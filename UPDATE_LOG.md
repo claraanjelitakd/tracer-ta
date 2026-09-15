@@ -12,6 +12,8 @@
   - `BiodataSeeder.php`: dibuat untuk melakukan seeding lengkap ke tabel `biodatas` mencakup seluruh data 28 field profil dan relasi ke perusahaan serta atasan.
   - `DatabaseSeeder.php` dan `QuestionMappingSeeder.php`: diselaraskan menggunakan `BiodataSeeder` dan `Biodata::all()`.
   - Database VIEW `v_question_mappings` diselaraskan memetakan butir pertanyaan ke tabel `biodatas` dan `yudisiums`.
+- **Dokumentasi Terpusat Entity Relationship Diagram (ERD)**:
+  - Membuat file terdedikasi [ERD.md](file:///c:/study/tracerstudy/ERD.md) yang memuat visualisasi diagram Mermaid `erDiagram`, kamus data komprehensif (*data dictionary*) untuk seluruh entitas (Autentikasi, Wilayah Master, Biodata/Akademik, Kuesioner Universitas, Kuesioner Prodi, Database Views), dan tabel matriks kardinalitas relasi antar entitas.
 - **Verifikasi & Pengujian Otomatis**:
   - Eksekusi migrasi & seeding ulang `php artisan migrate:fresh --seed` berjalan sukses 100% tanpa error.
   - Seluruh 38 skenario automated unit & feature tests di `vendor/bin/phpunit` lulus 100% (203 assertions).

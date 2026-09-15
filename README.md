@@ -7,13 +7,14 @@ Sistem Informasi Tracer Study Alumni Universitas Kristen Duta Wacana (UKDW). Dib
 ## Daftar Isi
 1. [Instalasi & Menjalankan Aplikasi](#instalasi--menjalankan-aplikasi)
 2. [Peta Struktur File & Direktori Proyek](#peta-struktur-file--direktori-proyek)
-3. [Arsitektur Kuesioner & Alur Data](#arsitektur-kuesioner--alur-data)
+3. [Entity Relationship Diagram (ERD) & Skema Database](#entity-relationship-diagram-erd--skema-database)
+4. [Arsitektur Kuesioner & Alur Data](#arsitektur-kuesioner--alur-data)
    - [A. Kuesioner Utama Universitas](#a-kuesioner-utama-universitas)
    - [B. Kuesioner Khusus Program Studi](#b-kuesioner-khusus-program-studi)
    - [C. Entitas Biodata & Sinkronisasi Otomatis Data Akademik](#c-entitas-biodata--sinkronisasi-otomatis-data-akademik)
-4. [Modularisasi Komponen Vue Alumni](#modularisasi-komponen-vue-alumni)
-5. [Manajemen Modul & Peran Pengguna (Roles)](#manajemen-modul--peran-pengguna-roles)
-6. [Panduan Pencarian Cepat Kode (Quick Navigation)](#panduan-pencarian-cepat-kode-quick-navigation)
+5. [Modularisasi Komponen Vue Alumni](#modularisasi-komponen-vue-alumni)
+6. [Manajemen Modul & Peran Pengguna (Roles)](#manajemen-modul--peran-pengguna-roles)
+7. [Panduan Pencarian Cepat Kode (Quick Navigation)](#panduan-pencarian-cepat-kode-quick-navigation)
 
 ---
 
@@ -212,6 +213,20 @@ tracerstudy/
     ├── web.php                                     # Seluruh endpoint URL web aplikasi (Tamu, Auth, Alumni, Prodi, Superadmin)
     └── console.php                                 # Perintah konsol Artisan terjadwal
 ```
+
+---
+
+## Entity Relationship Diagram (ERD) & Skema Database
+
+Dokumentasi lengkap diagram relasi antar tabel (ERD Mermaid), kamus data (*data dictionary*), dan spesifikasi kolom tersedia secara terdedikasi di:
+👉 **[`ERD.md`](file:///c:/study/tracerstudy/ERD.md)**
+
+Ringkasan relasi utama:
+- **`users` (1:1) $\rightarrow$ `biodatas`**: Profil alumni (28 kolom identitas, kontak, kependudukan, karier).
+- **`data_akademiks` (1:1) $\rightarrow$ `biodatas`**: Pangkalan data akademik resmi terhubung via `nim`.
+- **`biodatas` (1:N) $\rightarrow$ `tracers`**: Respon pengisian kuesioner tracer study tingkat universitas.
+- **`biodatas` (1:N) $\rightarrow$ `prodi_responses`**: Respon pengisian kuesioner evaluasi program studi.
+- **`prodis` (1:N) $\rightarrow$ `prodi_question_sections` $\rightarrow$ `prodi_questions`**: Manajemen kuesioner mandiri prodi.
 
 ---
 
