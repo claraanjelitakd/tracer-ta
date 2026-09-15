@@ -354,5 +354,62 @@ tracerstudy/
     ├── web.php                                     # Seluruh endpoint URL web aplikasi
     └── console.php                                 # Task scheduler console
 
+================================================================================
+ARSITEKTUR KUESIONER TRACER STUDY 2021 & TABEL TRACERS (UPDATE 2026-09-15)
+================================================================================
+
+1. STANDARISASI TABEL & MODEL DALAM BAHASA INDONESIA
+   - `kuesioners` (Model: Kuesioner, Seeder: KuesionerSeeder)
+     Menyimpan header kuesioner tracer study tingkat universitas (id, title, description, year, is_active).
+   - `kelompok_pertanyaans` (Model: KelompokPertanyaan, Seeder: KelompokPertanyaanSeeder)
+     Menyimpan kelompok/seksi instrumen kuesioner (id, kuesioner_id, kode_kelompok, title, description, order).
+   - `ref_subpertanyaan2021` (Model: RefSubpertanyaan2021, Seeder: RefSubpertanyaan2021Seeder)
+     Menyimpan butir subpertanyaan kuesioner 2021 (id, kelompok_pertanyaan_id, kelompok, kode_pertanyaan, subpertanyaan, type, keterangan, wajib, order).
+     * Catatan: Kolom 'kelompok' bertipe CHAR(3) menyimpan kode induk kuesioner (seperti 'BIO', 'F1', 'F2', 'F17', 'F18'), BUKAN foreign key integer.
+   - `ref_subpertanyaan_detil` (Model: RefSubpertanyaanDetil, Seeder: RefSubpertanyaanDetilSeeder)
+     Menyimpan opsi pilihan jawaban dan alur percabangan (id, pertanyaan_id, kode_pertanyaan, kode_opsi, option_text, jump_to, order).
+   - `tracers` (Model: Tracer)
+     Menyimpan jawaban respon alumni tracer study universitas.
+     Struktur kolom:
+     - id: Primary Key (BIGINT)
+     - alumni_id: FK ke tabel alumnis
+     - question_id: FK ke tabel ref_subpertanyaan2021
+     - nim: NIM alumni
+     - kelompok: Kode instrumen kelompok ('BIO', 'F1', 'F2', 'F3', 'F4', 'F5', 'F6', 'F7', 'F8', 'F10', 'F11', 'F12', 'F14', 'F15', 'F16', 'F17', 'F18')
+     - kode_pertanyaan: Kode subpertanyaan
+     - subpertanyaan: Teks subpertanyaan selaras tabel induk
+     - answer: Jawaban teks utama alumni (varchar/text)
+     - answer_json: Struktur array/JSON untuk jawaban majemuk, matriks, atau checkbox
+     - keterangan: Keterangan subpertanyaan atau judul kelompok
+     - tahun_lulus: Tahun kelulusan dari data akademik
+   - `v_question_mappings` (Database VIEW, Model: QuestionMapping, Seeder: QuestionMappingSeeder)
+     Database VIEW yang menghubungkan kolom pangkalan profil alumni (data_akademiks, alumnis, companies, atasans) dengan kode pertanyaan kuesioner.
+
+2. PEMISAHAN BIODATA BIO_TTL
+   - BIO_TTL dipecah menjadi dua butir pertanyaan mandiri:
+     1. BIO_TEMPAT_LAHIR: Mengambil data dari data_akademiks.tempat_lahir
+     2. BIO_TANGGAL_LAHIR: Mengambil data dari data_akademiks.tanggal_lahir
+   - Keduanya otomatis disinkronkan oleh KuesionerSyncService dan terdaftar di VIEW v_question_mappings.
+
+3. SINKRONISASI OTOMATIS DATA PROFIL (KuesionerSyncService)
+   Mencegah inkonsistensi data dengan menarik langsung data profil alumni ke tabel tracers:
+   - F2E & F5B   -> Nama Perusahaan (companies.nama_perusahaan)
+   - F2E1        -> Nama Atasan (atasans.nama)
+   - F2E2        -> Nomor Telepon Atasan (atasans.telepon)
+   - F2E3        -> Email Atasan (atasans.email)
+   - F2F & F510  -> Alamat Perusahaan (alamat, kabupaten, provinsi, kode pos)
+   - F2G & F5C   -> Posisi/Jabatan Alumni (alumnis.posisi_jabatan)
+   - F2H & F5D   -> Skala Perusahaan (companies.skala)
+
+4. KOMPATIBILITAS PENUH KODE LAMA (BACKWARD COMPATIBILITY)
+   - Model lama: Questionnaire, QuestionSection, Question, QuestionOption, Response
+   - Seluruh model lama dijadikan subclass wrapper dari model baru.
+   - Dilengkapi query builder scope transformer yang secara transparan memetakan kolom:
+     - code <-> kode_pertanyaan / kode_opsi
+     - question_text <-> subpertanyaan
+     - is_required <-> wajib
+     - answer_text <-> answer
+   - Hasil: Seluruh controller lama, service, dan automated tests tetap bekerja dengan sempurna.
+
 
 

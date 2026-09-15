@@ -88,7 +88,7 @@ tracerstudy/
 │   │       └── RoleMiddleware.php                  # Pembatas hak akses berdasarkan role pengguna
 │   ├── Models/                                     # Definisi Model Eloquent & Relasi Database
 │   │   ├── User.php                                # Akun pengguna, role, relasi ke alumni & prodi_id
-│   │   ├── Alumni.php                              # Entitas profil alumni, relasi ke user, akademik, respon, dll.
+│   │   ├── Alumni.php                              # Entitas profil alumni, relasi ke user, akademik, tracers, dll.
 │   │   ├── DataAkademik.php                        # Pangkalan data akademik (NIM, IPK, tahun lulus, predikat)
 │   │   ├── DataOrangTua.php                        # Data kontak & profil orang tua / wali alumni
 │   │   ├── Yudisium.php                            # Data kelulusan & status yudisium resmi dari universitas
@@ -97,22 +97,24 @@ tracerstudy/
 │   │   ├── Atasan.php                              # Data atasan langsung alumni di perusahaan
 │   │   ├── Province.php & Kabupaten.php            # Master data wilayah geografis Indonesia
 │   │   ├── Ump.php                                 # Data referensi Upah Minimum Provinsi (UMP)
-│   │   ├── Questionnaire.php                       # Header instrumen kuesioner universitas
-│   │   ├── QuestionSection.php                     # Bagian/seksi kuesioner universitas
-│   │   ├── Question.php                            # Butir pertanyaan kuesioner universitas (F1-F22)
-│   │   ├── QuestionOption.php                      # Pilihan opsi jawaban & nilai jump_to kuesioner univ
-│   │   ├── Response.php                            # Jawaban tersimpan kuesioner tracer study universitas
-│   │   ├── QuestionMapping.php                     # Pemetaan butir pertanyaan profil & standar Dikti
-│   │   ├── ProdiQuestionSection.php                # [BARU] Bagian/seksi kuesioner khusus program studi
-│   │   ├── ProdiQuestion.php                       # [BARU] Butir pertanyaan kuesioner khusus program studi
-│   │   ├── ProdiQuestionOption.php                 # [BARU] Opsi jawaban kuesioner khusus program studi
-│   │   └── ProdiResponse.php                       # [BARU] Jawaban alumni untuk kuesioner khusus program studi
+│   │   ├── Kuesioner.php                           # [BARU] Header kuesioner tracer study universitas
+│   │   ├── KelompokPertanyaan.php                  # [BARU] Bagian/seksi kuesioner universitas
+│   │   ├── RefSubpertanyaan2021.php                # [BARU] Butir pertanyaan kuesioner universitas 2021
+│   │   ├── RefSubpertanyaanDetil.php               # [BARU] Opsi jawaban & nilai jump_to kuesioner univ
+│   │   ├── Tracer.php                              # [BARU] Jawaban kuesioner tracer study alumni (tabel tracers)
+│   │   ├── QuestionMapping.php                     # [BARU] Pemetaan profil alumni via VIEW v_question_mappings
+│   │   ├── Questionnaire.php, QuestionSection.php  # [WRAPPER] Kompatibilitas model lama
+│   │   ├── Question.php, QuestionOption.php, Response.php # [WRAPPER] Kompatibilitas model lama
+│   │   ├── ProdiQuestionSection.php                # Bagian/seksi kuesioner khusus program studi
+│   │   ├── ProdiQuestion.php                       # Butir pertanyaan kuesioner khusus program studi
+│   │   ├── ProdiQuestionOption.php                 # Opsi jawaban kuesioner khusus program studi
+│   │   └── ProdiResponse.php                       # Jawaban alumni untuk kuesioner khusus program studi
 │   ├── Providers/
 │   │   └── AppServiceProvider.php                  # Konfigurasi layanan global aplikasi
 │   └── Services/                                   # Domain Services & Logika Bisnis Terpusat
 │       ├── Kuesioner/
 │       │   ├── KelengkapanTracerService.php        # Audit skor kelengkapan kuesioner universitas & profil
-│       │   └── KuesionerSyncService.php            # Auto-sync data akademik ke responses & prodi_responses
+│       │   └── KuesionerSyncService.php            # Auto-sync data profil ke tracers & prodi_responses
 │       └── LinkedIn/
 │           └── LinkedInService.php                 # Integrasi data profil profesional LinkedIn
 ├── database/                                       # Skema & Data Awal Database
@@ -120,18 +122,23 @@ tracerstudy/
 │   │   ├── 0001_01_01_000000_create_users_table.php
 │   │   ├── 2026_09_01_171350_create_data_akademiks_table.php
 │   │   ├── 2026_09_01_171352_create_alumnis_table.php
-│   │   ├── 2026_09_01_184426_create_questions_table.php
-│   │   ├── 2026_09_01_184428_create_responses_table.php
+│   │   ├── 2026_09_01_184424_create_kuesioners_table.php
+│   │   ├── 2026_09_01_184425_create_kelompok_pertanyaans_table.php
+│   │   ├── 2026_09_01_184426_create_ref_subpertanyaan2021_table.php
+│   │   ├── 2026_09_01_184427_create_ref_subpertanyaan_detil_table.php
+│   │   ├── 2026_09_01_184428_create_tracers_table.php
+│   │   ├── 2026_09_01_193004_create_v_question_mappings_view.php
 │   │   ├── 2026_09_13_090000_add_prodi_id_to_users_table.php
-│   │   ├── 2026_09_13_092000_create_prodi_questionnaire_tables.php # [BARU] 4 tabel instrumen prodi
-│   │   └── 2026_09_13_093000_remove_prodi_id_from_questions_table.php # [BARU] Pembersihan kuesioner univ
+│   │   └── 2026_09_13_092000_create_prodi_questionnaire_tables.php
 │   └── seeders/                                    # Data benih (Seeder)
 │       ├── DatabaseSeeder.php                      # Seeder master yang memanggil seluruh seeder
 │       ├── UserSeeder.php                          # Akun demo (superadmin, biro3, admin prodi SI/Filsafat, alumni)
-│       ├── ProdiQuestionnaireSeeder.php            # [BARU] 9 Section & 52 Pertanyaan Prodi SI + Filsafat
-│       ├── QuestionnaireSeeder.php, QuestionSectionSeeder.php, QuestionSeeder.php, QuestionOptionSeeder.php
-│       ├── QuestionMappingSeeder.php, AlumniSeeder.php, DataAkademikSeeder.php, DataOrangTuaSeeder.php
-│       └── YudisiumSeeder.php, CompanySeeder.php, WilayahSeeder.php, UmpSeeder.php
+│       ├── KuesionerSeeder.php                     # Seeder kuesioner 2021
+│       ├── KelompokPertanyaanSeeder.php            # Seeder 10 kelompok pertanyaan
+│       ├── RefSubpertanyaan2021Seeder.php          # Seeder 68 butir subpertanyaan 2021
+│       ├── RefSubpertanyaanDetilSeeder.php         # Seeder 185 opsi jawaban & jump logic
+│       ├── QuestionMappingSeeder.php               # Seeder sinkronisasi data profil
+│       └── ProdiQuestionnaireSeeder.php            # Seeder instrumen Prodi SI & Filsafat
 ├── resources/                                      # [FRONTEND] Antarmuka Pengguna (Vue 3, Inertia & Asset)
 │   ├── js/
 │   │   ├── app.js                                  # Bootstrapper Vue 3, Inertia SPA, & konfigurasi progress bar
@@ -155,12 +162,13 @@ tracerstudy/
 │   │       │   ├── Dashboard.vue                   # Beranda alumni (indikator progres kelengkapan & aksi cepat)
 │   │       │   ├── Kuesioner.vue                   # [INDUK] Kuesioner Tracer Study Universitas (Orkestrator Form)
 │   │       │   ├── KuesionerProdi.vue              # Pengisian Kuesioner Khusus Prodi (Auto-prefill data akademik)
-│   │       │   ├── Components/Kuesioner/           # [MODULAR] 6 Komponen Pecahan Kuesioner Universitas:
+│   │       │   ├── Components/Kuesioner/           # [MODULAR] Komponen Pecahan Kuesioner Universitas:
 │   │       │   │   ├── Navbar.vue                  # Header sticky kuesioner & tombol kembali ke dashboard
 │   │       │   │   ├── Stepper.vue                 # Stepper bulatan tahapan 1 s/d N dengan auto-scroll
 │   │       │   │   ├── Banner.vue                  # Banner kartu hijau judul bagian ("Bagian X dari Y")
+│   │       │   │   ├── TabelF2.vue                 # [BARU] Matriks 7 baris x 5 skala penilaian metode pembelajaran F21-F27
 │   │       │   │   ├── TabelF17.vue                # Komparasi dual-matrix F17 (Kemampuan Diri vs Kontribusi Kampus)
-│   │       │   │   ├── KartuPertanyaan.vue         # Dispatcher varian input (rating, radio, checkbox, F13 calc, dll)
+│   │       │   │   ├── KartuPertanyaan.vue         # Dispatcher varian input (rating, radio, checkbox, calc, dll)
 │   │       │   │   └── Navigasi.vue                # Floating action buttons desktop & mobile bottom bar
 │   │       │   └── Profil/
 │   │       │       ├── Index.vue                   # Halaman kelola data diri & rekam jejak alumni
@@ -203,11 +211,21 @@ tracerstudy/
 
 ## Arsitektur Kuesioner & Alur Data
 
-### A. Kuesioner Utama Universitas
-- **Database**: `questionnaires` $\rightarrow$ `question_sections` $\rightarrow$ `questions` $\rightarrow$ `question_options` $\rightarrow$ `responses`.
-- Murni berlaku universal untuk seluruh program studi. Kolom `prodi_id` pada tabel `questions` telah dihapus secara bersih.
-- Menggunakan branching logic otomatis berbasis `jump_to` pada tabel `question_options`.
-- Butir **F17**: Evaluasi kompetensi berpasangan (A: Kemampuan Diri vs B: Kontribusi Kampus).
+### A. Kuesioner Utama Universitas (Standar Tracer Study 2021)
+- **Database**: `kuesioners` $\rightarrow$ `kelompok_pertanyaans` $\rightarrow$ `ref_subpertanyaan2021` $\rightarrow$ `ref_subpertanyaan_detil` $\rightarrow$ `tracers`.
+- **Tabel Tracers**: Menyimpan jawaban alumni dengan kolom: `id`, `alumni_id`, `question_id`, `nim`, `kelompok` (char 3: 'BIO', 'F1', 'F2', 'F17', dst), `kode_pertanyaan`, `subpertanyaan`, `answer`, `answer_json`, `keterangan`, `tahun_lulus`.
+- **Pemisahan Biodata**:
+  - `BIO_TEMPAT_LAHIR`: Ditarik otomatis dari `data_akademiks.tempat_lahir`.
+  - `BIO_TANGGAL_LAHIR`: Ditarik otomatis dari `data_akademiks.tanggal_lahir`.
+  - Terhubung via database VIEW `v_question_mappings`.
+- **Auto-Pull Profil Pekerjaan**:
+  - `F2E` & `F5B` (Nama Perusahaan), `F2E1`..`F2E3` (Atasan: Nama, HP, Email), `F2F` & `F510` (Alamat Perusahaan), `F2G` & `F5C` (Posisi/Jabatan), `F2H` & `F5D` (Skala Perusahaan) ditarik otomatis dari profil alumni tanpa perlu diinput ulang.
+- **Komponen Matriks**:
+  - `TabelF2.vue`: Matriks 7 baris x 5 skala penilaian untuk metode pembelajaran (`F21` s.d. `F27`).
+  - `TabelF17.vue`: Dual-matrix komparasi 7 baris x 5 skala penilaian untuk kompetensi (`F17a1`..`a7` vs `F17b1`..`b7`).
+- **Alur Percabangan Jump Logic**:
+  - `F504` ("Ya" $\rightarrow$ `F502`, `F505`, `F505A`; "Tidak" $\rightarrow$ `F506`).
+  - `F3`, `F8`, `F10` mengatur kelanjutan ke seksi berikutnya secara dinamis.
 
 ### B. Kuesioner Khusus Program Studi
 - **Database**: Terpisah secara independen agar setiap program studi dapat mengelola instrumen evaluasinya sendiri:
@@ -222,10 +240,8 @@ tracerstudy/
   - **`PSI-1-01` (Nama)** $\rightarrow$ Diambil otomatis dari `data_akademiks.nama` (fallback `users.name`).
   - **`PSI-1-02` (NIM)** $\rightarrow$ Diambil otomatis dari `alumnis.nim` (atau `data_akademiks.nim`).
   - **`PSI-1-03` (Tahun Kelulusan)** $\rightarrow$ Diambil otomatis dari `data_akademiks.tahun_akademik_lulus` / `tahun_lulus`.
-- Ditangani secara terpusat oleh [`KuesionerSyncService::syncProdiResponses($alumni)`](file:///c:/study/tracerstudy/app/Services/Kuesioner/KuesionerSyncService.php):
-  - Terpicu saat halaman kuesioner alumni dibuka.
-  - Terpicu saat detail alumni dibuka oleh Admin Prodi atau Super Admin.
-  - Di sisi frontend alumni ([`KuesionerProdi.vue`](file:///c:/study/tracerstudy/resources/js/Pages/Alumni/KuesionerProdi.vue)), field bertipe `readonly` dengan badge hijau resmi *"✓ Data Akademik"*, sehingga alumni tidak perlu mengetik ulang data diri.
+- Ditangani secara terpusat oleh [`KuesionerSyncService::syncProdiResponses($alumni)`](file:///c:/study/tracerstudy/app/Services/Kuesioner/KuesionerSyncService.php).
+
 
 ---
 

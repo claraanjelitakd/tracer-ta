@@ -1,6 +1,53 @@
 # UPDATE LOG - SERU (Sistem Ekosistem Rekam Jejak Alumni)
 
-## [2026-09-13] Arsitektur Kuesioner Khusus Program Studi, Harmonisasi Antarmuka Admin Prodi & Super Admin, Serta Integrasi Otomatis Data Akademik
+## [2026-09-15] Restrukturisasi Skema Kuesioner Tracer Study 2021, Penamaan Tabel Bahasa Indonesia, Tabel Tracers, Pemisahan BIO_TTL, dan Sinkronisasi Otomatis Profil
+- **Penamaan Tabel, Model, Migrasi, dan Seeder ke Bahasa Indonesia**:
+  - **Standarisasi Nama Tabel Database**:
+    1. `kuesioners`: Menggantikan `questionnaires`, dikelola oleh model `App\Models\Kuesioner` dan seeder `KuesionerSeeder`.
+    2. `kelompok_pertanyaans`: Menggantikan `question_sections`, dikelola oleh model `App\Models\KelompokPertanyaan` dan seeder `KelompokPertanyaanSeeder`.
+    3. `ref_subpertanyaan2021`: Menggantikan `questions`, dikelola oleh model `App\Models\RefSubpertanyaan2021` dan seeder `RefSubpertanyaan2021Seeder`.
+    4. `ref_subpertanyaan_detil`: Menggantikan `question_options`, dikelola oleh model `App\Models\RefSubpertanyaanDetil` dan seeder `RefSubpertanyaanDetilSeeder`.
+    5. `tracers`: Menggantikan `responses`, dikelola oleh model `App\Models\Tracer`.
+    6. `v_question_mappings`: Database VIEW yang menggantikan tabel `question_mappings`, dikelola oleh model `App\Models\QuestionMapping` dan seeder `QuestionMappingSeeder`.
+  - **Kompatibilitas Penuh Kode Lama (Backward Compatibility)**:
+    - Model lama (`Questionnaire`, `QuestionSection`, `Question`, `QuestionOption`, `Response`) dipertahankan sebagai turunan langsung (*subclass wrapper*) dari model baru dengan query builder mapper transparan (`code` $\leftrightarrow$ `kode_pertanyaan`, `question_text` $\leftrightarrow$ `subpertanyaan`, `answer_text` $\leftrightarrow$ `answer`), menjamin seluruh controller lama dan 38 automated tests tetap lulus 100% tanpa regresi.
+- **Rekonstruksi Tabel Jawaban `tracers` & Penyelarasan Variabel Kolom**:
+  - Tabel `tracers` memuat kolom terstandarisasi:
+    - `id`: Primary key (BIGINT)
+    - `alumni_id`: Foreign key ke tabel `alumnis`
+    - `question_id`: Foreign key ke tabel `ref_subpertanyaan2021`
+    - `nim`: Nomor Induk Mahasiswa alumni
+    - `kelompok`: Kode kelompok instrumen kuesioner (`char(3)`), seperti `'BIO'`, `'F1'`, `'F2'`, `'F3'`, `'F4'`, `'F5'`, `'F6'`, `'F7'`, `'F8'`, `'F10'`, `'F11'`, `'F12'`, `'F14'`, `'F15'`, `'F16'`, `'F17'`, `'F18'` (bukan ID foreign key)
+    - `kode_pertanyaan`: Kode unik pertanyaan (`char(20)`)
+    - `subpertanyaan`: Teks pertanyaan yang diselaraskan dengan tabel induk
+    - `answer`: Teks jawaban utama alumni (menggantikan `answer_text`)
+    - `answer_json`: Struktur data array/JSON untuk jawaban majemuk, matriks, dan checkbox
+    - `keterangan`: Keterangan subpertanyaan atau judul kelompok (`varchar(100)`)
+    - `tahun_lulus`: Tahun kelulusan mahasiswa dari data akademik alumni
+  - Seluruh variabel pemrosesan di `SimpanJawabanController.php` dan `KuesionerSyncService.php` disamakan persis dengan nama-nama kolom database ini.
+- **Pemisahan Biodata `BIO_TTL` Menjadi Dua Butir Independen**:
+  - `BIO_TTL` dipecah menjadi 2 butir pertanyaan di tabel `ref_subpertanyaan2021`:
+    1. `BIO_TEMPAT_LAHIR`: Ditarik otomatis dari `data_akademiks.tempat_lahir`.
+    2. `BIO_TANGGAL_LAHIR`: Ditarik otomatis dari `data_akademiks.tanggal_lahir`.
+  - Keduanya terdaftar pada database VIEW `v_question_mappings` dan disinkronkan secara otomatis oleh `KuesionerSyncService`.
+- **Auto-Pull Data Profil Alumni / Perusahaan / Atasan ke Kuesioner**:
+  - Menghilangkan redundansi pengisian dan potensi inkonsistensi data dengan menarik langsung profil ke butir kuesioner:
+    - `F2E` dan `F5B`: Otomatis ditarik dari nama perusahaan alumni (`companies.nama_perusahaan`).
+    - `F2E1`, `F2E2`, `F2E3`: Otomatis ditarik dari data atasan langsung (`atasans.nama`, `telepon`, `email`).
+    - `F2F` dan `F510`: Otomatis ditarik dari alamat lengkap perusahaan (`alamat`, `kabupaten`, `provinsi`, `kode pos`).
+    - `F2G` dan `F5C`: Otomatis ditarik dari posisi/jabatan alumni (`alumnis.posisi_jabatan`).
+    - `F2H` dan `F5D`: Otomatis ditarik dari skala tempat kerja (`companies.skala`).
+- **Antarmuka Matriks & Branching Logic Kuesioner 2021**:
+  - `TabelF2.vue`: Komponen matriks 7 baris x 5 opsi skala penilaian untuk metode pembelajaran `F21` s.d. `F27`.
+  - `TabelF17.vue`: Komponen matriks dual-side komparasi 7 baris x 5 opsi untuk kompetensi `F17a1`..`F17a7` (saat lulus) vs `F17b1`..`F17b7` (saat ini).
+  - Alur percabangan `F504`:
+    - Opsi "Ya" (`jump_to`: `'F502'`) $\rightarrow$ Membuka `F502` (waktu dapat kerja), `F505` (gaji per bulan), dan `F505A` (kesesuaian UMR).
+    - Opsi "Tidak" (`jump_to`: `'F506'`) $\rightarrow$ Membuka `F506` (waktu mencari kerja).
+- **Pembersihan Migrasi & Eksekusi Seeder**:
+  - Menghapus migrasi usang (`create_responses_table.php`, `create_questions_table.php`, dll.) sehingga hanya tersisa migrasi `create` yang bersih dan terurut.
+  - `DatabaseSeeder.php` memanggil langsung `KuesionerSeeder`, `KelompokPertanyaanSeeder`, `RefSubpertanyaan2021Seeder` (68 pertanyaan), `RefSubpertanyaanDetilSeeder` (185 opsi), `QuestionMappingSeeder`, dan `ProdiQuestionnaireSeeder`.
+  - Pengujian `php artisan test --compact` berhasil dengan **38 tests passed (206 assertions)**.
+
 - **Pemisahan dan Rekonstruksi Kuesioner Khusus Program Studi (Database & Model Terpisah)**:
   - **Penghapusan Kolom `prodi_id` pada Kuesioner Utama**: Menghapus kolom `prodi_id` dari tabel kuesioner umum universitas (`questions`) melalui migrasi `2026_09_13_090001_remove_prodi_id_from_questions_table.php`, serta membersihkan seluruh elemen terkait di antarmuka Super Admin (`QuestionModal.vue`, `QuestionCard.vue`, `SuperAdmin/Pertanyaan/Index.vue`). Kuesioner universitas kini murni terpusat untuk kuesioner tingkat universitas.
   - **Arsitektur Tabel Kuesioner Prodi yang Mandiri & Hierarkis**:
