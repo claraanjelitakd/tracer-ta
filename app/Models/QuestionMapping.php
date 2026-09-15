@@ -5,14 +5,31 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
+/**
+ * Model QuestionMapping
+ *
+ * Terhubung ke database VIEW `v_question_mappings` yang memetakan kolom profil alumni
+ * ke pertanyaan instrumen kuesioner.
+ */
 class QuestionMapping extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['table_name', 'column_name', 'question_id'];
+    protected $table = 'v_question_mappings';
+
+    public $timestamps = false;
+
+    protected $fillable = ['table_name', 'column_name', 'question_id', 'kode_pertanyaan'];
+
+    protected $appends = ['code'];
+
+    public function getCodeAttribute()
+    {
+        return $this->attributes['kode_pertanyaan'] ?? null;
+    }
 
     public function question()
     {
-        return $this->belongsTo(Question::class);
+        return $this->belongsTo(Question::class, 'question_id');
     }
 }

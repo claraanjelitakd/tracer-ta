@@ -2,23 +2,12 @@
 
 namespace Database\Seeders;
 
-use App\Models\Questionnaire;
 use Illuminate\Database\Seeder;
 
 class QuestionnaireSeeder extends Seeder
 {
-    /**
-     * Run the database seeds.
-     */
     public function run(): void
     {
-        Questionnaire::updateOrCreate(
-            ['title' => 'Tracer Study UKDW 2018'],
-            [
-                'description' => 'Kuesioner pelacakan jejak alumni Universitas Kristen Duta Wacana tahun 2018.',
-                'year' => 2018,
-                'is_active' => true,
-            ]
-        );
+        $this->call(KuesionerSeeder::class);
     }
 }

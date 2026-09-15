@@ -27,22 +27,18 @@ class SimpanPertanyaanController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'question_section_id' => 'required|exists:question_sections,id',
-            'code' => 'required|string|unique:questions,code|max:50',
+            'question_section_id' => 'required|exists:kelompok_pertanyaans,id',
+            'code' => 'required|string|max:50|unique:ref_subpertanyaan2021,kode_pertanyaan',
             'question_text' => 'required|string',
-            'type' => 'required|string',
-            'is_required' => 'boolean',
+            'type' => 'required|string|in:single_choice,multiple_choice,text,number,searchable_select,radio_input,multiple_number,matrix_dual,rating_5',
+            'is_required' => 'required|boolean',
             'order' => 'nullable|integer',
         ]);
 
-        $validated['is_required'] = $request->boolean('is_required');
-
-        // Otomatisasi penentuan nomor urut jika dikosongkan
         if (empty($validated['order'])) {
-            $validated['order'] = (Question::where('question_section_id', $validated['question_section_id'])->max('order') ?? 0) + 1;
+            $validated['order'] = (Question::where('kelompok_pertanyaan_id', $validated['question_section_id'])->max('order') ?? 0) + 1;
         }
 
-        // Simpan data pertanyaan baru
         $question = Question::create($validated);
 
         return redirect()->back()->with('success', 'Pertanyaan baru berhasil ditambahkan.');
@@ -59,27 +55,21 @@ class SimpanPertanyaanController extends Controller
         $question = Question::findOrFail($id);
 
         $validated = $request->validate([
-            'question_section_id' => 'required|exists:question_sections,id',
-            'code' => 'required|string|max:50|unique:questions,code,'.$question->id,
+            'question_section_id' => 'required|exists:kelompok_pertanyaans,id',
+            'code' => 'required|string|max:50|unique:ref_subpertanyaan2021,kode_pertanyaan,'.$question->id,
             'question_text' => 'required|string',
-            'type' => 'required|string',
-            'is_required' => 'boolean',
+            'type' => 'required|string|in:single_choice,multiple_choice,text,number,searchable_select,radio_input,multiple_number,matrix_dual,rating_5',
+            'is_required' => 'required|boolean',
             'order' => 'nullable|integer',
         ]);
 
-        $validated['is_required'] = $request->boolean('is_required');
-
-        if (empty($validated['order'])) {
-            unset($validated['order']);
-        }
-
         $question->update($validated);
 
-        return redirect()->back()->with('success', 'Pertanyaan berhasil diperbarui.');
+        return redirect()->back()->with('success', 'Data pertanyaan berhasil diperbarui.');
     }
 
     /**
-     * Menghapus butir pertanyaan beserta seluruh pilihan opsi terkait.
+     * Menghapus butir pertanyaan.
      *
      * @param  int  $id
      * @return RedirectResponse
@@ -87,16 +77,17 @@ class SimpanPertanyaanController extends Controller
     public function destroy($id)
     {
         $question = Question::findOrFail($id);
-
-        // Hapus opsi jawaban terlebih dahulu
-        $question->options()->delete();
         $question->delete();
 
-        return redirect()->back()->with('success', 'Pertanyaan dan seluruh opsi jawabannya berhasil dihapus.');
+        return redirect()->back()->with('success', 'Pertanyaan berhasil dihapus.');
     }
 
     /**
-     * Memindahkan urutan nomor pertanyaan dalam section yang sama.
+     * Mengatur ulang urutan butir pertanyaan.
+     *
+     * Mendukung:
+     * - Direct directional reorder (naik / turun) via 'id' & 'direction'
+     * - Bulk drag-and-drop reorder via array 'orders'
      *
      * @return RedirectResponse
      */
@@ -104,7 +95,7 @@ class SimpanPertanyaanController extends Controller
     {
         if ($request->has(['id', 'direction'])) {
             $validated = $request->validate([
-                'id' => 'required|exists:questions,id',
+                'id' => 'required|exists:ref_subpertanyaan2021,id',
                 'direction' => 'required|in:up,down',
             ]);
 
@@ -112,8 +103,7 @@ class SimpanPertanyaanController extends Controller
             $operator = $validated['direction'] === 'up' ? '<' : '>';
             $sortOrder = $validated['direction'] === 'up' ? 'desc' : 'asc';
 
-            // Cari pertanyaan tetangga dalam section yang sama
-            $adjacentQuestion = Question::where('question_section_id', $currentQuestion->question_section_id)
+            $adjacentQuestion = Question::where('kelompok_pertanyaan_id', $currentQuestion->kelompok_pertanyaan_id)
                 ->where('order', $operator, $currentQuestion->order)
                 ->orderBy('order', $sortOrder)
                 ->first();
@@ -124,13 +114,13 @@ class SimpanPertanyaanController extends Controller
                 $adjacentQuestion->update(['order' => $tempOrder]);
             }
 
-            return redirect()->back()->with('success', 'Posisi urutan pertanyaan berhasil dipindahkan.');
+            return redirect()->back()->with('success', 'Urutan pertanyaan berhasil diperbarui.');
         }
 
         if ($request->has('orders')) {
             $validated = $request->validate([
                 'orders' => 'required|array',
-                'orders.*.id' => 'required|exists:questions,id',
+                'orders.*.id' => 'required|exists:ref_subpertanyaan2021,id',
                 'orders.*.order' => 'required|integer',
             ]);
 

@@ -52,12 +52,12 @@ class DatabaseSeeder extends Seeder
             YudisiumSeeder::class,
         ]);
 
-        // 4. Seed Questionnaire Data
+        // 4. Seed Questionnaire Data (Kuesioner 2021)
         $this->call([
-            QuestionnaireSeeder::class,
-            QuestionSectionSeeder::class,
-            QuestionSeeder::class,
-            QuestionOptionSeeder::class,
+            KuesionerSeeder::class,
+            KelompokPertanyaanSeeder::class,
+            RefSubpertanyaan2021Seeder::class,
+            RefSubpertanyaanDetilSeeder::class,
             QuestionMappingSeeder::class,
             ProdiQuestionnaireSeeder::class,
         ]);

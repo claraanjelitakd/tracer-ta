@@ -120,8 +120,8 @@ class BiroTigaKelolaPertanyaanTest extends TestCase
         ]);
 
         $response->assertSessionHasNoErrors();
-        $this->assertDatabaseHas('question_options', [
-            'question_id' => $q->id,
+        $this->assertDatabaseHas('ref_subpertanyaan_detil', [
+            'pertanyaan_id' => $q->id,
             'option_text' => 'Sebelum lulus',
             'order' => 1,
         ]);

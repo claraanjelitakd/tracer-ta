@@ -17,6 +17,7 @@ import Navbar from './Components/Kuesioner/Navbar.vue';
 import Stepper from './Components/Kuesioner/Stepper.vue';
 import Banner from './Components/Kuesioner/Banner.vue';
 import TabelF17 from './Components/Kuesioner/TabelF17.vue';
+import TabelF2 from './Components/Kuesioner/TabelF2.vue';
 import KartuPertanyaan from './Components/Kuesioner/KartuPertanyaan.vue';
 import Navigasi from './Components/Kuesioner/Navigasi.vue';
 
@@ -165,9 +166,30 @@ const currentSection = computed(() => {
     return props.questionnaire.sections[activeSectionIndex.value] || null;
 });
 
+// Deteksi khusus Section F2 (Penekanan Metode Pembelajaran)
+const isF2Section = computed(() => {
+    return currentSection.value?.questions?.some(q => q.code === 'F2' || (q.code && q.code.startsWith('F21'))) || false;
+});
+
+const f2HeaderQuestion = computed(() => {
+    return currentSection.value?.questions?.find(q => q.code === 'F2') || null;
+});
+
+const f2QuestionsList = computed(() => {
+    return currentSection.value?.questions?.filter(q => q.code !== 'F2' && q.type !== 'header') || [];
+});
+
 // Deteksi khusus Section F17 (Evaluasi Kompetensi Dual Matrix A vs B)
 const isF17Section = computed(() => {
-    return currentSection.value?.questions?.some(q => q.code && q.code.startsWith('F17-')) || false;
+    return currentSection.value?.questions?.some(q => 
+        q.code === 'F17' || 
+        (q.code && (q.code.toLowerCase().startsWith('f17a') || q.code.toLowerCase().startsWith('f17b') || q.code.startsWith('F17-'))) || 
+        q.type === 'matrix_dual'
+    ) || false;
+});
+
+const f17Question = computed(() => {
+    return currentSection.value?.questions?.find(q => q.code === 'F17' || q.type === 'matrix_dual') || null;
 });
 
 // Helper pembersih nama aspek kompetensi
@@ -178,10 +200,10 @@ const getCleanAspectName = (text) => {
     return text;
 };
 
-// Pasangan pertanyaan F17 berdampingan (A: Kompetensi yang dikuasai vs B: Kontribusi PT)
+// Pasangan pertanyaan F17 berdampingan (A: Kompetensi yang dikuasai vs B: Kebutuhan saat ini)
 const f17AspectPairs = computed(() => {
     if (!isF17Section.value || !currentSection.value?.questions) return [];
-    const questions = currentSection.value.questions;
+    const questions = currentSection.value.questions.filter(q => q.code !== 'F17' && q.type !== 'header');
     const pairs = [];
 
     for (let i = 0; i < questions.length; i += 2) {
@@ -203,11 +225,14 @@ const f17AspectPairs = computed(() => {
 const f17CompletedCount = computed(() => {
     if (!isF17Section.value) return 0;
     return f17AspectPairs.value.filter(pair => {
-        return !!form.answers[pair.qA.id] && !!form.answers[pair.qB.id];
+        const valA = form.answers[pair.qA.id];
+        const valB = form.answers[pair.qB.id];
+        return valA !== undefined && valA !== null && valA !== '' &&
+               valB !== undefined && valB !== null && valB !== '';
     }).length;
 });
 
-// Kelompokkan pertanyaan dalam section: buat berpasangan kanan-kiri khusus F6 dan F7
+// Kelompokkan pertanyaan dalam section: buat berpasangan kanan-kiri khusus F6/F7 dan F18
 const groupedQuestions = computed(() => {
     if (!currentSection.value?.questions) return [];
     const questions = currentSection.value.questions;
@@ -220,6 +245,20 @@ const groupedQuestions = computed(() => {
 
         // Khusus F6 dan F7: buat berdampingan kanan-kiri (grid 2 kolom)
         if (q.code === 'F6' && nextQ && nextQ.code === 'F7') {
+            groups.push({
+                type: 'pair',
+                items: [q, nextQ]
+            });
+            i += 2;
+        } else if (q.code === 'F18a' && nextQ && nextQ.code === 'F18b') {
+            // Pasangan Studi Lanjut F18A dan F18B
+            groups.push({
+                type: 'pair',
+                items: [q, nextQ]
+            });
+            i += 2;
+        } else if (q.code === 'F18c' && nextQ && nextQ.code === 'F18d') {
+            // Pasangan Studi Lanjut F18C dan F18D
             groups.push({
                 type: 'pair',
                 items: [q, nextQ]
@@ -254,6 +293,26 @@ const questionOptionMap = computed(() => {
 // Menentukan apakah suatu butir pertanyaan terlihat (tidak dilewati oleh alur percabangan)
 const isQuestionVisible = (qId) => {
     if (!props.questionnaire?.sections) return true;
+
+    // Aturan khusus F504 -> F502/F505/F505A (jika Ya) vs F506 (jika Tidak)
+    let currentQ = null;
+    let f504Q = null;
+    for (const s of props.questionnaire.sections) {
+        for (const q of s.questions || []) {
+            if (q.id === qId) currentQ = q;
+            if (q.code === 'F504') f504Q = q;
+        }
+    }
+
+    if (currentQ && f504Q) {
+        if (['F502', 'F505', 'F505A'].includes(currentQ.code)) {
+            const ansF504 = form.answers[f504Q.id];
+            if (ansF504 !== 'Ya' && ansF504 !== '1') return false;
+        } else if (currentQ.code === 'F506') {
+            const ansF504 = form.answers[f504Q.id];
+            if (ansF504 !== 'Tidak' && ansF504 !== '2') return false;
+        }
+    }
 
     for (const sec of props.questionnaire.sections) {
         if (!sec.questions) continue;
@@ -347,6 +406,7 @@ const getRadioInputVal = (qId, optId) => {
 // Memeriksa apakah satu butir pertanyaan sudah terjawab dengan valid
 const isQuestionAnswered = (q) => {
     if (!q) return true;
+    if (q.type === 'header') return true;
     if (!isQuestionVisible(q.id)) return true;
     if (!q.is_required) return true;
 
@@ -420,12 +480,17 @@ const isQuestionAnswered = (q) => {
 const isSectionAnswered = (section) => {
     if (!section || !section.questions || section.questions.length === 0) return true;
 
-    const isF17 = section.questions.some(q => q.code && q.code.startsWith('F17-'));
+    const isF2 = section.questions.some(q => q.code === 'F2' || (q.code && q.code.startsWith('F21')));
+    if (isF2) {
+        return f2QuestionsList.value.length > 0 && f2QuestionsList.value.every(q => isQuestionAnswered(q));
+    }
+
+    const isF17 = section.questions.some(q => q.code === 'F17' || (q.code && (q.code.toLowerCase().startsWith('f17a') || q.code.toLowerCase().startsWith('f17b') || q.code.startsWith('F17-'))));
     if (isF17) {
         return f17AspectPairs.value.length > 0 && f17CompletedCount.value === f17AspectPairs.value.length;
     }
 
-    const visibleQuestions = section.questions.filter(q => isQuestionVisible(q.id));
+    const visibleQuestions = section.questions.filter(q => q.type !== 'header' && isQuestionVisible(q.id));
     if (visibleQuestions.length === 0) return true;
 
     const requiredQuestions = visibleQuestions.filter(q => q.is_required);
@@ -598,7 +663,7 @@ watch(() => form.answers, (newAnswers) => {
         <!-- Area Konten Formulir Utama -->
         <main 
             class="flex-1 px-3 py-4 sm:px-4 md:px-6 w-full mx-auto mt-3 sm:mt-6 md:mt-8" 
-            :class="isF17Section ? 'max-w-6xl' : 'max-w-5xl'"
+            :class="(isF17Section || isF2Section) ? 'max-w-6xl' : 'max-w-5xl'"
         >
             <!-- Pesan Error jika kuesioner tidak aktif -->
             <div 
@@ -618,14 +683,23 @@ watch(() => form.answers, (newAnswers) => {
                 />
 
                 <form @submit.prevent="handleNextOrSubmit" class="space-y-4 sm:space-y-8">
-                    <!-- 4. Khusus Instrumen F17: Evaluasi Kompetensi Dual Matrix (A vs B) -->
+                    <!-- 4. Khusus Instrumen F2: Penekanan Metode Pembelajaran Matriks -->
+                    <TabelF2 
+                        v-if="isF2Section"
+                        :header-question="f2HeaderQuestion"
+                        :questions="f2QuestionsList"
+                        :form="form"
+                    />
+
+                    <!-- 5. Khusus Instrumen F17: Evaluasi Kompetensi Dual Matrix (A vs B) -->
                     <TabelF17 
-                        v-if="isF17Section"
+                        v-else-if="isF17Section"
+                        :question="f17Question"
                         :pairs="f17AspectPairs"
                         :form="form"
                     />
 
-                    <!-- 5. Daftar Pertanyaan Kuesioner Standar (Non-F17) -->
+                    <!-- 6. Daftar Pertanyaan Kuesioner Standar (Non-F2 & Non-F17) -->
                     <div v-else class="space-y-4 sm:space-y-8">
                         <template v-for="(group, gIdx) in groupedQuestions" :key="'grp_' + gIdx">
                             <!-- Pertanyaan 2 Kolom Berdampingan (Khusus F6 dan F7) -->

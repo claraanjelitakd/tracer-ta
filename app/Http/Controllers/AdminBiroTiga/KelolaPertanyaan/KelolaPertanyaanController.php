@@ -41,11 +41,11 @@ class KelolaPertanyaanController extends Controller
         $prodis = Prodi::orderBy('kode_prodi', 'asc')->get(['id', 'kode_prodi', 'nama_prodi']);
 
         // Peta kode pertanyaan ke teks pertanyaan untuk referensi jump_to di tabel
-        $targetQuestionMap = Question::pluck('question_text', 'code')->toArray();
+        $targetQuestionMap = Question::pluck('subpertanyaan', 'kode_pertanyaan')->toArray();
 
         // Pilihan target jump_to untuk dropdown opsi (dengan label kode + teks lengkap)
         $availableJumpTargets = Question::orderBy('order', 'asc')
-            ->get(['id', 'code', 'question_text'])
+            ->get()
             ->map(function ($q) {
                 return [
                     'code' => $q->code,
@@ -69,8 +69,8 @@ class KelolaPertanyaanController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'question_section_id' => 'required|exists:question_sections,id',
-            'code' => 'required|string|unique:questions,code|max:50',
+            'question_section_id' => 'required|exists:kelompok_pertanyaans,id',
+            'code' => 'required|string|unique:ref_subpertanyaan2021,kode_pertanyaan|max:50',
             'question_text' => 'required|string',
             'type' => 'required|string',
             'is_required' => 'boolean',
@@ -90,15 +90,18 @@ class KelolaPertanyaanController extends Controller
     }
 
     /**
-     * Memperbarui data pertanyaan
+     * Memperbarui data butir pertanyaan.
+     *
+     * @param  int  $id
+     * @return RedirectResponse
      */
     public function update(Request $request, $id)
     {
         $question = Question::findOrFail($id);
 
         $validated = $request->validate([
-            'question_section_id' => 'required|exists:question_sections,id',
-            'code' => 'required|string|max:50|unique:questions,code,'.$question->id,
+            'question_section_id' => 'required|exists:kelompok_pertanyaans,id',
+            'code' => 'required|string|max:50|unique:ref_subpertanyaan2021,kode_pertanyaan,'.$question->id,
             'question_text' => 'required|string',
             'type' => 'required|string',
             'is_required' => 'boolean',
@@ -136,7 +139,7 @@ class KelolaPertanyaanController extends Controller
         // Opsi A: Pemindahan langsung berdasarkan arah (direction: 'up' atau 'down') dalam section yang sama
         if ($request->has(['id', 'direction'])) {
             $validated = $request->validate([
-                'id' => 'required|exists:questions,id',
+                'id' => 'required|exists:ref_subpertanyaan2021,id',
                 'direction' => 'required|in:up,down',
             ]);
 
@@ -163,7 +166,7 @@ class KelolaPertanyaanController extends Controller
         if ($request->has('orders')) {
             $validated = $request->validate([
                 'orders' => 'required|array',
-                'orders.*.id' => 'required|exists:questions,id',
+                'orders.*.id' => 'required|exists:ref_subpertanyaan2021,id',
                 'orders.*.order' => 'required|integer',
             ]);
 

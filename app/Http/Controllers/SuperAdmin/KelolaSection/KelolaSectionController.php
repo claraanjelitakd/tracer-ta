@@ -62,7 +62,7 @@ class KelolaSectionController extends Controller
     {
         // Validasi input form section baru
         $validated = $request->validate([
-            'questionnaire_id' => 'required|exists:questionnaires,id',
+            'questionnaire_id' => 'required|exists:kuesioners,id',
             'title' => 'required|string|max:255',
             'order' => 'nullable|integer|min:1',
         ]);
@@ -93,7 +93,7 @@ class KelolaSectionController extends Controller
 
         // Validasi masukan data perubahan
         $validated = $request->validate([
-            'questionnaire_id' => 'required|exists:questionnaires,id',
+            'questionnaire_id' => 'required|exists:kuesioners,id',
             'title' => 'required|string|max:255',
             'order' => 'nullable|integer|min:1',
         ]);
@@ -145,7 +145,7 @@ class KelolaSectionController extends Controller
         // Skenario 1: Pemindahan posisi satu tingkat naik ('up') atau turun ('down')
         if ($request->has(['id', 'direction'])) {
             $validated = $request->validate([
-                'id' => 'required|exists:question_sections,id',
+                'id' => 'required|exists:kelompok_pertanyaans,id',
                 'direction' => 'required|in:up,down',
             ]);
 
@@ -155,7 +155,7 @@ class KelolaSectionController extends Controller
             $sortOrder = $validated['direction'] === 'up' ? 'desc' : 'asc';
 
             // Temukan section tetangga langsung dalam kuesioner yang sama
-            $adjacentSection = QuestionSection::where('questionnaire_id', $currentSection->questionnaire_id)
+            $adjacentSection = QuestionSection::where('kuesioner_id', $currentSection->kuesioner_id)
                 ->where('order', $operator, $currentSection->order)
                 ->orderBy('order', $sortOrder)
                 ->first();
@@ -174,7 +174,7 @@ class KelolaSectionController extends Controller
         if ($request->has('orders')) {
             $validated = $request->validate([
                 'orders' => 'required|array',
-                'orders.*.id' => 'required|exists:question_sections,id',
+                'orders.*.id' => 'required|exists:kelompok_pertanyaans,id',
                 'orders.*.order' => 'required|integer',
             ]);
 

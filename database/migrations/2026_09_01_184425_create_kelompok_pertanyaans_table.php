@@ -11,12 +11,12 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('questionnaires', function (Blueprint $table) {
+        Schema::create('kelompok_pertanyaans', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('kuesioner_id')->nullable()->constrained('kuesioners')->cascadeOnDelete();
+            $table->char('kode_kelompok', 3)->nullable();
             $table->string('title');
-            $table->text('description')->nullable();
-            $table->integer('year');
-            $table->boolean('is_active')->default(true);
+            $table->integer('order')->default(0);
             $table->timestamps();
         });
     }
@@ -26,6 +26,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('questionnaires');
+        Schema::dropIfExists('kelompok_pertanyaans');
     }
 };

@@ -146,7 +146,30 @@ const handleRadioOptionSelect = (qId, optId, optText = null) => {
 </script>
 
 <template>
+    <!-- KARTU KHUSUS TIPE HEADER / INSTRUKSI -->
     <div 
+        v-if="question.type === 'header'" 
+        v-show="isVisible" 
+        class="bg-emerald-50/70 border border-emerald-200/80 p-4 sm:p-6 rounded-2xl sm:rounded-3xl shadow-xs mb-4 sm:mb-6"
+    >
+        <div class="flex items-start gap-3 sm:gap-4">
+            <span class="shrink-0 bg-[#005B3C] text-white px-2.5 py-1 rounded-xl text-xs sm:text-sm font-black shadow-xs">
+                {{ question.code }}
+            </span>
+            <div>
+                <h3 class="text-base sm:text-lg font-black text-gray-900 leading-snug">
+                    {{ question.question_text }}
+                </h3>
+                <p v-if="question.keterangan || question.sub_detail" class="text-xs sm:text-sm text-emerald-800 mt-1 font-semibold">
+                    {{ question.keterangan || question.sub_detail }}
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- KARTU PERTANYAAN STANDAR -->
+    <div 
+        v-else
         v-show="isVisible" 
         class="bg-white p-4 sm:p-6 md:p-8 rounded-2xl sm:rounded-[2rem] shadow-sm relative z-0"
         :class="[
@@ -476,6 +499,81 @@ const handleRadioOptionSelect = (qId, optId, optText = null) => {
                 <div class="font-black text-[#005B3C] text-sm sm:text-base">Total Penghasilan (Take Home Pay):</div>
                 <div class="font-black text-[#005B3C] text-base sm:text-xl font-mono">
                     {{ formatRupiah(getMultipleNumberTotal(question)) }}
+                </div>
+            </div>
+        </div>
+
+        <!-- TIPE INPUT: Matrix (Single scale per row, misal F2 Penekanan Metode Pembelajaran) -->
+        <div v-else-if="question.type === 'matrix'" class="space-y-4">
+            <div class="overflow-x-auto rounded-2xl border border-gray-200 bg-white shadow-xs">
+                <table class="w-full text-xs sm:text-sm text-left border-collapse min-w-[600px]">
+                    <thead class="bg-emerald-50/80 text-emerald-950 font-bold border-b border-gray-200">
+                        <tr>
+                            <th class="p-3 sm:p-4 text-left">Metode Pembelajaran</th>
+                            <th v-for="sc in [
+                                { val: 1, label: 'Sangat Besar' },
+                                { val: 2, label: 'Besar' },
+                                { val: 3, label: 'Cukup Besar' },
+                                { val: 4, label: 'Kurang' },
+                                { val: 5, label: 'Tidak Sama Sekali' }
+                            ]" :key="sc.val" class="p-2 sm:p-3 text-center w-20 sm:w-28">
+                                <div class="text-[11px] sm:text-xs font-black">{{ sc.label }}</div>
+                                <div class="text-[10px] text-emerald-700 font-mono">({{ sc.val }})</div>
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-100">
+                        <tr v-for="item in [
+                            { key: 'F21', label: 'Perkuliahan' },
+                            { key: 'F22', label: 'Demonstrasi' },
+                            { key: 'F23', label: 'Proyek Riset' },
+                            { key: 'F24', label: 'Magang' },
+                            { key: 'F25', label: 'Praktikum' },
+                            { key: 'F26', label: 'Kerja Lapangan' },
+                            { key: 'F27', label: 'Diskusi' }
+                        ]" :key="item.key" class="hover:bg-gray-50/80 transition-colors">
+                            <td class="p-3 sm:p-4 font-bold text-gray-800">
+                                <span class="inline-block font-mono text-[11px] bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded mr-2">{{ item.key }}</span>
+                                {{ item.label }}
+                            </td>
+                            <td v-for="score in 5" :key="score" class="p-2 sm:p-3 text-center">
+                                <label class="cursor-pointer block py-1">
+                                    <input 
+                                        type="radio" 
+                                        :name="'matrix_' + question.id + '_' + item.key" 
+                                        :value="score"
+                                        :checked="form.answers[question.id]?.[item.key] == score"
+                                        @change="if (!form.answers[question.id] || typeof form.answers[question.id] !== 'object') form.answers[question.id] = {}; form.answers[question.id][item.key] = score"
+                                        class="w-4 h-4 sm:w-5 sm:h-5 text-[#005B3C] focus:ring-[#005B3C] accent-[#005B3C]"
+                                    >
+                                </label>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- TIPE INPUT: Multiple Textbox (F18 Pertanyaan Studi Lanjut) -->
+        <div v-else-if="question.type === 'multiple_textbox'" class="space-y-3 sm:space-y-4">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                <div v-for="field in [
+                    { key: 'F18A', label: 'Sumber Biaya' },
+                    { key: 'F18B', label: 'Perguruan Tinggi' },
+                    { key: 'F18C', label: 'Program Studi' },
+                    { key: 'F18D', label: 'Tanggal Masuk', type: 'date' }
+                ]" :key="field.key" class="space-y-1">
+                    <label class="block text-xs font-bold text-gray-700">
+                        <span class="inline-block font-mono text-[10px] bg-gray-100 text-gray-600 px-1 py-0.5 rounded mr-1">{{ field.key }}</span>
+                        {{ field.label }}
+                    </label>
+                    <input 
+                        :type="field.type || 'text'"
+                        :value="form.answers[question.id]?.[field.key] || ''"
+                        @input="if (!form.answers[question.id] || typeof form.answers[question.id] !== 'object') form.answers[question.id] = {}; form.answers[question.id][field.key] = $event.target.value"
+                        :placeholder="'Masukkan ' + field.label.toLowerCase() + '...'"
+                        class="w-full rounded-xl bg-white border border-gray-300 p-2.5 sm:p-3 text-sm focus:ring-2 focus:ring-[#005B3C] focus:border-transparent transition-all font-medium"
+                    >
                 </div>
             </div>
         </div>

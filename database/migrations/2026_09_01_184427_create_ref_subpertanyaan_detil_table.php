@@ -11,12 +11,13 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('question_options', function (Blueprint $table) {
+        Schema::create('ref_subpertanyaan_detil', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('question_id')->constrained()->cascadeOnDelete();
-            $table->string('code')->nullable(); // e.g. F4-01
+            $table->foreignId('pertanyaan_id')->constrained('ref_subpertanyaan2021')->cascadeOnDelete();
+            $table->string('kode_pertanyaan', 20)->nullable();
+            $table->string('kode_opsi', 20)->nullable(); // e.g. 1, 2, F401, F1601
             $table->text('option_text');
-            $table->string('jump_to')->nullable(); // target question code to jump to
+            $table->string('jump_to', 10)->nullable();
             $table->integer('order')->default(0);
             $table->timestamps();
         });
@@ -27,6 +28,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('question_options');
+        Schema::dropIfExists('ref_subpertanyaan_detil');
     }
 };

@@ -8,7 +8,7 @@ use App\Models\Company;
 use App\Models\DataAkademik;
 use App\Models\Question;
 use App\Models\QuestionMapping;
-use App\Models\Response;
+use App\Models\Tracer;
 use App\Services\Kuesioner\KuesionerSyncService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -248,10 +248,27 @@ class SimpanJawabanController extends Controller
                 case 'matrix':
                 case 'matrix_dual':
                     $answerJson = is_array($jawaban) ? $jawaban : json_decode($jawaban, true);
-                    if (empty($answerJson)) {
+                    $answerText = 'Data matriks kompetensi/metode tersimpan';
+                    break;
+
+                case 'multiple_textbox':
+                    if (is_array($jawaban)) {
+                        $hasAny = false;
+                        $parts = [];
+                        foreach ($jawaban as $k => $v) {
+                            if ($v !== null && trim((string) $v) !== '') {
+                                $hasAny = true;
+                                $parts[] = "{$k}: {$v}";
+                            }
+                        }
+                        if (! $hasAny) {
+                            continue 2;
+                        }
+                        $answerJson = $jawaban;
+                        $answerText = implode(', ', $parts);
+                    } else {
                         continue 2;
                     }
-                    $answerText = json_encode($answerJson);
                     break;
 
                 default:
@@ -269,12 +286,18 @@ class SimpanJawabanController extends Controller
                 continue;
             }
 
-            // Simpan atau update ke tabel responses
-            Response::updateOrCreate(
+            // Simpan atau update ke tabel tracers
+            Tracer::updateOrCreate(
                 ['alumni_id' => $alumni->id, 'question_id' => $idPertanyaan],
                 [
-                    'answer_text' => $answerText,
+                    'nim' => $alumni->nim,
+                    'kelompok' => $question->kelompok,
+                    'kode_pertanyaan' => $question->kode_pertanyaan,
+                    'subpertanyaan' => $question->subpertanyaan,
+                    'answer' => $answerText,
                     'answer_json' => $answerJson,
+                    'keterangan' => $question->keterangan,
+                    'tahun_lulus' => $alumni->dataAkademik?->tahun_lulus,
                 ]
             );
 

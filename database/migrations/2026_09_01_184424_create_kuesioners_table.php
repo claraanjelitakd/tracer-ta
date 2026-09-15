@@ -11,8 +11,13 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('questions', function (Blueprint $table) {
-            $table->dropConstrainedForeignId('prodi_id');
+        Schema::create('kuesioners', function (Blueprint $table) {
+            $table->id();
+            $table->string('title');
+            $table->text('description')->nullable();
+            $table->integer('year');
+            $table->boolean('is_active')->default(true);
+            $table->timestamps();
         });
     }
 
@@ -21,8 +26,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('questions', function (Blueprint $table) {
-            $table->foreignId('prodi_id')->nullable()->constrained('prodis')->nullOnDelete();
-        });
+        Schema::dropIfExists('kuesioners');
     }
 };

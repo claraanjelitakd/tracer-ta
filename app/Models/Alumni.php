@@ -100,11 +100,19 @@ class Alumni extends Model
     }
 
     /**
-     * Relasi ke Response (Jawaban Kuesioner)
+     * Relasi ke Tracer (Jawaban Kuesioner)
+     */
+    public function tracers()
+    {
+        return $this->hasMany(Tracer::class);
+    }
+
+    /**
+     * Relasi ke Response (Alias untuk kompatibilitas)
      */
     public function responses()
     {
-        return $this->hasMany(Response::class);
+        return $this->tracers();
     }
 
     /**

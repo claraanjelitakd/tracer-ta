@@ -147,11 +147,13 @@ class KuesionerController extends Controller
                             $jawabanAwal[$pertanyaan->id] = $formattedArr;
                         } elseif (in_array($pertanyaan->type, ['matrix_dual', 'matrix'])) {
                             $jawabanAwal[$pertanyaan->id] = $saved->answer_json ?? [];
+                        } elseif ($pertanyaan->type === 'multiple_textbox') {
+                            $jawabanAwal[$pertanyaan->id] = is_array($saved->answer_json) ? $saved->answer_json : [];
                         } else {
                             $jawabanAwal[$pertanyaan->id] = $saved->answer_text ?? '';
                         }
                     } else {
-                        if (in_array($pertanyaan->type, ['checkbox', 'multiple_choice'])) {
+                        if (in_array($pertanyaan->type, ['checkbox', 'multiple_choice', 'multiple_textbox'])) {
                             $jawabanAwal[$pertanyaan->id] = [];
                         } elseif ($pertanyaan->type === 'matrix_dual') {
                             $obj = [];

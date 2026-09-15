@@ -66,8 +66,8 @@ class SuperAdminKelolaSectionTest extends TestCase
             ]);
 
         $response->assertRedirect();
-        $this->assertDatabaseHas('question_sections', [
-            'questionnaire_id' => $this->questionnaire->id,
+        $this->assertDatabaseHas('kelompok_pertanyaans', [
+            'kuesioner_id' => $this->questionnaire->id,
             'title' => 'Bagian Riwayat Pekerjaan',
             'order' => 1,
         ]);
@@ -92,7 +92,7 @@ class SuperAdminKelolaSectionTest extends TestCase
             ]);
 
         $response->assertRedirect();
-        $this->assertDatabaseHas('question_sections', [
+        $this->assertDatabaseHas('kelompok_pertanyaans', [
             'id' => $section->id,
             'title' => 'Judul Baru yang Diperbarui',
         ]);
@@ -113,7 +113,7 @@ class SuperAdminKelolaSectionTest extends TestCase
             ->delete(route('superadmin.sections.destroy', $section->id));
 
         $response->assertRedirect();
-        $this->assertDatabaseMissing('question_sections', [
+        $this->assertDatabaseMissing('kelompok_pertanyaans', [
             'id' => $section->id,
         ]);
     }
