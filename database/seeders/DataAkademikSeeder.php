@@ -2,7 +2,7 @@
 
 namespace Database\Seeders;
 
-use App\Models\Alumni;
+use App\Models\Biodata;
 use App\Models\DataAkademik;
 use App\Models\Kabupaten;
 use App\Models\Province;
@@ -53,12 +53,20 @@ class DataAkademikSeeder extends Seeder
         $periodeLulusList = ['Gasal 2023/2024', 'Genap 2023/2024', 'Gasal 2024/2025', 'Genap 2024/2025'];
         $ipkList = [3.85, 3.72, 3.90, 3.65, 3.80, 3.75, 3.95, 3.68, 3.88, 3.78];
 
+        $sekolahList = [
+            ['nama' => 'SMA Kolese De Britto Yogyakarta', 'alamat' => 'Jl. Laksda Adisucipto No. 161', 'kota' => 'Kabupaten Sleman', 'prov' => 'DI Yogyakarta', 'jurusan' => 'IPA'],
+            ['nama' => 'SMA Negeri 1 Yogyakarta', 'alamat' => 'Jl. HOS Cokroaminoto No. 10', 'kota' => 'Kota Yogyakarta', 'prov' => 'DI Yogyakarta', 'jurusan' => 'IPA'],
+            ['nama' => 'SMA Santa Ursula Jakarta', 'alamat' => 'Jl. Pos No. 2', 'kota' => 'Kota Jakarta Pusat', 'prov' => 'DKI Jakarta', 'jurusan' => 'IPS'],
+            ['nama' => 'SMA Negeri 3 Yogyakarta', 'alamat' => 'Jl. Yos Sudarso No. 7', 'kota' => 'Kota Yogyakarta', 'prov' => 'DI Yogyakarta', 'jurusan' => 'IPA'],
+        ];
+
         foreach ($alumniUsers as $index => $user) {
             $nim = $user->username;
-            $parsedInfo = Alumni::parseNim($nim);
+            $parsedInfo = Biodata::parseNim($nim);
             $angkatan = $parsedInfo ? (int) $parsedInfo['angkatan'] : 2020;
             $nama = $namaDummy[$index % count($namaDummy)];
             $lokasi = $lokasiList[$index % count($lokasiList)];
+            $sekolah = $sekolahList[$index % count($sekolahList)];
 
             // Update nama user agar sinkron di auth & navbar
             $user->update([
@@ -76,10 +84,10 @@ class DataAkademikSeeder extends Seeder
                     'nama' => $nama,
                     // Data Paten Universitas
                     'angkatan_masuk' => (string) $angkatan,
-                    'status_mahasiswa' => 'Lulus',
+                    'status_mahasiswa' => 'AR',
                     'tahun_akademik_lulus' => $periodeLulusList[$index % count($periodeLulusList)],
                     'tahun_lulus' => $angkatan + 4,
-                    'ipk' => $ipk,
+                    'ip_kumulatif' => $ipk,
                     'total_sks' => $totalSks,
                     'total_angka_kualitas' => $angkaKualitas,
 
@@ -96,7 +104,6 @@ class DataAkademikSeeder extends Seeder
                     'no_kk' => '340411'.str_pad((string) (2000000000 + $index * 5678), 10, '0', STR_PAD_LEFT),
                     'nisn' => '003'.str_pad((string) (1234567 + $index), 7, '0', STR_PAD_LEFT),
                     'no_bpjs' => '000189'.str_pad((string) (7654321 + $index), 7, '0', STR_PAD_LEFT),
-                    'npwp' => '09.'.rand(100, 999).'.'.rand(100, 999).'.'.rand(1, 9).'-541.000',
 
                     // Kontak & Domisili
                     'nomor_telepon' => '0812'.rand(1000, 9999).str_pad((string) $index, 4, '0', STR_PAD_LEFT),
@@ -108,6 +115,13 @@ class DataAkademikSeeder extends Seeder
                     'kabupaten_id' => $lokasi['kab'],
                     'provinsi_id' => $lokasi['prov'],
                     'kode_pos' => $lokasi['kodepos'],
+
+                    // Data Asal Sekolah
+                    'asal_sekolah' => $sekolah['nama'],
+                    'alamat_asal_sekolah' => $sekolah['alamat'],
+                    'kota_kabupaten_asal_sekolah' => $sekolah['kota'],
+                    'provinsi_asal_sekolah' => $sekolah['prov'],
+                    'jurusan_asal_sekolah' => $sekolah['jurusan'],
                 ]
             );
         }

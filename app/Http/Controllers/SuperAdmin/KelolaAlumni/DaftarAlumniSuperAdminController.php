@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\SuperAdmin\KelolaAlumni;
 
 use App\Http\Controllers\Controller;
-use App\Models\Alumni;
+use App\Models\Biodata;
 use App\Models\DataAkademik;
 use App\Models\Prodi;
 use App\Services\Kuesioner\KelengkapanTracerService;
@@ -14,20 +14,17 @@ use Inertia\Response;
 /**
  * DaftarAlumniSuperAdminController
  *
- * Fungsi:
- * Menampilkan direktori seluruh mahasiswa / alumni bagi Super Admin.
- *
- * Fitur Utama:
- * 1. Filter per Tahun Kelulusan (Tahun Akademik, misal "2023/2024", "2024/2025", atau "All" untuk seluruh tahun).
- * 2. Filter Semester Kelulusan ("All", "Gasal", "Genap").
- * 3. Filter Status Pengisian Kuesioner Tracer ("All", "Selesai", "Belum Selesai").
- * 4. Filter Program Studi dan Pencarian Cepat Nama Lengkap / NIM.
- * 5. Evaluasi status kelengkapan profil dan kuesioner wajib via KelengkapanTracerService.
+ * Fungsi: Menampilkan daftar seluruh data alumni dari seluruh Program Studi bagi Super Admin.
+ * Fitur:
+ * 1. Filter Program Studi, Tahun Kelulusan, Semester (Gasal/Genap), Status Kuesioner (Selesai/Belum).
+ * 2. Pencarian cepat (NIM atau Nama Lengkap).
+ * 3. Ringkasan statistik (Total Alumni, Selesai, Belum Selesai, Persentase Selesai).
+ * 4. Navigasi langsung ke detail kuesioner individual untuk audit jawaban.
  */
 class DaftarAlumniSuperAdminController extends Controller
 {
     /**
-     * Tampilkan Direktori Mahasiswa & Alumni Super Admin
+     * Menampilkan Halaman Daftar Alumni Super Admin
      *
      * @return Response
      */
@@ -55,10 +52,12 @@ class DaftarAlumniSuperAdminController extends Controller
             return trim($item);
         })->unique()->sortDesc()->values()->all();
 
-        // 2. Kueri data alumni dengan relasi lengkap
-        $query = Alumni::with([
+        // 2. Kueri data biodata dengan relasi lengkap
+        $query = Biodata::with([
             'dataAkademik.yudisium',
             'dataAkademik.orangTua',
+            'yudisium',
+            'orangTua',
             'prodi',
             'company.province',
             'company.kabupaten',
@@ -158,6 +157,7 @@ class DaftarAlumniSuperAdminController extends Controller
         $daftarProdi = Prodi::orderBy('kode_prodi', 'asc')->get();
 
         return Inertia::render('SuperAdmin/Alumni/Index', [
+            'biodatas' => $alumniList,
             'alumnis' => $alumniList,
             'daftarTahun' => $daftarTahun,
             'prodis' => $daftarProdi,

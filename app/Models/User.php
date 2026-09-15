@@ -41,11 +41,19 @@ class User extends Authenticatable
     }
 
     /**
-     * Get the alumni record associated with the user.
+     * Get the biodata record associated with the user.
+     */
+    public function biodata()
+    {
+        return $this->hasOne(Biodata::class);
+    }
+
+    /**
+     * Alias for backward compatibility.
      */
     public function alumni()
     {
-        return $this->hasOne(Alumni::class);
+        return $this->biodata();
     }
 
     /**
@@ -53,8 +61,8 @@ class User extends Authenticatable
      */
     public function getNameAttribute($value)
     {
-        if ($this->role === 'alumni' && $this->alumni && $this->alumni->dataAkademik) {
-            return $this->alumni->dataAkademik->nama;
+        if ($this->role === 'alumni' && $this->biodata) {
+            return $this->biodata->nama ?? $this->biodata->dataAkademik?->nama ?? $value;
         }
 
         return $value;
@@ -65,8 +73,8 @@ class User extends Authenticatable
      */
     public function getEmailAttribute($value)
     {
-        if ($this->role === 'alumni' && $this->alumni && $this->alumni->dataAkademik) {
-            return $this->alumni->dataAkademik->email_pribadi;
+        if ($this->role === 'alumni' && $this->biodata) {
+            return $this->biodata->email_pribadi ?? $this->biodata->dataAkademik?->email_pribadi ?? $value;
         }
 
         return $value;

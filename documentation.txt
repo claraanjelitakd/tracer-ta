@@ -38,11 +38,11 @@ ARSITEKTUR DATABASE (STEP 3)
 1. Tabel `users`:
    - Menyimpan kredensial autentikasi utama.
    - Field: id, name, username (unik), email (nullable), role, must_change_password, password.
-   - Relasi: hasOne(Alumni::class)
-2. Tabel `alumnis`:
-   - Menyimpan data spesifik profil alumni.
-   - Field: id, user_id (FK), F1 (NIM), F2A (Nama), F2B (Telepon), F2C (Email), F2D (Alamat), ipk, sac_points.
-   - Relasi: belongsTo(User::class)
+   - Relasi: hasOne(Biodata::class)
+2. Tabel `biodatas`:
+   - Menyimpan data spesifik profil biodata alumni (28 field profil lengkap + karier).
+   - Field: id, user_id (FK), nim, tahun_lulus, kode_prodi, prodi_id, nama, nomor_telepon, email, email_pribadi, alamat, kabupaten_id, provinsi_id, kelurahan, kecamatan, kode_pos, agama, nik, no_kk, no_bpjs, npwp, instagram_url, facebook_url, linkedin_url, linkedin_username, expert, minat, company_id, atasan_id, posisi_jabatan, jenis_pekerjaan, zipcode.
+   - Relasi: belongsTo(User::class), hasOne(DataAkademik::class), hasOne(Yudisium::class), hasOne(DataOrangTua::class), belongsTo(Prodi::class), belongsTo(Company::class), belongsTo(Atasan::class), hasMany(Tracer::class), hasMany(ProdiResponse::class).
 
 MANAJEMEN OTORISASI (ROLES)
 - Terdapat 4 peran utama:
@@ -320,7 +320,7 @@ tracerstudy/
 │   ├── Models/
 │   │   ├── User.php, Alumni.php, DataAkademik.php, DataOrangTua.php, Yudisium.php, Prodi.php
 │   │   ├── Company.php, Atasan.php, Province.php, Kabupaten.php, Ump.php
-│   │   ├── Questionnaire.php, QuestionSection.php, Question.php, QuestionOption.php, Response.php
+│   │   ├── Kuesioner.php, KelompokPertanyaan.php, RefSubpertanyaan2021.php, RefSubpertanyaanDetil.php, Tracer.php, QuestionMapping.php
 │   │   └── ProdiQuestionSection.php, ProdiQuestion.php, ProdiQuestionOption.php, ProdiResponse.php
 │   └── Services/
 │       ├── Kuesioner/KelengkapanTracerService.php  # Audit kelengkapan kuesioner & profil
@@ -401,15 +401,28 @@ ARSITEKTUR KUESIONER TRACER STUDY 2021 & TABEL TRACERS (UPDATE 2026-09-15)
    - F2G & F5C   -> Posisi/Jabatan Alumni (alumnis.posisi_jabatan)
    - F2H & F5D   -> Skala Perusahaan (companies.skala)
 
-4. KOMPATIBILITAS PENUH KODE LAMA (BACKWARD COMPATIBILITY)
-   - Model lama: Questionnaire, QuestionSection, Question, QuestionOption, Response
-   - Seluruh model lama dijadikan subclass wrapper dari model baru.
-   - Dilengkapi query builder scope transformer yang secara transparan memetakan kolom:
-     - code <-> kode_pertanyaan / kode_opsi
-     - question_text <-> subpertanyaan
-     - is_required <-> wajib
-     - answer_text <-> answer
-   - Hasil: Seluruh controller lama, service, dan automated tests tetap bekerja dengan sempurna.
+4. REFACTORING LENGKAP MODEL KANONIKAL & STRUKTUR TABEL BARU
+   - Model kanonikal utama: Kuesioner, KelompokPertanyaan, RefSubpertanyaan2021, RefSubpertanyaanDetil, Tracer, QuestionMapping
+   - Seluruh wrapper model legacy dan seeder lama telah dihapus dan dimigrasikan secara penuh ke model kanonikal.
+   - Pemetaan kolom terstandarisasi:
+     - kode_pertanyaan: Kode butir pertanyaan (F1, F3, F13, dll.)
+     - kode_opsi: Kode unik opsi pilihan jawaban
+     - subpertanyaan: Teks butir pertanyaan
+     - wajib: Status wajib diisi (boolean)
+     - answer: Teks jawaban utama alumni di tabel tracers
+     - answer_json: Struktur data majemuk/array/matriks di tabel tracers
+   - Hasil: Seluruh controller, service, frontend Inertia/Vue, dan automated feature tests 100% lulus.
+
+5. STANDARISASI PERTANYAAN GAJI F505 & KELENGKAPAN TEMPLATE INPUT VUE (UPDATE 2026-09-16)
+   - Pertanyaan F505 ("Berapa rata-rata pendapatan anda per bulan ? (take home pay)?") diselaraskan ke tipe multiple_number.
+   - Dilengkapi 3 opsi sub-rincian pendapatan pada ref_subpertanyaan_detil:
+     1. F5051: "Dari Pekerjaan Utama"
+     2. F5052: "Dari Lembur dan Tips"
+     3. F5053: "Dari Pekerjaan Lainnya"
+   - Logika backend (SimpanJawabanController) & frontend (KartuPertanyaan.vue) otomatis mengalikan input ribuan (.000) dengan 1000 ke Rupiah penuh, menghitung akumulasi total Take Home Pay, serta menyimpan format JSON ke answer_json dan teks ke answer.
+   - Evaluasi kelengkapan kuesioner pada KelengkapanTracerService kini dinamis 100% membaca kolom 'wajib' (1/0) dari tabel ref_subpertanyaan2021.
+   - Seluruh varian input kuesioner Google Forms telah tersedia template siap pakai di KartuPertanyaan.vue: text, textarea, number, single_choice/radio, radio_input, radio_text, multiple_choice/checkbox, dropdown, searchable_select, rating_5, multiple_number, date, time, dan file.
+
 
 
 

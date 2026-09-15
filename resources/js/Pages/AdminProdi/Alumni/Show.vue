@@ -422,24 +422,24 @@ const statusYudisium = computed(() => {
 
                     <div class="p-6 space-y-4">
                         <div 
-                            v-for="q in section.questions" 
+                            v-for="q in (section.subpertanyaans || section.questions)" 
                             :key="q.id"
                             class="bg-white rounded-xl p-5 border border-gray-100"
                         >
                             <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-2 mb-2">
                                 <div class="flex items-start gap-2.5">
                                     <span class="px-2.5 py-1 bg-gray-100 text-gray-700 font-mono text-xs font-bold rounded-lg shrink-0">
-                                        {{ q.code }}
+                                        {{ q.kode_pertanyaan || q.code }}
                                     </span>
                                     <h4 class="text-sm font-bold text-gray-900 leading-snug">
-                                        {{ q.question_text }}
+                                        {{ q.subpertanyaan || q.question_text }}
                                     </h4>
                                 </div>
                                 <span 
                                     class="text-[11px] font-bold px-2.5 py-0.5 rounded-md self-start"
-                                    :class="q.is_mandatory ? 'bg-[#FDC700]/30 text-amber-900' : 'bg-gray-100 text-gray-500'"
+                                    :class="(q.wajib ?? q.is_mandatory) ? 'bg-[#FDC700]/30 text-amber-900' : 'bg-gray-100 text-gray-500'"
                                 >
-                                    {{ q.is_mandatory ? 'Wajib' : 'Opsional' }}
+                                    {{ (q.wajib ?? q.is_mandatory) ? 'Wajib' : 'Opsional' }}
                                 </span>
                             </div>
 

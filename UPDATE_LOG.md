@@ -1,5 +1,64 @@
 # UPDATE LOG - SERU (Sistem Ekosistem Rekam Jejak Alumni)
 
+## [2026-09-16] Refactoring Penuh Entitas Alumni Menjadi Biodata & Penyesuaian Kolom Seeding
+- **Refactor Entitas `Alumni` $\rightarrow$ `Biodata` Tanpa Kehilangan Data & Foreign Key**:
+  - Model `App\Models\Alumni` direfaktor menjadi `App\Models\Biodata` ([Biodata.php](file:///c:/study/tracerstudy/app/Models/Biodata.php)).
+  - Tabel `alumnis` direfaktor menjadi `biodatas` yang memuat seluruh 28 kolom profil target (`id`, `user_id`, `nim`, `tahun_lulus`, `kode_prodi`, `nama`, `nomor_telepon`, `email`, `alamat`, `kabupaten_id`, `provinsi_id`, `kelurahan`, `kecamatan`, `kode_pos`, `agama`, `email_pribadi`, `nik`, `no_kk`, `no_bpjs`, `npwp`, `instagram_url`, `facebook_url`, `linkedin_url`, `linkedin_username`, `expert`, `minat`) serta seluruh kolom karier/pekerjaan existing (`company_id`, `atasan_id`, `posisi_jabatan`, `jenis_pekerjaan`, `zipcode`).
+  - Seluruh relasi Foreign Key diselaraskan: `tracers.biodata_id` dan `prodi_responses.biodata_id`.
+  - Alias `$user->alumni()` tetap disediakan pada [User.php](file:///c:/study/tracerstudy/app/Models/User.php) untuk backward compatibility.
+- **Penyelarasan Kolom Seeding & Database Migrations**:
+  - `DataAkademikSeeder.php`: diselaraskan dengan kolom `ip_kumulatif`, `status_mahasiswa = 'AR'`, kolom asal sekolah (`asal_sekolah`, `alamat_asal_sekolah`, `kota_kabupaten_asal_sekolah`, `provinsi_asal_sekolah`, `jurusan_asal_sekolah`), dan penghapusan `npwp` (karena dipindahkan ke `biodatas`).
+  - `YudisiumSeeder.php`: diselaraskan dengan kolom `tahun_akademik_lulus` dan `tahun_lulus`.
+  - `BiodataSeeder.php`: dibuat untuk melakukan seeding lengkap ke tabel `biodatas` mencakup seluruh data 28 field profil dan relasi ke perusahaan serta atasan.
+  - `DatabaseSeeder.php` dan `QuestionMappingSeeder.php`: diselaraskan menggunakan `BiodataSeeder` dan `Biodata::all()`.
+  - Database VIEW `v_question_mappings` diselaraskan memetakan butir pertanyaan ke tabel `biodatas` dan `yudisiums`.
+- **Verifikasi & Pengujian Otomatis**:
+  - Eksekusi migrasi & seeding ulang `php artisan migrate:fresh --seed` berjalan sukses 100% tanpa error.
+  - Seluruh 38 skenario automated unit & feature tests di `vendor/bin/phpunit` lulus 100% (203 assertions).
+  - Standarisasi format kode PHP diperbarui via Laravel Pint (`vendor/bin/pint --format agent`).
+
+## [2026-09-16] Penyelarasan Tipe Data Gaji F505 (multiple_number) & Standarisasi Template Input Kuesioner Lengkap di Vue
+- **Standarisasi Tipe Data Pertanyaan Gaji / Take Home Pay (`F505`)**:
+  - Pertanyaan `F505` (*"Berapa rata-rata pendapatan anda per bulan ? (take home pay)?"*) pada [RefSubpertanyaan2021Seeder.php](file:///c:/study/tracerstudy/database/seeders/RefSubpertanyaan2021Seeder.php) diselaraskan ke tipe `multiple_number`.
+  - Menambahkan 3 butir rincian opsi gaji pada [RefSubpertanyaanDetilSeeder.php](file:///c:/study/tracerstudy/database/seeders/RefSubpertanyaanDetilSeeder.php):
+    1. `F5051` (Urutan 1): *"Dari Pekerjaan Utama"*
+    2. `F5052` (Urutan 2): *"Dari Lembur dan Tips"*
+    3. `F5053` (Urutan 3): *"Dari Pekerjaan Lainnya"*
+  - Backend [SimpanJawabanController.php](file:///c:/study/tracerstudy/app/Http/Controllers/Alumni/Kuesioner/SimpanJawabanController.php) dan [KuesionerController.php](file:///c:/study/tracerstudy/app/Http/Controllers/Alumni/Kuesioner/KuesionerController.php) secara otomatis menghitung total Take Home Pay, mengonversi satuan ribuan (`.000`), menyimpan struktur JSON ke kolom `answer_json`, dan menormalisasi angka saat formulir dimuat kembali.
+- **Penyelarasan Template Input Form Kuesioner Lengkap di Vue ([KartuPertanyaan.vue](file:///c:/study/tracerstudy/resources/js/Pages/Alumni/Components/Kuesioner/KartuPertanyaan.vue))**:
+  - Melengkapi seluruh template input form kuesioner siap pakai untuk semua tipe data Google Forms:
+    1. `text`: Isian singkat 1 baris.
+    2. `textarea`: Paragraf / isian multibaris.
+    3. `number`: Isian angka (termasuk layout 2-kolom berdampingan untuk F6 & F7).
+    4. `single_choice` / `radio`: Pilihan ganda radio button klasik (dengan dukungan opsi "Lainnya").
+    5. `radio_input`: Pilihan ganda radio dengan isian angka langsung pada opsi (seperti F3 & F5).
+    6. `radio_text`: Pilihan ganda radio dengan isian teks tambahan.
+    7. `multiple_choice` / `checkbox`: Kotak centang pilihan majemuk.
+    8. `dropdown`: Menu pilihan tarik-turun (`<select>`).
+    9. `searchable_select`: Dropdown pencarian interaktif untuk master data besar.
+    10. `rating_5`: Skala linier rating 1 s/d 5 (Sangat Rendah s/d Sangat Tinggi).
+    11. `multiple_number`: Isian rincian gaji / angka majemuk dengan akhiran `.000` dan kalkulasi total otomatis.
+    12. `date`: Input pemilihan tanggal.
+    13. `time`: Input pemilihan waktu/jam.
+    14. `file`: Area unggah berkas dengan feedback visual nama file.
+- **Komentar Kode & Dokumentasi Terstruktur**:
+  - Setiap konstanta, fungsi, template div HTML, dan prop Vue telah dilengkapi komentar penjelasan terstruktur dalam Bahasa Indonesia.
+  - Seluruh 38 automated test cases di `tests/Feature` berjalan sukses 100% (206 assertions).
+
+## [2026-09-15] Refactoring Penuh Model & Entitas Kuesioner (Penghapusan Model Wrapper Legacy)
+- **Migrasi Total Seluruh Model & Referensi Kode**:
+  - Seluruh wrapper model legacy (`Question`, `Questionnaire`, `QuestionSection`, `QuestionOption`, `Response`) serta legacy seeder (`QuestionSeeder`, `QuestionnaireSeeder`, `QuestionSectionSeeder`, `QuestionOptionSeeder`) telah dihapus secara permanen dari basis kode.
+  - Seluruh Controller, Service, Relasi Eloquent, Inertia Props, Komponen Vue, dan Automated Feature Tests kini 100% menggunakan model dan tabel kanonikal:
+    1. `Kuesioner` (`kuesioners`): Header kuesioner tracer study universitas.
+    2. `KelompokPertanyaan` (`kelompok_pertanyaans`): Bagian/seksi kelompok pertanyaan.
+    3. `RefSubpertanyaan2021` (`ref_subpertanyaan2021`): Butir pertanyaan tracer study 2021 (`kode_pertanyaan`, `subpertanyaan`, `wajib`, `order`, `type`).
+    4. `RefSubpertanyaanDetil` (`ref_subpertanyaan_detil`): Pilihan opsi jawaban & target alur lompatan branching (`kode_opsi`, `option_text`, `jump_to`, `order`).
+    5. `Tracer` (`tracers`): Data jawaban kuesioner alumni (`alumni_id`, `question_id`, `nim`, `kelompok`, `kode_pertanyaan`, `subpertanyaan`, `answer`, `answer_json`, `tahun_lulus`).
+- **Pembersihan Model & Pengayaan Dokumentasi Kode**:
+  - Model `Kuesioner`, `KelompokPertanyaan`, `RefSubpertanyaan2021`, `RefSubpertanyaanDetil`, dan `Tracer` dibersihkan dari query builder wrapper legacy dan mutator alias yang tidak lagi diperlukan.
+  - Setiap konstanta, method, fungsi controller/service, props Vue, dan elemen HTML telah dilengkapi PHPDoc/JSDoc dan komentar penjelasan terstruktur dalam Bahasa Indonesia.
+  - Seluruh 38 automated test cases di `tests/Feature` berjalan sukses 100% (206 assertions).
+
 ## [2026-09-15] Restrukturisasi Skema Kuesioner Tracer Study 2021, Penamaan Tabel Bahasa Indonesia, Tabel Tracers, Pemisahan BIO_TTL, dan Sinkronisasi Otomatis Profil
 - **Penamaan Tabel, Model, Migrasi, dan Seeder ke Bahasa Indonesia**:
   - **Standarisasi Nama Tabel Database**:
@@ -9,8 +68,6 @@
     4. `ref_subpertanyaan_detil`: Menggantikan `question_options`, dikelola oleh model `App\Models\RefSubpertanyaanDetil` dan seeder `RefSubpertanyaanDetilSeeder`.
     5. `tracers`: Menggantikan `responses`, dikelola oleh model `App\Models\Tracer`.
     6. `v_question_mappings`: Database VIEW yang menggantikan tabel `question_mappings`, dikelola oleh model `App\Models\QuestionMapping` dan seeder `QuestionMappingSeeder`.
-  - **Kompatibilitas Penuh Kode Lama (Backward Compatibility)**:
-    - Model lama (`Questionnaire`, `QuestionSection`, `Question`, `QuestionOption`, `Response`) dipertahankan sebagai turunan langsung (*subclass wrapper*) dari model baru dengan query builder mapper transparan (`code` $\leftrightarrow$ `kode_pertanyaan`, `question_text` $\leftrightarrow$ `subpertanyaan`, `answer_text` $\leftrightarrow$ `answer`), menjamin seluruh controller lama dan 38 automated tests tetap lulus 100% tanpa regresi.
 - **Rekonstruksi Tabel Jawaban `tracers` & Penyelarasan Variabel Kolom**:
   - Tabel `tracers` memuat kolom terstandarisasi:
     - `id`: Primary key (BIGINT)

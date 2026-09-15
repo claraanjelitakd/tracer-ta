@@ -30,8 +30,8 @@ class Company extends Model
         return $this->belongsTo(Kabupaten::class);
     }
 
-    public function alumnis()
+    public function biodatas()
     {
-        return $this->hasMany(Alumni::class);
+        return $this->hasMany(Biodata::class);
     }
 }

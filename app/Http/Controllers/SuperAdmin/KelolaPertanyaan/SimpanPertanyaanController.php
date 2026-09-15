@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\SuperAdmin\KelolaPertanyaan;
 
 use App\Http\Controllers\Controller;
-use App\Models\Question;
+use App\Models\RefSubpertanyaan2021;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 
@@ -27,19 +27,19 @@ class SimpanPertanyaanController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'question_section_id' => 'required|exists:kelompok_pertanyaans,id',
-            'code' => 'required|string|max:50|unique:ref_subpertanyaan2021,kode_pertanyaan',
-            'question_text' => 'required|string',
+            'kelompok_pertanyaan_id' => 'required|exists:kelompok_pertanyaans,id',
+            'kode_pertanyaan' => 'required|string|max:50|unique:ref_subpertanyaan2021,kode_pertanyaan',
+            'subpertanyaan' => 'required|string',
             'type' => 'required|string|in:single_choice,multiple_choice,text,number,searchable_select,radio_input,multiple_number,matrix_dual,rating_5',
-            'is_required' => 'required|boolean',
+            'wajib' => 'required|boolean',
             'order' => 'nullable|integer',
         ]);
 
         if (empty($validated['order'])) {
-            $validated['order'] = (Question::where('kelompok_pertanyaan_id', $validated['question_section_id'])->max('order') ?? 0) + 1;
+            $validated['order'] = (RefSubpertanyaan2021::where('kelompok_pertanyaan_id', $validated['kelompok_pertanyaan_id'])->max('order') ?? 0) + 1;
         }
 
-        $question = Question::create($validated);
+        $subpertanyaan = RefSubpertanyaan2021::create($validated);
 
         return redirect()->back()->with('success', 'Pertanyaan baru berhasil ditambahkan.');
     }
@@ -52,18 +52,18 @@ class SimpanPertanyaanController extends Controller
      */
     public function update(Request $request, $id)
     {
-        $question = Question::findOrFail($id);
+        $subpertanyaan = RefSubpertanyaan2021::findOrFail($id);
 
         $validated = $request->validate([
-            'question_section_id' => 'required|exists:kelompok_pertanyaans,id',
-            'code' => 'required|string|max:50|unique:ref_subpertanyaan2021,kode_pertanyaan,'.$question->id,
-            'question_text' => 'required|string',
+            'kelompok_pertanyaan_id' => 'required|exists:kelompok_pertanyaans,id',
+            'kode_pertanyaan' => 'required|string|max:50|unique:ref_subpertanyaan2021,kode_pertanyaan,'.$subpertanyaan->id,
+            'subpertanyaan' => 'required|string',
             'type' => 'required|string|in:single_choice,multiple_choice,text,number,searchable_select,radio_input,multiple_number,matrix_dual,rating_5',
-            'is_required' => 'required|boolean',
+            'wajib' => 'required|boolean',
             'order' => 'nullable|integer',
         ]);
 
-        $question->update($validated);
+        $subpertanyaan->update($validated);
 
         return redirect()->back()->with('success', 'Data pertanyaan berhasil diperbarui.');
     }
@@ -76,8 +76,8 @@ class SimpanPertanyaanController extends Controller
      */
     public function destroy($id)
     {
-        $question = Question::findOrFail($id);
-        $question->delete();
+        $subpertanyaan = RefSubpertanyaan2021::findOrFail($id);
+        $subpertanyaan->delete();
 
         return redirect()->back()->with('success', 'Pertanyaan berhasil dihapus.');
     }
@@ -99,19 +99,19 @@ class SimpanPertanyaanController extends Controller
                 'direction' => 'required|in:up,down',
             ]);
 
-            $currentQuestion = Question::findOrFail($validated['id']);
+            $currentSubpertanyaan = RefSubpertanyaan2021::findOrFail($validated['id']);
             $operator = $validated['direction'] === 'up' ? '<' : '>';
             $sortOrder = $validated['direction'] === 'up' ? 'desc' : 'asc';
 
-            $adjacentQuestion = Question::where('kelompok_pertanyaan_id', $currentQuestion->kelompok_pertanyaan_id)
-                ->where('order', $operator, $currentQuestion->order)
+            $adjacentSubpertanyaan = RefSubpertanyaan2021::where('kelompok_pertanyaan_id', $currentSubpertanyaan->kelompok_pertanyaan_id)
+                ->where('order', $operator, $currentSubpertanyaan->order)
                 ->orderBy('order', $sortOrder)
                 ->first();
 
-            if ($adjacentQuestion) {
-                $tempOrder = $currentQuestion->order;
-                $currentQuestion->update(['order' => $adjacentQuestion->order]);
-                $adjacentQuestion->update(['order' => $tempOrder]);
+            if ($adjacentSubpertanyaan) {
+                $tempOrder = $currentSubpertanyaan->order;
+                $currentSubpertanyaan->update(['order' => $adjacentSubpertanyaan->order]);
+                $adjacentSubpertanyaan->update(['order' => $tempOrder]);
             }
 
             return redirect()->back()->with('success', 'Urutan pertanyaan berhasil diperbarui.');
@@ -125,7 +125,7 @@ class SimpanPertanyaanController extends Controller
             ]);
 
             foreach ($validated['orders'] as $item) {
-                Question::where('id', $item['id'])->update(['order' => $item['order']]);
+                RefSubpertanyaan2021::where('id', $item['id'])->update(['order' => $item['order']]);
             }
 
             return redirect()->back()->with('success', 'Seluruh urutan pertanyaan berhasil diperbarui.');

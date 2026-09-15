@@ -4,10 +4,11 @@ namespace App\Http\Controllers\Alumni\Kuesioner;
 
 use App\Http\Controllers\Controller;
 use App\Models\Atasan;
+use App\Models\Biodata;
 use App\Models\Company;
 use App\Models\DataAkademik;
-use App\Models\Question;
 use App\Models\QuestionMapping;
+use App\Models\RefSubpertanyaan2021;
 use App\Models\Tracer;
 use App\Services\Kuesioner\KuesionerSyncService;
 use Illuminate\Http\Request;
@@ -20,7 +21,7 @@ use Illuminate\Support\Facades\Auth;
  * Tujuan: Menerima data jawaban dari Frontend, menstandarkan format respons ke tabel responses
  * (mendukung array murni pada answer_json untuk tipe multiple, format varchar rapi pada answer_text,
  * teks isian kustom pada opsi 'Lainnya', serta penanganan terstruktur untuk radio_input dan multiple_number),
- * serta melakukan sinkronisasi otomatis ke profil alumni dan data QuestionMapping.
+ * serta melakukan sinkronisasi otomatis ke profil biodata dan data QuestionMapping.
  */
 class SimpanJawabanController extends Controller
 {
@@ -30,10 +31,10 @@ class SimpanJawabanController extends Controller
     public function simpanJawabanKuesioner(Request $request)
     {
         $pengguna = Auth::user();
-        $alumni = $pengguna->alumni;
+        $biodata = $pengguna->biodata;
 
-        if (! $alumni) {
-            abort(403, 'Profil alumni tidak ditemukan.');
+        if (! $biodata) {
+            abort(403, 'Profil biodata tidak ditemukan.');
         }
 
         $jawabanMasuk = $request->input('answers', []); // Format: [question_id => answer_data]
@@ -43,24 +44,24 @@ class SimpanJawabanController extends Controller
         });
 
         // Ambil data pertanyaan beserta opsi untuk referensi tipe dan pemformatan teks
-        $pertanyaanModels = Question::with('options')
+        $subpertanyaanModels = RefSubpertanyaan2021::with('detils')
             ->whereIn('id', $kumpulanIdPertanyaan)
             ->get()
             ->keyBy('id');
 
-        // Ambil mapping kolom khusus untuk tabel alumnis, data_akademiks, companies, atasans
-        $pemetaan = QuestionMapping::whereIn('table_name', ['alumnis', 'data_akademiks', 'companies', 'atasans'])
+        // Ambil mapping kolom khusus untuk tabel biodatas, data_akademiks, companies, atasans
+        $pemetaan = QuestionMapping::whereIn('table_name', ['biodatas', 'alumnis', 'data_akademiks', 'companies', 'atasans'])
             ->whereIn('question_id', $kumpulanIdPertanyaan)
             ->get()
             ->keyBy('question_id');
 
-        $dataUpdateAlumni = [];
+        $dataUpdateBiodata = [];
         $dataUpdateAkademik = [];
         $dataUpdateCompany = [];
         $dataUpdateAtasan = [];
 
-        $kolomAlumni = $alumni->getFillable();
-        $kolomAkademik = $alumni->dataAkademik ? $alumni->dataAkademik->getFillable() : (new DataAkademik)->getFillable();
+        $kolomBiodata = $biodata->getFillable();
+        $kolomAkademik = $biodata->dataAkademik ? $biodata->dataAkademik->getFillable() : (new DataAkademik)->getFillable();
         $kolomCompany = (new Company)->getFillable();
         $kolomAtasan = (new Atasan)->getFillable();
 
@@ -74,8 +75,8 @@ class SimpanJawabanController extends Controller
                 continue;
             }
 
-            $question = $pertanyaanModels[$idPertanyaan] ?? null;
-            if (! $question) {
+            $subpertanyaan = $subpertanyaanModels[$idPertanyaan] ?? null;
+            if (! $subpertanyaan) {
                 continue;
             }
 
@@ -84,7 +85,7 @@ class SimpanJawabanController extends Controller
             $answerText = null;
             $answerJson = null;
 
-            switch ($question->type) {
+            switch ($subpertanyaan->type) {
                 case 'multiple_choice':
                 case 'checkbox':
                     // Pastikan input berupa array
@@ -156,7 +157,7 @@ class SimpanJawabanController extends Controller
                         }
 
                         // Cari opsi yang sesuai untuk membaca input independen per opsi
-                        $selectedOpt = $question->options->firstWhere('option_text', $selected);
+                        $selectedOpt = $subpertanyaan->detils->firstWhere('option_text', $selected);
                         $inputVal = '';
 
                         if ($selectedOpt && isset($jawaban['inputs']) && is_array($jawaban['inputs'])) {
@@ -208,10 +209,10 @@ class SimpanJawabanController extends Controller
                         $cleanJson = [];
                         $parts = [];
                         $total = 0;
-                        $optionCodeMap = $question->options->keyBy('code');
+                        $optionCodeMap = $subpertanyaan->detils->keyBy('kode_opsi');
 
-                        foreach ($question->options as $opt) {
-                            $optCode = $opt->code;
+                        foreach ($subpertanyaan->detils as $opt) {
+                            $optCode = $opt->kode_opsi ?? $opt->code;
                             $rawVal = $jawaban[$optCode] ?? null;
 
                             // Normalisasi input ribuan (default akhiran 000):
@@ -234,7 +235,7 @@ class SimpanJawabanController extends Controller
 
                         // Simpan total salary akumulatif pada answer_json dan sertakan di answer_text jika opsi lebih dari 1
                         $cleanJson['total'] = $total;
-                        if ($question->options->count() > 1) {
+                        if ($subpertanyaan->detils->count() > 1) {
                             $parts[] = 'Total Pendapatan: Rp '.number_format($total, 0, ',', '.');
                         }
 
@@ -288,16 +289,16 @@ class SimpanJawabanController extends Controller
 
             // Simpan atau update ke tabel tracers
             Tracer::updateOrCreate(
-                ['alumni_id' => $alumni->id, 'question_id' => $idPertanyaan],
+                ['biodata_id' => $biodata->id, 'question_id' => $idPertanyaan],
                 [
-                    'nim' => $alumni->nim,
-                    'kelompok' => $question->kelompok,
-                    'kode_pertanyaan' => $question->kode_pertanyaan,
-                    'subpertanyaan' => $question->subpertanyaan,
+                    'nim' => $biodata->nim,
+                    'kelompok' => $subpertanyaan->kelompok,
+                    'kode_pertanyaan' => $subpertanyaan->kode_pertanyaan,
+                    'subpertanyaan' => $subpertanyaan->subpertanyaan,
                     'answer' => $answerText,
                     'answer_json' => $answerJson,
-                    'keterangan' => $question->keterangan,
-                    'tahun_lulus' => $alumni->dataAkademik?->tahun_lulus,
+                    'keterangan' => $subpertanyaan->keterangan,
+                    'tahun_lulus' => $biodata->tahun_lulus ?? $biodata->dataAkademik?->tahun_lulus,
                 ]
             );
 
@@ -308,8 +309,8 @@ class SimpanJawabanController extends Controller
 
                 if ($tabel === 'data_akademiks' && in_array($kolom, $kolomAkademik)) {
                     $dataUpdateAkademik[$kolom] = $answerText;
-                } elseif ($tabel === 'alumnis' && in_array($kolom, $kolomAlumni)) {
-                    $dataUpdateAlumni[$kolom] = $answerText;
+                } elseif (($tabel === 'biodatas' || $tabel === 'alumnis') && in_array($kolom, $kolomBiodata)) {
+                    $dataUpdateBiodata[$kolom] = $answerText;
                 } elseif ($tabel === 'companies' && in_array($kolom, $kolomCompany)) {
                     $dataUpdateCompany[$kolom] = $answerText;
                 } elseif ($tabel === 'atasans' && in_array($kolom, $kolomAtasan)) {
@@ -318,31 +319,31 @@ class SimpanJawabanController extends Controller
             }
         }
 
-        if (! empty($dataUpdateAlumni)) {
-            $alumni->update($dataUpdateAlumni);
+        if (! empty($dataUpdateBiodata)) {
+            $biodata->update($dataUpdateBiodata);
         }
 
         if (! empty($dataUpdateAkademik)) {
             DataAkademik::updateOrCreate(
-                ['nim' => $alumni->nim],
+                ['nim' => $biodata->nim],
                 $dataUpdateAkademik
             );
         }
 
         if (! empty($dataUpdateCompany)) {
-            if ($alumni->company_id && $alumni->company) {
-                $alumni->company->update($dataUpdateCompany);
+            if ($biodata->company_id && $biodata->company) {
+                $biodata->company->update($dataUpdateCompany);
             } elseif (! empty($dataUpdateCompany['nama_perusahaan'])) {
                 $comp = Company::create($dataUpdateCompany);
-                $alumni->update(['company_id' => $comp->id]);
+                $biodata->update(['company_id' => $comp->id]);
             }
         }
 
         if (! empty($dataUpdateAtasan)) {
-            if ($alumni->atasan_id && $alumni->atasan) {
-                $alumni->atasan->update($dataUpdateAtasan);
+            if ($biodata->atasan_id && $biodata->atasan) {
+                $biodata->atasan->update($dataUpdateAtasan);
             } elseif (! empty($dataUpdateAtasan['nama']) || ! empty($dataUpdateAtasan['email'])) {
-                $emailAtasan = $dataUpdateAtasan['email'] ?? ('atasan_'.$alumni->nim.'@tracerstudy.ukdw.ac.id');
+                $emailAtasan = $dataUpdateAtasan['email'] ?? ('atasan_'.$biodata->nim.'@tracerstudy.ukdw.ac.id');
                 $atasan = Atasan::firstOrCreate(
                     ['email' => $emailAtasan],
                     [
@@ -350,12 +351,12 @@ class SimpanJawabanController extends Controller
                         'telepon' => $dataUpdateAtasan['telepon'] ?? null,
                     ]
                 );
-                $alumni->update(['atasan_id' => $atasan->id]);
+                $biodata->update(['atasan_id' => $atasan->id]);
             }
         }
 
         // Pastikan jawaban profil (F1..F2H) selalu tersinkronisasi di tabel responses
-        KuesionerSyncService::syncProfileResponses($alumni);
+        KuesionerSyncService::syncProfileResponses($biodata);
 
         return redirect()->back()->with('success', 'Jawaban berhasil disimpan.');
     }

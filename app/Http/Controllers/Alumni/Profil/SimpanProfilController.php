@@ -26,52 +26,14 @@ class SimpanProfilController extends Controller
     public function simpanPerubahanProfil(Request $request)
     {
         $pengguna = $request->user();
-        $alumni = $pengguna->alumni;
+        $biodata = $pengguna->biodata;
 
         $dataTervalidasi = $request->all();
 
-        // 1. Simpan ke Data Akademik (tabel terpisah, dihubungkan via NIM/F1)
-        $dataAkademik = DataAkademik::firstOrCreate(
-            ['nim' => $alumni->nim],
-            [
-                'nama' => $pengguna->name,
-                'email_students' => $pengguna->email,
-            ]
-        );
+        // 1. Data Akademik & Data Yudisium bersifat data induk (Read-Only)
+        // dan tidak dimodifikasi melalui form tracer alumni.
 
-        // Filter bidang yang dimiliki oleh DataAkademik
-        $dataUntukAkademik = array_intersect_key($dataTervalidasi, array_flip((new DataAkademik)->getFillable()));
-
-        // Proteksi Bidang Paten Resmi Universitas (NIM, Kelulusan, Angkatan, IPK, SKS)
-        // Data ini paten dari pihak universitas dan tidak boleh diubah oleh alumni
-        $fieldPaten = [
-            'nim',
-            'angkatan_masuk',
-            'status_mahasiswa',
-            'tahun_akademik_lulus',
-            'tahun_lulus',
-            'ipk',
-            'total_sks',
-            'total_angka_kualitas',
-        ];
-        foreach ($fieldPaten as $paten) {
-            unset($dataUntukAkademik[$paten]);
-        }
-
-        foreach ($dataUntukAkademik as $key => $val) {
-            if ($val === '') {
-                $dataUntukAkademik[$key] = null;
-            }
-        }
-
-        if (! empty($dataUntukAkademik)) {
-            $dataAkademik->update($dataUntukAkademik);
-        }
-
-        // 2. Data Yudisium bersifat paten (ditarik langsung dari pangkalan data universitas)
-        // dan tidak boleh diubah oleh alumni.
-
-        // 3. Simpan Data Orang Tua (Simpan null jika field dikosongkan)
+        // 2. Simpan Data Orang Tua (Simpan null jika field dikosongkan)
         $dataOrangTua = [
             'nama_orang_tua' => ! empty($dataTervalidasi['nama_orang_tua']) ? $dataTervalidasi['nama_orang_tua'] : null,
             'pekerjaan' => ! empty($dataTervalidasi['pekerjaan_orang_tua']) ? $dataTervalidasi['pekerjaan_orang_tua'] : null,
@@ -83,12 +45,12 @@ class SimpanProfilController extends Controller
             'nomor_telepon' => ! empty($dataTervalidasi['nomor_telepon_orang_tua']) ? $dataTervalidasi['nomor_telepon_orang_tua'] : null,
         ];
         DataOrangTua::updateOrCreate(
-            ['nim' => $alumni->nim],
+            ['nim' => $biodata->nim],
             $dataOrangTua
         );
 
         // =========================================================================================
-        // 4. TANGANI PERUSAHAAN (COMPANY)
+        // 3. TANGANI PERUSAHAAN (COMPANY)
         // =========================================================================================
         $idPerusahaan = null;
 
@@ -112,11 +74,11 @@ class SimpanProfilController extends Controller
             $idPerusahaan = $perusahaan->id;
         }
 
-        // 5. Tangani Data Atasan (Supervisor)
+        // 4. Tangani Data Atasan (Supervisor)
         $idAtasan = null;
         if (! empty($dataTervalidasi['nama_atasan'])) {
-            $atasan = ! empty($alumni->atasan_id)
-                ? Atasan::find($alumni->atasan_id)
+            $atasan = ! empty($biodata->atasan_id)
+                ? Atasan::find($biodata->atasan_id)
                 : null;
 
             if ($atasan) {
@@ -136,9 +98,24 @@ class SimpanProfilController extends Controller
         }
 
         // =========================================================================================
-        // 6. UPDATE PROFIL ALUMNI UTAMA
+        // 5. UPDATE PROFIL BIODATA ALUMNI UTAMA
         // =========================================================================================
-        $alumni->update([
+        $biodata->update([
+            'nama' => ! empty($dataTervalidasi['nama']) ? $dataTervalidasi['nama'] : $biodata->nama,
+            'nomor_telepon' => ! empty($dataTervalidasi['nomor_telepon']) ? $dataTervalidasi['nomor_telepon'] : null,
+            'email' => ! empty($dataTervalidasi['email']) ? $dataTervalidasi['email'] : (! empty($dataTervalidasi['email_pribadi']) ? $dataTervalidasi['email_pribadi'] : null),
+            'email_pribadi' => ! empty($dataTervalidasi['email_pribadi']) ? $dataTervalidasi['email_pribadi'] : null,
+            'alamat' => ! empty($dataTervalidasi['alamat_saat_ini']) ? $dataTervalidasi['alamat_saat_ini'] : (! empty($dataTervalidasi['alamat']) ? $dataTervalidasi['alamat'] : null),
+            'kelurahan' => ! empty($dataTervalidasi['kelurahan']) ? $dataTervalidasi['kelurahan'] : null,
+            'kecamatan' => ! empty($dataTervalidasi['kecamatan']) ? $dataTervalidasi['kecamatan'] : null,
+            'kabupaten_id' => ! empty($dataTervalidasi['kabupaten_id']) ? $dataTervalidasi['kabupaten_id'] : null,
+            'provinsi_id' => ! empty($dataTervalidasi['provinsi_id']) ? $dataTervalidasi['provinsi_id'] : null,
+            'kode_pos' => ! empty($dataTervalidasi['kode_pos']) ? $dataTervalidasi['kode_pos'] : null,
+            'agama' => ! empty($dataTervalidasi['agama']) ? $dataTervalidasi['agama'] : null,
+            'nik' => ! empty($dataTervalidasi['nik']) ? $dataTervalidasi['nik'] : null,
+            'no_kk' => ! empty($dataTervalidasi['no_kk']) ? $dataTervalidasi['no_kk'] : null,
+            'no_bpjs' => ! empty($dataTervalidasi['no_bpjs']) ? $dataTervalidasi['no_bpjs'] : null,
+            'npwp' => ! empty($dataTervalidasi['npwp']) ? $dataTervalidasi['npwp'] : null,
             'instagram_url' => ! empty($dataTervalidasi['instagram_url']) ? $dataTervalidasi['instagram_url'] : null,
             'facebook_url' => ! empty($dataTervalidasi['facebook_url']) ? $dataTervalidasi['facebook_url'] : null,
             'linkedin_url' => ! empty($dataTervalidasi['linkedin_url']) ? $dataTervalidasi['linkedin_url'] : null,
@@ -152,12 +129,12 @@ class SimpanProfilController extends Controller
             'atasan_id' => $idAtasan,
         ]);
 
-        $alumni->refresh();
+        $biodata->refresh();
 
-        // Sinkronisasi otomatis ke tabel responses kuesioner
-        KuesionerSyncService::syncProfileResponses($alumni);
+        // Sinkronisasi otomatis ke tabel tracers kuesioner
+        KuesionerSyncService::syncProfileResponses($biodata);
 
-        return redirect()->back()->with('success', 'Profil dan Data Akademik berhasil diperbarui.');
+        return redirect()->back()->with('success', 'Profil biodata berhasil diperbarui.');
     }
 
     /**

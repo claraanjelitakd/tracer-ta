@@ -2,7 +2,7 @@
 
 namespace Database\Seeders;
 
-use App\Models\Alumni;
+use App\Models\Biodata;
 use App\Models\Prodi;
 use App\Models\ProdiQuestion;
 use App\Models\ProdiQuestionOption;
@@ -573,7 +573,7 @@ class ProdiQuestionnaireSeeder extends Seeder
         ProdiQuestion::whereIn('code', ['PSI-01', 'PSI-02', 'PSI-03'])->delete();
 
         // Sinkronkan data akademik (Nama, NIM, Tahun Kelulusan) untuk seluruh alumni ke prodi_responses
-        $allAlumni = Alumni::all();
+        $allAlumni = Biodata::all();
         foreach ($allAlumni as $alm) {
             KuesionerSyncService::syncProdiResponses($alm);
         }

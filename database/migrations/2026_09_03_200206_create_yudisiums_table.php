@@ -33,7 +33,9 @@ return new class extends Migration
             $table->string('jenis_publikasi')->nullable();
             $table->string('status_publikasi')->nullable();
 
-            // Yudisium
+            // Yudisium & Periode Kelulusan
+            $table->string('tahun_akademik_lulus')->nullable()->comment('Contoh: Gasal 2026/2027');
+            $table->year('tahun_lulus')->nullable()->comment('Contoh: 2026');
             $table->string('keterangan_hasil_yudisium')->nullable();
             $table->enum('proses_yudisium', ['Belum', 'Proses', 'Lulus', 'Tidak Lulus'])->default('Belum');
 

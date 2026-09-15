@@ -11,7 +11,7 @@
 import { computed } from 'vue';
 
 const props = defineProps({
-    question: {
+    subpertanyaan: {
         type: Object,
         required: true,
     },
@@ -52,7 +52,7 @@ const isOptionSupported = computed(() => {
         'checkbox',
         'dropdown',
     ];
-    return supportedTypes.includes(props.question.type);
+    return supportedTypes.includes(props.subpertanyaan.type);
 });
 
 const formatQuestionType = (type) => {
@@ -89,26 +89,26 @@ const formatQuestionType = (type) => {
             <div class="flex flex-wrap items-center gap-2">
                 <!-- Badge Nomor & Kode (Hijau Resmi UKDW #0D542B) -->
                 <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-[#0D542B] text-white font-extrabold text-xs">
-                    <span>#{{ question.order }}</span>
+                    <span>#{{ subpertanyaan.order }}</span>
                     <span class="opacity-60">•</span>
-                    <span class="tracking-wide">{{ question.code }}</span>
+                    <span class="tracking-wide">{{ subpertanyaan.kode_pertanyaan }}</span>
                 </span>
 
                 <!-- Badge Tipe Pertanyaan -->
                 <span class="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-semibold bg-white border border-gray-200 text-gray-700">
-                    {{ formatQuestionType(question.type) }}
+                    {{ formatQuestionType(subpertanyaan.type) }}
                 </span>
 
                 <!-- Badge Wajib (Kuning Resmi UKDW #FDC700) / Opsional -->
                 <span 
                     class="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold"
                     :class="[
-                        question.is_required
+                        subpertanyaan.wajib
                             ? 'bg-[#FDC700] text-black'
                             : 'bg-gray-100 text-gray-600'
                     ]"
                 >
-                    {{ question.is_required ? 'Wajib Diisi' : 'Opsional' }}
+                    {{ subpertanyaan.wajib ? 'Wajib Diisi' : 'Opsional' }}
                 </span>
             </div>
 
@@ -118,7 +118,7 @@ const formatQuestionType = (type) => {
                 <button
                     type="button"
                     :disabled="index === 0 || isReordering"
-                    @click="emit('moveQuestion', question, 'up')"
+                    @click="emit('moveQuestion', subpertanyaan, 'up')"
                     class="p-2 rounded-lg text-gray-600 hover:text-[#0D542B] hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors border border-gray-200 bg-white"
                     title="Pindahkan ke atas"
                 >
@@ -129,7 +129,7 @@ const formatQuestionType = (type) => {
                 <button
                     type="button"
                     :disabled="index === totalInActiveSection - 1 || isReordering"
-                    @click="emit('moveQuestion', question, 'down')"
+                    @click="emit('moveQuestion', subpertanyaan, 'down')"
                     class="p-2 rounded-lg text-gray-600 hover:text-[#0D542B] hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors border border-gray-200 bg-white"
                     title="Pindahkan ke bawah"
                 >
@@ -141,7 +141,7 @@ const formatQuestionType = (type) => {
                 <!-- Tombol Edit Pertanyaan -->
                 <button
                     type="button"
-                    @click="emit('editQuestion', question)"
+                    @click="emit('editQuestion', subpertanyaan)"
                     class="px-3 py-1.5 rounded-lg text-xs font-bold text-gray-700 hover:text-[#0D542B] hover:bg-gray-100 border border-gray-200 bg-white transition-colors flex items-center gap-1 cursor-pointer"
                 >
                     <svg class="w-3.5 h-3.5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
@@ -151,7 +151,7 @@ const formatQuestionType = (type) => {
                 <!-- Tombol Hapus Pertanyaan -->
                 <button
                     type="button"
-                    @click="emit('deleteQuestion', question)"
+                    @click="emit('deleteQuestion', subpertanyaan)"
                     class="px-3 py-1.5 rounded-lg text-xs font-bold text-gray-600 hover:text-red-700 hover:bg-gray-100 border border-gray-200 bg-white transition-colors flex items-center gap-1 cursor-pointer"
                 >
                     <svg class="w-3.5 h-3.5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
@@ -163,20 +163,20 @@ const formatQuestionType = (type) => {
         <!-- Isi Teks Pertanyaan -->
         <div class="p-5 sm:p-6">
             <h3 class="text-base sm:text-lg font-extrabold text-gray-900 leading-snug">
-                {{ question.question_text }}
+                {{ subpertanyaan.subpertanyaan }}
             </h3>
 
             <!-- Bagian Opsi Pilihan Jawaban -->
             <div v-if="isOptionSupported" class="mt-5 pt-4 border-t border-gray-100">
                 <div class="flex items-center justify-between mb-3">
                     <span class="text-xs font-extrabold uppercase text-gray-500 tracking-wider">
-                        Pilihan Opsi Jawaban ({{ question.options?.length || 0 }})
+                        Pilihan Opsi Jawaban ({{ (subpertanyaan.detils || subpertanyaan.options)?.length || 0 }})
                     </span>
 
                     <!-- Tombol Tambah Opsi (Hijau UKDW #0D542B) -->
                     <button
                         type="button"
-                        @click="emit('addOption', question)"
+                        @click="emit('addOption', subpertanyaan)"
                         class="px-3 py-1.5 rounded-xl text-xs font-bold text-white bg-[#0D542B] hover:bg-[#08381c] transition-colors flex items-center gap-1.5 cursor-pointer shadow-xs"
                     >
                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
@@ -185,9 +185,9 @@ const formatQuestionType = (type) => {
                 </div>
 
                 <!-- Daftar Butir Opsi (Latar Bersih, Tanpa Hover Border) -->
-                <div v-if="question.options && question.options.length > 0" class="space-y-2">
+                <div v-if="(subpertanyaan.detils || subpertanyaan.options) && (subpertanyaan.detils || subpertanyaan.options).length > 0" class="space-y-2">
                     <div 
-                        v-for="opt in question.options" 
+                        v-for="opt in (subpertanyaan.detils || subpertanyaan.options)" 
                         :key="opt.id"
                         class="flex items-center justify-between p-3 rounded-xl bg-gray-50 hover:bg-gray-100 transition-colors group"
                     >
@@ -195,11 +195,11 @@ const formatQuestionType = (type) => {
                         <div class="flex items-center gap-3 min-w-0 pr-2">
                             <div 
                                 class="w-4 h-4 shrink-0 flex items-center justify-center border-2 border-gray-400 bg-white"
-                                :class="question.type === 'multiple_choice' ? 'rounded-md' : 'rounded-full'"
+                                :class="subpertanyaan.type === 'multiple_choice' ? 'rounded-md' : 'rounded-full'"
                             ></div>
 
                             <span class="font-mono text-xs font-bold text-gray-600 bg-white px-2 py-0.5 rounded border border-gray-200 shrink-0">
-                                {{ opt.option_code || '-' }}
+                                {{ opt.kode_opsi || opt.code || '-' }}
                             </span>
 
                             <span class="text-sm font-medium text-gray-800 break-words line-clamp-2">
@@ -219,7 +219,7 @@ const formatQuestionType = (type) => {
                         <div class="flex items-center gap-1 shrink-0 opacity-80 group-hover:opacity-100 transition-opacity">
                             <button
                                 type="button"
-                                @click="emit('editOption', question, opt)"
+                                @click="emit('editOption', subpertanyaan, opt)"
                                 class="p-1.5 text-gray-500 hover:text-[#0D542B] hover:bg-white rounded-md transition-colors"
                                 title="Edit opsi"
                             >
@@ -243,7 +243,7 @@ const formatQuestionType = (type) => {
             </div>
 
             <!-- Catatan khusus tipe rating_5 (Skala Murni Tanpa Opsi Tambahan) -->
-            <div v-else-if="question.type === 'rating_5'" class="mt-4 pt-3 border-t border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between text-xs text-gray-500 bg-emerald-50/50 p-3 rounded-xl gap-1">
+            <div v-else-if="subpertanyaan.type === 'rating_5'" class="mt-4 pt-3 border-t border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between text-xs text-gray-500 bg-emerald-50/50 p-3 rounded-xl gap-1">
                 <span class="font-bold text-emerald-900 flex items-center gap-1.5">
                     <span>⭐</span>
                     <span>Skala Penilaian Range 1 s/d 5 (Jawaban berupa angka murni)</span>

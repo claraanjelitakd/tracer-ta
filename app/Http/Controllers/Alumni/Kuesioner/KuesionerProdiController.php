@@ -23,9 +23,9 @@ class KuesionerProdiController extends Controller
     public function tampilkanKuesionerProdi(): InertiaResponse
     {
         $user = Auth::user();
-        $alumni = $user->alumni;
+        $biodata = $user->biodata;
 
-        if (! $alumni || ! $alumni->prodi_id) {
+        if (! $biodata || ! $biodata->prodi_id) {
             return Inertia::render('Alumni/KuesionerProdi', [
                 'prodi' => null,
                 'sections' => [],
@@ -35,31 +35,31 @@ class KuesionerProdiController extends Controller
             ]);
         }
 
-        $alumni->load(['dataAkademik', 'user', 'prodi']);
-        $prodi = $alumni->prodi;
+        $biodata->load(['dataAkademik', 'yudisium', 'user', 'prodi']);
+        $prodi = $biodata->prodi;
 
         // Ambil sections kuesioner prodi beserta seluruh butir pertanyaan dan opsi
-        $sections = ProdiQuestionSection::where('prodi_id', $alumni->prodi_id)
+        $sections = ProdiQuestionSection::where('prodi_id', $biodata->prodi_id)
             ->with(['questions.options'])
             ->orderBy('order', 'asc')
             ->get();
 
         // Ambil seluruh butir pertanyaan khusus prodi alumni ini
-        $questions = ProdiQuestion::where('prodi_id', $alumni->prodi_id)
+        $questions = ProdiQuestion::where('prodi_id', $biodata->prodi_id)
             ->with(['section', 'options'])
             ->orderBy('order', 'asc')
             ->get();
 
         // Ambil riwayat respon kuesioner prodi alumni jika sudah pernah mengisi
-        $existingResponses = ProdiResponse::where('alumni_id', $alumni->id)
+        $existingResponses = ProdiResponse::where('biodata_id', $biodata->id)
             ->whereIn('prodi_question_id', $questions->pluck('id'))
             ->get()
             ->keyBy('prodi_question_id');
 
         // Data akademik default alumni untuk auto-prefill pertanyaan identitas
-        $namaAkademik = $alumni->dataAkademik?->nama ?? $alumni->user?->name ?? '';
-        $nimAkademik = $alumni->nim ?? $alumni->dataAkademik?->nim ?? '';
-        $tahunLulusAkademik = $alumni->dataAkademik?->tahun_akademik_lulus ?? $alumni->dataAkademik?->tahun_lulus ?? '';
+        $namaAkademik = $biodata->nama ?? $biodata->dataAkademik?->nama ?? $biodata->user?->name ?? '';
+        $nimAkademik = $biodata->nim ?? $biodata->dataAkademik?->nim ?? '';
+        $tahunLulusAkademik = $biodata->tahun_lulus ?? $biodata->yudisium?->tahun_lulus ?? $biodata->dataAkademik?->tahun_lulus ?? '';
 
         $initialAnswers = [];
         foreach ($questions as $q) {
@@ -98,7 +98,7 @@ class KuesionerProdiController extends Controller
                     // Simpan otomatis ke tabel prodi_responses agar langsung tersinkronisasi
                     ProdiResponse::updateOrCreate(
                         [
-                            'alumni_id' => $alumni->id,
+                            'biodata_id' => $biodata->id,
                             'prodi_question_id' => $q->id,
                         ],
                         [
@@ -111,7 +111,8 @@ class KuesionerProdiController extends Controller
         }
 
         return Inertia::render('Alumni/KuesionerProdi', [
-            'alumni' => $alumni,
+            'biodata' => $biodata,
+            'alumni' => $biodata,
             'prodi' => $prodi,
             'sections' => $sections,
             'questions' => $questions,
@@ -125,14 +126,14 @@ class KuesionerProdiController extends Controller
     public function simpanJawaban(Request $request): RedirectResponse
     {
         $user = Auth::user();
-        $alumni = $user->alumni;
+        $biodata = $user->biodata;
 
-        if (! $alumni || ! $alumni->prodi_id) {
+        if (! $biodata || ! $biodata->prodi_id) {
             return redirect()->back()->with('error', 'Profil alumni tidak valid.');
         }
 
         $jawabanMasuk = $request->input('answers', []);
-        $questions = ProdiQuestion::where('prodi_id', $alumni->prodi_id)->get()->keyBy('id');
+        $questions = ProdiQuestion::where('prodi_id', $biodata->prodi_id)->get()->keyBy('id');
 
         foreach ($jawabanMasuk as $qId => $jawaban) {
             if (! is_numeric($qId) || ! isset($questions[$qId])) {
@@ -167,22 +168,22 @@ class KuesionerProdiController extends Controller
                 $answerValue = trim((string) $jawaban);
             }
 
-            // Fallback otomatis mengambil langsung dari Data Akademik jika input kosong
+            // Fallback otomatis mengambil langsung dari Biodata / Data Akademik jika input kosong
             if ($answerValue === null || $answerValue === '') {
                 $qText = strtolower(trim($q->question_text));
                 if ($q->code === 'PSI-1-01' || $qText === 'nama') {
-                    $answerValue = $alumni->dataAkademik?->nama ?? $alumni->user?->name;
+                    $answerValue = $biodata->nama ?? $biodata->dataAkademik?->nama ?? $biodata->user?->name;
                 } elseif ($q->code === 'PSI-1-02' || $qText === 'nim') {
-                    $answerValue = $alumni->nim ?? $alumni->dataAkademik?->nim;
+                    $answerValue = $biodata->nim ?? $biodata->dataAkademik?->nim;
                 } elseif ($q->code === 'PSI-1-03' || $qText === 'tahun kelulusan' || $qText === 'tahun lulus') {
-                    $answerValue = $alumni->dataAkademik?->tahun_akademik_lulus ?? $alumni->dataAkademik?->tahun_lulus;
+                    $answerValue = $biodata->tahun_lulus ?? $biodata->yudisium?->tahun_lulus ?? $biodata->dataAkademik?->tahun_lulus;
                 }
             }
 
             if ($answerValue !== null && $answerValue !== '') {
                 ProdiResponse::updateOrCreate(
                     [
-                        'alumni_id' => $alumni->id,
+                        'biodata_id' => $biodata->id,
                         'prodi_question_id' => $q->id,
                     ],
                     [

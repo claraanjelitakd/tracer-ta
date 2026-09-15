@@ -57,7 +57,7 @@ const handleSelect = (qId, optionText) => {
                         <span class="text-[11px] sm:text-xs text-gray-500 font-bold">Metode Pembelajaran</span>
                     </div>
                     <h2 class="text-base sm:text-xl md:text-2xl font-black text-gray-900 leading-snug">
-                        {{ headerQuestion?.question_text || 'Menurut anda seberapa besar penekanan pada metode pembelajaran di bawah ini dilaksanakan di program studi anda?' }}
+                        {{ headerQuestion?.subpertanyaan || headerQuestion?.question_text || 'Menurut anda seberapa besar penekanan pada metode pembelajaran di bawah ini dilaksanakan di program studi anda?' }}
                     </h2>
                     <p class="text-xs sm:text-sm text-gray-600 mt-1 font-medium">
                         Pilihlah tingkat penekanan dari 1 (Sangat Besar) hingga 5 (Tidak Sama Sekali) untuk setiap metode.
@@ -115,10 +115,10 @@ const handleSelect = (qId, optionText) => {
                             <td class="py-3.5 px-4">
                                 <div class="flex items-center gap-2">
                                     <span class="font-mono text-[11px] font-black px-1.5 py-0.5 rounded bg-gray-100 text-gray-700 border border-gray-200/60 shrink-0">
-                                        {{ q.code }}
+                                        {{ q.kode_pertanyaan || q.code }}
                                     </span>
                                     <span class="font-bold text-gray-900 text-xs sm:text-sm md:text-base">
-                                        {{ q.question_text }}
+                                        {{ q.subpertanyaan || q.question_text }}
                                     </span>
                                 </div>
                             </td>

@@ -18,7 +18,7 @@ import OptionModal from './Components/OptionModal.vue';
 
 // Properti yang dikirimkan oleh SuperAdmin\KelolaPertanyaan\DaftarPertanyaanController
 const props = defineProps({
-    questions: {
+    subpertanyaans: {
         type: Array,
         default: () => [],
     },
@@ -90,13 +90,13 @@ const isReordering = ref(false);
 const activeSectionQuestions = computed(() => {
     if (!activeSectionId.value) return [];
 
-    return props.questions
-        .filter((q) => q.question_section_id === activeSectionId.value)
+    return props.subpertanyaans
+        .filter((q) => q.kelompok_pertanyaan_id === activeSectionId.value)
         .filter((q) => {
             if (!searchQuery.value.trim()) return true;
             const query = searchQuery.value.toLowerCase();
-            const matchCode = q.code?.toLowerCase().includes(query);
-            const matchText = q.question_text?.toLowerCase().includes(query);
+            const matchCode = q.kode_pertanyaan?.toLowerCase().includes(query);
+            const matchText = q.subpertanyaan?.toLowerCase().includes(query);
             return matchCode || matchText;
         })
         .sort((a, b) => a.order - b.order);
@@ -107,7 +107,7 @@ const activeSectionQuestions = computed(() => {
 // ========================================================
 // Deteksi khusus apakah section yang sedang aktif memuat pertanyaan F17
 const isF17Section = computed(() => {
-    return activeSectionQuestions.value.some((q) => q.code && q.code.startsWith('F17-'));
+    return activeSectionQuestions.value.some((q) => q.kode_pertanyaan && q.kode_pertanyaan.startsWith('F17-'));
 });
 
 // Mode tampilan pada Section F17: 'paired' (berpasangan) atau 'flat' (kartu individual)
@@ -123,8 +123,8 @@ const getCleanAspectName = (text) => {
 
 // Menghitung nomor order berikutnya secara global kuesioner agar pertanyaan baru berada di urutan paling akhir
 const calculatedNextOrder = computed(() => {
-    if (!props.questions || props.questions.length === 0) return 1;
-    const maxOrder = Math.max(...props.questions.map((q) => q.order || 0));
+    if (!props.subpertanyaans || props.subpertanyaans.length === 0) return 1;
+    const maxOrder = Math.max(...props.subpertanyaans.map((q) => q.order || 0));
     return maxOrder + 1;
 });
 
@@ -138,7 +138,7 @@ const f17AspectPairs = computed(() => {
     const unnumberedQuestions = [];
 
     questions.forEach((q) => {
-        const match = q.code ? q.code.match(/^F17-(\d+)$/i) : null;
+        const match = q.kode_pertanyaan ? q.kode_pertanyaan.match(/^F17-(\d+)$/i) : null;
         if (match) {
             const num = parseInt(match[1], 10);
             questionByNum[num] = q;
@@ -167,8 +167,8 @@ const f17AspectPairs = computed(() => {
         const qB = questionByNum[numB] || null;
 
         const aspectName = qA 
-            ? getCleanAspectName(qA.question_text) 
-            : (qB ? getCleanAspectName(qB.question_text) : `Aspek #${aspectNum}`);
+            ? getCleanAspectName(qA.subpertanyaan) 
+            : (qB ? getCleanAspectName(qB.subpertanyaan) : `Aspek #${aspectNum}`);
 
         pairs.push({
             aspectNumber: aspectNum,
@@ -184,9 +184,9 @@ const f17AspectPairs = computed(() => {
     for (let i = 0; i < unnumberedQuestions.length; i += 2) {
         pairs.push({
             aspectNumber: pairs.length + 1,
-            aspectName: getCleanAspectName(unnumberedQuestions[i].question_text),
-            expectedCodeA: unnumberedQuestions[i].code,
-            expectedCodeB: unnumberedQuestions[i + 1]?.code || null,
+            aspectName: getCleanAspectName(unnumberedQuestions[i].subpertanyaan),
+            expectedCodeA: unnumberedQuestions[i].kode_pertanyaan,
+            expectedCodeB: unnumberedQuestions[i + 1]?.kode_pertanyaan || null,
             qA: unnumberedQuestions[i],
             qB: unnumberedQuestions[i + 1] || null,
         });
@@ -227,7 +227,7 @@ const handleDeleteQuestion = (q) => {
             <div class="text-center space-y-2">
                 <p class="text-sm text-gray-600">Apakah Anda yakin ingin menghapus butir pertanyaan:</p>
                 <div class="inline-block px-3 py-1 rounded-lg bg-red-50 text-red-700 font-mono font-bold text-sm border border-red-200">
-                    ${q.code} — ${q.question_text?.substring(0, 50)}...
+                    ${q.kode_pertanyaan} — ${q.subpertanyaan?.substring(0, 50)}...
                 </div>
                 <p class="text-xs text-red-500 font-medium">Seluruh opsi jawaban terkait juga akan terhapus.</p>
             </div>
@@ -246,7 +246,7 @@ const handleDeleteQuestion = (q) => {
                 onSuccess: () => {
                     Swal.fire({
                         title: 'Berhasil!',
-                        text: `Pertanyaan ${q.code} telah dihapus.`,
+                        text: `Pertanyaan ${q.kode_pertanyaan} telah dihapus.`,
                         icon: 'success',
                         confirmButtonColor: '#005B3C',
                         confirmButtonText: 'Tutup',
@@ -378,7 +378,7 @@ const handleDeleteOption = (opt) => {
                 <SectionTabs
                     :sections="sections"
                     :activeSectionId="activeSectionId"
-                    :questions="questions"
+                    :subpertanyaans="subpertanyaans"
                     @select="handleSelectSection"
                 />
 
@@ -410,8 +410,6 @@ const handleDeleteOption = (opt) => {
                                 />
                             </div>
 
-                            <!-- Tombol Kelola Section Kuesioner -->
-                            <!-- <Link
                             <!-- Tombol Tambah Pertanyaan (Hijau Resmi UKDW #0D542B) -->
                             <button
                                 type="button"
@@ -434,7 +432,7 @@ const handleDeleteOption = (opt) => {
                                 <div>
                                     <div class="flex items-center gap-2 flex-wrap">
                                         <h4 class="font-extrabold text-sm sm:text-base text-gray-900">
-                                            Instrumen Evaluasi Kompetensi (Dual Matrix A vs B)
+                                             Instrumen Evaluasi Kompetensi (Dual Matrix A vs B)
                                         </h4>
                                         <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-[#005B3C] text-white">
                                             {{ f17AspectPairs.length }} Aspek ({{ activeSectionQuestions.length }} Butir Soal)
@@ -515,9 +513,9 @@ const handleDeleteOption = (opt) => {
 
                                 <div class="text-[11px] font-semibold text-gray-500">
                                     Berpasangan: 
-                                    <span class="text-emerald-700 font-bold font-mono">{{ pair.qA ? pair.qA.code : (pair.expectedCodeA + ' (Belum)') }}</span> 
+                                    <span class="text-emerald-700 font-bold font-mono">{{ pair.qA ? pair.qA.kode_pertanyaan : (pair.expectedCodeA + ' (Belum)') }}</span> 
                                     & 
-                                    <span class="text-teal-700 font-bold font-mono">{{ pair.qB ? pair.qB.code : (pair.expectedCodeB + ' (Belum)') }}</span>
+                                    <span class="text-teal-700 font-bold font-mono">{{ pair.qB ? pair.qB.kode_pertanyaan : (pair.expectedCodeB + ' (Belum)') }}</span>
                                 </div>
                             </div>
 
@@ -527,7 +525,7 @@ const handleDeleteOption = (opt) => {
                                 <div v-if="pair.qA" class="p-4 rounded-xl bg-emerald-50/30 border border-emerald-100 space-y-2.5 relative">
                                     <div class="flex items-center justify-between gap-2">
                                         <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-extrabold bg-emerald-100 text-emerald-800 font-mono">
-                                            Kolom A • {{ pair.qA.code }}
+                                            Kolom A • {{ pair.qA.kode_pertanyaan }}
                                         </span>
                                         <div class="flex items-center gap-1">
                                             <button
@@ -550,17 +548,17 @@ const handleDeleteOption = (opt) => {
                                     </div>
 
                                     <p class="text-xs sm:text-sm font-bold text-gray-800 leading-snug">
-                                        {{ pair.qA.question_text }}
+                                        {{ pair.qA.subpertanyaan }}
                                     </p>
 
                                     <!-- Indikator 5 Opsi Skala Rating -->
                                     <div class="pt-2 border-t border-emerald-100/80 flex items-center justify-between text-[11px] text-gray-500">
                                         <span class="font-medium">Pilihan Skala Rating:</span>
                                         <div class="flex items-center gap-1 font-mono font-bold text-emerald-800">
-                                            <span v-for="opt in (pair.qA.options || [])" :key="opt.id" class="px-1.5 py-0.5 rounded bg-white border border-emerald-100 text-[10px]" :title="opt.option_text">
+                                            <span v-for="opt in (pair.qA.detils || pair.qA.options || [])" :key="opt.id" class="px-1.5 py-0.5 rounded bg-white border border-emerald-100 text-[10px]" :title="opt.option_text">
                                                 {{ opt.option_text?.substring(0, 1) || '•' }}
                                             </span>
-                                            <span v-if="!pair.qA.options || pair.qA.options.length === 0" class="text-amber-600 text-xs">
+                                            <span v-if="(!pair.qA.detils && !pair.qA.options) || (pair.qA.detils?.length === 0 && pair.qA.options?.length === 0)" class="text-amber-600 text-xs">
                                                 Belum ada opsi
                                             </span>
                                         </div>
@@ -577,7 +575,7 @@ const handleDeleteOption = (opt) => {
                                 <div v-if="pair.qB" class="p-4 rounded-xl bg-teal-50/30 border border-teal-100 space-y-2.5 relative">
                                     <div class="flex items-center justify-between gap-2">
                                         <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-extrabold bg-teal-100 text-teal-800 font-mono">
-                                            Kolom B • {{ pair.qB.code }}
+                                            Kolom B • {{ pair.qB.kode_pertanyaan }}
                                         </span>
                                         <div class="flex items-center gap-1">
                                             <button
@@ -600,17 +598,17 @@ const handleDeleteOption = (opt) => {
                                     </div>
 
                                     <p class="text-xs sm:text-sm font-bold text-gray-800 leading-snug">
-                                        {{ pair.qB.question_text }}
+                                        {{ pair.qB.subpertanyaan }}
                                     </p>
 
                                     <!-- Indikator 5 Opsi Skala Rating -->
                                     <div class="pt-2 border-t border-teal-100/80 flex items-center justify-between text-[11px] text-gray-500">
                                         <span class="font-medium">Pilihan Skala Rating:</span>
                                         <div class="flex items-center gap-1 font-mono font-bold text-teal-800">
-                                            <span v-for="opt in (pair.qB.options || [])" :key="opt.id" class="px-1.5 py-0.5 rounded bg-white border border-teal-100 text-[10px]" :title="opt.option_text">
+                                            <span v-for="opt in (pair.qB.detils || pair.qB.options || [])" :key="opt.id" class="px-1.5 py-0.5 rounded bg-white border border-teal-100 text-[10px]" :title="opt.option_text">
                                                 {{ opt.option_text?.substring(0, 1) || '•' }}
                                             </span>
-                                            <span v-if="!pair.qB.options || pair.qB.options.length === 0" class="text-amber-600 text-xs">
+                                            <span v-if="(!pair.qB.detils && !pair.qB.options) || (pair.qB.detils?.length === 0 && pair.qB.options?.length === 0)" class="text-amber-600 text-xs">
                                                 Belum ada opsi
                                             </span>
                                         </div>
@@ -631,7 +629,7 @@ const handleDeleteOption = (opt) => {
                         <QuestionCard
                             v-for="(q, index) in activeSectionQuestions"
                             :key="q.id"
-                            :question="q"
+                            :subpertanyaan="q"
                             :index="index"
                             :totalInActiveSection="activeSectionQuestions.length"
                             :targetQuestionMap="targetQuestionMap"
@@ -668,7 +666,7 @@ const handleDeleteOption = (opt) => {
         <QuestionModal
             :show="showQuestionModal"
             :isEdit="isEditingQuestion"
-            :question="selectedQuestion"
+            :subpertanyaan="selectedQuestion"
             :sections="sections"
             :defaultSectionId="activeSectionId"
             :nextOrder="calculatedNextOrder"
@@ -680,7 +678,7 @@ const handleDeleteOption = (opt) => {
         <OptionModal
             :show="showOptionModal"
             :isEdit="isEditingOption"
-            :question="selectedQuestionForOption"
+            :subpertanyaan="selectedQuestionForOption"
             :option="selectedOption"
             :availableJumpTargets="availableJumpTargets"
             @close="closeOptionModal"

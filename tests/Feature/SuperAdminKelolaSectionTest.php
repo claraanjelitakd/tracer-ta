@@ -2,8 +2,8 @@
 
 namespace Tests\Feature;
 
-use App\Models\Questionnaire;
-use App\Models\QuestionSection;
+use App\Models\KelompokPertanyaan;
+use App\Models\Kuesioner;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
@@ -15,7 +15,7 @@ class SuperAdminKelolaSectionTest extends TestCase
 
     protected User $superadmin;
 
-    protected Questionnaire $questionnaire;
+    protected Kuesioner $kuesioner;
 
     protected function setUp(): void
     {
@@ -29,7 +29,7 @@ class SuperAdminKelolaSectionTest extends TestCase
             'must_change_password' => false,
         ]);
 
-        $this->questionnaire = Questionnaire::create([
+        $this->kuesioner = Kuesioner::create([
             'title' => 'Tracer Study 2026',
             'year' => 2026,
             'is_active' => true,
@@ -41,8 +41,8 @@ class SuperAdminKelolaSectionTest extends TestCase
      */
     public function test_superadmin_can_view_sections_page(): void
     {
-        QuestionSection::create([
-            'questionnaire_id' => $this->questionnaire->id,
+        KelompokPertanyaan::create([
+            'kuesioner_id' => $this->kuesioner->id,
             'title' => 'Bagian Identitas Diri',
             'order' => 1,
         ]);
@@ -60,14 +60,14 @@ class SuperAdminKelolaSectionTest extends TestCase
     {
         $response = $this->actingAs($this->superadmin)
             ->post(route('superadmin.sections.store'), [
-                'questionnaire_id' => $this->questionnaire->id,
+                'kuesioner_id' => $this->kuesioner->id,
                 'title' => 'Bagian Riwayat Pekerjaan',
                 'order' => 1,
             ]);
 
         $response->assertRedirect();
         $this->assertDatabaseHas('kelompok_pertanyaans', [
-            'kuesioner_id' => $this->questionnaire->id,
+            'kuesioner_id' => $this->kuesioner->id,
             'title' => 'Bagian Riwayat Pekerjaan',
             'order' => 1,
         ]);
@@ -78,15 +78,15 @@ class SuperAdminKelolaSectionTest extends TestCase
      */
     public function test_superadmin_can_update_section(): void
     {
-        $section = QuestionSection::create([
-            'questionnaire_id' => $this->questionnaire->id,
+        $section = KelompokPertanyaan::create([
+            'kuesioner_id' => $this->kuesioner->id,
             'title' => 'Judul Lama',
             'order' => 1,
         ]);
 
         $response = $this->actingAs($this->superadmin)
             ->put(route('superadmin.sections.update', $section->id), [
-                'questionnaire_id' => $this->questionnaire->id,
+                'kuesioner_id' => $this->kuesioner->id,
                 'title' => 'Judul Baru yang Diperbarui',
                 'order' => 1,
             ]);
@@ -103,8 +103,8 @@ class SuperAdminKelolaSectionTest extends TestCase
      */
     public function test_superadmin_can_delete_section(): void
     {
-        $section = QuestionSection::create([
-            'questionnaire_id' => $this->questionnaire->id,
+        $section = KelompokPertanyaan::create([
+            'kuesioner_id' => $this->kuesioner->id,
             'title' => 'Bagian untuk Dihapus',
             'order' => 1,
         ]);
@@ -123,14 +123,14 @@ class SuperAdminKelolaSectionTest extends TestCase
      */
     public function test_superadmin_can_reorder_sections_directionally(): void
     {
-        $section1 = QuestionSection::create([
-            'questionnaire_id' => $this->questionnaire->id,
+        $section1 = KelompokPertanyaan::create([
+            'kuesioner_id' => $this->kuesioner->id,
             'title' => 'Section 1',
             'order' => 1,
         ]);
 
-        $section2 = QuestionSection::create([
-            'questionnaire_id' => $this->questionnaire->id,
+        $section2 = KelompokPertanyaan::create([
+            'kuesioner_id' => $this->kuesioner->id,
             'title' => 'Section 2',
             'order' => 2,
         ]);
@@ -153,14 +153,14 @@ class SuperAdminKelolaSectionTest extends TestCase
      */
     public function test_superadmin_can_bulk_reorder_sections(): void
     {
-        $secA = QuestionSection::create([
-            'questionnaire_id' => $this->questionnaire->id,
+        $secA = KelompokPertanyaan::create([
+            'kuesioner_id' => $this->kuesioner->id,
             'title' => 'Section A',
             'order' => 1,
         ]);
 
-        $secB = QuestionSection::create([
-            'questionnaire_id' => $this->questionnaire->id,
+        $secB = KelompokPertanyaan::create([
+            'kuesioner_id' => $this->kuesioner->id,
             'title' => 'Section B',
             'order' => 2,
         ]);

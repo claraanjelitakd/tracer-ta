@@ -17,7 +17,7 @@ const props = defineProps({
         type: [Number, String],
         default: null,
     },
-    questions: {
+    subpertanyaans: {
         type: Array,
         default: () => [],
     },
@@ -30,7 +30,7 @@ const activeTabRef = ref(null);
 
 // Hitung jumlah butir pertanyaan per section ID
 const getQuestionCountBySection = (sectionId) => {
-    return props.questions.filter((q) => q.question_section_id === sectionId).length;
+    return props.subpertanyaans.filter((q) => q.kelompok_pertanyaan_id === sectionId).length;
 };
 
 // Urutkan sections berdasarkan properti order

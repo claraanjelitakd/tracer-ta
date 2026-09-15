@@ -3,8 +3,8 @@
 namespace App\Http\Controllers\SuperAdmin\KelolaPertanyaan;
 
 use App\Http\Controllers\Controller;
-use App\Models\Question;
-use App\Models\QuestionOption;
+use App\Models\RefSubpertanyaan2021;
+use App\Models\RefSubpertanyaanDetil;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 
@@ -27,29 +27,31 @@ class KelolaOpsiController extends Controller
      */
     public function storeOption(Request $request, $questionId)
     {
-        $question = Question::findOrFail($questionId);
+        $subpertanyaan = RefSubpertanyaan2021::findOrFail($questionId);
 
         $validated = $request->validate([
+            'kode_opsi' => 'nullable|string|max:50',
             'code' => 'nullable|string|max:50',
             'option_text' => 'required|string',
             'jump_to' => 'nullable|string|max:50',
             'order' => 'nullable|integer',
         ]);
 
-        if (empty($validated['order'])) {
-            $validated['order'] = ($question->options()->max('order') ?? 0) + 1;
+        $order = $validated['order'] ?? (($subpertanyaan->detils()->max('order') ?? 0) + 1);
+        $kodeOpsi = $validated['kode_opsi'] ?? $validated['code'] ?? null;
+
+        if (empty($kodeOpsi)) {
+            $optionCount = $subpertanyaan->detils()->count() + 1;
+            $kodeOpsi = $subpertanyaan->kode_pertanyaan.'-'.str_pad($optionCount, 2, '0', STR_PAD_LEFT);
         }
 
-        if (empty($validated['code'])) {
-            $optionCount = $question->options()->count() + 1;
-            $validated['code'] = $question->code.'-'.str_pad($optionCount, 2, '0', STR_PAD_LEFT);
-        }
-
-        if (empty($validated['jump_to'])) {
-            $validated['jump_to'] = null;
-        }
-
-        $question->options()->create($validated);
+        $subpertanyaan->detils()->create([
+            'kode_pertanyaan' => $subpertanyaan->kode_pertanyaan,
+            'kode_opsi' => $kodeOpsi,
+            'option_text' => $validated['option_text'],
+            'jump_to' => $validated['jump_to'] ?? null,
+            'order' => $order,
+        ]);
 
         return redirect()->back()->with('success', 'Pilihan opsi jawaban berhasil ditambahkan.');
     }
@@ -62,24 +64,30 @@ class KelolaOpsiController extends Controller
      */
     public function updateOption(Request $request, $optionId)
     {
-        $option = QuestionOption::findOrFail($optionId);
+        $option = RefSubpertanyaanDetil::findOrFail($optionId);
 
         $validated = $request->validate([
+            'kode_opsi' => 'nullable|string|max:50',
             'code' => 'nullable|string|max:50',
             'option_text' => 'required|string',
             'jump_to' => 'nullable|string|max:50',
             'order' => 'nullable|integer',
         ]);
 
-        if (empty($validated['jump_to'])) {
-            $validated['jump_to'] = null;
+        $data = [
+            'option_text' => $validated['option_text'],
+            'jump_to' => $validated['jump_to'] ?? null,
+        ];
+
+        if (isset($validated['kode_opsi']) || isset($validated['code'])) {
+            $data['kode_opsi'] = $validated['kode_opsi'] ?? $validated['code'];
         }
 
-        if (empty($validated['order'])) {
-            unset($validated['order']);
+        if (! empty($validated['order'])) {
+            $data['order'] = $validated['order'];
         }
 
-        $option->update($validated);
+        $option->update($data);
 
         return redirect()->back()->with('success', 'Pilihan opsi jawaban berhasil diperbarui.');
     }
@@ -92,7 +100,7 @@ class KelolaOpsiController extends Controller
      */
     public function destroyOption($optionId)
     {
-        $option = QuestionOption::findOrFail($optionId);
+        $option = RefSubpertanyaanDetil::findOrFail($optionId);
         $option->delete();
 
         return redirect()->back()->with('success', 'Pilihan opsi jawaban berhasil dihapus.');

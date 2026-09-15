@@ -25,10 +25,10 @@ class Atasan extends Model
     }
 
     /**
-     * Relasi ke Alumni yang dibawahi oleh atasan ini
+     * Relasi ke Biodata yang dibawahi oleh atasan ini
      */
-    public function alumnis()
+    public function biodatas()
     {
-        return $this->hasMany(Alumni::class);
+        return $this->hasMany(Biodata::class);
     }
 }

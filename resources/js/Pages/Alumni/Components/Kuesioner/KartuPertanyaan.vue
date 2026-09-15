@@ -15,7 +15,7 @@
 import SearchableSelect from '@/components/form/searchable-select.vue';
 
 const props = defineProps({
-    question: {
+    subpertanyaan: {
         type: Object,
         required: true,
     },
@@ -58,8 +58,9 @@ const formatRupiah = (val) => {
 const getMultipleNumberTotal = (q) => {
     if (!props.form.answers[q.id] || typeof props.form.answers[q.id] !== 'object') return 0;
     let total = 0;
-    q.options?.forEach(opt => {
-        const val = props.form.answers[q.id][opt.code];
+    (q.detils || q.options)?.forEach(opt => {
+        const optCode = opt.kode_opsi || opt.code;
+        const val = props.form.answers[q.id][optCode];
         if (val !== null && val !== '' && !isNaN(val)) {
             const num = parseInt(val, 10);
             if (num > 0) {
@@ -143,25 +144,33 @@ const handleRadioOptionSelect = (qId, optId, optText = null) => {
     }
     props.form.answers[qId].input = props.form.answers[qId].inputs[optId] ?? '';
 };
+
+// Helper upload berkas / file
+const handleFileUpload = (qId, event) => {
+    const file = event.target.files?.[0];
+    if (file) {
+        props.form.answers[qId] = file.name;
+    }
+};
 </script>
 
 <template>
     <!-- KARTU KHUSUS TIPE HEADER / INSTRUKSI -->
     <div 
-        v-if="question.type === 'header'" 
+        v-if="subpertanyaan.type === 'header'" 
         v-show="isVisible" 
         class="bg-emerald-50/70 border border-emerald-200/80 p-4 sm:p-6 rounded-2xl sm:rounded-3xl shadow-xs mb-4 sm:mb-6"
     >
         <div class="flex items-start gap-3 sm:gap-4">
             <span class="shrink-0 bg-[#005B3C] text-white px-2.5 py-1 rounded-xl text-xs sm:text-sm font-black shadow-xs">
-                {{ question.code }}
+                {{ subpertanyaan.kode_pertanyaan }}
             </span>
             <div>
                 <h3 class="text-base sm:text-lg font-black text-gray-900 leading-snug">
-                    {{ question.question_text }}
+                    {{ subpertanyaan.subpertanyaan }}
                 </h3>
-                <p v-if="question.keterangan || question.sub_detail" class="text-xs sm:text-sm text-emerald-800 mt-1 font-semibold">
-                    {{ question.keterangan || question.sub_detail }}
+                <p v-if="subpertanyaan.keterangan || subpertanyaan.sub_detail" class="text-xs sm:text-sm text-emerald-800 mt-1 font-semibold">
+                    {{ subpertanyaan.keterangan || subpertanyaan.sub_detail }}
                 </p>
             </div>
         </div>
@@ -175,36 +184,47 @@ const handleRadioOptionSelect = (qId, optId, optText = null) => {
         :class="[
             isPaired ? 'flex flex-col justify-between' : 'mb-4 sm:mb-6'
         ]"
-        :style="{ zIndex: question.type === 'searchable_select' ? 10 : 1 }"
+        :style="{ zIndex: subpertanyaan.type === 'searchable_select' ? 10 : 1 }"
     >
         <!-- Header Soal: Kode & Teks Pertanyaan -->
         <h2 class="text-base sm:text-xl md:text-2xl font-black text-gray-800 mb-4 sm:mb-6 leading-snug sm:leading-relaxed flex items-start gap-2.5 sm:gap-4">
             <span class="shrink-0 bg-[#FFD700] text-[#005B3C] px-2.5 py-0.5 sm:px-3.5 sm:py-1 rounded-lg sm:rounded-xl text-xs sm:text-base font-black shadow-xs">
-                {{ question.code }}
+                {{ subpertanyaan.kode_pertanyaan }}
             </span>
             <span>
-                {{ getCleanQuestionText(question.question_text) }} 
-                <span v-if="question.is_required" class="text-red-500 font-black">*</span>
+                {{ getCleanQuestionText(subpertanyaan.subpertanyaan) }} 
+                <span v-if="subpertanyaan.wajib" class="text-red-500 font-black">*</span>
             </span>
         </h2>
 
         <!-- TIPE INPUT: Teks Biasa -->
-        <div v-if="question.type === 'text'">
+        <div v-if="subpertanyaan.type === 'text'">
             <input 
                 type="text" 
-                v-model="form.answers[question.id]" 
-                :required="question.is_required && isVisible"
+                v-model="form.answers[subpertanyaan.id]" 
+                :required="subpertanyaan.wajib && isVisible"
                 class="w-full rounded-xl sm:rounded-2xl bg-gray-50/90 p-3.5 sm:p-5 text-gray-900 font-bold focus:bg-white focus:ring-2 focus:ring-[#005B3C] transition-all text-sm sm:text-lg border-0 shadow-xs"
                 placeholder="Ketik jawabanmu di sini..."
             >
         </div>
 
+        <!-- TIPE INPUT: Paragraf / Textarea -->
+        <div v-else-if="subpertanyaan.type === 'textarea'">
+            <textarea 
+                v-model="form.answers[subpertanyaan.id]" 
+                :required="subpertanyaan.wajib && isVisible"
+                rows="4"
+                class="w-full rounded-xl sm:rounded-2xl bg-gray-50/90 p-3.5 sm:p-5 text-gray-900 font-medium focus:bg-white focus:ring-2 focus:ring-[#005B3C] transition-all text-sm sm:text-base border-0 shadow-xs resize-y"
+                placeholder="Tuliskan uraian jawabanmu di sini..."
+            ></textarea>
+        </div>
+
         <!-- TIPE INPUT: Angka / Number -->
-        <div v-else-if="question.type === 'number'" :class="{'mt-3 sm:mt-4': isPaired}">
+        <div v-else-if="subpertanyaan.type === 'number'" :class="{'mt-3 sm:mt-4': isPaired}">
             <input 
                 type="number" 
-                v-model="form.answers[question.id]" 
-                :required="question.is_required && isVisible"
+                v-model="form.answers[subpertanyaan.id]" 
+                :required="subpertanyaan.wajib && isVisible"
                 @keydown="filterNumberInput"
                 min="0"
                 class="w-full rounded-xl sm:rounded-2xl bg-gray-50/90 p-3.5 sm:p-5 text-gray-900 font-black font-mono focus:bg-white focus:ring-2 focus:ring-[#005B3C] transition-all text-lg sm:text-2xl text-center border-0 shadow-xs"
@@ -213,27 +233,83 @@ const handleRadioOptionSelect = (qId, optId, optText = null) => {
             >
         </div>
 
+        <!-- TIPE INPUT: Dropdown Menu -->
+        <div v-else-if="subpertanyaan.type === 'dropdown'">
+            <select
+                v-model="form.answers[subpertanyaan.id]"
+                :required="subpertanyaan.wajib && isVisible"
+                class="w-full rounded-xl sm:rounded-2xl bg-gray-50/90 p-3.5 sm:p-5 text-gray-900 font-bold focus:bg-white focus:ring-2 focus:ring-[#005B3C] transition-all text-sm sm:text-base border-0 shadow-xs cursor-pointer"
+            >
+                <option value="" disabled>-- Pilih salah satu opsi --</option>
+                <option 
+                    v-for="opt in (subpertanyaan.detils || subpertanyaan.options)" 
+                    :key="opt.id" 
+                    :value="opt.option_text"
+                >
+                    {{ opt.option_text }}
+                </option>
+            </select>
+        </div>
+
+        <!-- TIPE INPUT: Tanggal (Date) -->
+        <div v-else-if="subpertanyaan.type === 'date'" class="max-w-xs">
+            <input 
+                type="date" 
+                v-model="form.answers[subpertanyaan.id]" 
+                :required="subpertanyaan.wajib && isVisible"
+                class="w-full rounded-xl sm:rounded-2xl bg-gray-50/90 p-3.5 sm:p-4 text-gray-900 font-bold focus:bg-white focus:ring-2 focus:ring-[#005B3C] transition-all text-sm sm:text-base border-0 shadow-xs"
+            >
+        </div>
+
+        <!-- TIPE INPUT: Waktu (Time) -->
+        <div v-else-if="subpertanyaan.type === 'time'" class="max-w-xs">
+            <input 
+                type="time" 
+                v-model="form.answers[subpertanyaan.id]" 
+                :required="subpertanyaan.wajib && isVisible"
+                class="w-full rounded-xl sm:rounded-2xl bg-gray-50/90 p-3.5 sm:p-4 text-gray-900 font-bold focus:bg-white focus:ring-2 focus:ring-[#005B3C] transition-all text-sm sm:text-base border-0 shadow-xs"
+            >
+        </div>
+
+        <!-- TIPE INPUT: Upload Berkas (File) -->
+        <div v-else-if="subpertanyaan.type === 'file'" class="p-6 border-2 border-dashed border-gray-300 rounded-2xl text-center bg-gray-50/70 hover:bg-emerald-50/50 transition-colors">
+            <input 
+                type="file" 
+                :id="'file_' + subpertanyaan.id"
+                class="sr-only"
+                @change="handleFileUpload(subpertanyaan.id, $event)"
+            >
+            <label :for="'file_' + subpertanyaan.id" class="cursor-pointer flex flex-col items-center justify-center">
+                <span class="text-3xl mb-2">☁️</span>
+                <span class="font-bold text-sm text-[#005B3C] hover:underline">Klik untuk mengunggah berkas</span>
+                <span class="text-xs text-gray-500 mt-1">PDF, DOC, DOCX, JPG, PNG (Maks. 5MB)</span>
+                <span v-if="form.answers[subpertanyaan.id]" class="mt-2 text-xs font-mono font-bold text-emerald-800 bg-emerald-100 px-2.5 py-1 rounded-lg">
+                    ✓ Berkas terpilih: {{ form.answers[subpertanyaan.id] }}
+                </span>
+            </label>
+        </div>
+
         <!-- TIPE INPUT: Searchable Select -->
-        <div v-else-if="question.type === 'searchable_select'" class="relative">
+        <div v-else-if="subpertanyaan.type === 'searchable_select'" class="relative">
             <SearchableSelect 
-                v-model="form.answers[question.id]" 
-                :options="question.options" 
-                :required="question.is_required && isVisible" 
+                v-model="form.answers[subpertanyaan.id]" 
+                :options="subpertanyaan.detils || subpertanyaan.options" 
+                :required="subpertanyaan.wajib && isVisible" 
                 placeholder="Cari bidang pekerjaan..." 
             />
         </div>
 
         <!-- TIPE INPUT: Skala Penilaian / Rating 1 s/d 5 -->
-        <div v-else-if="question.type === 'rating_5'" class="space-y-3 sm:space-y-4">
+        <div v-else-if="subpertanyaan.type === 'rating_5'" class="space-y-3 sm:space-y-4">
             <!-- Kotak Panduan Skor 1 s/d 5 -->
             <div class="flex flex-col sm:flex-row sm:items-center justify-between p-2.5 sm:p-3.5 bg-emerald-50/70 rounded-xl sm:rounded-2xl text-xs sm:text-sm font-bold text-emerald-950 shadow-2xs gap-1.5 sm:gap-2">
                 <div class="flex items-center gap-2">
                     <span class="w-5 h-5 sm:w-6 sm:h-6 rounded-md sm:rounded-lg bg-[#005B3C] text-white flex items-center justify-center font-black text-[11px] sm:text-xs shrink-0 shadow-2xs">1</span>
-                    <span>Skor 1: <strong>{{ getScaleGuide(question.code).min }}</strong></span>
+                    <span>Skor 1: <strong>{{ getScaleGuide(subpertanyaan.kode_pertanyaan).min }}</strong></span>
                 </div>
                 <div class="flex items-center gap-2 sm:justify-end">
                     <span class="w-5 h-5 sm:w-6 sm:h-6 rounded-md sm:rounded-lg bg-[#005B3C] text-white flex items-center justify-center font-black text-[11px] sm:text-xs shrink-0 shadow-2xs">5</span>
-                    <span>Skor 5: <strong>{{ getScaleGuide(question.code).max }}</strong></span>
+                    <span>Skor 5: <strong>{{ getScaleGuide(subpertanyaan.kode_pertanyaan).max }}</strong></span>
                 </div>
             </div>
 
@@ -247,16 +323,16 @@ const handleRadioOptionSelect = (qId, optId, optText = null) => {
                     >
                         <input 
                             type="radio" 
-                            :name="'question_' + question.id" 
+                            :name="'question_' + subpertanyaan.id" 
                             :value="score" 
-                            v-model="form.answers[question.id]" 
-                            :required="question.is_required && isVisible" 
+                            v-model="form.answers[subpertanyaan.id]" 
+                            :required="subpertanyaan.wajib && isVisible" 
                             class="sr-only"
                         >
                         <div 
                             class="w-full h-11 sm:h-12 md:h-14 rounded-xl sm:rounded-2xl flex items-center justify-center font-black text-base sm:text-lg md:text-xl shadow-xs transition-all active:scale-95"
                             :class="[
-                                Number(form.answers[question.id]) === score
+                                Number(form.answers[subpertanyaan.id]) === score
                                     ? 'bg-[#005B3C] text-white'
                                     : 'bg-white text-gray-700 hover:bg-emerald-50 hover:text-[#005B3C]'
                             ]"
@@ -269,24 +345,24 @@ const handleRadioOptionSelect = (qId, optId, optText = null) => {
         </div>
 
         <!-- TIPE INPUT: Pilihan Tunggal / Radio -->
-        <div v-else-if="question.type === 'radio' || question.type === 'single_choice'">
+        <div v-else-if="subpertanyaan.type === 'radio' || subpertanyaan.type === 'single_choice'">
             <div class="inline-block mb-3 sm:mb-4 px-3 py-1 sm:px-3.5 sm:py-1.5 rounded-full bg-emerald-50/80 border border-emerald-200/70 text-[11px] sm:text-xs font-bold text-emerald-800 shadow-2xs">
                 Hanya bisa memilih satu jawaban
             </div>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-2.5 sm:gap-4">
-                <label v-for="opt in question.options" :key="opt.id" class="cursor-pointer group block select-none">
+                <label v-for="opt in (subpertanyaan.detils || subpertanyaan.options)" :key="opt.id" class="cursor-pointer group block select-none">
                     <input 
                         type="radio" 
-                        :name="'question_'+question.id" 
+                        :name="'question_'+subpertanyaan.id" 
                         :value="opt.option_text" 
-                        v-model="form.answers[question.id]" 
-                        :required="question.is_required && isVisible" 
+                        v-model="form.answers[subpertanyaan.id]" 
+                        :required="subpertanyaan.wajib && isVisible" 
                         class="sr-only"
                     >
                     <div 
                         class="h-full p-3.5 sm:p-5 rounded-xl sm:rounded-2xl font-bold text-sm sm:text-lg transition-all duration-200 flex flex-col items-center justify-center text-center shadow-xs"
                         :class="[
-                            form.answers[question.id] === opt.option_text
+                            form.answers[subpertanyaan.id] === opt.option_text
                                 ? 'bg-[#005B3C] text-white shadow-md hover:bg-[#00482f]' 
                                 : 'bg-gray-50/90 text-gray-700 hover:bg-emerald-50 hover:text-[#005B3C] hover:shadow-sm'
                         ]"
@@ -295,30 +371,30 @@ const handleRadioOptionSelect = (qId, optId, optText = null) => {
                             <span v-if="getSplitDotsText(opt.option_text).before">{{ getSplitDotsText(opt.option_text).before }}</span>
                             <input 
                                 type="text"
-                                v-model="form.answers[question.id + '_custom']"
-                                @click.stop="form.answers[question.id] = opt.option_text"
-                                @focus="form.answers[question.id] = opt.option_text"
+                                v-model="form.answers[subpertanyaan.id + '_custom']"
+                                @click.stop="form.answers[subpertanyaan.id] = opt.option_text"
+                                @focus="form.answers[subpertanyaan.id] = opt.option_text"
                                 placeholder="..."
                                 class="w-14 sm:w-20 py-0.5 sm:py-1.5 px-1.5 sm:px-2 text-center font-black rounded-lg sm:rounded-xl text-xs sm:text-base font-mono shadow-xs focus:outline-none transition-all"
                                 :class="[
-                                    form.answers[question.id] === opt.option_text
+                                    form.answers[subpertanyaan.id] === opt.option_text
                                         ? 'bg-white text-gray-900 ring-2 ring-[#FFD700] shadow-sm'
                                         : 'bg-white text-gray-800 border border-gray-300 focus:ring-2 focus:ring-[#005B3C]'
                                 ]"
-                                :required="question.is_required && form.answers[question.id] === opt.option_text"
+                                :required="subpertanyaan.wajib && form.answers[subpertanyaan.id] === opt.option_text"
                             >
                             <span v-if="getSplitDotsText(opt.option_text).after">{{ getSplitDotsText(opt.option_text).after }}</span>
                         </div>
                         <span v-else>{{ opt.option_text }}</span>
 
                         <div 
-                            v-if="!getSplitDotsText(opt.option_text).hasDots && form.answers[question.id] === opt.option_text && (opt.option_text.toLowerCase().includes('lainnya') || opt.option_text.toLowerCase().includes('tuliskan') || opt.option_text.includes('...') || opt.option_text.includes('…'))" 
+                            v-if="!getSplitDotsText(opt.option_text).hasDots && form.answers[subpertanyaan.id] === opt.option_text && (opt.option_text.toLowerCase().includes('lainnya') || opt.option_text.toLowerCase().includes('tuliskan') || opt.option_text.includes('...') || opt.option_text.includes('…'))" 
                             class="w-full mt-2.5 sm:mt-4" 
                             @click.stop
                         >
                             <input 
                                 type="text" 
-                                v-model="form.answers[question.id + '_custom']" 
+                                v-model="form.answers[subpertanyaan.id + '_custom']" 
                                 placeholder="Tuliskan di sini..." 
                                 class="w-full rounded-lg sm:rounded-xl bg-white text-gray-900 placeholder-gray-400 p-2.5 sm:p-3.5 font-bold shadow-inner focus:ring-2 focus:ring-[#FFD700] text-center text-sm sm:text-base border-0" 
                                 required
@@ -330,22 +406,22 @@ const handleRadioOptionSelect = (qId, optId, optText = null) => {
         </div>
 
         <!-- TIPE INPUT: Pilihan Ganda / Checkbox -->
-        <div v-else-if="question.type === 'checkbox' || question.type === 'multiple_choice'">
+        <div v-else-if="subpertanyaan.type === 'checkbox' || subpertanyaan.type === 'multiple_choice'">
             <div class="inline-block mb-3 sm:mb-4 px-3 py-1 sm:px-3.5 sm:py-1.5 rounded-full bg-emerald-100/70 border border-emerald-300/80 text-[11px] sm:text-xs font-bold text-[#005B3C] shadow-2xs">
                 Jawaban bisa lebih dari satu
             </div>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-2.5 sm:gap-4">
-                <label v-for="opt in question.options" :key="opt.id" class="cursor-pointer group block select-none">
+                <label v-for="opt in (subpertanyaan.detils || subpertanyaan.options)" :key="opt.id" class="cursor-pointer group block select-none">
                     <input 
                         type="checkbox" 
                         :value="opt.option_text" 
-                        v-model="form.answers[question.id]" 
+                        v-model="form.answers[subpertanyaan.id]" 
                         class="sr-only"
                     >
                     <div 
                         class="h-full p-3.5 sm:p-5 rounded-xl sm:rounded-2xl font-bold text-sm sm:text-lg transition-all duration-200 flex flex-col items-center justify-center text-center shadow-xs"
                         :class="[
-                            Array.isArray(form.answers[question.id]) && form.answers[question.id].includes(opt.option_text)
+                            Array.isArray(form.answers[subpertanyaan.id]) && form.answers[subpertanyaan.id].includes(opt.option_text)
                                 ? 'bg-[#005B3C] text-white shadow-md hover:bg-[#00482f]' 
                                 : 'bg-gray-50/90 text-gray-700 hover:bg-emerald-50 hover:text-[#005B3C] hover:shadow-sm'
                         ]"
@@ -354,13 +430,13 @@ const handleRadioOptionSelect = (qId, optId, optText = null) => {
                             <span v-if="getSplitDotsText(opt.option_text).before">{{ getSplitDotsText(opt.option_text).before }}</span>
                             <input 
                                 type="text"
-                                v-model="form.answers[question.id + '_custom']"
-                                @click.stop="() => { if (!Array.isArray(form.answers[question.id])) form.answers[question.id] = []; if (!form.answers[question.id].includes(opt.option_text)) form.answers[question.id].push(opt.option_text); }"
-                                @focus="() => { if (!Array.isArray(form.answers[question.id])) form.answers[question.id] = []; if (!form.answers[question.id].includes(opt.option_text)) form.answers[question.id].push(opt.option_text); }"
+                                v-model="form.answers[subpertanyaan.id + '_custom']"
+                                @click.stop="() => { if (!Array.isArray(form.answers[subpertanyaan.id])) form.answers[subpertanyaan.id] = []; if (!form.answers[subpertanyaan.id].includes(opt.option_text)) form.answers[subpertanyaan.id].push(opt.option_text); }"
+                                @focus="() => { if (!Array.isArray(form.answers[subpertanyaan.id])) form.answers[subpertanyaan.id] = []; if (!form.answers[subpertanyaan.id].includes(opt.option_text)) form.answers[subpertanyaan.id].push(opt.option_text); }"
                                 placeholder="..."
                                 class="w-14 sm:w-20 py-0.5 sm:py-1.5 px-1.5 sm:px-2 text-center font-black rounded-lg sm:rounded-xl text-xs sm:text-base font-mono shadow-xs focus:outline-none transition-all"
                                 :class="[
-                                    Array.isArray(form.answers[question.id]) && form.answers[question.id].includes(opt.option_text)
+                                    Array.isArray(form.answers[subpertanyaan.id]) && form.answers[subpertanyaan.id].includes(opt.option_text)
                                         ? 'bg-white text-gray-900 ring-2 ring-[#FFD700] shadow-sm'
                                         : 'bg-white text-gray-800 border border-gray-300 focus:ring-2 focus:ring-[#005B3C]'
                                 ]"
@@ -370,13 +446,13 @@ const handleRadioOptionSelect = (qId, optId, optText = null) => {
                         <span v-else>{{ opt.option_text }}</span>
 
                         <div 
-                            v-if="!getSplitDotsText(opt.option_text).hasDots && Array.isArray(form.answers[question.id]) && form.answers[question.id].includes(opt.option_text) && (opt.option_text.toLowerCase().includes('lainnya') || opt.option_text.toLowerCase().includes('tuliskan') || opt.option_text.includes('...') || opt.option_text.includes('…'))" 
+                            v-if="!getSplitDotsText(opt.option_text).hasDots && Array.isArray(form.answers[subpertanyaan.id]) && form.answers[subpertanyaan.id].includes(opt.option_text) && (opt.option_text.toLowerCase().includes('lainnya') || opt.option_text.toLowerCase().includes('tuliskan') || opt.option_text.includes('...') || opt.option_text.includes('…'))" 
                             class="w-full mt-2.5 sm:mt-4" 
                             @click.stop
                         >
                             <input 
                                 type="text" 
-                                v-model="form.answers[question.id + '_custom']" 
+                                v-model="form.answers[subpertanyaan.id + '_custom']" 
                                 placeholder="Tuliskan di sini..." 
                                 class="w-full rounded-lg sm:rounded-xl bg-white text-gray-900 placeholder-gray-400 p-2.5 sm:p-3.5 font-bold shadow-inner focus:ring-2 focus:ring-[#FFD700] text-center text-sm sm:text-base border-0" 
                                 required
@@ -388,24 +464,24 @@ const handleRadioOptionSelect = (qId, optId, optText = null) => {
         </div>
 
         <!-- TIPE INPUT: Radio Input / Radio Text -->
-        <div v-else-if="question.type === 'radio_input' || question.type === 'radio_text'">
+        <div v-else-if="subpertanyaan.type === 'radio_input' || subpertanyaan.type === 'radio_text'">
             <div class="inline-block mb-3 sm:mb-4 px-3 py-1 sm:px-3.5 sm:py-1.5 rounded-full bg-emerald-50/80 border border-emerald-200/70 text-[11px] sm:text-xs font-bold text-emerald-800 shadow-2xs">
                 Hanya bisa memilih satu jawaban
             </div>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-2.5 sm:gap-4">
-                <label v-for="opt in question.options" :key="opt.id" class="cursor-pointer group block select-none">
+                <label v-for="opt in (subpertanyaan.detils || subpertanyaan.options)" :key="opt.id" class="cursor-pointer group block select-none">
                     <input 
                         type="radio" 
-                        :name="'question_'+question.id" 
+                        :name="'question_'+subpertanyaan.id" 
                         :value="opt.option_text" 
-                        v-model="form.answers[question.id].selected" 
-                        @change="handleRadioOptionSelect(question.id, opt.id, opt.option_text)" 
+                        v-model="form.answers[subpertanyaan.id].selected" 
+                        @change="handleRadioOptionSelect(subpertanyaan.id, opt.id, opt.option_text)" 
                         class="sr-only"
                     >
                     <div 
                         class="p-3.5 sm:p-5 rounded-xl sm:rounded-2xl font-bold text-sm sm:text-lg transition-all duration-200 flex flex-col items-center justify-center text-center shadow-xs"
                         :class="[
-                            form.answers[question.id]?.selected === opt.option_text
+                            form.answers[subpertanyaan.id]?.selected === opt.option_text
                                 ? 'bg-[#005B3C] text-white shadow-md hover:bg-[#00482f]' 
                                 : 'bg-gray-50/90 text-gray-700 hover:bg-emerald-50 hover:text-[#005B3C] hover:shadow-sm'
                         ]"
@@ -413,37 +489,37 @@ const handleRadioOptionSelect = (qId, optId, optText = null) => {
                         <div v-if="getSplitDotsText(opt.option_text).hasDots" class="inline-flex flex-wrap items-center justify-center gap-1.5 sm:gap-2 leading-relaxed">
                             <span v-if="getSplitDotsText(opt.option_text).before">{{ getSplitDotsText(opt.option_text).before }}</span>
                             <input 
-                                :type="question.type === 'radio_input' ? 'number' : 'text'"
-                                :value="getRadioInputVal(question.id, opt.id)"
-                                @input="setRadioInputVal(question.id, opt.id, $event.target.value, opt.option_text)"
-                                @click.stop="handleRadioOptionSelect(question.id, opt.id, opt.option_text)"
-                                @focus="handleRadioOptionSelect(question.id, opt.id, opt.option_text)"
-                                @keydown="question.type === 'radio_input' ? filterNumberInput($event) : null"
+                                :type="subpertanyaan.type === 'radio_input' ? 'number' : 'text'"
+                                :value="getRadioInputVal(subpertanyaan.id, opt.id)"
+                                @input="setRadioInputVal(subpertanyaan.id, opt.id, $event.target.value, opt.option_text)"
+                                @click.stop="handleRadioOptionSelect(subpertanyaan.id, opt.id, opt.option_text)"
+                                @focus="handleRadioOptionSelect(subpertanyaan.id, opt.id, opt.option_text)"
+                                @keydown="subpertanyaan.type === 'radio_input' ? filterNumberInput($event) : null"
                                 min="0"
                                 placeholder="..."
                                 class="w-14 sm:w-20 py-0.5 sm:py-1.5 px-1.5 sm:px-2 text-center font-black rounded-lg sm:rounded-xl text-xs sm:text-base font-mono shadow-xs focus:outline-none transition-all"
                                 :class="[
-                                    form.answers[question.id]?.selected === opt.option_text
+                                    form.answers[subpertanyaan.id]?.selected === opt.option_text
                                         ? 'bg-white text-gray-900 ring-2 ring-[#FFD700] shadow-sm'
                                         : 'bg-white text-gray-800 border border-gray-300 focus:ring-2 focus:ring-[#005B3C]'
                                 ]"
-                                :required="question.is_required && form.answers[question.id]?.selected === opt.option_text"
+                                :required="subpertanyaan.wajib && form.answers[subpertanyaan.id]?.selected === opt.option_text"
                             >
                             <span v-if="getSplitDotsText(opt.option_text).after">{{ getSplitDotsText(opt.option_text).after }}</span>
                         </div>
                         <span v-else>{{ opt.option_text }}</span>
 
                         <div 
-                            v-if="!getSplitDotsText(opt.option_text).hasDots && form.answers[question.id]?.selected === opt.option_text && (opt.option_text.toLowerCase().includes('lainnya') || opt.option_text.toLowerCase().includes('tuliskan') || opt.option_text.includes('...') || opt.option_text.includes('…'))" 
+                            v-if="!getSplitDotsText(opt.option_text).hasDots && form.answers[subpertanyaan.id]?.selected === opt.option_text && (opt.option_text.toLowerCase().includes('lainnya') || opt.option_text.toLowerCase().includes('tuliskan') || opt.option_text.includes('...') || opt.option_text.includes('…'))" 
                             class="w-full mt-2.5 sm:mt-4" 
                             @click.stop
                         >
                             <input 
-                                :type="question.type === 'radio_input' ? 'number' : 'text'"
-                                :value="getRadioInputVal(question.id, opt.id)"
-                                @input="setRadioInputVal(question.id, opt.id, $event.target.value, opt.option_text)"
-                                :placeholder="question.type === 'radio_input' ? 'Masukkan angka...' : 'Tuliskan di sini...'"
-                                @keydown="question.type === 'radio_input' ? filterNumberInput($event) : null"
+                                :type="subpertanyaan.type === 'radio_input' ? 'number' : 'text'"
+                                :value="getRadioInputVal(subpertanyaan.id, opt.id)"
+                                @input="setRadioInputVal(subpertanyaan.id, opt.id, $event.target.value, opt.option_text)"
+                                :placeholder="subpertanyaan.type === 'radio_input' ? 'Masukkan angka...' : 'Tuliskan di sini...'"
+                                @keydown="subpertanyaan.type === 'radio_input' ? filterNumberInput($event) : null"
                                 class="w-full rounded-lg sm:rounded-xl bg-white text-gray-900 placeholder-gray-400 p-2.5 sm:p-3.5 font-bold shadow-inner focus:ring-2 focus:ring-[#FFD700] text-center text-sm sm:text-base border-0"
                                 required
                             >
@@ -454,7 +530,7 @@ const handleRadioOptionSelect = (qId, optId, optText = null) => {
         </div>
 
         <!-- TIPE INPUT: Multiple Number (Take Home Pay Gaji F13) -->
-        <div v-else-if="question.type === 'multiple_number'" class="space-y-4 sm:space-y-6">
+        <div v-else-if="subpertanyaan.type === 'multiple_number'" class="space-y-4 sm:space-y-6">
             <div class="p-3 sm:p-4 rounded-xl sm:rounded-2xl bg-amber-50/80 border border-amber-200/80 text-amber-900 flex items-start gap-2.5 sm:gap-3 text-xs sm:text-sm">
                 <span class="text-base sm:text-lg">💡</span>
                 <div>
@@ -467,14 +543,14 @@ const handleRadioOptionSelect = (qId, optId, optText = null) => {
 
             <div class="grid grid-cols-1 gap-2.5 sm:gap-4">
                 <div 
-                    v-for="opt in question.options" 
+                    v-for="opt in (subpertanyaan.detils || subpertanyaan.options)" 
                     :key="opt.id"
                     class="flex flex-col sm:flex-row sm:items-center justify-between p-3.5 sm:p-5 bg-gray-50/90 rounded-xl sm:rounded-2xl gap-2 sm:gap-4 shadow-xs"
                 >
                     <div class="flex-1">
                         <div class="font-bold text-gray-800 text-sm sm:text-base">{{ opt.option_text }}</div>
-                        <div v-if="form.answers[question.id]?.[opt.code]" class="text-xs font-bold text-[#005B3C] mt-0.5">
-                            Terbaca: {{ getMultipleNumberItemPreview(form.answers[question.id]?.[opt.code]) }}
+                        <div v-if="form.answers[subpertanyaan.id]?.[opt.kode_opsi || opt.code]" class="text-xs font-bold text-[#005B3C] mt-0.5">
+                            Terbaca: {{ getMultipleNumberItemPreview(form.answers[subpertanyaan.id]?.[opt.kode_opsi || opt.code]) }}
                         </div>
                     </div>
                     <div class="w-full sm:w-72">
@@ -482,7 +558,7 @@ const handleRadioOptionSelect = (qId, optId, optText = null) => {
                             <span class="pl-3 pr-1 font-bold text-gray-400 select-none text-sm sm:text-base">Rp</span>
                             <input 
                                 type="number" 
-                                v-model="form.answers[question.id][opt.code]"
+                                v-model="form.answers[subpertanyaan.id][opt.kode_opsi || opt.code]"
                                 @keydown="filterNumberInput"
                                 min="0"
                                 placeholder="0"
@@ -498,13 +574,13 @@ const handleRadioOptionSelect = (qId, optId, optText = null) => {
             <div class="flex items-center justify-between p-3.5 sm:p-5 bg-emerald-50 rounded-xl sm:rounded-2xl border border-emerald-200/60 shadow-xs">
                 <div class="font-black text-[#005B3C] text-sm sm:text-base">Total Penghasilan (Take Home Pay):</div>
                 <div class="font-black text-[#005B3C] text-base sm:text-xl font-mono">
-                    {{ formatRupiah(getMultipleNumberTotal(question)) }}
+                    {{ formatRupiah(getMultipleNumberTotal(subpertanyaan)) }}
                 </div>
             </div>
         </div>
 
         <!-- TIPE INPUT: Matrix (Single scale per row, misal F2 Penekanan Metode Pembelajaran) -->
-        <div v-else-if="question.type === 'matrix'" class="space-y-4">
+        <div v-else-if="subpertanyaan.type === 'matrix'" class="space-y-4">
             <div class="overflow-x-auto rounded-2xl border border-gray-200 bg-white shadow-xs">
                 <table class="w-full text-xs sm:text-sm text-left border-collapse min-w-[600px]">
                     <thead class="bg-emerald-50/80 text-emerald-950 font-bold border-b border-gray-200">
@@ -540,10 +616,10 @@ const handleRadioOptionSelect = (qId, optId, optText = null) => {
                                 <label class="cursor-pointer block py-1">
                                     <input 
                                         type="radio" 
-                                        :name="'matrix_' + question.id + '_' + item.key" 
+                                        :name="'matrix_' + subpertanyaan.id + '_' + item.key" 
                                         :value="score"
-                                        :checked="form.answers[question.id]?.[item.key] == score"
-                                        @change="if (!form.answers[question.id] || typeof form.answers[question.id] !== 'object') form.answers[question.id] = {}; form.answers[question.id][item.key] = score"
+                                        :checked="form.answers[subpertanyaan.id]?.[item.key] == score"
+                                        @change="if (!form.answers[subpertanyaan.id] || typeof form.answers[subpertanyaan.id] !== 'object') form.answers[subpertanyaan.id] = {}; form.answers[subpertanyaan.id][item.key] = score"
                                         class="w-4 h-4 sm:w-5 sm:h-5 text-[#005B3C] focus:ring-[#005B3C] accent-[#005B3C]"
                                     >
                                 </label>
@@ -555,7 +631,7 @@ const handleRadioOptionSelect = (qId, optId, optText = null) => {
         </div>
 
         <!-- TIPE INPUT: Multiple Textbox (F18 Pertanyaan Studi Lanjut) -->
-        <div v-else-if="question.type === 'multiple_textbox'" class="space-y-3 sm:space-y-4">
+        <div v-else-if="subpertanyaan.type === 'multiple_textbox'" class="space-y-3 sm:space-y-4">
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 <div v-for="field in [
                     { key: 'F18A', label: 'Sumber Biaya' },
@@ -569,8 +645,8 @@ const handleRadioOptionSelect = (qId, optId, optText = null) => {
                     </label>
                     <input 
                         :type="field.type || 'text'"
-                        :value="form.answers[question.id]?.[field.key] || ''"
-                        @input="if (!form.answers[question.id] || typeof form.answers[question.id] !== 'object') form.answers[question.id] = {}; form.answers[question.id][field.key] = $event.target.value"
+                        :value="form.answers[subpertanyaan.id]?.[field.key] || ''"
+                        @input="if (!form.answers[subpertanyaan.id] || typeof form.answers[subpertanyaan.id] !== 'object') form.answers[subpertanyaan.id] = {}; form.answers[subpertanyaan.id][field.key] = $event.target.value"
                         :placeholder="'Masukkan ' + field.label.toLowerCase() + '...'"
                         class="w-full rounded-xl bg-white border border-gray-300 p-2.5 sm:p-3 text-sm focus:ring-2 focus:ring-[#005B3C] focus:border-transparent transition-all font-medium"
                     >

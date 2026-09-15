@@ -385,24 +385,24 @@ const statusYudisium = computed(() => {
                     <!-- Daftar Butir Soal & Jawaban (Card Putih Rapi & Bebas Hover Border) -->
                     <div class="p-6 space-y-4">
                         <div 
-                            v-for="q in section.questions" 
+                            v-for="q in (section.subpertanyaans || section.questions)" 
                             :key="q.id"
                             class="bg-white rounded-xl p-5 border border-gray-100 transition-all"
                         >
                             <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-2 mb-2">
                                 <div class="flex items-start gap-2.5">
                                     <span class="px-2.5 py-1 bg-gray-100 text-gray-700 font-mono text-xs font-bold rounded-lg shrink-0">
-                                        {{ q.code }}
+                                        {{ q.kode_pertanyaan || q.code }}
                                     </span>
                                     <h4 class="text-sm font-bold text-gray-900 leading-snug">
-                                        {{ q.question_text }}
+                                        {{ q.subpertanyaan || q.question_text }}
                                     </h4>
                                 </div>
 
                                 <!-- Label Wajib vs Opsional -->
                                 <div class="shrink-0">
                                     <span 
-                                        v-if="q.is_mandatory"
+                                        v-if="q.wajib ?? q.is_mandatory"
                                         class="px-2.5 py-0.5 bg-[#FDC700] text-black font-bold text-[10px] rounded-full uppercase tracking-wider"
                                     >
                                         Wajib

@@ -32,21 +32,25 @@ class DataAkademik extends Model
         'no_kk',
         'nisn',
         'no_bpjs',
-        'npwp',
+        'asal_sekolah',
+        'alamat_asal_sekolah',
+        'kota_kabupaten_asal_sekolah',
+        'provinsi_asal_sekolah',
+        'jurusan_asal_sekolah',
         'status_mahasiswa',
         'tahun_akademik_lulus',
         'tahun_lulus',
-        'ipk',
+        'ip_kumulatif',
         'total_sks',
         'total_angka_kualitas',
     ];
 
     /**
-     * Relasi ke model Alumni
+     * Relasi ke model Biodata
      */
-    public function alumni()
+    public function biodata()
     {
-        return $this->hasOne(Alumni::class, 'nim', 'nim');
+        return $this->hasOne(Biodata::class, 'nim', 'nim');
     }
 
     public function yudisium()

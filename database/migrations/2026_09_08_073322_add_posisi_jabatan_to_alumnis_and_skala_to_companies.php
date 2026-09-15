@@ -11,13 +11,19 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('alumnis', function (Blueprint $table) {
-            $table->string('posisi_jabatan')->nullable()->after('company_id');
-            $table->string('jenis_pekerjaan')->nullable()->after('posisi_jabatan');
+        Schema::table('biodatas', function (Blueprint $table) {
+            if (! Schema::hasColumn('biodatas', 'posisi_jabatan')) {
+                $table->string('posisi_jabatan')->nullable()->after('company_id');
+            }
+            if (! Schema::hasColumn('biodatas', 'jenis_pekerjaan')) {
+                $table->string('jenis_pekerjaan')->nullable()->after('posisi_jabatan');
+            }
         });
 
         Schema::table('companies', function (Blueprint $table) {
-            $table->string('skala')->nullable()->after('sektor');
+            if (! Schema::hasColumn('companies', 'skala')) {
+                $table->string('skala')->nullable()->after('sektor');
+            }
         });
     }
 
@@ -26,12 +32,16 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('alumnis', function (Blueprint $table) {
-            $table->dropColumn(['posisi_jabatan', 'jenis_pekerjaan']);
+        Schema::table('biodatas', function (Blueprint $table) {
+            if (Schema::hasColumn('biodatas', 'posisi_jabatan')) {
+                $table->dropColumn(['posisi_jabatan', 'jenis_pekerjaan']);
+            }
         });
 
         Schema::table('companies', function (Blueprint $table) {
-            $table->dropColumn(['skala']);
+            if (Schema::hasColumn('companies', 'skala')) {
+                $table->dropColumn(['skala']);
+            }
         });
     }
 };

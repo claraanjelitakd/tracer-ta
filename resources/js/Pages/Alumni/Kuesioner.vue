@@ -70,7 +70,8 @@ const getInitialAnswers = () => {
     // Normalisasi struktur radio_input & multiple_number
     if (props.questionnaire?.sections) {
         props.questionnaire.sections.forEach(sec => {
-            sec.questions?.forEach(q => {
+            (sec.subpertanyaans || sec.questions)?.forEach(q => {
+                const options = q.detils || q.options;
                 if (['radio_input', 'radio_text'].includes(q.type)) {
                     if (!base[q.id] || typeof base[q.id] !== 'object') {
                         base[q.id] = { selected: '', input: '', inputs: {} };
@@ -78,14 +79,14 @@ const getInitialAnswers = () => {
                         if (!base[q.id].inputs || typeof base[q.id].inputs !== 'object') {
                             base[q.id].inputs = {};
                         }
-                        if (base[q.id].selected && base[q.id].input !== undefined && q.options) {
-                            const matchedOpt = q.options.find(o => o.option_text === base[q.id].selected);
+                        if (base[q.id].selected && base[q.id].input !== undefined && options) {
+                            const matchedOpt = options.find(o => o.option_text === base[q.id].selected);
                             if (matchedOpt && !base[q.id].inputs[matchedOpt.id]) {
                                 base[q.id].inputs[matchedOpt.id] = base[q.id].input;
                             }
                         }
-                        if (q.options) {
-                            q.options.forEach(o => {
+                        if (options) {
+                            options.forEach(o => {
                                 if (base[q.id].inputs[o.id] === undefined) {
                                     base[q.id].inputs[o.id] = '';
                                 }
@@ -98,15 +99,16 @@ const getInitialAnswers = () => {
                     if (!base[q.id] || typeof base[q.id] !== 'object') {
                         base[q.id] = {};
                     }
-                    if (q.options) {
-                        q.options.forEach(o => {
-                            const val = base[q.id][o.code];
+                    if (options) {
+                        options.forEach(o => {
+                            const optCode = o.kode_opsi || o.code;
+                            const val = base[q.id][optCode];
                             if (val !== undefined && val !== null && val !== '' && !isNaN(val)) {
                                 const num = parseInt(val, 10);
-                                base[q.id][o.code] = (num >= 1000 && num % 1000 === 0) ? (num / 1000) : num;
+                                base[q.id][optCode] = (num >= 1000 && num % 1000 === 0) ? (num / 1000) : num;
                             } else {
-                                if (base[q.id][o.code] === undefined) {
-                                    base[q.id][o.code] = '';
+                                if (base[q.id][optCode] === undefined) {
+                                    base[q.id][optCode] = '';
                                 }
                             }
                         });
@@ -168,28 +170,34 @@ const currentSection = computed(() => {
 
 // Deteksi khusus Section F2 (Penekanan Metode Pembelajaran)
 const isF2Section = computed(() => {
-    return currentSection.value?.questions?.some(q => q.code === 'F2' || (q.code && q.code.startsWith('F21'))) || false;
+    const list = currentSection.value?.subpertanyaans || currentSection.value?.questions;
+    return list?.some(q => (q.kode_pertanyaan || q.code) === 'F2' || ((q.kode_pertanyaan || q.code) && (q.kode_pertanyaan || q.code).startsWith('F21'))) || false;
 });
 
 const f2HeaderQuestion = computed(() => {
-    return currentSection.value?.questions?.find(q => q.code === 'F2') || null;
+    const list = currentSection.value?.subpertanyaans || currentSection.value?.questions;
+    return list?.find(q => (q.kode_pertanyaan || q.code) === 'F2') || null;
 });
 
 const f2QuestionsList = computed(() => {
-    return currentSection.value?.questions?.filter(q => q.code !== 'F2' && q.type !== 'header') || [];
+    const list = currentSection.value?.subpertanyaans || currentSection.value?.questions;
+    return list?.filter(q => (q.kode_pertanyaan || q.code) !== 'F2' && q.type !== 'header') || [];
 });
 
 // Deteksi khusus Section F17 (Evaluasi Kompetensi Dual Matrix A vs B)
 const isF17Section = computed(() => {
-    return currentSection.value?.questions?.some(q => 
-        q.code === 'F17' || 
-        (q.code && (q.code.toLowerCase().startsWith('f17a') || q.code.toLowerCase().startsWith('f17b') || q.code.startsWith('F17-'))) || 
-        q.type === 'matrix_dual'
-    ) || false;
+    const list = currentSection.value?.subpertanyaans || currentSection.value?.questions;
+    return list?.some(q => {
+        const c = q.kode_pertanyaan || q.code;
+        return c === 'F17' || 
+            (c && (c.toLowerCase().startsWith('f17a') || c.toLowerCase().startsWith('f17b') || c.startsWith('F17-'))) || 
+            q.type === 'matrix_dual';
+    }) || false;
 });
 
 const f17Question = computed(() => {
-    return currentSection.value?.questions?.find(q => q.code === 'F17' || q.type === 'matrix_dual') || null;
+    const list = currentSection.value?.subpertanyaans || currentSection.value?.questions;
+    return list?.find(q => (q.kode_pertanyaan || q.code) === 'F17' || q.type === 'matrix_dual') || null;
 });
 
 // Helper pembersih nama aspek kompetensi
@@ -202,8 +210,9 @@ const getCleanAspectName = (text) => {
 
 // Pasangan pertanyaan F17 berdampingan (A: Kompetensi yang dikuasai vs B: Kebutuhan saat ini)
 const f17AspectPairs = computed(() => {
-    if (!isF17Section.value || !currentSection.value?.questions) return [];
-    const questions = currentSection.value.questions.filter(q => q.code !== 'F17' && q.type !== 'header');
+    if (!isF17Section.value || !currentSection.value) return [];
+    const list = currentSection.value.subpertanyaans || currentSection.value.questions || [];
+    const questions = list.filter(q => (q.kode_pertanyaan || q.code) !== 'F17' && q.type !== 'header');
     const pairs = [];
 
     for (let i = 0; i < questions.length; i += 2) {
@@ -213,7 +222,7 @@ const f17AspectPairs = computed(() => {
 
         pairs.push({
             aspectNumber: Math.floor(i / 2) + 1,
-            aspectName: getCleanAspectName(qA.question_text),
+            aspectName: getCleanAspectName(qA.subpertanyaan || qA.question_text),
             qA,
             qB,
         });
@@ -234,30 +243,33 @@ const f17CompletedCount = computed(() => {
 
 // Kelompokkan pertanyaan dalam section: buat berpasangan kanan-kiri khusus F6/F7 dan F18
 const groupedQuestions = computed(() => {
-    if (!currentSection.value?.questions) return [];
-    const questions = currentSection.value.questions;
+    const list = currentSection.value?.subpertanyaans || currentSection.value?.questions;
+    if (!list) return [];
+    const questions = list;
     const groups = [];
     let i = 0;
 
     while (i < questions.length) {
         const q = questions[i];
         const nextQ = questions[i + 1];
+        const qCode = q.kode_pertanyaan || q.code;
+        const nextQCode = nextQ ? (nextQ.kode_pertanyaan || nextQ.code) : '';
 
         // Khusus F6 dan F7: buat berdampingan kanan-kiri (grid 2 kolom)
-        if (q.code === 'F6' && nextQ && nextQ.code === 'F7') {
+        if (qCode === 'F6' && nextQ && nextQCode === 'F7') {
             groups.push({
                 type: 'pair',
                 items: [q, nextQ]
             });
             i += 2;
-        } else if (q.code === 'F18a' && nextQ && nextQ.code === 'F18b') {
+        } else if (qCode === 'F18a' && nextQ && nextQCode === 'F18b') {
             // Pasangan Studi Lanjut F18A dan F18B
             groups.push({
                 type: 'pair',
                 items: [q, nextQ]
             });
             i += 2;
-        } else if (q.code === 'F18c' && nextQ && nextQ.code === 'F18d') {
+        } else if (qCode === 'F18c' && nextQ && nextQCode === 'F18d') {
             // Pasangan Studi Lanjut F18C dan F18D
             groups.push({
                 type: 'pair',
@@ -279,8 +291,8 @@ const groupedQuestions = computed(() => {
 const questionOptionMap = computed(() => {
     const map = {};
     props.questionnaire?.sections?.forEach(sec => {
-        sec.questions?.forEach(q => {
-            q.options?.forEach(opt => {
+        (sec.subpertanyaans || sec.questions)?.forEach(q => {
+            (q.detils || q.options)?.forEach(opt => {
                 if (opt.jump_to) {
                     map[q.id + '_' + opt.option_text] = opt.jump_to;
                 }
@@ -298,25 +310,27 @@ const isQuestionVisible = (qId) => {
     let currentQ = null;
     let f504Q = null;
     for (const s of props.questionnaire.sections) {
-        for (const q of s.questions || []) {
+        for (const q of (s.subpertanyaans || s.questions || [])) {
             if (q.id === qId) currentQ = q;
-            if (q.code === 'F504') f504Q = q;
+            if ((q.kode_pertanyaan || q.code) === 'F504') f504Q = q;
         }
     }
 
     if (currentQ && f504Q) {
-        if (['F502', 'F505', 'F505A'].includes(currentQ.code)) {
+        const curCode = currentQ.kode_pertanyaan || currentQ.code;
+        if (['F502', 'F505', 'F505A'].includes(curCode)) {
             const ansF504 = form.answers[f504Q.id];
             if (ansF504 !== 'Ya' && ansF504 !== '1') return false;
-        } else if (currentQ.code === 'F506') {
+        } else if (curCode === 'F506') {
             const ansF504 = form.answers[f504Q.id];
             if (ansF504 !== 'Tidak' && ansF504 !== '2') return false;
         }
     }
 
     for (const sec of props.questionnaire.sections) {
-        if (!sec.questions) continue;
-        for (const q of sec.questions) {
+        const questions = sec.subpertanyaans || sec.questions;
+        if (!questions) continue;
+        for (const q of questions) {
             if (q.id === qId) return true;
 
             const selectedAnswer = form.answers[q.id];
@@ -335,13 +349,13 @@ const isQuestionVisible = (qId) => {
                     let scanning = false;
 
                     for (const s of props.questionnaire.sections) {
-                        for (const targetQ of s.questions || []) {
+                        for (const targetQ of (s.subpertanyaans || s.questions || [])) {
                             if (targetQ.id === q.id) {
                                 scanning = true;
                                 continue;
                             }
                             if (scanning) {
-                                if (targetQ.code === jumpTarget) {
+                                if ((targetQ.kode_pertanyaan || targetQ.code) === jumpTarget) {
                                     foundTarget = true;
                                     break;
                                 }
@@ -364,8 +378,9 @@ const isQuestionVisible = (qId) => {
 
 // Menentukan apakah suatu section terlihat (memiliki setidaknya satu pertanyaan yang terlihat)
 const isSectionVisible = (section) => {
-    if (!section || !section.questions || section.questions.length === 0) return true;
-    return section.questions.some(q => isQuestionVisible(q.id));
+    const list = section?.subpertanyaans || section?.questions;
+    if (!section || !list || list.length === 0) return true;
+    return list.some(q => isQuestionVisible(q.id));
 };
 
 // Menentukan apakah section saat ini adalah section terlihat terakhir
@@ -384,8 +399,9 @@ const isLastVisibleSection = computed(() => {
 const getMultipleNumberTotal = (q) => {
     if (!form.answers[q.id] || typeof form.answers[q.id] !== 'object') return 0;
     let total = 0;
-    q.options?.forEach(opt => {
-        const val = form.answers[q.id][opt.code];
+    (q.detils || q.options)?.forEach(opt => {
+        const optCode = opt.kode_opsi || opt.code;
+        const val = form.answers[q.id][optCode];
         if (val !== null && val !== '' && !isNaN(val)) {
             const num = parseInt(val, 10);
             if (num > 0) {
@@ -408,7 +424,8 @@ const isQuestionAnswered = (q) => {
     if (!q) return true;
     if (q.type === 'header') return true;
     if (!isQuestionVisible(q.id)) return true;
-    if (!q.is_required) return true;
+    const isReq = q.wajib ?? q.is_required;
+    if (!isReq) return true;
 
     const ans = form.answers[q.id];
 
@@ -460,7 +477,8 @@ const isQuestionAnswered = (q) => {
             if (!ans || typeof ans !== 'object' || !ans.selected) return false;
             const sel = ans.selected;
             if (sel.includes('...') || sel.includes('…') || sel.toLowerCase().includes('lainnya')) {
-                const matchedOpt = q.options?.find(o => o.option_text === sel);
+                const options = q.detils || q.options;
+                const matchedOpt = options?.find(o => o.option_text === sel);
                 const inputVal = matchedOpt ? getRadioInputVal(q.id, matchedOpt.id) : (ans.input || '');
                 return inputVal !== undefined && inputVal !== null && inputVal.toString().trim() !== '';
             }
@@ -478,22 +496,26 @@ const isQuestionAnswered = (q) => {
 
 // Memeriksa apakah seluruh pertanyaan wajib di suatu section sudah terjawab
 const isSectionAnswered = (section) => {
-    if (!section || !section.questions || section.questions.length === 0) return true;
+    const questions = section?.subpertanyaans || section?.questions;
+    if (!section || !questions || questions.length === 0) return true;
 
-    const isF2 = section.questions.some(q => q.code === 'F2' || (q.code && q.code.startsWith('F21')));
+    const isF2 = questions.some(q => (q.kode_pertanyaan || q.code) === 'F2' || ((q.kode_pertanyaan || q.code) && (q.kode_pertanyaan || q.code).startsWith('F21')));
     if (isF2) {
         return f2QuestionsList.value.length > 0 && f2QuestionsList.value.every(q => isQuestionAnswered(q));
     }
 
-    const isF17 = section.questions.some(q => q.code === 'F17' || (q.code && (q.code.toLowerCase().startsWith('f17a') || q.code.toLowerCase().startsWith('f17b') || q.code.startsWith('F17-'))));
+    const isF17 = questions.some(q => {
+        const c = q.kode_pertanyaan || q.code;
+        return c === 'F17' || (c && (c.toLowerCase().startsWith('f17a') || c.toLowerCase().startsWith('f17b') || c.startsWith('F17-')));
+    });
     if (isF17) {
         return f17AspectPairs.value.length > 0 && f17CompletedCount.value === f17AspectPairs.value.length;
     }
 
-    const visibleQuestions = section.questions.filter(q => q.type !== 'header' && isQuestionVisible(q.id));
+    const visibleQuestions = questions.filter(q => q.type !== 'header' && isQuestionVisible(q.id));
     if (visibleQuestions.length === 0) return true;
 
-    const requiredQuestions = visibleQuestions.filter(q => q.is_required);
+    const requiredQuestions = visibleQuestions.filter(q => (q.wajib ?? q.is_required));
     if (requiredQuestions.length > 0) {
         return requiredQuestions.every(q => isQuestionAnswered(q));
     }
@@ -707,7 +729,7 @@ watch(() => form.answers, (newAnswers) => {
                                 <KartuPertanyaan 
                                     v-for="q in group.items"
                                     :key="q.id"
-                                    :question="q"
+                                    :subpertanyaan="q"
                                     :form="form"
                                     :is-visible="isQuestionVisible(q.id)"
                                     :is-paired="true"
@@ -719,7 +741,7 @@ watch(() => form.answers, (newAnswers) => {
                                 <KartuPertanyaan 
                                     v-for="q in group.items"
                                     :key="q.id"
-                                    :question="q"
+                                    :subpertanyaan="q"
                                     :form="form"
                                     :is-visible="isQuestionVisible(q.id)"
                                     :is-paired="false"

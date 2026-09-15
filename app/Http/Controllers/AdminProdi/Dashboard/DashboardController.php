@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\AdminProdi\Dashboard;
 
 use App\Http\Controllers\Controller;
-use App\Models\Alumni;
+use App\Models\Biodata;
 use App\Models\ProdiQuestion;
 use App\Models\ProdiQuestionSection;
 use App\Models\ProdiResponse;
@@ -30,7 +30,7 @@ class DashboardController extends Controller
         $prodiId = $user->prodi_id;
 
         // Hitung total alumni di program studi ini
-        $totalAlumni = $prodiId ? Alumni::where('prodi_id', $prodiId)->count() : 0;
+        $totalAlumni = $prodiId ? Biodata::where('prodi_id', $prodiId)->count() : 0;
 
         // Hitung total section dan pertanyaan khusus prodi ini
         $totalSections = $prodiId ? ProdiQuestionSection::where('prodi_id', $prodiId)->count() : 0;
@@ -42,12 +42,12 @@ class DashboardController extends Controller
         $totalRespondenProdi = 0;
         if ($prodiQuestionIds->isNotEmpty()) {
             $totalRespondenProdi = ProdiResponse::whereIn('prodi_question_id', $prodiQuestionIds)
-                ->distinct('alumni_id')
-                ->count('alumni_id');
+                ->distinct('biodata_id')
+                ->count('biodata_id');
         }
 
         // Hitung alumni prodi yang sudah menyelesaikan kuesioner universitas
-        $alumnis = $prodiId ? Alumni::where('prodi_id', $prodiId)->with(['user', 'dataAkademik'])->get() : collect();
+        $alumnis = $prodiId ? Biodata::where('prodi_id', $prodiId)->with(['user', 'dataAkademik', 'yudisium'])->get() : collect();
         $totalUnivSelesai = 0;
         foreach ($alumnis as $a) {
             $eval = KelengkapanTracerService::evaluasiKelengkapanTotal($a);
@@ -62,15 +62,15 @@ class DashboardController extends Controller
         // Ringkasan 5 alumni terbaru untuk tabel cepat di dashboard
         $recentAlumnis = $alumnis->take(5)->map(function ($alumni) use ($prodiQuestionIds, $totalPertanyaan) {
             $eval = KelengkapanTracerService::evaluasiKelengkapanTotal($alumni);
-            $prodiAnswers = ProdiResponse::where('alumni_id', $alumni->id)
+            $prodiAnswers = ProdiResponse::where('biodata_id', $alumni->id)
                 ->whereIn('prodi_question_id', $prodiQuestionIds)
                 ->count();
 
             return [
                 'id' => $alumni->id,
                 'nim' => $alumni->nim,
-                'nama' => $alumni->dataAkademik->nama ?? $alumni->user->name ?? '-',
-                'tahun_lulus' => $alumni->dataAkademik->tahun_akademik_lulus ?? $alumni->dataAkademik->tahun_lulus ?? '-',
+                'nama' => $alumni->nama ?? $alumni->dataAkademik?->nama ?? $alumni->user?->name ?? '-',
+                'tahun_lulus' => $alumni->tahun_lulus ?? $alumni->yudisium?->tahun_lulus ?? $alumni->dataAkademik?->tahun_akademik_lulus ?? '-',
                 'is_univ_complete' => $eval['questionnaire']['is_complete'] ?? false,
                 'is_prodi_complete' => ($totalPertanyaan > 0 && $prodiAnswers >= $totalPertanyaan),
             ];

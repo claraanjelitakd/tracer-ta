@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('tracers', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('alumni_id')->constrained('alumnis')->cascadeOnDelete();
+            $table->foreignId('biodata_id')->constrained('biodatas')->cascadeOnDelete();
             $table->foreignId('question_id')->nullable()->constrained('ref_subpertanyaan2021')->cascadeOnDelete();
             $table->string('nim', 20); // Ref NIM dari biodata / data akademik alumni
             $table->char('kelompok', 3); // Ref kode kelompok induk (F2, F17, F5, F18, BIO, dll)
@@ -25,7 +25,7 @@ return new class extends Migration
             $table->string('tahun_lulus', 10)->nullable(); // Tahun kelulusan dari data akademik
             $table->timestamps();
 
-            $table->index(['alumni_id', 'kode_pertanyaan']);
+            $table->index(['biodata_id', 'kode_pertanyaan']);
             $table->index('nim');
             $table->index('kelompok');
         });

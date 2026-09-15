@@ -50,13 +50,13 @@ return new class extends Migration
         // 4. Tabel Respon / Jawaban Alumni Khusus Kuesioner Program Studi
         Schema::create('prodi_responses', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('alumni_id')->constrained('alumnis')->cascadeOnDelete();
+            $table->foreignId('biodata_id')->constrained('biodatas')->cascadeOnDelete();
             $table->foreignId('prodi_question_id')->constrained('prodi_questions')->cascadeOnDelete();
             $table->text('answer_text')->nullable();
             $table->json('answer_json')->nullable();
             $table->timestamps();
 
-            $table->unique(['alumni_id', 'prodi_question_id']);
+            $table->unique(['biodata_id', 'prodi_question_id']);
         });
     }
 

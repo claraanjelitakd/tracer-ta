@@ -28,8 +28,13 @@ class QuestionMapping extends Model
         return $this->attributes['kode_pertanyaan'] ?? null;
     }
 
+    public function subpertanyaan()
+    {
+        return $this->belongsTo(RefSubpertanyaan2021::class, 'question_id');
+    }
+
     public function question()
     {
-        return $this->belongsTo(Question::class, 'question_id');
+        return $this->subpertanyaan();
     }
 }

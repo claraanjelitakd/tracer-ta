@@ -3,13 +3,13 @@
 namespace App\Http\Controllers\AdminProdi\KelolaAlumni;
 
 use App\Http\Controllers\Controller;
-use App\Models\Alumni;
+use App\Models\Biodata;
 use App\Models\DataAkademik;
+use App\Models\Kuesioner;
 use App\Models\ProdiQuestion;
 use App\Models\ProdiQuestionSection;
 use App\Models\ProdiResponse;
-use App\Models\Questionnaire;
-use App\Models\Response as UnivResponse;
+use App\Models\Tracer;
 use App\Services\Kuesioner\KelengkapanTracerService;
 use App\Services\Kuesioner\KuesionerSyncService;
 use Illuminate\Http\Request;
@@ -43,7 +43,7 @@ class DaftarAlumniProdiController extends Controller
         $statusProdiTerpilih = $request->input('status_prodi', 'all');
 
         // 1. Ambil daftar tahun akademik lulus unik untuk prodi ini
-        $rawTahunAkademik = DataAkademik::whereHas('alumni', function ($q) use ($prodiId) {
+        $rawTahunAkademik = DataAkademik::whereHas('biodata', function ($q) use ($prodiId) {
             $q->where('prodi_id', $prodiId);
         })
             ->whereNotNull('tahun_akademik_lulus')
@@ -60,9 +60,10 @@ class DaftarAlumniProdiController extends Controller
         })->unique()->sortDesc()->values()->all();
 
         // 2. Kueri data alumni khusus prodi ini
-        $query = Alumni::where('prodi_id', $prodiId)
+        $query = Biodata::where('prodi_id', $prodiId)
             ->with([
                 'dataAkademik.yudisium',
+                'yudisium',
                 'user',
             ]);
 
@@ -70,6 +71,7 @@ class DaftarAlumniProdiController extends Controller
         if ($pencarian) {
             $query->where(function ($w) use ($pencarian) {
                 $w->where('nim', 'like', "%{$pencarian}%")
+                    ->orWhere('nama', 'like', "%{$pencarian}%")
                     ->orWhereHas('dataAkademik', function ($q) use ($pencarian) {
                         $q->where('nama', 'like', "%{$pencarian}%")
                             ->orWhere('nim', 'like', "%{$pencarian}%");
@@ -83,9 +85,12 @@ class DaftarAlumniProdiController extends Controller
 
         // Filter Tahun Kelulusan
         if ($tahunTerpilih && $tahunTerpilih !== 'all') {
-            $query->whereHas('dataAkademik', function ($q) use ($tahunTerpilih) {
-                $q->where('tahun_akademik_lulus', 'like', "%{$tahunTerpilih}%")
-                    ->orWhere('tahun_lulus', 'like', "%{$tahunTerpilih}%");
+            $query->where(function ($q) use ($tahunTerpilih) {
+                $q->where('tahun_lulus', 'like', "%{$tahunTerpilih}%")
+                    ->orWhereHas('dataAkademik', function ($qa) use ($tahunTerpilih) {
+                        $qa->where('tahun_akademik_lulus', 'like', "%{$tahunTerpilih}%")
+                            ->orWhere('tahun_lulus', 'like', "%{$tahunTerpilih}%");
+                    });
             });
         }
 
@@ -119,7 +124,7 @@ class DaftarAlumniProdiController extends Controller
             // Evaluasi Kuesioner Prodi
             $prodiAnswersCount = 0;
             if ($totalProdiQuestions > 0) {
-                $prodiAnswersCount = ProdiResponse::where('alumni_id', $alumni->id)
+                $prodiAnswersCount = ProdiResponse::where('biodata_id', $alumni->id)
                     ->whereIn('prodi_question_id', $prodiQuestionIds)
                     ->count();
             }
@@ -134,11 +139,11 @@ class DaftarAlumniProdiController extends Controller
             return [
                 'id' => $alumni->id,
                 'nim' => $alumni->nim,
-                'nama' => $akademik->nama ?? $alumni->user->name ?? 'Belum ada nama',
-                'email' => $akademik->email_pribadi ?? $alumni->user->email ?? '-',
-                'nomor_telepon' => $akademik->nomor_telepon ?? '-',
-                'tahun_lulus' => $akademik->tahun_akademik_lulus ?? $akademik->tahun_lulus ?? '-',
-                'ipk' => $akademik->ipk ?? '-',
+                'nama' => $alumni->nama ?? $akademik?->nama ?? $alumni->user?->name ?? 'Belum ada nama',
+                'email' => $alumni->email_pribadi ?? $alumni->email ?? $akademik?->email_pribadi ?? $alumni->user?->email ?? '-',
+                'nomor_telepon' => $alumni->nomor_telepon ?? $akademik?->nomor_telepon ?? '-',
+                'tahun_lulus' => $alumni->tahun_lulus ?? $alumni->yudisium?->tahun_lulus ?? $akademik?->tahun_akademik_lulus ?? $akademik?->tahun_lulus ?? '-',
+                'ipk' => $akademik?->ip_kumulatif ?? '-',
                 'is_univ_complete' => $isUnivComplete,
                 'univ_percentage' => $univPercentage,
                 'is_prodi_complete' => $isProdiComplete,
@@ -197,9 +202,11 @@ class DaftarAlumniProdiController extends Controller
             abort(403, 'Akun Anda belum dikaitkan dengan Program Studi.');
         }
 
-        $alumni = Alumni::with([
+        $alumni = Biodata::with([
             'dataAkademik.yudisium',
             'dataAkademik.orangTua',
+            'yudisium',
+            'orangTua',
             'company.province',
             'company.kabupaten',
             'atasan',
@@ -216,16 +223,16 @@ class DaftarAlumniProdiController extends Controller
         $evaluasi = KelengkapanTracerService::evaluasiKelengkapanTotal($alumni);
 
         // 1. Kuesioner Universitas (Tracer Study)
-        $savedUnivResponses = UnivResponse::where('alumni_id', $alumni->id)
+        $savedUnivResponses = Tracer::where('biodata_id', $alumni->id)
             ->get()
             ->keyBy('question_id');
 
-        $kuesionerUniv = Questionnaire::where('is_active', true)
+        $kuesionerUniv = Kuesioner::where('is_active', true)
             ->with(['sections' => function ($secQuery) {
                 $secQuery->orderBy('order', 'asc')
-                    ->with(['questions' => function ($qQuery) {
+                    ->with(['subpertanyaans' => function ($qQuery) {
                         $qQuery->orderBy('order', 'asc')
-                            ->with('options');
+                            ->with('detils');
                     }]);
             }])
             ->first();
@@ -233,11 +240,11 @@ class DaftarAlumniProdiController extends Controller
         $univSectionsWithAnswers = [];
         if ($kuesionerUniv) {
             foreach ($kuesionerUniv->sections as $section) {
-                $questionsList = [];
+                $subpertanyaansList = [];
 
-                foreach ($section->questions as $question) {
-                    $resp = $savedUnivResponses->get($question->id);
-                    $isMandatory = KelengkapanTracerService::isMandatoryQuestion($question->code);
+                foreach ($section->subpertanyaans as $subpertanyaan) {
+                    $resp = $savedUnivResponses->get($subpertanyaan->id);
+                    $isMandatory = KelengkapanTracerService::isMandatoryQuestion($subpertanyaan->kode_pertanyaan);
 
                     $hasAnswer = false;
                     $displayAnswer = null;
@@ -252,32 +259,32 @@ class DaftarAlumniProdiController extends Controller
                         }
                     }
 
-                    $questionsList[] = [
-                        'id' => $question->id,
-                        'code' => $question->code,
-                        'question_text' => $question->question_text,
-                        'type' => $question->type,
+                    $subpertanyaansList[] = [
+                        'id' => $subpertanyaan->id,
+                        'kode_pertanyaan' => $subpertanyaan->kode_pertanyaan,
+                        'subpertanyaan' => $subpertanyaan->subpertanyaan,
+                        'type' => $subpertanyaan->type,
                         'is_mandatory' => $isMandatory,
                         'is_answered' => $hasAnswer,
                         'answer_text' => $displayAnswer,
-                        'options' => $question->options->map(function ($opt) {
+                        'options' => $subpertanyaan->detils->map(function ($opt) {
                             return [
-                                'code' => $opt->code,
+                                'code' => $opt->kode_opsi ?? $opt->code,
                                 'text' => $opt->option_text,
                             ];
                         }),
                     ];
                 }
 
-                $unansweredCount = count(array_filter($questionsList, function ($item) {
+                $unansweredCount = count(array_filter($subpertanyaansList, function ($item) {
                     return $item['is_mandatory'] && ! $item['is_answered'];
                 }));
 
                 $univSectionsWithAnswers[] = [
                     'id' => $section->id,
-                    'title' => $section->title,
+                    'title' => $section->title ?? $section->section,
                     'order' => $section->order,
-                    'questions' => $questionsList,
+                    'subpertanyaans' => $subpertanyaansList,
                     'unanswered_mandatory_count' => $unansweredCount,
                 ];
             }
@@ -291,7 +298,7 @@ class DaftarAlumniProdiController extends Controller
             ->orderBy('order', 'asc')
             ->get();
 
-        $savedProdiResponses = ProdiResponse::where('alumni_id', $alumni->id)
+        $savedProdiResponses = ProdiResponse::where('biodata_id', $alumni->id)
             ->get()
             ->keyBy('prodi_question_id');
 
@@ -367,43 +374,45 @@ class DaftarAlumniProdiController extends Controller
 
         // 3. Data Form Profil Lengkap
         $dataAkademik = $alumni->dataAkademik;
-        $orangTua = $dataAkademik?->orangTua;
-        $yudisium = $dataAkademik?->yudisium;
+        $orangTua = $alumni->orangTua ?? $dataAkademik?->orangTua;
+        $yudisium = $alumni->yudisium ?? $dataAkademik?->yudisium;
         $atasan = $alumni->atasan;
 
         $formData = [
             // Identitas Pribadi
             'nim' => $alumni->nim ?? '',
-            'nama' => $dataAkademik?->nama ?? $alumni->user?->name ?? '',
+            'nama' => $alumni->nama ?? $dataAkademik?->nama ?? $alumni->user?->name ?? '',
             'tempat_lahir' => $dataAkademik?->tempat_lahir ?? '',
             'tanggal_lahir' => $dataAkademik?->tanggal_lahir ?? '',
-            'agama' => $dataAkademik?->agama ?? '',
+            'agama' => $alumni->agama ?? $dataAkademik?->agama ?? '',
             'jenis_kelamin' => $dataAkademik?->jenis_kelamin ?? '',
             'golongan_darah' => $dataAkademik?->golongan_darah ?? '',
             'warga_negara' => $dataAkademik?->warga_negara ?? 'WNI',
-            'nik' => $dataAkademik?->nik ?? '',
-            'no_kk' => $dataAkademik?->no_kk ?? '',
+            'nik' => $alumni->nik ?? $dataAkademik?->nik ?? '',
+            'no_kk' => $alumni->no_kk ?? $dataAkademik?->no_kk ?? '',
             'nisn' => $dataAkademik?->nisn ?? '',
-            'no_bpjs' => $dataAkademik?->no_bpjs ?? '',
-            'npwp' => $dataAkademik?->npwp ?? '',
+            'no_bpjs' => $alumni->no_bpjs ?? $dataAkademik?->no_bpjs ?? '',
+            'npwp' => $alumni->npwp ?? '',
 
             // Kontak & Alamat Pribadi
-            'alamat_saat_ini' => $dataAkademik?->alamat_saat_ini ?? '',
-            'kelurahan' => $dataAkademik?->kelurahan ?? '',
-            'kecamatan' => $dataAkademik?->kecamatan ?? '',
-            'kabupaten_id' => $dataAkademik?->kabupaten_id ?? '',
-            'provinsi_id' => $dataAkademik?->provinsi_id ?? '',
-            'kode_pos' => $dataAkademik?->kode_pos ?? '',
-            'nomor_telepon' => $dataAkademik?->nomor_telepon ?? '',
-            'email_pribadi' => $dataAkademik?->email_pribadi ?? '',
+            'alamat_saat_ini' => $alumni->alamat ?? $dataAkademik?->alamat_saat_ini ?? '',
+            'alamat' => $alumni->alamat ?? $dataAkademik?->alamat_saat_ini ?? '',
+            'kelurahan' => $alumni->kelurahan ?? $dataAkademik?->kelurahan ?? '',
+            'kecamatan' => $alumni->kecamatan ?? $dataAkademik?->kecamatan ?? '',
+            'kabupaten_id' => $alumni->kabupaten_id ?? $dataAkademik?->kabupaten_id ?? '',
+            'provinsi_id' => $alumni->provinsi_id ?? $dataAkademik?->provinsi_id ?? '',
+            'kode_pos' => $alumni->kode_pos ?? $dataAkademik?->kode_pos ?? '',
+            'nomor_telepon' => $alumni->nomor_telepon ?? $dataAkademik?->nomor_telepon ?? '',
+            'email_pribadi' => $alumni->email_pribadi ?? $alumni->email ?? $dataAkademik?->email_pribadi ?? '',
             'email_students' => $dataAkademik?->email_students ?? '',
 
             // Data Akademik Utama
             'angkatan_masuk' => $dataAkademik?->angkatan_masuk ?? '',
-            'status_mahasiswa' => $dataAkademik?->status_mahasiswa ?? 'Lulus',
-            'tahun_akademik_lulus' => $dataAkademik?->tahun_akademik_lulus ?? '',
-            'tahun_lulus' => $dataAkademik?->tahun_lulus ?? '',
-            'ipk' => $dataAkademik?->ipk ?? '',
+            'status_mahasiswa' => $dataAkademik?->status_mahasiswa ?? 'AR',
+            'tahun_akademik_lulus' => $yudisium?->tahun_akademik_lulus ?? $dataAkademik?->tahun_akademik_lulus ?? '',
+            'tahun_lulus' => $alumni->tahun_lulus ?? $yudisium?->tahun_lulus ?? $dataAkademik?->tahun_lulus ?? '',
+            'ipk' => $dataAkademik?->ip_kumulatif ?? '',
+            'ip_kumulatif' => $dataAkademik?->ip_kumulatif ?? '',
             'total_sks' => $dataAkademik?->total_sks ?? '',
             'total_angka_kualitas' => $dataAkademik?->total_angka_kualitas ?? '',
 
@@ -456,6 +465,7 @@ class DaftarAlumniProdiController extends Controller
         return Inertia::render('AdminProdi/Alumni/Show', [
             'user' => $user,
             'prodi' => $prodi,
+            'biodata' => $alumni,
             'alumni' => $alumni,
             'evaluasi' => $evaluasi,
             'univSections' => $univSectionsWithAnswers,

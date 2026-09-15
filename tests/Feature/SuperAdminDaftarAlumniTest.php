@@ -2,12 +2,12 @@
 
 namespace Tests\Feature;
 
-use App\Models\Alumni;
+use App\Models\Biodata;
 use App\Models\DataAkademik;
+use App\Models\KelompokPertanyaan;
+use App\Models\Kuesioner;
 use App\Models\Prodi;
-use App\Models\Question;
-use App\Models\Questionnaire;
-use App\Models\QuestionSection;
+use App\Models\RefSubpertanyaan2021;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
@@ -22,13 +22,13 @@ class SuperAdminDaftarAlumniTest extends TestCase
 
     protected User $alumniUser;
 
-    protected Alumni $alumni;
+    protected Biodata $alumni;
 
     protected Prodi $prodi;
 
-    protected Questionnaire $questionnaire;
+    protected Kuesioner $kuesioner;
 
-    protected QuestionSection $section;
+    protected KelompokPertanyaan $section;
 
     protected function setUp(): void
     {
@@ -62,43 +62,44 @@ class SuperAdminDaftarAlumniTest extends TestCase
             'angkatan_masuk' => '2020',
             'tahun_akademik_lulus' => 'Gasal 2024/2025',
             'tahun_lulus' => '2024',
-            'ipk' => '3.85',
+            'ip_kumulatif' => '3.85',
         ]);
 
-        $this->alumni = Alumni::create([
+        $this->alumni = Biodata::create([
             'user_id' => $this->alumniUser->id,
             'nim' => '72200001',
+            'nama' => 'Budi Santoso',
             'prodi_id' => $this->prodi->id,
             'posisi_jabatan' => 'Software Engineer',
         ]);
 
-        $this->questionnaire = Questionnaire::create([
+        $this->kuesioner = Kuesioner::create([
             'title' => 'Tracer Study 2026',
             'year' => 2026,
             'is_active' => true,
         ]);
 
-        $this->section = QuestionSection::create([
-            'questionnaire_id' => $this->questionnaire->id,
+        $this->section = KelompokPertanyaan::create([
+            'kuesioner_id' => $this->kuesioner->id,
             'title' => 'Kurikulum, Fasilitas & Nilai Kedutawacanaan',
             'order' => 9,
         ]);
 
-        Question::create([
-            'question_section_id' => $this->section->id,
-            'code' => 'F24A',
-            'question_text' => 'Sebutkan sumberdana dalam pembiayaan kuliah S1 di UKDW :',
+        RefSubpertanyaan2021::create([
+            'kelompok_pertanyaan_id' => $this->section->id,
+            'kode_pertanyaan' => 'F24A',
+            'subpertanyaan' => 'Sebutkan sumberdana dalam pembiayaan kuliah S1 di UKDW :',
             'type' => 'single_choice',
-            'is_required' => true,
+            'wajib' => true,
             'order' => 1,
         ]);
 
-        Question::create([
-            'question_section_id' => $this->section->id,
-            'code' => 'F24B',
-            'question_text' => 'Jika Anda melanjutkan ke jenjang pascasarjana (S2), sebutkan sumberdana dalam pembiayaan kuliah S2 Anda :',
+        RefSubpertanyaan2021::create([
+            'kelompok_pertanyaan_id' => $this->section->id,
+            'kode_pertanyaan' => 'F24B',
+            'subpertanyaan' => 'Jika Anda melanjutkan ke jenjang pascasarjana (S2), sebutkan sumberdana dalam pembiayaan kuliah S2 Anda :',
             'type' => 'single_choice',
-            'is_required' => true,
+            'wajib' => true,
             'order' => 2,
         ]);
     }
@@ -162,10 +163,10 @@ class SuperAdminDaftarAlumniTest extends TestCase
             ->has('alumni')
             ->has('evaluasi')
             ->has('sections')
-            ->where('sections.0.questions.0.code', 'F24A')
-            ->where('sections.0.questions.0.is_mandatory', true)
-            ->where('sections.0.questions.1.code', 'F24B')
-            ->where('sections.0.questions.1.is_mandatory', true)
+            ->where('sections.0.subpertanyaans.0.kode_pertanyaan', 'F24A')
+            ->where('sections.0.subpertanyaans.0.is_mandatory', true)
+            ->where('sections.0.subpertanyaans.1.kode_pertanyaan', 'F24B')
+            ->where('sections.0.subpertanyaans.1.is_mandatory', true)
         );
     }
 
@@ -201,13 +202,10 @@ class SuperAdminDaftarAlumniTest extends TestCase
             ->post(route('superadmin.alumni.profile.update', $this->alumni->id), $payload);
 
         $response->assertRedirect();
-        $this->assertDatabaseHas('data_akademiks', [
-            'nim' => '72200001',
+        $this->assertDatabaseHas('biodatas', [
+            'id' => $this->alumni->id,
             'nama' => 'Budi Santoso Diperbarui',
             'nomor_telepon' => '081234567890',
-        ]);
-        $this->assertDatabaseHas('alumnis', [
-            'id' => $this->alumni->id,
             'posisi_jabatan' => 'Lead Engineer',
         ]);
         $this->assertDatabaseHas('companies', [

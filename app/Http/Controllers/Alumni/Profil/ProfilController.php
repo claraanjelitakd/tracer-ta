@@ -22,51 +22,55 @@ class ProfilController extends Controller
     public function tampilkanHalamanProfil(Request $request)
     {
         $pengguna = $request->user();
-        $alumni = $pengguna->alumni()->with(['prodi', 'company', 'company.province', 'company.kabupaten', 'dataAkademik.yudisium', 'dataAkademik.orangTua', 'atasan'])->first();
+        $biodata = $pengguna->biodata()->with(['prodi', 'company', 'company.province', 'company.kabupaten', 'dataAkademik', 'yudisium', 'orangTua', 'atasan'])->first();
 
         $provinsi = Province::all();
         $kabupaten = Kabupaten::all();
-        $dataAkademik = $alumni?->dataAkademik;
-        $orangTua = $alumni?->dataAkademik?->orangTua;
-        $yudisium = $alumni?->dataAkademik?->yudisium;
-        $atasan = $alumni?->atasan;
+        $dataAkademik = $biodata?->dataAkademik;
+        $orangTua = $biodata?->orangTua ?? $biodata?->dataAkademik?->orangTua;
+        $yudisium = $biodata?->yudisium ?? $biodata?->dataAkademik?->yudisium;
+        $atasan = $biodata?->atasan;
 
         // Merakit formData murni di backend agar frontend Vue tidak perlu logika inisialisasi / pengecekan manual
         $formData = [
             // Identitas Pribadi
-            'nim' => $alumni?->nim ?? '',
-            'nama' => $dataAkademik?->nama ?? '',
+            'nim' => $biodata?->nim ?? '',
+            'nama' => $biodata?->nama ?? ($dataAkademik?->nama ?? ''),
             'tempat_lahir' => $dataAkademik?->tempat_lahir ?? '',
             'tanggal_lahir' => $dataAkademik?->tanggal_lahir ?? '',
-            'agama' => $dataAkademik?->agama ?? '',
+            'agama' => $biodata?->agama ?? ($dataAkademik?->agama ?? ''),
             'jenis_kelamin' => $dataAkademik?->jenis_kelamin ?? '',
             'golongan_darah' => $dataAkademik?->golongan_darah ?? '',
             'warga_negara' => $dataAkademik?->warga_negara ?? 'WNI',
-            'nik' => $dataAkademik?->nik ?? '',
-            'no_kk' => $dataAkademik?->no_kk ?? '',
+            'nik' => $biodata?->nik ?? ($dataAkademik?->nik ?? ''),
+            'no_kk' => $biodata?->no_kk ?? ($dataAkademik?->no_kk ?? ''),
             'nisn' => $dataAkademik?->nisn ?? '',
-            'no_bpjs' => $dataAkademik?->no_bpjs ?? '',
-            'npwp' => $dataAkademik?->npwp ?? '',
+            'no_bpjs' => $biodata?->no_bpjs ?? ($dataAkademik?->no_bpjs ?? ''),
+            'npwp' => $biodata?->npwp ?? '',
 
             // Kontak & Alamat Pribadi
-            'alamat_saat_ini' => $dataAkademik?->alamat_saat_ini ?? '',
-            'kelurahan' => $dataAkademik?->kelurahan ?? '',
-            'kecamatan' => $dataAkademik?->kecamatan ?? '',
-            'kabupaten_id' => $dataAkademik?->kabupaten_id ?? '',
-            'provinsi_id' => $dataAkademik?->provinsi_id ?? '',
-            'kode_pos' => $dataAkademik?->kode_pos ?? '',
-            'nomor_telepon' => $dataAkademik?->nomor_telepon ?? '',
-            'email_pribadi' => $dataAkademik?->email_pribadi ?? '',
+            'alamat_saat_ini' => $biodata?->alamat ?? ($dataAkademik?->alamat_saat_ini ?? ''),
+            'alamat' => $biodata?->alamat ?? ($dataAkademik?->alamat_saat_ini ?? ''),
+            'kelurahan' => $biodata?->kelurahan ?? ($dataAkademik?->kelurahan ?? ''),
+            'kecamatan' => $biodata?->kecamatan ?? ($dataAkademik?->kecamatan ?? ''),
+            'kabupaten_id' => $biodata?->kabupaten_id ?? ($dataAkademik?->kabupaten_id ?? ''),
+            'provinsi_id' => $biodata?->provinsi_id ?? ($dataAkademik?->provinsi_id ?? ''),
+            'kode_pos' => $biodata?->kode_pos ?? ($dataAkademik?->kode_pos ?? ''),
+            'nomor_telepon' => $biodata?->nomor_telepon ?? ($dataAkademik?->nomor_telepon ?? ''),
+            'email' => $biodata?->email ?? ($biodata?->email_pribadi ?? ($dataAkademik?->email_pribadi ?? '')),
+            'email_pribadi' => $biodata?->email_pribadi ?? ($dataAkademik?->email_pribadi ?? ''),
             'email_students' => $dataAkademik?->email_students ?? '',
 
             // Data Akademik Utama
             'angkatan_masuk' => $dataAkademik?->angkatan_masuk ?? '',
-            'status_mahasiswa' => $dataAkademik?->status_mahasiswa ?? 'Lulus',
-            'tahun_akademik_lulus' => $dataAkademik?->tahun_akademik_lulus ?? '',
-            'tahun_lulus' => $dataAkademik?->tahun_lulus ?? '',
-            'ipk' => $dataAkademik?->ipk ?? '',
+            'status_mahasiswa' => $dataAkademik?->status_mahasiswa ?? 'AR',
+            'tahun_akademik_lulus' => $yudisium?->tahun_akademik_lulus ?? ($dataAkademik?->tahun_akademik_lulus ?? ''),
+            'tahun_lulus' => $biodata?->tahun_lulus ?? ($yudisium?->tahun_lulus ?? ($dataAkademik?->tahun_lulus ?? '')),
+            'ipk' => $dataAkademik?->ip_kumulatif ?? '',
+            'ip_kumulatif' => $dataAkademik?->ip_kumulatif ?? '',
             'total_sks' => $dataAkademik?->total_sks ?? '',
             'total_angka_kualitas' => $dataAkademik?->total_angka_kualitas ?? '',
+            'asal_sekolah' => $dataAkademik?->asal_sekolah ?? '',
 
             // Yudisium (Skripsi & Dosen)
             'judul_ta' => $yudisium?->judul_ta ?? '',
@@ -92,23 +96,23 @@ class ProfilController extends Controller
             'nomor_telepon_orang_tua' => $orangTua?->nomor_telepon ?? '',
 
             // Karier / Profil Profesional
-            'instagram_url' => $alumni?->instagram_url ?? '',
-            'facebook_url' => $alumni?->facebook_url ?? '',
-            'linkedin_url' => $alumni?->linkedin_url ?? '',
-            'linkedin_username' => $alumni?->linkedin_username ?? '',
+            'instagram_url' => $biodata?->instagram_url ?? '',
+            'facebook_url' => $biodata?->facebook_url ?? '',
+            'linkedin_url' => $biodata?->linkedin_url ?? '',
+            'linkedin_username' => $biodata?->linkedin_username ?? '',
 
-            'expert' => $alumni?->expert ?? '',
-            'minat' => $alumni?->minat ?? '',
-            'posisi_jabatan' => $alumni?->posisi_jabatan ?? '',
-            'jenis_pekerjaan' => $alumni?->jenis_pekerjaan ?? '',
-            'zipcode' => $alumni?->zipcode ?? '', // Zipcode untuk perusahaan
+            'expert' => $biodata?->expert ?? '',
+            'minat' => $biodata?->minat ?? '',
+            'posisi_jabatan' => $biodata?->posisi_jabatan ?? '',
+            'jenis_pekerjaan' => $biodata?->jenis_pekerjaan ?? '',
+            'zipcode' => $biodata?->zipcode ?? '',
 
-            'nama_perusahaan' => $alumni?->company?->nama_perusahaan ?? '',
-            'company_alamat' => $alumni?->company?->alamat ?? '',
-            'company_skala' => $alumni?->company?->skala ?? '',
-            'company_province_id' => $alumni?->company?->province_id ?? '',
-            'company_kabupaten_id' => $alumni?->company?->kabupaten_id ?? '',
-            'company_status_verifikasi' => $alumni?->company?->status_verifikasi ?? '',
+            'nama_perusahaan' => $biodata?->company?->nama_perusahaan ?? '',
+            'company_alamat' => $biodata?->company?->alamat ?? '',
+            'company_skala' => $biodata?->company?->skala ?? '',
+            'company_province_id' => $biodata?->company?->province_id ?? '',
+            'company_kabupaten_id' => $biodata?->company?->kabupaten_id ?? '',
+            'company_status_verifikasi' => $biodata?->company?->status_verifikasi ?? '',
 
             // Data Atasan
             'nama_atasan' => $atasan?->nama ?? '',
@@ -116,11 +120,12 @@ class ProfilController extends Controller
             'telepon_atasan' => $atasan?->telepon ?? '',
         ];
 
-        // Get all companies for Autocomplete (id, name, province_id, kabupaten_id, alamat, kode_pos, skala, status_verifikasi)
+        // Get all companies for Autocomplete
         $companies = Company::select('id', 'nama_perusahaan', 'province_id', 'kabupaten_id', 'alamat', 'kode_pos', 'skala', 'status_verifikasi')->get();
 
         return inertia('Alumni/Profil/Index', [
-            'alumniData' => $alumni,
+            'biodataData' => $biodata,
+            'alumniData' => $biodata,
             'formData' => $formData,
             'provinces' => $provinsi,
             'kabupatens' => $kabupaten,

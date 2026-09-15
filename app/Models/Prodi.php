@@ -14,8 +14,8 @@ class Prodi extends Model
         'nama_prodi',
     ];
 
-    public function alumnis()
+    public function biodatas()
     {
-        return $this->hasMany(Alumni::class);
+        return $this->hasMany(Biodata::class);
     }
 }

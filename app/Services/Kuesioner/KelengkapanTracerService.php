@@ -2,9 +2,9 @@
 
 namespace App\Services\Kuesioner;
 
-use App\Models\Alumni;
-use App\Models\Question;
-use App\Models\Response;
+use App\Models\Biodata;
+use App\Models\RefSubpertanyaan2021;
+use App\Models\Tracer;
 
 /**
  * KelengkapanTracerService
@@ -12,84 +12,69 @@ use App\Models\Response;
  * Fungsi:
  * Mengaudit status kelengkapan data seorang alumni secara komprehensif, mencakup:
  * 1. Kelengkapan Profil (Data Pribadi, Data Akademik, Data Orang Tua, Data Perusahaan, Data Atasan, dan Posisi Jabatan).
- * 2. Kelengkapan Kuesioner Wajib (F8, Waktu Tunggu F3/F5, Lokasi Kerja F2F, Jenis Perusahaan F11, Nama Perusahaan F2E,
- *    Posisi Jabatan F2G, Studi Lanjut F24A & F24B, Keselarasan Bidang Studi F14, Kesesuaian Pendidikan F15, dan
- *    Evaluasi Kompetensi F17-1 sampai F17-54).
+ * 2. Kelengkapan Kuesioner Wajib (Ditentukan secara dinamis berdasarkan kolom `wajib = 1` di tabel `ref_subpertanyaan2021`).
  *
- * Pertanyaan selain daftar wajib di atas bersifat OPSIONAL dan tidak membatalkan kelengkapan status alumni.
+ * Pertanyaan dengan `wajib = 0` bersifat OPSIONAL dan tidak membatalkan kelengkapan status alumni.
  */
 class KelengkapanTracerService
 {
     /**
-     * Daftar kode pertanyaan tracer study yang WAJIB diisi.
+     * Mengambil seluruh butir pertanyaan kuesioner yang berstatus WAJIB (wajib = 1) dari database.
      *
-     * @var array<int, string>
+     * @return array<int, string>
      */
     public static function getMandatoryQuestionCodes(): array
     {
-        $mandatoryCodes = [
-            'F8',   // Apakah anda bekerja saat ini (termasuk kerja sambilan dan wirausaha)?
-            'F11',  // Jenis perusahaan/instansi/institusi
-            'F14',  // Seberapa erat hubungan bidang studi dengan pekerjaan
-            'F15',  // Tingkat pendidikan yang paling tepat/sesuai
-            'F24A', // Sumberdana pembiayaan kuliah S1 di UKDW
-            'F24B', // Sumberdana pembiayaan kuliah S2 jika studi lanjut
-        ];
-
-        // F17-1 sampai F17-54 (54 butir evaluasi kompetensi)
-        for ($i = 1; $i <= 54; $i++) {
-            $mandatoryCodes[] = "F17-{$i}";
-        }
-
-        return $mandatoryCodes;
+        return RefSubpertanyaan2021::where('wajib', true)
+            ->where('type', '!=', 'header')
+            ->pluck('kode_pertanyaan')
+            ->all();
     }
 
     /**
-     * Memeriksa apakah suatu kode pertanyaan berstatus Wajib.
+     * Memeriksa apakah suatu kode pertanyaan berstatus Wajib (wajib = 1).
      *
-     * @param  string  $code  Kode pertanyaan (misal: 'F8', 'F17-1', 'F18')
+     * @param  string  $code  Kode pertanyaan (misal: 'F1', 'F8', 'F17a1', dll.)
      */
     public static function isMandatoryQuestion(string $code): bool
     {
-        // Pertanyaan profil otomatis & instrumen wajib inti
-        if (in_array($code, ['F1', 'F2A', 'F2B', 'F2C', 'F2D', 'F2E', 'F2E1', 'F2E2', 'F2E3', 'F2F', 'F2G', 'F2H', 'F3', 'F5'])) {
-            return true;
-        }
+        $question = RefSubpertanyaan2021::where('kode_pertanyaan', $code)->first();
 
-        return in_array($code, self::getMandatoryQuestionCodes());
+        return (bool) ($question?->wajib && $question?->type !== 'header');
     }
 
     /**
-     * Evaluasi kelengkapan profil alumni.
+     * Evaluasi kelengkapan profil biodata alumni.
      *
-     * @return array Shape: ['is_complete' => bool, 'percentage' => int, 'missing_fields' => array]
+     * @return array Shape: ['is_complete' => bool, 'percentage' => int, 'filled_count' => int, 'total_fields' => int, 'missing_fields' => array]
      */
-    public static function evaluasiProfil(Alumni $alumni): array
+    public static function evaluasiProfil(Biodata $biodata): array
     {
-        $alumni->refresh();
-        $alumni->load(['dataAkademik.orangTua', 'company.province', 'company.kabupaten', 'atasan', 'user']);
+        $biodata->refresh();
+        $biodata->load(['dataAkademik.orangTua', 'company.province', 'company.kabupaten', 'atasan', 'user', 'prodi']);
 
-        $dataAkademik = $alumni->dataAkademik;
-        $orangTua = $dataAkademik?->orangTua;
-        $company = $alumni->company;
-        $atasan = $alumni->atasan;
+        $dataAkademik = $biodata->dataAkademik;
+        $orangTua = $dataAkademik?->orangTua ?? $biodata->orangTua;
+        $company = $biodata->company;
+        $atasan = $biodata->atasan;
 
         $fields = [
             // Data Pribadi & Kontak
-            'Nama Lengkap' => $dataAkademik?->nama,
-            'NIM' => $alumni->nim,
+            'Nama Lengkap' => $biodata->nama ?? $dataAkademik?->nama,
+            'NIM' => $biodata->nim,
             'Tempat Lahir' => $dataAkademik?->tempat_lahir,
             'Tanggal Lahir' => $dataAkademik?->tanggal_lahir,
-            'Agama' => $dataAkademik?->agama,
+            'Agama' => $biodata->agama ?? $dataAkademik?->agama,
             'Jenis Kelamin' => $dataAkademik?->jenis_kelamin,
-            'Nomor Telepon/HP' => $dataAkademik?->nomor_telepon,
-            'Email Pribadi' => $dataAkademik?->email_pribadi,
-            'Alamat Domisili Saat Ini' => $dataAkademik?->alamat_saat_ini,
-            'NIK KTP' => $dataAkademik?->nik,
+            'Nomor Telepon/HP' => $biodata->nomor_telepon ?? $dataAkademik?->nomor_telepon,
+            'Email Pribadi' => $biodata->email_pribadi ?? $dataAkademik?->email_pribadi,
+            'Alamat Domisili Saat Ini' => $biodata->alamat ?? $dataAkademik?->alamat_saat_ini,
+            'NIK KTP' => $biodata->nik ?? $dataAkademik?->nik,
+            'NPWP' => $biodata->npwp,
 
             // Data Akademik
-            'IPK Kelulusan' => $dataAkademik?->ipk,
-            'Tahun Kelulusan' => $dataAkademik?->tahun_akademik_lulus ?? $alumni->tahun_lulus,
+            'IPK Kelulusan' => $dataAkademik?->ip_kumulatif,
+            'Tahun Kelulusan' => $biodata->tahun_lulus ?? ($dataAkademik?->tahun_akademik_lulus ?? $dataAkademik?->tahun_lulus),
 
             // Data Orang Tua
             'Nama Orang Tua' => $orangTua?->nama_orang_tua,
@@ -106,21 +91,21 @@ class KelengkapanTracerService
             'Nama Atasan' => $atasan?->nama,
             'Email Atasan' => $atasan?->email,
             'Nomor Telepon Atasan' => $atasan?->telepon,
-            'Posisi Jabatan' => $alumni->posisi_jabatan,
+            'Posisi Jabatan' => $biodata->posisi_jabatan,
 
-            // Data Media Sosial & Profesional Alumni (Tabel alumnis)
-            'Bidang Keahlian (Expertise)' => $alumni->expert,
-            'Minat & Ketertarikan' => $alumni->minat,
-            'LinkedIn Profil URL' => $alumni->linkedin_url,
-            'LinkedIn Username' => $alumni->linkedin_username,
-            'Instagram Profil URL' => $alumni->instagram_url,
-            'Facebook Profil URL' => $alumni->facebook_url,
-            'Kode Pos Perusahaan (Zipcode)' => $alumni->zipcode,
+            // Data Media Sosial & Profesional Alumni (Tabel biodatas)
+            'Bidang Keahlian (Expertise)' => $biodata->expert,
+            'Minat & Ketertarikan' => $biodata->minat,
+            'LinkedIn Profil URL' => $biodata->linkedin_url,
+            'LinkedIn Username' => $biodata->linkedin_username,
+            'Instagram Profil URL' => $biodata->instagram_url,
+            'Facebook Profil URL' => $biodata->facebook_url,
+            'Kode Pos Perusahaan (Zipcode)' => $biodata->zipcode,
         ];
 
-        $isTeologi = ($alumni->prodi?->kode_prodi === '31' || substr((string) $alumni->nim, 0, 2) === '31');
+        $isTeologi = ($biodata->prodi?->kode_prodi === '31' || substr((string) $biodata->nim, 0, 2) === '31');
         if ($isTeologi) {
-            $fields['Jenis Pekerjaan (Gerejawi)'] = $alumni->jenis_pekerjaan;
+            $fields['Jenis Pekerjaan (Gerejawi)'] = $biodata->jenis_pekerjaan;
         }
 
         $missing = [];
@@ -145,39 +130,39 @@ class KelengkapanTracerService
 
     /**
      * Evaluasi kelengkapan kuesioner tracer study wajib bagi alumni.
+     * Murni didasarkan pada butir pertanyaan dengan status wajib = 1 di tabel ref_subpertanyaan2021.
      *
      * @return array Shape: ['is_complete' => bool, 'percentage' => int, 'answered_count' => int, 'total_mandatory' => int, 'missing_questions' => array]
      */
-    public static function evaluasiKuesionerWajib(Alumni $alumni): array
+    public static function evaluasiKuesionerWajib(Biodata $biodata): array
     {
-        // Pastikan respon profil tersinkron
-        KuesionerSyncService::syncProfileResponses($alumni);
+        // Pastikan respon profil tersinkron ke tabel tracers
+        KuesionerSyncService::syncProfileResponses($biodata);
 
         // Ambil ID dan respon pertanyaan alumni
-        $responses = Response::where('alumni_id', $alumni->id)
-            ->with('question')
+        $responses = Tracer::where('biodata_id', $biodata->id)
+            ->with('subpertanyaan')
             ->get()
             ->keyBy(function ($item) {
-                return $item->question?->code;
+                return $item->subpertanyaan?->kode_pertanyaan ?? $item->kode_pertanyaan;
             });
 
-        $mandatoryCodes = self::getMandatoryQuestionCodes();
+        // Ambil seluruh butir pertanyaan wajib (wajib = 1 dan non-header)
+        $mandatoryQuestions = RefSubpertanyaan2021::where('wajib', true)
+            ->where('type', '!=', 'header')
+            ->orderBy('order', 'asc')
+            ->get();
+
         $missing = [];
 
-        // 1. Cek F3 / F5 (Pertanyaan waktu tunggu kerja <= 6 bulan)
-        $hasF3 = ! empty($responses->get('F3')?->answer_text);
-        $hasF5 = ! empty($responses->get('F5')?->answer_text);
-        if (! $hasF3 && ! $hasF5) {
-            $missing[] = 'F3 / F5 (Waktu Mulai Mencari Kerja / Lama Waktu Tunggu)';
-        }
-
-        // 2. Cek pertanyaan wajib lainnya (F8, F11, F14, F15, F24A, F24B, F17-1..54)
-        foreach ($mandatoryCodes as $code) {
+        foreach ($mandatoryQuestions as $q) {
+            $code = $q->kode_pertanyaan;
             $resp = $responses->get($code);
             $hasAnswer = false;
 
             if ($resp) {
-                if (! empty($resp->answer_text) && trim((string) $resp->answer_text) !== '') {
+                $rawAnswer = $resp->answer ?? $resp->answer_text;
+                if (! empty($rawAnswer) && trim((string) $rawAnswer) !== '') {
                     $hasAnswer = true;
                 } elseif (is_array($resp->answer_json) && count($resp->answer_json) > 0) {
                     $hasAnswer = true;
@@ -185,16 +170,14 @@ class KelengkapanTracerService
             }
 
             if (! $hasAnswer) {
-                $q = Question::where('code', $code)->first();
-                $label = $q ? "{$code} ({$q->question_text})" : $code;
-                $missing[] = $label;
+                $missing[] = "{$code} ({$q->subpertanyaan})";
             }
         }
 
-        $totalMandatory = count($mandatoryCodes) + 1; // +1 untuk blok F3/F5
+        $totalMandatory = $mandatoryQuestions->count();
         $missingCount = count($missing);
         $answeredCount = max(0, $totalMandatory - $missingCount);
-        $percentage = (int) round(($answeredCount / $totalMandatory) * 100);
+        $percentage = $totalMandatory > 0 ? (int) round(($answeredCount / $totalMandatory) * 100) : 100;
 
         return [
             'is_complete' => ($missingCount === 0),
@@ -210,10 +193,10 @@ class KelengkapanTracerService
      *
      * @return array Shape: ['status' => string, 'is_complete' => bool, 'profile' => array, 'questionnaire' => array]
      */
-    public static function evaluasiKelengkapanTotal(Alumni $alumni): array
+    public static function evaluasiKelengkapanTotal(Biodata $biodata): array
     {
-        $evalProfil = self::evaluasiProfil($alumni);
-        $evalKuesioner = self::evaluasiKuesionerWajib($alumni);
+        $evalProfil = self::evaluasiProfil($biodata);
+        $evalKuesioner = self::evaluasiKuesionerWajib($biodata);
 
         $isComplete = $evalProfil['is_complete'] && $evalKuesioner['is_complete'];
 

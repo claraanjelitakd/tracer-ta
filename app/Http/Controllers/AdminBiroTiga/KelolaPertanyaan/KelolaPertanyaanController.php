@@ -3,10 +3,10 @@
 namespace App\Http\Controllers\AdminBiroTiga\KelolaPertanyaan;
 
 use App\Http\Controllers\Controller;
+use App\Models\KelompokPertanyaan;
 use App\Models\Prodi;
-use App\Models\Question;
-use App\Models\QuestionOption;
-use App\Models\QuestionSection;
+use App\Models\RefSubpertanyaan2021;
+use App\Models\RefSubpertanyaanDetil;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
@@ -29,11 +29,11 @@ class KelolaPertanyaanController extends Controller
     public function index(Request $request)
     {
         // Memuat semua pertanyaan beserta relasi section dan options
-        $questions = Question::with(['section.questionnaire', 'options'])
+        $subpertanyaans = RefSubpertanyaan2021::with(['kelompokPertanyaan.kuesioner', 'detils'])
             ->orderBy('order', 'asc')
             ->get();
 
-        $sections = QuestionSection::with('questionnaire')
+        $sections = KelompokPertanyaan::with('kuesioner')
             ->orderBy('order', 'asc')
             ->get();
 
@@ -41,21 +41,21 @@ class KelolaPertanyaanController extends Controller
         $prodis = Prodi::orderBy('kode_prodi', 'asc')->get(['id', 'kode_prodi', 'nama_prodi']);
 
         // Peta kode pertanyaan ke teks pertanyaan untuk referensi jump_to di tabel
-        $targetQuestionMap = Question::pluck('subpertanyaan', 'kode_pertanyaan')->toArray();
+        $targetQuestionMap = RefSubpertanyaan2021::pluck('subpertanyaan', 'kode_pertanyaan')->toArray();
 
         // Pilihan target jump_to untuk dropdown opsi (dengan label kode + teks lengkap)
-        $availableJumpTargets = Question::orderBy('order', 'asc')
+        $availableJumpTargets = RefSubpertanyaan2021::orderBy('order', 'asc')
             ->get()
             ->map(function ($q) {
                 return [
-                    'code' => $q->code,
-                    'label' => $q->code.' — '.Str::limit($q->question_text, 65),
-                    'text' => $q->question_text,
+                    'kode_pertanyaan' => $q->kode_pertanyaan,
+                    'label' => $q->kode_pertanyaan.' — '.Str::limit($q->subpertanyaan, 65),
+                    'text' => $q->subpertanyaan,
                 ];
             });
 
         return Inertia::render('AdminBiroTiga/Pertanyaan/Index', [
-            'questions' => $questions,
+            'subpertanyaans' => $subpertanyaans,
             'sections' => $sections,
             'prodis' => $prodis,
             'availableJumpTargets' => $availableJumpTargets,
@@ -69,22 +69,22 @@ class KelolaPertanyaanController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'question_section_id' => 'required|exists:kelompok_pertanyaans,id',
-            'code' => 'required|string|unique:ref_subpertanyaan2021,kode_pertanyaan|max:50',
-            'question_text' => 'required|string',
+            'kelompok_pertanyaan_id' => 'required|exists:kelompok_pertanyaans,id',
+            'kode_pertanyaan' => 'required|string|unique:ref_subpertanyaan2021,kode_pertanyaan|max:50',
+            'subpertanyaan' => 'required|string',
             'type' => 'required|string',
-            'is_required' => 'boolean',
+            'wajib' => 'boolean',
             'order' => 'nullable|integer',
         ]);
 
-        $validated['is_required'] = $request->boolean('is_required');
+        $validated['wajib'] = $request->boolean('wajib');
 
         // Otomatisasi urutan pertanyaan jika tidak diisi manual
         if (empty($validated['order'])) {
-            $validated['order'] = (Question::max('order') ?? 0) + 1;
+            $validated['order'] = (RefSubpertanyaan2021::max('order') ?? 0) + 1;
         }
 
-        Question::create($validated);
+        RefSubpertanyaan2021::create($validated);
 
         return redirect()->back()->with('success', 'Pertanyaan baru berhasil ditambahkan.');
     }
@@ -97,24 +97,24 @@ class KelolaPertanyaanController extends Controller
      */
     public function update(Request $request, $id)
     {
-        $question = Question::findOrFail($id);
+        $subpertanyaan = RefSubpertanyaan2021::findOrFail($id);
 
         $validated = $request->validate([
-            'question_section_id' => 'required|exists:kelompok_pertanyaans,id',
-            'code' => 'required|string|max:50|unique:ref_subpertanyaan2021,kode_pertanyaan,'.$question->id,
-            'question_text' => 'required|string',
+            'kelompok_pertanyaan_id' => 'required|exists:kelompok_pertanyaans,id',
+            'kode_pertanyaan' => 'required|string|max:50|unique:ref_subpertanyaan2021,kode_pertanyaan,'.$subpertanyaan->id,
+            'subpertanyaan' => 'required|string',
             'type' => 'required|string',
-            'is_required' => 'boolean',
+            'wajib' => 'boolean',
             'order' => 'nullable|integer',
         ]);
 
-        $validated['is_required'] = $request->boolean('is_required');
+        $validated['wajib'] = $request->boolean('wajib');
 
         if (empty($validated['order'])) {
             unset($validated['order']);
         }
 
-        $question->update($validated);
+        $subpertanyaan->update($validated);
 
         return redirect()->back()->with('success', 'Pertanyaan berhasil diperbarui.');
     }
@@ -124,9 +124,9 @@ class KelolaPertanyaanController extends Controller
      */
     public function destroy($id)
     {
-        $question = Question::findOrFail($id);
-        $question->options()->delete();
-        $question->delete();
+        $subpertanyaan = RefSubpertanyaan2021::findOrFail($id);
+        $subpertanyaan->detils()->delete();
+        $subpertanyaan->delete();
 
         return redirect()->back()->with('success', 'Pertanyaan dan seluruh opsinya berhasil dihapus.');
     }
@@ -143,20 +143,20 @@ class KelolaPertanyaanController extends Controller
                 'direction' => 'required|in:up,down',
             ]);
 
-            $currentQuestion = Question::findOrFail($validated['id']);
+            $currentSubpertanyaan = RefSubpertanyaan2021::findOrFail($validated['id']);
             $operator = $validated['direction'] === 'up' ? '<' : '>';
             $sortOrder = $validated['direction'] === 'up' ? 'desc' : 'asc';
 
             // Pindah hanya dalam section yang sama
-            $adjacentQuestion = Question::where('question_section_id', $currentQuestion->question_section_id)
-                ->where('order', $operator, $currentQuestion->order)
+            $adjacentSubpertanyaan = RefSubpertanyaan2021::where('kelompok_pertanyaan_id', $currentSubpertanyaan->kelompok_pertanyaan_id)
+                ->where('order', $operator, $currentSubpertanyaan->order)
                 ->orderBy('order', $sortOrder)
                 ->first();
 
-            if ($adjacentQuestion) {
-                $tempOrder = $currentQuestion->order;
-                $currentQuestion->update(['order' => $adjacentQuestion->order]);
-                $adjacentQuestion->update(['order' => $tempOrder]);
+            if ($adjacentSubpertanyaan) {
+                $tempOrder = $currentSubpertanyaan->order;
+                $currentSubpertanyaan->update(['order' => $adjacentSubpertanyaan->order]);
+                $adjacentSubpertanyaan->update(['order' => $tempOrder]);
             }
 
             return redirect()->back()->with('success', 'Posisi pertanyaan berhasil dipindahkan.');
@@ -171,7 +171,7 @@ class KelolaPertanyaanController extends Controller
             ]);
 
             foreach ($validated['orders'] as $item) {
-                Question::where('id', $item['id'])->update(['order' => $item['order']]);
+                RefSubpertanyaan2021::where('id', $item['id'])->update(['order' => $item['order']]);
             }
 
             return redirect()->back()->with('success', 'Seluruh urutan pertanyaan berhasil diperbarui.');
@@ -185,7 +185,7 @@ class KelolaPertanyaanController extends Controller
      */
     public function storeOption(Request $request, $questionId)
     {
-        $question = Question::findOrFail($questionId);
+        $subpertanyaan = RefSubpertanyaan2021::findOrFail($questionId);
 
         $validated = $request->validate([
             'code' => 'nullable|string|max:50',
@@ -194,23 +194,21 @@ class KelolaPertanyaanController extends Controller
             'order' => 'nullable|integer',
         ]);
 
-        // Urutan otomatis dihitung di backend (urutan terakhir + 1)
-        if (empty($validated['order'])) {
-            $validated['order'] = ($question->options()->max('order') ?? 0) + 1;
+        $order = $validated['order'] ?? (($subpertanyaan->detils()->max('order') ?? 0) + 1);
+        $kodeOpsi = $validated['kode_opsi'] ?? $validated['code'] ?? null;
+
+        if (empty($kodeOpsi)) {
+            $optionCount = $subpertanyaan->detils()->count() + 1;
+            $kodeOpsi = $subpertanyaan->kode_pertanyaan.'-'.str_pad($optionCount, 2, '0', STR_PAD_LEFT);
         }
 
-        // Kode opsi otomatis jika dikosongkan (misal: F3-01)
-        if (empty($validated['code'])) {
-            $optionCount = $question->options()->count() + 1;
-            $validated['code'] = $question->code.'-'.str_pad($optionCount, 2, '0', STR_PAD_LEFT);
-        }
-
-        // Bersihkan empty string menjadi null
-        if (empty($validated['jump_to'])) {
-            $validated['jump_to'] = null;
-        }
-
-        $question->options()->create($validated);
+        $subpertanyaan->detils()->create([
+            'kode_pertanyaan' => $subpertanyaan->kode_pertanyaan,
+            'kode_opsi' => $kodeOpsi,
+            'option_text' => $validated['option_text'],
+            'jump_to' => $validated['jump_to'] ?? null,
+            'order' => $order,
+        ]);
 
         return redirect()->back()->with('success', 'Pilihan opsi berhasil ditambahkan.');
     }
@@ -220,24 +218,30 @@ class KelolaPertanyaanController extends Controller
      */
     public function updateOption(Request $request, $optionId)
     {
-        $option = QuestionOption::findOrFail($optionId);
+        $option = RefSubpertanyaanDetil::findOrFail($optionId);
 
         $validated = $request->validate([
+            'kode_opsi' => 'nullable|string|max:50',
             'code' => 'nullable|string|max:50',
             'option_text' => 'required|string',
             'jump_to' => 'nullable|string|max:50',
             'order' => 'nullable|integer',
         ]);
 
-        if (empty($validated['jump_to'])) {
-            $validated['jump_to'] = null;
+        $data = [
+            'option_text' => $validated['option_text'],
+            'jump_to' => $validated['jump_to'] ?? null,
+        ];
+
+        if (isset($validated['kode_opsi']) || isset($validated['code'])) {
+            $data['kode_opsi'] = $validated['kode_opsi'] ?? $validated['code'];
         }
 
-        if (empty($validated['order'])) {
-            unset($validated['order']); // Pertahankan urutan yang sudah ada
+        if (! empty($validated['order'])) {
+            $data['order'] = $validated['order'];
         }
 
-        $option->update($validated);
+        $option->update($data);
 
         return redirect()->back()->with('success', 'Pilihan opsi berhasil diperbarui.');
     }
@@ -247,7 +251,7 @@ class KelolaPertanyaanController extends Controller
      */
     public function destroyOption($optionId)
     {
-        $option = QuestionOption::findOrFail($optionId);
+        $option = RefSubpertanyaanDetil::findOrFail($optionId);
         $option->delete();
 
         return redirect()->back()->with('success', 'Pilihan opsi berhasil dihapus.');

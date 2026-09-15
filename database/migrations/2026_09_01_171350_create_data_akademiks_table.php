@@ -39,13 +39,19 @@ return new class extends Migration
             $table->string('no_kk', 20)->nullable()->comment('Nomor Kartu Keluarga');
             $table->string('nisn', 20)->nullable()->comment('Nomor Induk Siswa Nasional');
             $table->string('no_bpjs', 30)->nullable()->comment('Nomor BPJS Kesehatan');
-            $table->string('npwp', 30)->nullable()->comment('Nomor Pokok Wajib Pajak');
+
+            // Asal Sekolah Menengah
+            $table->string('asal_sekolah')->nullable();
+            $table->text('alamat_asal_sekolah')->nullable();
+            $table->string('kota_kabupaten_asal_sekolah')->nullable();
+            $table->string('provinsi_asal_sekolah')->nullable();
+            $table->string('jurusan_asal_sekolah')->nullable();
 
             // Data Kelulusan Akademik
-            $table->enum('status_mahasiswa', ['Tidak Aktif', 'Aktif', 'Lulus'])->default('Lulus');
+            $table->char('status_mahasiswa', 2)->default('AR')->comment('AR, DO, CT, NA');
             $table->string('tahun_akademik_lulus')->nullable()->comment('Periode lulus, contoh: Gasal 2026/2027');
             $table->year('tahun_lulus')->nullable();
-            $table->decimal('ipk', 3, 2)->nullable()->comment('Indeks Prestasi Kumulatif');
+            $table->decimal('ip_kumulatif', 3, 2)->nullable()->comment('Indeks Prestasi Kumulatif');
             $table->integer('total_sks')->nullable();
             $table->decimal('total_angka_kualitas', 8, 2)->nullable();
 

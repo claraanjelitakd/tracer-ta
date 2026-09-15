@@ -14,7 +14,7 @@ import { Head, Link, useForm, router } from '@inertiajs/vue3';
 import { ref, computed, watch } from 'vue';
 
 const props = defineProps({
-    questions: Array,
+    subpertanyaans: Array,
     sections: Array,
     prodis: Array,
     availableJumpTargets: Array,
@@ -72,13 +72,13 @@ const isReordering = ref(false);
 const activeSectionQuestions = computed(() => {
     if (!activeSectionId.value) return [];
     
-    return props.questions
-        .filter((q) => q.question_section_id === activeSectionId.value)
+    return (props.subpertanyaans || [])
+        .filter((q) => q.kelompok_pertanyaan_id === activeSectionId.value)
         .filter((q) => {
             if (!searchQuery.value.trim()) return true;
             const query = searchQuery.value.toLowerCase();
-            const matchCode = q.code?.toLowerCase().includes(query);
-            const matchText = q.question_text?.toLowerCase().includes(query);
+            const matchCode = q.kode_pertanyaan?.toLowerCase().includes(query);
+            const matchText = q.subpertanyaan?.toLowerCase().includes(query);
             return matchCode || matchText;
         })
         .sort((a, b) => a.order - b.order);
@@ -94,22 +94,24 @@ const currentActiveSection = computed(() => {
 // ========================================================
 const questionForm = useForm({
     id: null,
-    question_section_id: '',
+    kelompok_pertanyaan_id: '',
     prodi_id: null,
-    code: '',
-    question_text: '',
+    kode_pertanyaan: '',
+    subpertanyaan: '',
     type: 'single_choice',
-    is_required: true,
+    wajib: true,
     order: null,
 });
 
 const openAddQuestionForm = () => {
     isEditingQuestion.value = false;
     questionForm.reset();
-    questionForm.question_section_id = activeSectionId.value || (props.sections.length > 0 ? props.sections[0].id : '');
+    questionForm.kelompok_pertanyaan_id = activeSectionId.value || (props.sections.length > 0 ? props.sections[0].id : '');
     questionForm.prodi_id = null;
+    questionForm.kode_pertanyaan = '';
+    questionForm.subpertanyaan = '';
     questionForm.type = 'single_choice';
-    questionForm.is_required = true;
+    questionForm.wajib = true;
     questionForm.order = activeSectionQuestions.value.length + 1;
     currentView.value = 'form';
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -118,12 +120,12 @@ const openAddQuestionForm = () => {
 const openEditQuestionForm = (q) => {
     isEditingQuestion.value = true;
     questionForm.id = q.id;
-    questionForm.question_section_id = q.question_section_id;
+    questionForm.kelompok_pertanyaan_id = q.kelompok_pertanyaan_id;
     questionForm.prodi_id = q.prodi_id || null;
-    questionForm.code = q.code;
-    questionForm.question_text = q.question_text;
+    questionForm.kode_pertanyaan = q.kode_pertanyaan;
+    questionForm.subpertanyaan = q.subpertanyaan;
     questionForm.type = q.type;
-    questionForm.is_required = !!q.is_required;
+    questionForm.wajib = !!q.wajib;
     questionForm.order = q.order;
     currentView.value = 'form';
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -151,7 +153,7 @@ const submitQuestion = () => {
 };
 
 const deleteQuestion = (q) => {
-    if (confirm(`Hapus pertanyaan ${q.code}? Semua opsi jawaban terkait juga akan terhapus.`)) {
+    if (confirm(`Hapus pertanyaan ${q.kode_pertanyaan}? Semua opsi jawaban terkait juga akan terhapus.`)) {
         router.delete(`/biro3/pertanyaan/${q.id}`, {
             preserveScroll: true,
         });
@@ -202,7 +204,7 @@ const openEditOptionModal = (q, opt) => {
     selectedQuestion.value = q;
     isEditingOption.value = true;
     optionForm.id = opt.id;
-    optionForm.code = opt.code || '';
+    optionForm.code = opt.code || opt.kode_opsi || '';
     optionForm.option_text = opt.option_text;
     optionForm.jump_to = opt.jump_to || '';
     showOptionModal.value = true;
@@ -373,7 +375,7 @@ const getTypeLabel = (type) => {
                             {{ isEditingQuestion ? 'Edit Data Pertanyaan' : 'Tambah Pertanyaan Baru' }}
                         </span>
                         <h2 class="text-xl font-extrabold text-gray-900 mt-1">
-                            {{ isEditingQuestion ? `Edit Butir Pertanyaan [ ${questionForm.code} ]` : 'Formulir Penambahan Butir Pertanyaan Baru' }}
+                            {{ isEditingQuestion ? `Edit Butir Pertanyaan [ ${questionForm.kode_pertanyaan} ]` : 'Formulir Penambahan Butir Pertanyaan Baru' }}
                         </h2>
                     </div>
                     <button @click="cancelQuestionForm" class="text-gray-400 hover:text-gray-600 text-sm font-semibold">
@@ -388,7 +390,7 @@ const getTypeLabel = (type) => {
                             <label class="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-2">
                                 Bagian Kuesioner (Section) <span class="text-red-500">*</span>
                             </label>
-                            <select v-model="questionForm.question_section_id" required class="w-full text-sm font-medium rounded-xl border-gray-300 focus:border-[#005B3C] focus:ring-[#005B3C] shadow-sm py-2.5">
+                            <select v-model="questionForm.kelompok_pertanyaan_id" required class="w-full text-sm font-medium rounded-xl border-gray-300 focus:border-[#005B3C] focus:ring-[#005B3C] shadow-sm py-2.5">
                                 <option v-for="sec in sections" :key="sec.id" :value="sec.id">
                                     {{ sec.title }}
                                 </option>
@@ -416,7 +418,7 @@ const getTypeLabel = (type) => {
                             </label>
                             <input 
                                 type="text" 
-                                v-model="questionForm.code" 
+                                v-model="questionForm.kode_pertanyaan" 
                                 placeholder="Contoh: F3, F8, F11" 
                                 required 
                                 class="w-full text-sm font-mono font-bold rounded-xl border-gray-300 focus:border-[#005B3C] focus:ring-[#005B3C] shadow-sm py-2.5 uppercase"
@@ -445,7 +447,7 @@ const getTypeLabel = (type) => {
                             Teks / Bunyi Pertanyaan <span class="text-red-500">*</span>
                         </label>
                         <textarea 
-                            v-model="questionForm.question_text" 
+                            v-model="questionForm.subpertanyaan" 
                             rows="3" 
                             required 
                             placeholder="Tuliskan isi teks pertanyaan..." 
@@ -457,7 +459,7 @@ const getTypeLabel = (type) => {
                         <label class="inline-flex items-center cursor-pointer gap-3">
                             <input 
                                 type="checkbox" 
-                                v-model="questionForm.is_required" 
+                                v-model="questionForm.wajib" 
                                 class="rounded border-gray-300 text-[#005B3C] focus:ring-[#005B3C] h-4 w-4"
                             >
                             <div>
@@ -507,7 +509,7 @@ const getTypeLabel = (type) => {
                             class="px-2 py-0.5 text-[10px] rounded-full font-mono font-bold"
                             :class="activeSectionId === sec.id ? 'bg-[#005B3C] text-white' : 'bg-gray-100 text-gray-600'"
                         >
-                            {{ questions.filter(q => q.question_section_id === sec.id).length }}
+                            {{ (subpertanyaans || []).filter(q => q.kelompok_pertanyaan_id === sec.id).length }}
                         </span>
                     </button>
                 </div>
@@ -569,7 +571,7 @@ const getTypeLabel = (type) => {
 
                                 <!-- Kode Pertanyaan (Hijau Resmi UKDW) -->
                                 <span class="px-2.5 py-0.5 bg-[#005B3C] text-white font-mono font-bold text-xs rounded-md">
-                                    {{ q.code }}
+                                    {{ q.kode_pertanyaan }}
                                 </span>
 
                                 <!-- Tipe Input -->
@@ -578,7 +580,7 @@ const getTypeLabel = (type) => {
                                 </span>
 
                                 <!-- Wajib / Opsional (Kuning Elegan / Netral) -->
-                                <span v-if="q.is_required" class="px-2 py-0.5 bg-yellow-100 text-yellow-900 font-semibold text-xs rounded-md border border-yellow-300">
+                                <span v-if="q.wajib" class="px-2 py-0.5 bg-yellow-100 text-yellow-900 font-semibold text-xs rounded-md border border-yellow-300">
                                     Wajib
                                 </span>
                                 <span v-else class="px-2 py-0.5 bg-gray-100 text-gray-500 text-xs rounded-md">
@@ -612,7 +614,7 @@ const getTypeLabel = (type) => {
                         <!-- Teks Pertanyaan -->
                         <div class="px-6 py-4 border-b border-gray-100">
                             <h3 class="text-base font-bold text-gray-900 leading-snug">
-                                {{ q.question_text }}
+                                {{ q.subpertanyaan }}
                             </h3>
                         </div>
 
@@ -620,7 +622,7 @@ const getTypeLabel = (type) => {
                         <div class="p-6">
                             <div class="flex items-center justify-between mb-3">
                                 <span class="text-xs font-bold uppercase tracking-wider text-gray-600">
-                                    Pilihan Opsi Jawaban & Alur Percabangan ({{ q.options?.length || 0 }})
+                                    Pilihan Opsi Jawaban & Alur Percabangan ({{ (q.detils || q.options)?.length || 0 }})
                                 </span>
                                 <button 
                                     @click="openAddOptionModal(q)" 
@@ -631,7 +633,7 @@ const getTypeLabel = (type) => {
                             </div>
 
                             <!-- Bila Tanpa Opsi -->
-                            <div v-if="!q.options || q.options.length === 0" class="bg-gray-50 border border-dashed border-gray-200 rounded-lg p-3 text-center text-xs text-gray-400 italic">
+                            <div v-if="!(q.detils || q.options) || (q.detils || q.options).length === 0" class="bg-gray-50 border border-dashed border-gray-200 rounded-lg p-3 text-center text-xs text-gray-400 italic">
                                 Pertanyaan tipe ini berupa isian langsung tanpa opsi pilihan.
                             </div>
 
@@ -648,12 +650,12 @@ const getTypeLabel = (type) => {
                                         </tr>
                                     </thead>
                                     <tbody class="divide-y divide-gray-50 bg-white">
-                                        <tr v-for="(opt, optIdx) in q.options" :key="opt.id" class="hover:bg-gray-50/60 transition-colors">
+                                        <tr v-for="(opt, optIdx) in (q.detils || q.options)" :key="opt.id" class="hover:bg-gray-50/60 transition-colors">
                                             <td class="py-3 px-4 text-center font-bold text-gray-400">
                                                 {{ optIdx + 1 }}
                                             </td>
                                             <td class="py-3 px-4 font-mono font-bold text-gray-700">
-                                                {{ opt.code || '-' }}
+                                                {{ opt.code || opt.kode_opsi || '-' }}
                                             </td>
                                             <td class="py-3 px-4 font-medium text-gray-900">
                                                 {{ opt.option_text }}
@@ -716,7 +718,7 @@ const getTypeLabel = (type) => {
                             {{ isEditingOption ? 'Edit Pilihan Opsi' : 'Tambah Pilihan Opsi' }}
                         </h3>
                         <p class="text-xs text-gray-500 font-mono mt-0.5">
-                            Pertanyaan: [ {{ selectedQuestion?.code }} ] {{ selectedQuestion?.question_text }}
+                            Pertanyaan: [ {{ selectedQuestion?.kode_pertanyaan }} ] {{ selectedQuestion?.subpertanyaan }}
                         </p>
                     </div>
                     <button @click="showOptionModal = false" class="text-gray-400 hover:text-gray-600 font-bold text-lg leading-none">
@@ -746,7 +748,7 @@ const getTypeLabel = (type) => {
                         <input 
                             type="text" 
                             v-model="optionForm.code" 
-                            :placeholder="`Otomatis (misal: ${selectedQuestion?.code || 'F3'}-01)`" 
+                            :placeholder="`Otomatis (misal: ${selectedQuestion?.kode_pertanyaan || 'F3'}-01)`" 
                             class="w-full text-xs font-mono font-bold rounded-xl border-gray-300 focus:border-[#005B3C] focus:ring-[#005B3C] shadow-sm py-2 uppercase"
                         >
                         <span class="text-[10px] text-gray-400 block mt-1">Kosongkan jika ingin nomor kode digenerate otomatis.</span>

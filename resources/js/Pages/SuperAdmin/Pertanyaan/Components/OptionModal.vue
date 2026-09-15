@@ -22,7 +22,7 @@ const props = defineProps({
         default: false,
     },
     // Objek pertanyaan induk dari opsi ini
-    question: {
+    subpertanyaan: {
         type: Object,
         default: null,
     },
@@ -91,7 +91,7 @@ watch(() => props.show, (isOpen) => {
 
         if (props.isEdit && props.option) {
             form.id = props.option.id;
-            form.code = props.option.code || '';
+            form.code = props.option.kode_opsi || props.option.code || '';
             form.option_text = props.option.option_text;
             form.jump_to = props.option.jump_to || '';
         } else {
@@ -302,7 +302,7 @@ const handleSubmit = () => {
             },
         });
     } else {
-        form.post(`/superadmin/pertanyaan/${props.question.id}/options`, {
+        form.post(`/superadmin/pertanyaan/${props.subpertanyaan.id}/options`, {
             preserveScroll: true,
             onSuccess: () => {
                 Swal.fire({
@@ -356,7 +356,7 @@ const handleSubmit = () => {
                         {{ isEdit ? 'Edit Pilihan Opsi' : 'Tambah Opsi Jawaban' }}
                     </h3>
                     <p class="text-xs text-emerald-100/90 font-medium mt-0.5">
-                        Pertanyaan: <strong class="text-yellow-300 font-mono">{{ question?.code }}</strong>
+                        Pertanyaan: <strong class="text-yellow-300 font-mono">{{ subpertanyaan?.kode_pertanyaan }}</strong>
                     </p>
                 </div>
                 <button 

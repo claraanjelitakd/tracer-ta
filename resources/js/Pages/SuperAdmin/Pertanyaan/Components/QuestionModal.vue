@@ -20,7 +20,7 @@ const props = defineProps({
         type: Boolean,
         default: false,
     },
-    question: {
+    subpertanyaan: {
         type: Object,
         default: null,
     },
@@ -43,11 +43,11 @@ const emit = defineEmits(['close', 'saved']);
 // Formulir reaktif Inertia
 const form = useForm({
     id: null,
-    question_section_id: '',
-    code: '',
-    question_text: '',
+    kelompok_pertanyaan_id: '',
+    kode_pertanyaan: '',
+    subpertanyaan: '',
     type: 'single_choice',
-    is_required: true,
+    wajib: true,
     order: null,
 });
 
@@ -101,9 +101,9 @@ const getSelectedTypeHint = computed(() => {
 
 // Deteksi otomatis apakah input sedang dalam konteks Section F17 atau skala rating F17
 const isF17Context = computed(() => {
-    const selectedSec = props.sections.find((s) => s.id === form.question_section_id);
+    const selectedSec = props.sections.find((s) => s.id === form.kelompok_pertanyaan_id);
     const secTitle = selectedSec?.title?.toLowerCase() || '';
-    const codeMatch = form.code?.toUpperCase().startsWith('F17');
+    const codeMatch = form.kode_pertanyaan?.toUpperCase().startsWith('F17');
     const typeMatch = form.type === 'rating_5';
     return codeMatch || typeMatch || secTitle.includes('f17') || secTitle.includes('kompetensi');
 });
@@ -112,22 +112,22 @@ const isF17Context = computed(() => {
 watch(() => props.show, (isOpen) => {
     if (isOpen) {
         form.clearErrors();
-        if (props.isEdit && props.question) {
-            form.id = props.question.id;
-            form.question_section_id = props.question.question_section_id;
-            form.code = props.question.code;
-            form.question_text = props.question.question_text;
-            form.type = props.question.type;
-            form.is_required = !!props.question.is_required;
-            form.order = props.question.order;
+        if (props.isEdit && props.subpertanyaan) {
+            form.id = props.subpertanyaan.id;
+            form.kelompok_pertanyaan_id = props.subpertanyaan.kelompok_pertanyaan_id;
+            form.kode_pertanyaan = props.subpertanyaan.kode_pertanyaan;
+            form.subpertanyaan = props.subpertanyaan.subpertanyaan;
+            form.type = props.subpertanyaan.type;
+            form.wajib = !!props.subpertanyaan.wajib;
+            form.order = props.subpertanyaan.order;
         } else {
             form.reset();
             form.id = null;
-            form.question_section_id = props.defaultSectionId || (props.sections[0]?.id || '');
-            form.code = '';
-            form.question_text = '';
+            form.kelompok_pertanyaan_id = props.defaultSectionId || (props.sections[0]?.id || '');
+            form.kode_pertanyaan = '';
+            form.subpertanyaan = '';
             form.type = 'single_choice';
-            form.is_required = true;
+            form.wajib = true;
             form.order = props.nextOrder;
         }
     }
@@ -253,7 +253,7 @@ const handleSubmit = () => {
                         Bagian Kuesioner (Section) <span class="text-red-500">*</span>
                     </label>
                     <select
-                        v-model="form.question_section_id"
+                        v-model="form.kelompok_pertanyaan_id"
                         required
                         class="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:ring-2 focus:ring-[#005B3C] focus:border-transparent text-sm bg-gray-50/50"
                     >
@@ -262,8 +262,8 @@ const handleSubmit = () => {
                             Section {{ sec.order }}: {{ sec.title }}
                         </option>
                     </select>
-                    <p v-if="form.errors.question_section_id" class="text-xs text-red-500 mt-1 font-semibold">
-                        {{ form.errors.question_section_id }}
+                    <p v-if="form.errors.kelompok_pertanyaan_id" class="text-xs text-red-500 mt-1 font-semibold">
+                        {{ form.errors.kelompok_pertanyaan_id }}
                     </p>
                 </div>
 
@@ -304,13 +304,13 @@ const handleSubmit = () => {
                         </label>
                         <input
                             type="text"
-                            v-model="form.code"
+                            v-model="form.kode_pertanyaan"
                             required
                             placeholder="Contoh: F3, F13, F17-01"
                             class="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:ring-2 focus:ring-[#005B3C] focus:border-transparent text-sm font-mono uppercase bg-gray-50/50"
                         />
-                        <p v-if="form.errors.code" class="text-xs text-red-500 mt-1 font-semibold">
-                            {{ form.errors.code }}
+                        <p v-if="form.errors.kode_pertanyaan" class="text-xs text-red-500 mt-1 font-semibold">
+                            {{ form.errors.kode_pertanyaan }}
                         </p>
                     </div>
 
@@ -361,7 +361,7 @@ const handleSubmit = () => {
                     <input
                         type="checkbox"
                         id="is_required_check"
-                        v-model="form.is_required"
+                        v-model="form.wajib"
                         class="w-4 h-4 text-[#005B3C] rounded border-gray-300 focus:ring-[#005B3C] cursor-pointer"
                     />
                     <label for="is_required_check" class="text-xs font-bold text-emerald-950 cursor-pointer select-none">
@@ -375,14 +375,14 @@ const handleSubmit = () => {
                         Teks Kalimat Pertanyaan <span class="text-red-500">*</span>
                     </label>
                     <textarea
-                        v-model="form.question_text"
+                        v-model="form.subpertanyaan"
                         required
                         rows="3"
                         placeholder="Ketikkan rumusan pertanyaan kuesioner..."
                         class="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-[#005B3C] focus:border-transparent text-sm bg-gray-50/50"
                     ></textarea>
-                    <p v-if="form.errors.question_text" class="text-xs text-red-500 mt-1 font-semibold">
-                        {{ form.errors.question_text }}
+                    <p v-if="form.errors.subpertanyaan" class="text-xs text-red-500 mt-1 font-semibold">
+                        {{ form.errors.subpertanyaan }}
                     </p>
                 </div>
 

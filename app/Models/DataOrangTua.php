@@ -25,4 +25,12 @@ class DataOrangTua extends Model
     {
         return $this->belongsTo(DataAkademik::class, 'nim', 'nim');
     }
+
+    /**
+     * Relasi ke model Biodata
+     */
+    public function biodata()
+    {
+        return $this->hasOne(Biodata::class, 'nim', 'nim');
+    }
 }

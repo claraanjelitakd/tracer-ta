@@ -57,6 +57,11 @@ class RefSubpertanyaanDetilSeeder extends Seeder
             ['kode_pertanyaan' => 'F504', 'order' => 1, 'kode_opsi' => '1', 'option_text' => 'Ya', 'jump_to' => 'F502'],
             ['kode_pertanyaan' => 'F504', 'order' => 2, 'kode_opsi' => '2', 'option_text' => 'Tidak', 'jump_to' => 'F506'],
 
+            // F505 (Berapa rata-rata pendapatan per bulan / Take home pay)
+            ['kode_pertanyaan' => 'F505', 'order' => 1, 'kode_opsi' => 'F5051', 'option_text' => 'Dari Pekerjaan Utama', 'jump_to' => null],
+            ['kode_pertanyaan' => 'F505', 'order' => 2, 'kode_opsi' => 'F5052', 'option_text' => 'Dari Lembur dan Tips', 'jump_to' => null],
+            ['kode_pertanyaan' => 'F505', 'order' => 3, 'kode_opsi' => 'F5053', 'option_text' => 'Dari Pekerjaan Lainnya', 'jump_to' => null],
+
             // F505A (Kesesuaian gaji dengan UMR)
             ['kode_pertanyaan' => 'F505A', 'order' => 1, 'kode_opsi' => '1', 'option_text' => 'Di Bawah', 'jump_to' => null],
             ['kode_pertanyaan' => 'F505A', 'order' => 2, 'kode_opsi' => '2', 'option_text' => 'Sesuai', 'jump_to' => null],
@@ -173,10 +178,10 @@ class RefSubpertanyaanDetilSeeder extends Seeder
             }
         }
 
-        $questions = RefSubpertanyaan2021::all()->keyBy('kode_pertanyaan');
+        $subpertanyaans = RefSubpertanyaan2021::all()->keyBy('kode_pertanyaan');
 
         foreach ($options as $item) {
-            $q = $questions[$item['kode_pertanyaan']] ?? null;
+            $q = $subpertanyaans[$item['kode_pertanyaan']] ?? null;
             if ($q) {
                 RefSubpertanyaanDetil::updateOrCreate(
                     [

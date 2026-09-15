@@ -17,4 +17,9 @@ class Yudisium extends Model
     {
         return $this->belongsTo(DataAkademik::class, 'nim', 'nim');
     }
+
+    public function biodata()
+    {
+        return $this->hasOne(Biodata::class, 'nim', 'nim');
+    }
 }

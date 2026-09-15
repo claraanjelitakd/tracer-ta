@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -18,7 +17,7 @@ class Tracer extends Model
     protected $table = 'tracers';
 
     protected $fillable = [
-        'alumni_id',
+        'biodata_id',
         'question_id',
         'nim',
         'kelompok',
@@ -35,75 +34,50 @@ class Tracer extends Model
         'answer_json' => 'array',
     ];
 
-    protected $appends = [
-        'answer_text',
-    ];
-
-    public function newEloquentBuilder($query)
-    {
-        return new class($query) extends Builder
-        {
-            public function where($column, $operator = null, $value = null, $boolean = 'and')
-            {
-                if (is_string($column) && $column === 'answer_text') {
-                    $column = 'answer';
-                }
-
-                return parent::where($column, $operator, $value, $boolean);
-            }
-        };
-    }
-
     protected static function booted()
     {
         static::saving(function ($tracer) {
-            unset($tracer->attributes['answer_text']);
-
             // Auto-populate data pendukung dari relasi jika belum terisi
-            if (empty($tracer->nim) && $tracer->alumni_id) {
-                $alumni = Alumni::find($tracer->alumni_id);
-                if ($alumni) {
-                    $tracer->nim = $alumni->nim;
+            if (empty($tracer->nim) && $tracer->biodata_id) {
+                $biodata = Biodata::find($tracer->biodata_id);
+                if ($biodata) {
+                    $tracer->nim = $biodata->nim;
                     if (empty($tracer->tahun_lulus)) {
-                        $tracer->tahun_lulus = $alumni->dataAkademik?->tahun_lulus;
+                        $tracer->tahun_lulus = $biodata->tahun_lulus ?? $biodata->dataAkademik?->tahun_lulus;
                     }
                 }
             }
 
-            if (empty($tracer->subpertanyaan) && $tracer->question_id) {
+            if ((empty($tracer->attributes['kode_pertanyaan']) || empty($tracer->attributes['subpertanyaan'])) && $tracer->question_id) {
                 $question = RefSubpertanyaan2021::find($tracer->question_id);
                 if ($question) {
                     $tracer->kode_pertanyaan = $tracer->kode_pertanyaan ?: $question->kode_pertanyaan;
-                    $tracer->subpertanyaan = $question->subpertanyaan;
-                    $tracer->kelompok = $tracer->kelompok ?: $question->kelompok;
+                    $tracer->subpertanyaan = $tracer->attributes['subpertanyaan'] ?? $question->subpertanyaan;
+                    $tracer->kelompok = $tracer->kelompok ?: ($question->kelompok ?: substr($question->kode_pertanyaan ?: 'F1', 0, 3));
                     $tracer->keterangan = $tracer->keterangan ?: $question->keterangan;
                 }
+            }
+
+            if (empty($tracer->kelompok)) {
+                $tracer->kelompok = substr($tracer->kode_pertanyaan ?: 'F1', 0, 3);
             }
         });
     }
 
     /**
-     * Relasi ke alumni.
+     * Relasi ke biodata.
      */
-    public function alumni()
+    public function biodata()
     {
-        return $this->belongsTo(Alumni::class);
+        return $this->belongsTo(Biodata::class, 'biodata_id');
     }
 
     /**
-     * Relasi ke butir pertanyaan (RefSubpertanyaan2021 / Question).
+     * Relasi ke butir pertanyaan (RefSubpertanyaan2021).
      */
-    public function subpertanyaanRelasi()
+    public function subpertanyaan()
     {
         return $this->belongsTo(RefSubpertanyaan2021::class, 'question_id');
-    }
-
-    /**
-     * Alias relasi question untuk kompatibilitas.
-     */
-    public function question()
-    {
-        return $this->subpertanyaanRelasi();
     }
 
     // Accessors & Mutators

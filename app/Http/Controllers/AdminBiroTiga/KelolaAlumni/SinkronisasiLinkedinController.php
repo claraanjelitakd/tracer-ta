@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\AdminBiroTiga\KelolaAlumni;
 
 use App\Http\Controllers\Controller;
-use App\Models\Alumni;
+use App\Models\Biodata;
 use App\Models\Company;
 use App\Services\LinkedIn\LinkedInService;
 use Illuminate\Http\Request;
@@ -22,7 +22,7 @@ class SinkronisasiLinkedinController extends Controller
      */
     public function sinkronisasiDataLinkedin($id, LinkedInService $linkedinService)
     {
-        $alumni = Alumni::findOrFail($id);
+        $alumni = Biodata::findOrFail($id);
 
         $identitas = $alumni->linkedin_username ?: $alumni->linkedin_url;
 
@@ -57,7 +57,7 @@ class SinkronisasiLinkedinController extends Controller
             'location' => 'nullable|string',
         ]);
 
-        $alumni = Alumni::findOrFail($id);
+        $alumni = Biodata::findOrFail($id);
 
         DB::beginTransaction();
         try {

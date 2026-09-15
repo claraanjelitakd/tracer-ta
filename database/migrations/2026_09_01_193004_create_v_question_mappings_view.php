@@ -37,7 +37,7 @@ return new class extends Migration
             SELECT 8, 'data_akademiks', 'nik', q.id, q.kode_pertanyaan
             FROM ref_subpertanyaan2021 q WHERE q.kode_pertanyaan = 'BIO_NIK'
             UNION ALL
-            SELECT 9, 'data_akademiks', 'npwp', q.id, q.kode_pertanyaan
+            SELECT 9, 'biodatas', 'npwp', q.id, q.kode_pertanyaan
             FROM ref_subpertanyaan2021 q WHERE q.kode_pertanyaan = 'BIO_NPWP'
             UNION ALL
             SELECT 10, 'data_akademiks', 'jenis_kelamin', q.id, q.kode_pertanyaan
@@ -46,7 +46,7 @@ return new class extends Migration
             SELECT 11, 'data_akademiks', 'tanggal_kelulusan', q.id, q.kode_pertanyaan
             FROM ref_subpertanyaan2021 q WHERE q.kode_pertanyaan = 'BIO_TGL_LULUS'
             UNION ALL
-            SELECT 12, 'data_akademiks', 'judul_skripsi', q.id, q.kode_pertanyaan
+            SELECT 12, 'yudisiums', 'judul_ta', q.id, q.kode_pertanyaan
             FROM ref_subpertanyaan2021 q WHERE q.kode_pertanyaan = 'BIO_JUDUL_TA'
             UNION ALL
             SELECT 13, 'companies', 'nama_perusahaan', q.id, q.kode_pertanyaan
@@ -64,7 +64,7 @@ return new class extends Migration
             SELECT 17, 'companies', 'alamat', q.id, q.kode_pertanyaan
             FROM ref_subpertanyaan2021 q WHERE q.kode_pertanyaan = 'F2F'
             UNION ALL
-            SELECT 18, 'alumnis', 'posisi_jabatan', q.id, q.kode_pertanyaan
+            SELECT 18, 'biodatas', 'posisi_jabatan', q.id, q.kode_pertanyaan
             FROM ref_subpertanyaan2021 q WHERE q.kode_pertanyaan = 'F2G'
             UNION ALL
             SELECT 19, 'companies', 'skala', q.id, q.kode_pertanyaan
@@ -73,7 +73,7 @@ return new class extends Migration
             SELECT 20, 'companies', 'nama_perusahaan', q.id, q.kode_pertanyaan
             FROM ref_subpertanyaan2021 q WHERE q.kode_pertanyaan = 'F5B'
             UNION ALL
-            SELECT 21, 'alumnis', 'posisi_jabatan', q.id, q.kode_pertanyaan
+            SELECT 21, 'biodatas', 'posisi_jabatan', q.id, q.kode_pertanyaan
             FROM ref_subpertanyaan2021 q WHERE q.kode_pertanyaan = 'F5C'
             UNION ALL
             SELECT 22, 'companies', 'skala', q.id, q.kode_pertanyaan

@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Alumni\Dashboard;
 
 use App\Http\Controllers\Controller;
-use App\Models\Alumni;
+use App\Models\Biodata;
 use App\Models\ProdiQuestion;
 use App\Models\ProdiResponse;
 use App\Services\Kuesioner\KelengkapanTracerService;
@@ -14,7 +14,7 @@ use Inertia\Inertia;
  * DashboardController
  *
  * Fungsi: Menampilkan halaman utama (Dashboard) untuk pengguna dengan peran (role) Alumni.
- * Tujuan: Menyajikan ringkasan aktivitas alumni, persentase kelengkapan profil dan kuesioner tracer study.
+ * Tujuan: Menyajikan ringkasan aktivitas alumni, persentase kelengkapan profil biodata dan kuesioner tracer study.
  */
 class DashboardController extends Controller
 {
@@ -28,7 +28,7 @@ class DashboardController extends Controller
     public function tampilkanDashboard(Request $request)
     {
         $user = $request->user();
-        $alumni = Alumni::where('user_id', $user->id)->first();
+        $biodata = Biodata::where('user_id', $user->id)->first();
 
         $profilePercentage = 0;
         $profileCompleted = false;
@@ -46,9 +46,9 @@ class DashboardController extends Controller
         $prodiAnsweredCount = 0;
         $prodiCompleted = false;
 
-        if ($alumni) {
-            $alumni->load('prodi');
-            $eval = KelengkapanTracerService::evaluasiKelengkapanTotal($alumni);
+        if ($biodata) {
+            $biodata->load('prodi');
+            $eval = KelengkapanTracerService::evaluasiKelengkapanTotal($biodata);
 
             $profilePercentage = $eval['profile']['percentage'] ?? 0;
             $profileCompleted = $eval['profile']['is_complete'] ?? false;
@@ -63,11 +63,11 @@ class DashboardController extends Controller
             $questionnaireMissing = $eval['questionnaire']['missing_questions'] ?? [];
 
             // Evaluasi Kuesioner Program Studi
-            if ($alumni->prodi_id) {
-                $prodiQIds = ProdiQuestion::where('prodi_id', $alumni->prodi_id)->pluck('id');
+            if ($biodata->prodi_id) {
+                $prodiQIds = ProdiQuestion::where('prodi_id', $biodata->prodi_id)->pluck('id');
                 $prodiQuestionsCount = $prodiQIds->count();
                 if ($prodiQuestionsCount > 0) {
-                    $prodiAnsweredCount = ProdiResponse::where('alumni_id', $alumni->id)
+                    $prodiAnsweredCount = ProdiResponse::where('biodata_id', $biodata->id)
                         ->whereIn('prodi_question_id', $prodiQIds)
                         ->count();
                     $prodiCompleted = ($prodiAnsweredCount >= $prodiQuestionsCount);
@@ -77,7 +77,8 @@ class DashboardController extends Controller
 
         return Inertia::render('Alumni/Dashboard', [
             'user' => $user,
-            'alumni' => $alumni,
+            'biodata' => $biodata,
+            'alumni' => $biodata,
             'profilePercentage' => $profilePercentage,
             'profileCompleted' => $profileCompleted,
             'profileFilledCount' => $profileFilledCount,

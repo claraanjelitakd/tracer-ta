@@ -2,9 +2,9 @@
 
 namespace Tests\Feature;
 
-use App\Models\Question;
-use App\Models\Questionnaire;
-use App\Models\QuestionSection;
+use App\Models\KelompokPertanyaan;
+use App\Models\Kuesioner;
+use App\Models\RefSubpertanyaan2021;
 use App\Models\User;
 use Illuminate\Foundation\Testing\DatabaseMigrations;
 use Illuminate\Support\Facades\Hash;
@@ -16,7 +16,7 @@ class BiroTigaKelolaPertanyaanTest extends TestCase
 
     protected User $admin;
 
-    protected QuestionSection $section;
+    protected KelompokPertanyaan $section;
 
     protected function setUp(): void
     {
@@ -30,14 +30,14 @@ class BiroTigaKelolaPertanyaanTest extends TestCase
             'must_change_password' => false,
         ]);
 
-        $q = Questionnaire::create([
+        $q = Kuesioner::create([
             'title' => 'Tracer Study',
             'year' => 2026,
             'is_active' => true,
         ]);
 
-        $this->section = QuestionSection::create([
-            'questionnaire_id' => $q->id,
+        $this->section = KelompokPertanyaan::create([
+            'kuesioner_id' => $q->id,
             'title' => 'Bagian I',
             'order' => 1,
         ]);
@@ -48,19 +48,19 @@ class BiroTigaKelolaPertanyaanTest extends TestCase
      */
     public function test_can_render_kelola_pertanyaan_page(): void
     {
-        Question::create([
-            'question_section_id' => $this->section->id,
-            'code' => 'F1',
-            'question_text' => 'Nomor Induk Mahasiswa',
+        RefSubpertanyaan2021::create([
+            'kelompok_pertanyaan_id' => $this->section->id,
+            'kode_pertanyaan' => 'F1',
+            'subpertanyaan' => 'Nomor Induk Mahasiswa',
             'type' => 'text',
-            'is_required' => true,
+            'wajib' => true,
             'order' => 1,
         ]);
 
         $response = $this->actingAs($this->admin)->get('/superadmin/pertanyaan');
         $response->assertStatus(200);
         $response->assertInertia(fn ($page) => $page->component('SuperAdmin/Pertanyaan/Index')
-            ->has('questions')
+            ->has('subpertanyaans')
             ->has('availableJumpTargets')
             ->has('targetQuestionMap')
         );
@@ -71,21 +71,21 @@ class BiroTigaKelolaPertanyaanTest extends TestCase
      */
     public function test_can_reorder_questions_direction(): void
     {
-        $q1 = Question::create([
-            'question_section_id' => $this->section->id,
-            'code' => 'F1',
-            'question_text' => 'Pertanyaan 1',
+        $q1 = RefSubpertanyaan2021::create([
+            'kelompok_pertanyaan_id' => $this->section->id,
+            'kode_pertanyaan' => 'F1',
+            'subpertanyaan' => 'Pertanyaan 1',
             'type' => 'text',
-            'is_required' => true,
+            'wajib' => true,
             'order' => 1,
         ]);
 
-        $q2 = Question::create([
-            'question_section_id' => $this->section->id,
-            'code' => 'F2',
-            'question_text' => 'Pertanyaan 2',
+        $q2 = RefSubpertanyaan2021::create([
+            'kelompok_pertanyaan_id' => $this->section->id,
+            'kode_pertanyaan' => 'F2',
+            'subpertanyaan' => 'Pertanyaan 2',
             'type' => 'text',
-            'is_required' => true,
+            'wajib' => true,
             'order' => 2,
         ]);
 
@@ -105,12 +105,12 @@ class BiroTigaKelolaPertanyaanTest extends TestCase
      */
     public function test_can_store_option_without_manual_order(): void
     {
-        $q = Question::create([
-            'question_section_id' => $this->section->id,
-            'code' => 'F3',
-            'question_text' => 'Kapan mulai mencari kerja?',
+        $q = RefSubpertanyaan2021::create([
+            'kelompok_pertanyaan_id' => $this->section->id,
+            'kode_pertanyaan' => 'F3',
+            'subpertanyaan' => 'Kapan mulai mencari kerja?',
             'type' => 'single_choice',
-            'is_required' => true,
+            'wajib' => true,
             'order' => 1,
         ]);
 
@@ -133,16 +133,16 @@ class BiroTigaKelolaPertanyaanTest extends TestCase
     public function test_storing_rating_question_does_not_store_options(): void
     {
         $response = $this->actingAs($this->admin)->post('/superadmin/pertanyaan', [
-            'question_section_id' => $this->section->id,
-            'code' => 'F99',
-            'question_text' => 'Penilaian Kualitas Fasilitas Belajar',
+            'kelompok_pertanyaan_id' => $this->section->id,
+            'kode_pertanyaan' => 'F99',
+            'subpertanyaan' => 'Penilaian Kualitas Fasilitas Belajar',
             'type' => 'rating_5',
-            'is_required' => true,
+            'wajib' => true,
         ]);
 
         $response->assertSessionHasNoErrors();
-        $q = Question::where('code', 'F99')->first();
+        $q = RefSubpertanyaan2021::where('kode_pertanyaan', 'F99')->first();
         $this->assertNotNull($q);
-        $this->assertCount(0, $q->options);
+        $this->assertCount(0, $q->detils);
     }
 }

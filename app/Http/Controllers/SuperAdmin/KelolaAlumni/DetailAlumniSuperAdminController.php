@@ -3,22 +3,22 @@
 namespace App\Http\Controllers\SuperAdmin\KelolaAlumni;
 
 use App\Http\Controllers\Controller;
-use App\Models\Alumni;
 use App\Models\Atasan;
+use App\Models\Biodata;
 use App\Models\Company;
-use App\Models\DataAkademik;
 use App\Models\DataOrangTua;
 use App\Models\Kabupaten;
+use App\Models\Kuesioner;
 use App\Models\ProdiQuestionSection;
 use App\Models\ProdiResponse;
 use App\Models\Province;
-use App\Models\Questionnaire;
-use App\Models\Response;
+use App\Models\Tracer;
 use App\Services\Kuesioner\KelengkapanTracerService;
 use App\Services\Kuesioner\KuesionerSyncService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
+use Inertia\Response;
 
 /**
  * DetailAlumniSuperAdminController
@@ -39,13 +39,15 @@ class DetailAlumniSuperAdminController extends Controller
      * Tampilkan Halaman Detail Profil & Kuesioner Alumni
      *
      * @param  int|string  $id
-     * @return \Inertia\Response
+     * @return Response
      */
     public function show($id)
     {
-        $alumni = Alumni::with([
+        $alumni = Biodata::with([
             'dataAkademik.yudisium',
             'dataAkademik.orangTua',
+            'yudisium',
+            'orangTua',
             'company.province',
             'company.kabupaten',
             'atasan',
@@ -60,18 +62,18 @@ class DetailAlumniSuperAdminController extends Controller
         $evaluasi = KelengkapanTracerService::evaluasiKelengkapanTotal($alumni);
 
         // Ambil seluruh jawaban kuesioner alumni
-        $savedResponses = Response::where('alumni_id', $alumni->id)
+        $savedResponses = Tracer::where('biodata_id', $alumni->id)
             ->get()
             ->keyBy('question_id');
 
         // Ambil seluruh section dan pertanyaan dari kuesioner aktif
         $alumniProdiId = $alumni->prodi_id;
-        $kuesioner = Questionnaire::where('is_active', true)
+        $kuesioner = Kuesioner::where('is_active', true)
             ->with(['sections' => function ($secQuery) {
                 $secQuery->orderBy('order', 'asc')
-                    ->with(['questions' => function ($qQuery) {
+                    ->with(['subpertanyaans' => function ($qQuery) {
                         $qQuery->orderBy('order', 'asc')
-                            ->with('options');
+                            ->with('detils');
                     }]);
             }])
             ->first();
@@ -81,11 +83,11 @@ class DetailAlumniSuperAdminController extends Controller
 
         if ($kuesioner) {
             foreach ($kuesioner->sections as $section) {
-                $questionsList = [];
+                $subpertanyaansList = [];
 
-                foreach ($section->questions as $question) {
-                    $resp = $savedResponses->get($question->id);
-                    $isMandatory = KelengkapanTracerService::isMandatoryQuestion($question->code);
+                foreach ($section->subpertanyaans as $subpertanyaan) {
+                    $resp = $savedResponses->get($subpertanyaan->id);
+                    $isMandatory = KelengkapanTracerService::isMandatoryQuestion($subpertanyaan->kode_pertanyaan);
 
                     $hasAnswer = false;
                     $displayAnswer = null;
@@ -100,77 +102,81 @@ class DetailAlumniSuperAdminController extends Controller
                         }
                     }
 
-                    $questionsList[] = [
-                        'id' => $question->id,
-                        'code' => $question->code,
-                        'question_text' => $question->question_text,
-                        'type' => $question->type,
+                    if ($isMandatory && $hasAnswer) {
+                        // Respon wajib terjawab
+                    }
+
+                    $subpertanyaansList[] = [
+                        'id' => $subpertanyaan->id,
+                        'kode_pertanyaan' => $subpertanyaan->kode_pertanyaan,
+                        'subpertanyaan' => $subpertanyaan->subpertanyaan,
+                        'type' => $subpertanyaan->type,
+                        'kelompok' => $subpertanyaan->kelompok,
                         'is_mandatory' => $isMandatory,
                         'is_answered' => $hasAnswer,
-                        'answer_text' => $displayAnswer,
-                        'options' => $question->options->map(function ($opt) {
-                            return [
-                                'code' => $opt->code,
-                                'text' => $opt->option_text,
-                            ];
-                        }),
+                        'answer' => $displayAnswer,
+                        'answer_json' => $resp?->answer_json,
+                        'detils' => $subpertanyaan->detils,
                     ];
                 }
 
                 // Hitung berapa pertanyaan wajib di section ini yang belum dijawab
-                $unansweredCount = count(array_filter($questionsList, function ($item) {
+                $unansweredCount = count(array_filter($subpertanyaansList, function ($item) {
                     return $item['is_mandatory'] && ! $item['is_answered'];
                 }));
 
                 $sectionsWithAnswers[] = [
                     'id' => $section->id,
-                    'title' => $section->title,
+                    'section' => $section->section,
                     'order' => $section->order,
-                    'questions' => $questionsList,
+                    'subpertanyaans' => $subpertanyaansList,
                     'unanswered_mandatory_count' => $unansweredCount,
                 ];
             }
         }
 
-        // Susun Data Form Profil Lengkap (sama persis dengan Profil Alumni)
+        // Susun Data Form Profil Lengkap (sama persis dengan Profil Biodata)
         $dataAkademik = $alumni->dataAkademik;
-        $orangTua = $dataAkademik?->orangTua;
-        $yudisium = $dataAkademik?->yudisium;
+        $orangTua = $alumni->orangTua ?? $dataAkademik?->orangTua;
+        $yudisium = $alumni->yudisium ?? $dataAkademik?->yudisium;
         $atasan = $alumni->atasan;
 
         $formData = [
             // Identitas Pribadi
             'nim' => $alumni->nim ?? '',
-            'nama' => $dataAkademik?->nama ?? '',
+            'nama' => $alumni->nama ?? $dataAkademik?->nama ?? '',
             'tempat_lahir' => $dataAkademik?->tempat_lahir ?? '',
             'tanggal_lahir' => $dataAkademik?->tanggal_lahir ?? '',
-            'agama' => $dataAkademik?->agama ?? '',
+            'agama' => $alumni->agama ?? $dataAkademik?->agama ?? '',
             'jenis_kelamin' => $dataAkademik?->jenis_kelamin ?? '',
             'golongan_darah' => $dataAkademik?->golongan_darah ?? '',
             'warga_negara' => $dataAkademik?->warga_negara ?? 'WNI',
-            'nik' => $dataAkademik?->nik ?? '',
-            'no_kk' => $dataAkademik?->no_kk ?? '',
+            'nik' => $alumni->nik ?? $dataAkademik?->nik ?? '',
+            'no_kk' => $alumni->no_kk ?? $dataAkademik?->no_kk ?? '',
             'nisn' => $dataAkademik?->nisn ?? '',
-            'no_bpjs' => $dataAkademik?->no_bpjs ?? '',
-            'npwp' => $dataAkademik?->npwp ?? '',
+            'no_bpjs' => $alumni->no_bpjs ?? $dataAkademik?->no_bpjs ?? '',
+            'npwp' => $alumni->npwp ?? '',
 
             // Kontak & Alamat Pribadi
-            'alamat_saat_ini' => $dataAkademik?->alamat_saat_ini ?? '',
-            'kelurahan' => $dataAkademik?->kelurahan ?? '',
-            'kecamatan' => $dataAkademik?->kecamatan ?? '',
-            'kabupaten_id' => $dataAkademik?->kabupaten_id ?? '',
-            'provinsi_id' => $dataAkademik?->provinsi_id ?? '',
-            'kode_pos' => $dataAkademik?->kode_pos ?? '',
-            'nomor_telepon' => $dataAkademik?->nomor_telepon ?? '',
-            'email_pribadi' => $dataAkademik?->email_pribadi ?? '',
+            'alamat_saat_ini' => $alumni->alamat ?? $dataAkademik?->alamat_saat_ini ?? '',
+            'alamat' => $alumni->alamat ?? $dataAkademik?->alamat_saat_ini ?? '',
+            'kelurahan' => $alumni->kelurahan ?? $dataAkademik?->kelurahan ?? '',
+            'kecamatan' => $alumni->kecamatan ?? $dataAkademik?->kecamatan ?? '',
+            'kabupaten_id' => $alumni->kabupaten_id ?? $dataAkademik?->kabupaten_id ?? '',
+            'provinsi_id' => $alumni->provinsi_id ?? $dataAkademik?->provinsi_id ?? '',
+            'kode_pos' => $alumni->kode_pos ?? $dataAkademik?->kode_pos ?? '',
+            'nomor_telepon' => $alumni->nomor_telepon ?? $dataAkademik?->nomor_telepon ?? '',
+            'email_pribadi' => $alumni->email_pribadi ?? $alumni->email ?? $dataAkademik?->email_pribadi ?? '',
+            'email' => $alumni->email ?? $dataAkademik?->email_students ?? '',
             'email_students' => $dataAkademik?->email_students ?? '',
 
             // Data Akademik Utama
             'angkatan_masuk' => $dataAkademik?->angkatan_masuk ?? '',
-            'status_mahasiswa' => $dataAkademik?->status_mahasiswa ?? 'Lulus',
-            'tahun_akademik_lulus' => $dataAkademik?->tahun_akademik_lulus ?? '',
-            'tahun_lulus' => $dataAkademik?->tahun_lulus ?? '',
-            'ipk' => $dataAkademik?->ipk ?? '',
+            'status_mahasiswa' => $dataAkademik?->status_mahasiswa ?? 'AR',
+            'tahun_akademik_lulus' => $yudisium?->tahun_akademik_lulus ?? $dataAkademik?->tahun_akademik_lulus ?? '',
+            'tahun_lulus' => $alumni->tahun_lulus ?? $yudisium?->tahun_lulus ?? $dataAkademik?->tahun_lulus ?? '',
+            'ipk' => $dataAkademik?->ip_kumulatif ?? '',
+            'ip_kumulatif' => $dataAkademik?->ip_kumulatif ?? '',
             'total_sks' => $dataAkademik?->total_sks ?? '',
             'total_angka_kualitas' => $dataAkademik?->total_angka_kualitas ?? '',
 
@@ -239,7 +245,7 @@ class DetailAlumniSuperAdminController extends Controller
                 ->orderBy('order', 'asc')
                 ->get();
 
-            $savedProdiResponses = ProdiResponse::where('alumni_id', $alumni->id)
+            $savedProdiResponses = ProdiResponse::where('biodata_id', $alumni->id)
                 ->get()
                 ->keyBy('prodi_question_id');
 
@@ -318,6 +324,7 @@ class DetailAlumniSuperAdminController extends Controller
         $companies = Company::select('id', 'nama_perusahaan', 'province_id', 'kabupaten_id', 'alamat', 'kode_pos', 'skala', 'status_verifikasi')->get();
 
         return Inertia::render('SuperAdmin/Alumni/Show', [
+            'biodata' => $alumni,
             'alumni' => $alumni,
             'evaluasi' => $evaluasi,
             'sections' => $sectionsWithAnswers,
@@ -338,26 +345,10 @@ class DetailAlumniSuperAdminController extends Controller
      */
     public function updateProfile(Request $request, $id)
     {
-        $alumni = Alumni::findOrFail($id);
+        $biodata = Biodata::findOrFail($id);
         $data = $request->all();
 
-        // 1. Perbarui Data Akademik
-        $dataAkademik = DataAkademik::firstOrCreate(
-            ['nim' => $alumni->nim],
-            ['nama' => $data['nama'] ?? $alumni->nim]
-        );
-
-        $dataAkademikFields = array_intersect_key($data, array_flip((new DataAkademik)->getFillable()));
-        foreach ($dataAkademikFields as $key => $val) {
-            if ($val === '') {
-                $dataAkademikFields[$key] = null;
-            }
-        }
-        if (! empty($dataAkademikFields)) {
-            $dataAkademik->update($dataAkademikFields);
-        }
-
-        // 2. Perbarui Data Orang Tua
+        // 1. Perbarui Data Orang Tua
         $dataOrangTua = [
             'nama_orang_tua' => ! empty($data['nama_orang_tua']) ? $data['nama_orang_tua'] : null,
             'pekerjaan' => ! empty($data['pekerjaan_orang_tua']) ? $data['pekerjaan_orang_tua'] : null,
@@ -369,12 +360,12 @@ class DetailAlumniSuperAdminController extends Controller
             'nomor_telepon' => ! empty($data['nomor_telepon_orang_tua']) ? $data['nomor_telepon_orang_tua'] : null,
         ];
         DataOrangTua::updateOrCreate(
-            ['nim' => $alumni->nim],
+            ['nim' => $biodata->nim],
             $dataOrangTua
         );
 
-        // 3. Tangani Data Perusahaan
-        $companyId = null;
+        // 2. Tangani Data Perusahaan
+        $companyId = $biodata->company_id;
         if (! empty($data['nama_perusahaan'])) {
             $company = Company::firstOrCreate(
                 ['nama_perusahaan' => $data['nama_perusahaan']],
@@ -398,10 +389,10 @@ class DetailAlumniSuperAdminController extends Controller
             $companyId = $company->id;
         }
 
-        // 4. Tangani Data Atasan
-        $atasanId = null;
+        // 3. Tangani Data Atasan
+        $atasanId = $biodata->atasan_id;
         if (! empty($data['nama_atasan'])) {
-            $atasan = ! empty($alumni->atasan_id) ? Atasan::find($alumni->atasan_id) : null;
+            $atasan = ! empty($biodata->atasan_id) ? Atasan::find($biodata->atasan_id) : null;
             if ($atasan) {
                 $atasan->update([
                     'nama' => $data['nama_atasan'],
@@ -418,8 +409,23 @@ class DetailAlumniSuperAdminController extends Controller
             $atasanId = $atasan->id;
         }
 
-        // 5. Perbarui Model Alumni
-        $alumni->update([
+        // 4. Perbarui Model Biodata
+        $biodata->update([
+            'nama' => ! empty($data['nama']) ? $data['nama'] : $biodata->nama,
+            'nomor_telepon' => ! empty($data['nomor_telepon']) ? $data['nomor_telepon'] : null,
+            'email' => ! empty($data['email']) ? $data['email'] : null,
+            'email_pribadi' => ! empty($data['email_pribadi']) ? $data['email_pribadi'] : null,
+            'alamat' => ! empty($data['alamat_saat_ini']) ? $data['alamat_saat_ini'] : (! empty($data['alamat']) ? $data['alamat'] : null),
+            'kelurahan' => ! empty($data['kelurahan']) ? $data['kelurahan'] : null,
+            'kecamatan' => ! empty($data['kecamatan']) ? $data['kecamatan'] : null,
+            'kabupaten_id' => ! empty($data['kabupaten_id']) ? $data['kabupaten_id'] : null,
+            'provinsi_id' => ! empty($data['provinsi_id']) ? $data['provinsi_id'] : null,
+            'kode_pos' => ! empty($data['kode_pos']) ? $data['kode_pos'] : null,
+            'agama' => ! empty($data['agama']) ? $data['agama'] : null,
+            'nik' => ! empty($data['nik']) ? $data['nik'] : null,
+            'no_kk' => ! empty($data['no_kk']) ? $data['no_kk'] : null,
+            'no_bpjs' => ! empty($data['no_bpjs']) ? $data['no_bpjs'] : null,
+            'npwp' => ! empty($data['npwp']) ? $data['npwp'] : null,
             'company_id' => $companyId,
             'atasan_id' => $atasanId,
             'posisi_jabatan' => ! empty($data['posisi_jabatan']) ? $data['posisi_jabatan'] : null,
@@ -433,10 +439,10 @@ class DetailAlumniSuperAdminController extends Controller
             'linkedin_username' => ! empty($data['linkedin_username']) ? $data['linkedin_username'] : null,
         ]);
 
-        $alumni->refresh();
+        $biodata->refresh();
 
-        // 6. Sinkronkan Respon Kuesioner (F1 s/d F2H)
-        KuesionerSyncService::syncProfileResponses($alumni);
+        // 5. Sinkronkan Respon Kuesioner (F1 s/d F2H)
+        KuesionerSyncService::syncProfileResponses($biodata);
 
         return redirect()->back()->with('success', 'Data profil mahasiswa berhasil diperbarui oleh Super Admin.');
     }

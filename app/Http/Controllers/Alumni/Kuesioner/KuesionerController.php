@@ -3,9 +3,9 @@
 namespace App\Http\Controllers\Alumni\Kuesioner;
 
 use App\Http\Controllers\Controller;
+use App\Models\Kuesioner;
 use App\Models\QuestionMapping;
-use App\Models\Questionnaire;
-use App\Models\Response;
+use App\Models\Tracer;
 use App\Services\Kuesioner\KuesionerSyncService;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
@@ -24,28 +24,28 @@ class KuesionerController extends Controller
     public function tampilkanKuesioner()
     {
         $pengguna = Auth::user();
-        $alumni = $pengguna->alumni;
+        $biodata = $pengguna->biodata;
 
-        if (! $alumni) {
-            abort(403, 'Profil Alumni tidak ditemukan.');
+        if (! $biodata) {
+            abort(403, 'Profil Biodata tidak ditemukan.');
         }
 
-        $alumniProdiId = $alumni->prodi_id;
-        $alumni->load(['dataAkademik', 'company.province', 'company.kabupaten', 'atasan', 'user']);
+        $alumniProdiId = $biodata->prodi_id;
+        $biodata->load(['dataAkademik', 'yudisium', 'company.province', 'company.kabupaten', 'atasan', 'user']);
 
         // Sinkronisasi otomatis data profil (Identitas & Perusahaan/Atasan) ke responses
-        KuesionerSyncService::syncProfileResponses($alumni);
+        KuesionerSyncService::syncProfileResponses($biodata);
 
         // Ambil kuesioner aktif mulai dari Section 3 (Waktu Mulai Mencari Kerja).
         // Section 1 (Identitas) & Section 2 (Perusahaan & Atasan) tidak perlu diisi ulang
         // karena sudah terisi dari profil alumni dan tersimpan otomatis di responses.
-        $kuesioner = Questionnaire::where('is_active', true)
+        $kuesioner = Kuesioner::where('is_active', true)
             ->with(['sections' => function ($query) {
                 $query->where('order', '>=', 3)
                     ->orderBy('order', 'asc')
-                    ->with(['questions' => function ($qQuery) {
+                    ->with(['subpertanyaans' => function ($qQuery) {
                         $qQuery->orderBy('order', 'asc')
-                            ->with('options');
+                            ->with('detils');
                     }]);
             }])
             ->first();
@@ -54,12 +54,13 @@ class KuesionerController extends Controller
             return Inertia::render('Alumni/Kuesioner', [
                 'error' => 'Tidak ada kuesioner aktif saat ini.',
                 'questionnaire' => null,
+                'kuesioner' => null,
                 'initialAnswers' => [],
             ]);
         }
 
         // Ambil jawaban yang sudah ada
-        $jawabanTersimpan = Response::where('alumni_id', $alumni->id)
+        $jawabanTersimpan = Tracer::where('biodata_id', $biodata->id)
             ->get()
             ->keyBy('question_id');
 
@@ -70,7 +71,7 @@ class KuesionerController extends Controller
         $jawabanAwal = [];
         if ($kuesioner) {
             foreach ($kuesioner->sections as $bagian) {
-                foreach ($bagian->questions as $pertanyaan) {
+                foreach ($bagian->subpertanyaans as $pertanyaan) {
                     if (isset($jawabanTersimpan[$pertanyaan->id])) {
                         $saved = $jawabanTersimpan[$pertanyaan->id];
 
@@ -80,7 +81,7 @@ class KuesionerController extends Controller
                             $customText = '';
 
                             // Cari opsi database yang merupakan opsi lainnya jika ada
-                            $otherOption = $pertanyaan->options->first(function ($opt) {
+                            $otherOption = $pertanyaan->detils->first(function ($opt) {
                                 $t = strtolower($opt->option_text);
 
                                 return str_contains($t, 'lainnya') || str_contains($t, 'tuliskan') || str_contains($t, '...');
@@ -107,7 +108,7 @@ class KuesionerController extends Controller
                             $textVal = $saved->answer_text ?? '';
                             if (str_starts_with($textVal, 'Lainnya: ')) {
                                 $customText = trim(substr($textVal, 9));
-                                $otherOption = $pertanyaan->options->first(function ($opt) {
+                                $otherOption = $pertanyaan->detils->first(function ($opt) {
                                     $t = strtolower($opt->option_text);
 
                                     return str_contains($t, 'lainnya') || str_contains($t, 'tuliskan') || str_contains($t, '...');
@@ -121,9 +122,9 @@ class KuesionerController extends Controller
                             $json = $saved->answer_json ?? [];
                             $selected = $json['selected'] ?? ($saved->answer_text ?? '');
                             $input = $json['input'] ?? '';
-                            $selectedOpt = $pertanyaan->options->firstWhere('option_text', $selected);
+                            $selectedOpt = $pertanyaan->detils->firstWhere('option_text', $selected);
                             $inputsObj = [];
-                            foreach ($pertanyaan->options as $o) {
+                            foreach ($pertanyaan->detils as $o) {
                                 $inputsObj[$o->id] = ($selectedOpt && $selectedOpt->id === $o->id) ? $input : '';
                             }
                             $jawabanAwal[$pertanyaan->id] = [
@@ -134,14 +135,15 @@ class KuesionerController extends Controller
                         } elseif ($pertanyaan->type === 'multiple_number') {
                             $rawArr = $saved->answer_json ?? [];
                             $formattedArr = [];
-                            foreach ($pertanyaan->options as $opsi) {
-                                $val = $rawArr[$opsi->code] ?? '';
+                            foreach ($pertanyaan->detils as $opsi) {
+                                $optCode = $opsi->kode_opsi ?? $opsi->code;
+                                $val = $rawArr[$optCode] ?? '';
                                 if ($val !== '' && $val !== null && is_numeric($val)) {
                                     $intVal = (int) $val;
                                     // Jika nilai tersimpan kelipatan 1000 (> 0), ubah ke ribuan untuk input berakhiran .000
-                                    $formattedArr[$opsi->code] = ($intVal >= 1000 && $intVal % 1000 === 0) ? ($intVal / 1000) : $intVal;
+                                    $formattedArr[$optCode] = ($intVal >= 1000 && $intVal % 1000 === 0) ? ($intVal / 1000) : $intVal;
                                 } else {
-                                    $formattedArr[$opsi->code] = '';
+                                    $formattedArr[$optCode] = '';
                                 }
                             }
                             $jawabanAwal[$pertanyaan->id] = $formattedArr;
@@ -157,25 +159,26 @@ class KuesionerController extends Controller
                             $jawabanAwal[$pertanyaan->id] = [];
                         } elseif ($pertanyaan->type === 'matrix_dual') {
                             $obj = [];
-                            foreach ($pertanyaan->options as $opsi) {
+                            foreach ($pertanyaan->detils as $opsi) {
                                 $obj[$opsi->id] = ['A' => null, 'B' => null];
                             }
                             $jawabanAwal[$pertanyaan->id] = $obj;
                         } elseif ($pertanyaan->type === 'matrix') {
                             $obj = [];
-                            foreach ($pertanyaan->options as $opsi) {
+                            foreach ($pertanyaan->detils as $opsi) {
                                 $obj[$opsi->id] = null;
                             }
                             $jawabanAwal[$pertanyaan->id] = $obj;
                         } elseif ($pertanyaan->type === 'multiple_number') {
                             $obj = [];
-                            foreach ($pertanyaan->options as $opsi) {
-                                $obj[$opsi->code] = '';
+                            foreach ($pertanyaan->detils as $opsi) {
+                                $optCode = $opsi->kode_opsi ?? $opsi->code;
+                                $obj[$optCode] = '';
                             }
                             $jawabanAwal[$pertanyaan->id] = $obj;
                         } elseif (in_array($pertanyaan->type, ['radio_input', 'radio_text'])) {
                             $inputsObj = [];
-                            foreach ($pertanyaan->options as $o) {
+                            foreach ($pertanyaan->detils as $o) {
                                 $inputsObj[$o->id] = '';
                             }
                             $jawabanAwal[$pertanyaan->id] = [
@@ -264,6 +267,7 @@ class KuesionerController extends Controller
         }
 
         return Inertia::render('Alumni/Kuesioner', [
+            'kuesioner' => $kuesioner,
             'questionnaire' => $kuesioner,
             'initialAnswers' => $jawabanAwal,
             'error' => null,

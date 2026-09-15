@@ -6,6 +6,20 @@ use App\Models\KelompokPertanyaan;
 use App\Models\RefSubpertanyaan2021;
 use Illuminate\Database\Seeder;
 
+/**
+ * Seeder RefSubpertanyaan2021Seeder
+ *
+ * Fungsi: Mengisi seluruh butir pertanyaan instrumen Tracer Study 2021 (Universitas).
+ * Status 'wajib' (1 = Wajib Diisi, 0 = Opsional):
+ * - Wajib (1): F1 (NIM), F2A (Nama), F2B (Telepon), F2C (Email), F2D (Alamat),
+ *   BIO_TEMPAT_LAHIR, BIO_TANGGAL_LAHIR, BIO_JK, BIO_TGL_LULUS, BIO_JUDUL_TA, BIO_NIK, BIO_NPWP,
+ *   F2E (Nama Perusahaan), F2E1 (Nama Atasan), F2E2 (Telepon Atasan), F2E3 (Email Atasan),
+ *   F2F (Alamat Perusahaan), F2G (Posisi Jabatan), F2H (Skala Perusahaan),
+ *   F8 (Status Pekerjaan), Kelompok F5 (F504, F502, F505, F505A, F506, F5a1, F5a2, F510, F5B, F5C, F5D),
+ *   F11 (Jenis Perusahaan), F12 (Sumber Pembiayaan), F14 (Hubungan Bidang Studi), F15 (Tingkat Pendidikan Sesuai),
+ *   F17 (Kompetensi F17a1..a7, F17b1..b7), dan F18 (Studi Lanjut F18a..d).
+ * - Opsional (0): F2 (Header), F21 s.d. F27 (Metode Pembelajaran), F3, F4, F6, F7, F7A, F10, F16, F17 Header, F18 Header.
+ */
 class RefSubpertanyaan2021Seeder extends Seeder
 {
     /**
@@ -16,7 +30,9 @@ class RefSubpertanyaan2021Seeder extends Seeder
         $sections = KelompokPertanyaan::all()->keyBy('kode_kelompok');
 
         $questionsData = [
-            // Kelompok 1: Identitas & Biodata Mahasiswa
+            // =========================================================
+            // Kelompok 1: Identitas & Biodata Mahasiswa (Wajib Semua)
+            // =========================================================
             [
                 'section_kode' => '1',
                 'kelompok' => 'F1',
@@ -134,11 +150,13 @@ class RefSubpertanyaan2021Seeder extends Seeder
                 'subpertanyaan' => 'Nomor Pokok Wajib Pajak (NPWP)',
                 'type' => 'text',
                 'keterangan' => null,
-                'wajib' => 0,
+                'wajib' => 1,
                 'order' => 12,
             ],
 
-            // Kelompok 2: Penekanan Metode Pembelajaran (Kelompok: F2)
+            // =========================================================
+            // Kelompok 2: Penekanan Metode Pembelajaran (Opsional: F21 s.d. F27)
+            // =========================================================
             [
                 'section_kode' => '2',
                 'kelompok' => 'F2',
@@ -156,7 +174,7 @@ class RefSubpertanyaan2021Seeder extends Seeder
                 'subpertanyaan' => 'Perkuliahan',
                 'type' => 'radio',
                 'keterangan' => 'Metode pembelajaran',
-                'wajib' => 1,
+                'wajib' => 0,
                 'order' => 14,
             ],
             [
@@ -166,7 +184,7 @@ class RefSubpertanyaan2021Seeder extends Seeder
                 'subpertanyaan' => 'Demonstrasi',
                 'type' => 'radio',
                 'keterangan' => 'Metode pembelajaran',
-                'wajib' => 1,
+                'wajib' => 0,
                 'order' => 15,
             ],
             [
@@ -176,7 +194,7 @@ class RefSubpertanyaan2021Seeder extends Seeder
                 'subpertanyaan' => 'Partisipasi dalam proyek riset',
                 'type' => 'radio',
                 'keterangan' => 'Metode pembelajaran',
-                'wajib' => 1,
+                'wajib' => 0,
                 'order' => 16,
             ],
             [
@@ -186,7 +204,7 @@ class RefSubpertanyaan2021Seeder extends Seeder
                 'subpertanyaan' => 'Magang',
                 'type' => 'radio',
                 'keterangan' => 'Metode pembelajaran',
-                'wajib' => 1,
+                'wajib' => 0,
                 'order' => 17,
             ],
             [
@@ -196,7 +214,7 @@ class RefSubpertanyaan2021Seeder extends Seeder
                 'subpertanyaan' => 'Praktikum',
                 'type' => 'radio',
                 'keterangan' => 'Metode pembelajaran',
-                'wajib' => 1,
+                'wajib' => 0,
                 'order' => 18,
             ],
             [
@@ -206,7 +224,7 @@ class RefSubpertanyaan2021Seeder extends Seeder
                 'subpertanyaan' => 'Kerja Lapangan',
                 'type' => 'radio',
                 'keterangan' => 'Metode pembelajaran',
-                'wajib' => 1,
+                'wajib' => 0,
                 'order' => 19,
             ],
             [
@@ -216,11 +234,13 @@ class RefSubpertanyaan2021Seeder extends Seeder
                 'subpertanyaan' => 'Diskusi',
                 'type' => 'radio',
                 'keterangan' => 'Metode pembelajaran',
-                'wajib' => 1,
+                'wajib' => 0,
                 'order' => 20,
             ],
 
-            // Kelompok 3: Waktu Mulai & Cara Mencari Pekerjaan
+            // =========================================================
+            // Kelompok 3: Waktu Mulai & Cara Mencari Pekerjaan (Opsional)
+            // =========================================================
             [
                 'section_kode' => '3',
                 'kelompok' => 'F3',
@@ -228,7 +248,7 @@ class RefSubpertanyaan2021Seeder extends Seeder
                 'subpertanyaan' => 'Kapan anda mulai mencari pekerjaan? Mohon pekerjaan sambilan tidak dimasukkan',
                 'type' => 'radio_input',
                 'keterangan' => 'F302 sebelum lulus, F303 sesudah lulus',
-                'wajib' => 1,
+                'wajib' => 0,
                 'order' => 21,
             ],
             [
@@ -238,11 +258,13 @@ class RefSubpertanyaan2021Seeder extends Seeder
                 'subpertanyaan' => 'Bagaimana anda mencari pekerjaan tersebut?',
                 'type' => 'multiple_choice',
                 'keterangan' => 'Jawaban bisa lebih dari satu',
-                'wajib' => 1,
+                'wajib' => 0,
                 'order' => 22,
             ],
 
-            // Kelompok 4: Mendapatkan Pekerjaan & Data Pekerjaan (Kelompok: F5 & F2)
+            // =========================================================
+            // Kelompok 4: Mendapatkan Pekerjaan & Data Pekerjaan (Wajib)
+            // =========================================================
             [
                 'section_kode' => '4',
                 'kelompok' => 'F5',
@@ -260,7 +282,7 @@ class RefSubpertanyaan2021Seeder extends Seeder
                 'subpertanyaan' => 'Dalam berapa bulan anda mendapatkan pekerjaan ?',
                 'type' => 'number',
                 'keterangan' => 'Jumlah bulan setelah lulus',
-                'wajib' => 0,
+                'wajib' => 1,
                 'order' => 24,
             ],
             [
@@ -268,9 +290,9 @@ class RefSubpertanyaan2021Seeder extends Seeder
                 'kelompok' => 'F5',
                 'kode_pertanyaan' => 'F505',
                 'subpertanyaan' => 'Berapa rata-rata pendapatan anda per bulan ? (take home pay)?',
-                'type' => 'number',
-                'keterangan' => 'Nominal Rupiah per bulan',
-                'wajib' => 0,
+                'type' => 'multiple_number',
+                'keterangan' => 'Nominal Rupiah per bulan (Pekerjaan Utama, Lembur/Tips, Lainnya)',
+                'wajib' => 1,
                 'order' => 25,
             ],
             [
@@ -280,7 +302,7 @@ class RefSubpertanyaan2021Seeder extends Seeder
                 'subpertanyaan' => 'Apakah Gaji anda sesuai UMR ?',
                 'type' => 'radio',
                 'keterangan' => 'Kesesuaian gaji dengan UMR',
-                'wajib' => 0,
+                'wajib' => 1,
                 'order' => 26,
             ],
             [
@@ -290,8 +312,28 @@ class RefSubpertanyaan2021Seeder extends Seeder
                 'subpertanyaan' => 'Dalam berapa bulan anda mendapatkan pekerjaan?',
                 'type' => 'number',
                 'keterangan' => 'Jumlah bulan',
-                'wajib' => 0,
+                'wajib' => 1,
                 'order' => 27,
+            ],
+            [
+                'section_kode' => '4',
+                'kelompok' => 'F5',
+                'kode_pertanyaan' => 'F5a1',
+                'subpertanyaan' => 'Provinsi tempat Anda bekerja',
+                'type' => 'text',
+                'keterangan' => 'ID Provinsi tempat bekerja',
+                'wajib' => 1,
+                'order' => 28,
+            ],
+            [
+                'section_kode' => '4',
+                'kelompok' => 'F5',
+                'kode_pertanyaan' => 'F5a2',
+                'subpertanyaan' => 'Kabupaten/Kota tempat Anda bekerja',
+                'type' => 'text',
+                'keterangan' => 'ID Kabupaten/Kota tempat bekerja',
+                'wajib' => 1,
+                'order' => 29,
             ],
             [
                 'section_kode' => '4',
@@ -299,9 +341,9 @@ class RefSubpertanyaan2021Seeder extends Seeder
                 'kode_pertanyaan' => 'F510',
                 'subpertanyaan' => 'Di mana lokasi tempat Anda bekerja?',
                 'type' => 'text',
-                'keterangan' => null,
-                'wajib' => 0,
-                'order' => 28,
+                'keterangan' => 'Alamat lengkap tempat bekerja',
+                'wajib' => 1,
+                'order' => 30,
             ],
             [
                 'section_kode' => '4',
@@ -310,8 +352,8 @@ class RefSubpertanyaan2021Seeder extends Seeder
                 'subpertanyaan' => 'Apa nama perusahaan/kantor tempat Anda bekerja?',
                 'type' => 'text',
                 'keterangan' => null,
-                'wajib' => 0,
-                'order' => 29,
+                'wajib' => 1,
+                'order' => 31,
             ],
             [
                 'section_kode' => '4',
@@ -320,8 +362,8 @@ class RefSubpertanyaan2021Seeder extends Seeder
                 'subpertanyaan' => 'Bila berwiraswasta, apa posisi/jabatan Anda saat ini?',
                 'type' => 'text',
                 'keterangan' => null,
-                'wajib' => 0,
-                'order' => 30,
+                'wajib' => 1,
+                'order' => 32,
             ],
             [
                 'section_kode' => '4',
@@ -330,8 +372,8 @@ class RefSubpertanyaan2021Seeder extends Seeder
                 'subpertanyaan' => 'Apa tingkat tempat kerja Anda?',
                 'type' => 'text',
                 'keterangan' => null,
-                'wajib' => 0,
-                'order' => 31,
+                'wajib' => 1,
+                'order' => 33,
             ],
             [
                 'section_kode' => '4',
@@ -340,8 +382,8 @@ class RefSubpertanyaan2021Seeder extends Seeder
                 'subpertanyaan' => 'Nama perusahaan/instansi/institusi',
                 'type' => 'text',
                 'keterangan' => null,
-                'wajib' => 0,
-                'order' => 32,
+                'wajib' => 1,
+                'order' => 34,
             ],
             [
                 'section_kode' => '4',
@@ -350,8 +392,8 @@ class RefSubpertanyaan2021Seeder extends Seeder
                 'subpertanyaan' => 'Nama atasan di tempat bekerja',
                 'type' => 'text',
                 'keterangan' => null,
-                'wajib' => 0,
-                'order' => 33,
+                'wajib' => 1,
+                'order' => 35,
             ],
             [
                 'section_kode' => '4',
@@ -360,8 +402,8 @@ class RefSubpertanyaan2021Seeder extends Seeder
                 'subpertanyaan' => 'Nomor telepon atasan di tempat bekerja',
                 'type' => 'text',
                 'keterangan' => null,
-                'wajib' => 0,
-                'order' => 34,
+                'wajib' => 1,
+                'order' => 36,
             ],
             [
                 'section_kode' => '4',
@@ -370,8 +412,8 @@ class RefSubpertanyaan2021Seeder extends Seeder
                 'subpertanyaan' => 'Email atasan di tempat bekerja',
                 'type' => 'text',
                 'keterangan' => null,
-                'wajib' => 0,
-                'order' => 35,
+                'wajib' => 1,
+                'order' => 37,
             ],
             [
                 'section_kode' => '4',
@@ -380,8 +422,8 @@ class RefSubpertanyaan2021Seeder extends Seeder
                 'subpertanyaan' => 'Alamat perusahaan/instansi/institusi',
                 'type' => 'text',
                 'keterangan' => null,
-                'wajib' => 0,
-                'order' => 36,
+                'wajib' => 1,
+                'order' => 38,
             ],
             [
                 'section_kode' => '4',
@@ -390,8 +432,8 @@ class RefSubpertanyaan2021Seeder extends Seeder
                 'subpertanyaan' => 'Posisi jabatan Anda sekarang',
                 'type' => 'radio',
                 'keterangan' => null,
-                'wajib' => 0,
-                'order' => 37,
+                'wajib' => 1,
+                'order' => 39,
             ],
             [
                 'section_kode' => '4',
@@ -400,11 +442,13 @@ class RefSubpertanyaan2021Seeder extends Seeder
                 'subpertanyaan' => 'Skala perusahaan/instansi/institusi',
                 'type' => 'radio',
                 'keterangan' => null,
-                'wajib' => 0,
-                'order' => 38,
+                'wajib' => 1,
+                'order' => 40,
             ],
 
-            // Kelompok 5: Riwayat Lamaran Pekerjaan
+            // =========================================================
+            // Kelompok 5: Riwayat Lamaran Pekerjaan (Opsional)
+            // =========================================================
             [
                 'section_kode' => '5',
                 'kelompok' => 'F6',
@@ -412,8 +456,8 @@ class RefSubpertanyaan2021Seeder extends Seeder
                 'subpertanyaan' => 'Berapa perusahaan/instansi/institusi yang sudah Anda lamar sebelum memperoleh pekerjaan pertama?',
                 'type' => 'number',
                 'keterangan' => null,
-                'wajib' => 1,
-                'order' => 39,
+                'wajib' => 0,
+                'order' => 41,
             ],
             [
                 'section_kode' => '5',
@@ -422,8 +466,8 @@ class RefSubpertanyaan2021Seeder extends Seeder
                 'subpertanyaan' => 'Berapa banyak perusahaan/instansi/institusi yang merespons lamaran Anda?',
                 'type' => 'number',
                 'keterangan' => null,
-                'wajib' => 1,
-                'order' => 40,
+                'wajib' => 0,
+                'order' => 42,
             ],
             [
                 'section_kode' => '5',
@@ -432,11 +476,13 @@ class RefSubpertanyaan2021Seeder extends Seeder
                 'subpertanyaan' => 'Berapa banyak perusahaan/instansi/institusi yang mengundang Anda untuk wawancara?',
                 'type' => 'number',
                 'keterangan' => null,
-                'wajib' => 1,
-                'order' => 41,
+                'wajib' => 0,
+                'order' => 43,
             ],
 
-            // Kelompok 6: Status Pekerjaan Saat Ini
+            // =========================================================
+            // Kelompok 6: Status Pekerjaan Saat Ini (F8 Wajib, F10 Opsional)
+            // =========================================================
             [
                 'section_kode' => '6',
                 'kelompok' => 'F8',
@@ -445,7 +491,7 @@ class RefSubpertanyaan2021Seeder extends Seeder
                 'type' => 'radio',
                 'keterangan' => 'Status pekerjaan saat ini',
                 'wajib' => 1,
-                'order' => 42,
+                'order' => 44,
             ],
             [
                 'section_kode' => '6',
@@ -454,11 +500,13 @@ class RefSubpertanyaan2021Seeder extends Seeder
                 'subpertanyaan' => 'Apakah anda aktif mencari pekerjaan dalam 4 minggu terakhir?',
                 'type' => 'radio',
                 'keterangan' => 'Pilih satu jawaban',
-                'wajib' => 1,
-                'order' => 43,
+                'wajib' => 0,
+                'order' => 45,
             ],
 
-            // Kelompok 7: Jenis Perusahaan & Pembiayaan Kuliah
+            // =========================================================
+            // Kelompok 7: Jenis Perusahaan & Pembiayaan Kuliah (Wajib Semua)
+            // =========================================================
             [
                 'section_kode' => '7',
                 'kelompok' => 'F11',
@@ -467,7 +515,7 @@ class RefSubpertanyaan2021Seeder extends Seeder
                 'type' => 'radio',
                 'keterangan' => null,
                 'wajib' => 1,
-                'order' => 44,
+                'order' => 46,
             ],
             [
                 'section_kode' => '7',
@@ -477,10 +525,12 @@ class RefSubpertanyaan2021Seeder extends Seeder
                 'type' => 'radio_input',
                 'keterangan' => 'Pilihan sumber dana kuliah',
                 'wajib' => 1,
-                'order' => 45,
+                'order' => 47,
             ],
 
-            // Kelompok 8: Keselarasan & Relevansi Pekerjaan
+            // =========================================================
+            // Kelompok 8: Keselarasan & Relevansi Pekerjaan (F14 & F15 Wajib, F16 Opsional)
+            // =========================================================
             [
                 'section_kode' => '8',
                 'kelompok' => 'F14',
@@ -489,7 +539,7 @@ class RefSubpertanyaan2021Seeder extends Seeder
                 'type' => 'radio',
                 'keterangan' => null,
                 'wajib' => 1,
-                'order' => 46,
+                'order' => 48,
             ],
             [
                 'section_kode' => '8',
@@ -499,7 +549,7 @@ class RefSubpertanyaan2021Seeder extends Seeder
                 'type' => 'radio',
                 'keterangan' => null,
                 'wajib' => 1,
-                'order' => 47,
+                'order' => 49,
             ],
             [
                 'section_kode' => '8',
@@ -509,10 +559,12 @@ class RefSubpertanyaan2021Seeder extends Seeder
                 'type' => 'multiple_choice',
                 'keterangan' => 'Jawaban bisa lebih dari satu',
                 'wajib' => 0,
-                'order' => 48,
+                'order' => 50,
             ],
 
-            // Kelompok 9: Evaluasi Kompetensi Lulusan (Kelompok: F17)
+            // =========================================================
+            // Kelompok 9: Evaluasi Kompetensi Lulusan (F17a1..a7 & F17b1..b7 Wajib)
+            // =========================================================
             [
                 'section_kode' => '9',
                 'kelompok' => 'F17',
@@ -521,7 +573,7 @@ class RefSubpertanyaan2021Seeder extends Seeder
                 'type' => 'header',
                 'keterangan' => 'Evaluasi kompetensi lulusan A dan B',
                 'wajib' => 0,
-                'order' => 49,
+                'order' => 51,
             ],
             [
                 'section_kode' => '9',
@@ -531,7 +583,7 @@ class RefSubpertanyaan2021Seeder extends Seeder
                 'type' => 'radio',
                 'keterangan' => 'Pada saat lulus, kompetensi yang dikuasai (A)',
                 'wajib' => 1,
-                'order' => 50,
+                'order' => 52,
             ],
             [
                 'section_kode' => '9',
@@ -541,7 +593,7 @@ class RefSubpertanyaan2021Seeder extends Seeder
                 'type' => 'radio',
                 'keterangan' => 'Pada saat ini, tingkat kompetensi yang diperlukan (B)',
                 'wajib' => 1,
-                'order' => 51,
+                'order' => 53,
             ],
             [
                 'section_kode' => '9',
@@ -551,7 +603,7 @@ class RefSubpertanyaan2021Seeder extends Seeder
                 'type' => 'radio',
                 'keterangan' => 'Pada saat lulus, kompetensi yang dikuasai (A)',
                 'wajib' => 1,
-                'order' => 52,
+                'order' => 54,
             ],
             [
                 'section_kode' => '9',
@@ -561,7 +613,7 @@ class RefSubpertanyaan2021Seeder extends Seeder
                 'type' => 'radio',
                 'keterangan' => 'Pada saat ini, tingkat kompetensi yang diperlukan (B)',
                 'wajib' => 1,
-                'order' => 53,
+                'order' => 55,
             ],
             [
                 'section_kode' => '9',
@@ -571,7 +623,7 @@ class RefSubpertanyaan2021Seeder extends Seeder
                 'type' => 'radio',
                 'keterangan' => 'Pada saat lulus, kompetensi yang dikuasai (A)',
                 'wajib' => 1,
-                'order' => 54,
+                'order' => 56,
             ],
             [
                 'section_kode' => '9',
@@ -581,7 +633,7 @@ class RefSubpertanyaan2021Seeder extends Seeder
                 'type' => 'radio',
                 'keterangan' => 'Pada saat ini, tingkat kompetensi yang diperlukan (B)',
                 'wajib' => 1,
-                'order' => 55,
+                'order' => 57,
             ],
             [
                 'section_kode' => '9',
@@ -591,7 +643,7 @@ class RefSubpertanyaan2021Seeder extends Seeder
                 'type' => 'radio',
                 'keterangan' => 'Pada saat lulus, kompetensi yang dikuasai (A)',
                 'wajib' => 1,
-                'order' => 56,
+                'order' => 58,
             ],
             [
                 'section_kode' => '9',
@@ -601,7 +653,7 @@ class RefSubpertanyaan2021Seeder extends Seeder
                 'type' => 'radio',
                 'keterangan' => 'Pada saat ini, tingkat kompetensi yang diperlukan (B)',
                 'wajib' => 1,
-                'order' => 57,
+                'order' => 59,
             ],
             [
                 'section_kode' => '9',
@@ -611,7 +663,7 @@ class RefSubpertanyaan2021Seeder extends Seeder
                 'type' => 'radio',
                 'keterangan' => 'Pada saat lulus, kompetensi yang dikuasai (A)',
                 'wajib' => 1,
-                'order' => 58,
+                'order' => 60,
             ],
             [
                 'section_kode' => '9',
@@ -621,7 +673,7 @@ class RefSubpertanyaan2021Seeder extends Seeder
                 'type' => 'radio',
                 'keterangan' => 'Pada saat ini, tingkat kompetensi yang diperlukan (B)',
                 'wajib' => 1,
-                'order' => 59,
+                'order' => 61,
             ],
             [
                 'section_kode' => '9',
@@ -631,7 +683,7 @@ class RefSubpertanyaan2021Seeder extends Seeder
                 'type' => 'radio',
                 'keterangan' => 'Pada saat lulus, kompetensi yang dikuasai (A)',
                 'wajib' => 1,
-                'order' => 60,
+                'order' => 62,
             ],
             [
                 'section_kode' => '9',
@@ -641,7 +693,7 @@ class RefSubpertanyaan2021Seeder extends Seeder
                 'type' => 'radio',
                 'keterangan' => 'Pada saat ini, tingkat kompetensi yang diperlukan (B)',
                 'wajib' => 1,
-                'order' => 61,
+                'order' => 63,
             ],
             [
                 'section_kode' => '9',
@@ -651,7 +703,7 @@ class RefSubpertanyaan2021Seeder extends Seeder
                 'type' => 'radio',
                 'keterangan' => 'Pada saat lulus, kompetensi yang dikuasai (A)',
                 'wajib' => 1,
-                'order' => 62,
+                'order' => 64,
             ],
             [
                 'section_kode' => '9',
@@ -661,10 +713,12 @@ class RefSubpertanyaan2021Seeder extends Seeder
                 'type' => 'radio',
                 'keterangan' => 'Pada saat ini, tingkat kompetensi yang diperlukan (B)',
                 'wajib' => 1,
-                'order' => 63,
+                'order' => 65,
             ],
 
-            // Kelompok 10: Studi Lanjut (Kelompok: F18)
+            // =========================================================
+            // Kelompok 10: Studi Lanjut (F18a..d Wajib)
+            // =========================================================
             [
                 'section_kode' => '10',
                 'kelompok' => 'F18',
@@ -673,7 +727,7 @@ class RefSubpertanyaan2021Seeder extends Seeder
                 'type' => 'header',
                 'keterangan' => 'Bagi yang melanjutkan pendidikan',
                 'wajib' => 0,
-                'order' => 64,
+                'order' => 66,
             ],
             [
                 'section_kode' => '10',
@@ -682,8 +736,8 @@ class RefSubpertanyaan2021Seeder extends Seeder
                 'subpertanyaan' => 'Sumber biaya',
                 'type' => 'text',
                 'keterangan' => 'Sumber biaya studi lanjut',
-                'wajib' => 0,
-                'order' => 65,
+                'wajib' => 1,
+                'order' => 67,
             ],
             [
                 'section_kode' => '10',
@@ -692,8 +746,8 @@ class RefSubpertanyaan2021Seeder extends Seeder
                 'subpertanyaan' => 'Perguruan Tinggi',
                 'type' => 'text',
                 'keterangan' => 'Perguruan tinggi studi lanjut',
-                'wajib' => 0,
-                'order' => 66,
+                'wajib' => 1,
+                'order' => 68,
             ],
             [
                 'section_kode' => '10',
@@ -702,8 +756,8 @@ class RefSubpertanyaan2021Seeder extends Seeder
                 'subpertanyaan' => 'Program Studi',
                 'type' => 'text',
                 'keterangan' => 'Program studi studi lanjut',
-                'wajib' => 0,
-                'order' => 67,
+                'wajib' => 1,
+                'order' => 69,
             ],
             [
                 'section_kode' => '10',
@@ -712,8 +766,8 @@ class RefSubpertanyaan2021Seeder extends Seeder
                 'subpertanyaan' => 'Tanggal Masuk',
                 'type' => 'text',
                 'keterangan' => 'Tanggal masuk studi lanjut',
-                'wajib' => 0,
-                'order' => 68,
+                'wajib' => 1,
+                'order' => 70,
             ],
         ];
 

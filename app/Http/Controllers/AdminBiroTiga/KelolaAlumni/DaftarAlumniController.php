@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\AdminBiroTiga\KelolaAlumni;
 
 use App\Http\Controllers\Controller;
-use App\Models\Alumni;
+use App\Models\Biodata;
 use App\Models\DataAkademik;
 use App\Models\Prodi;
 use Illuminate\Http\Request;
@@ -44,24 +44,29 @@ class DaftarAlumniController extends Controller
             $semesterTerpilih = $daftarSemester->first() ?? '';
         }
 
-        // 3. Kueri Utama: Mengambil data alumni yang berstatus Yudisium 'Lulus' pada tahun kelulusan terpilih
-        $query = Alumni::with(['dataAkademik', 'prodi', 'company', 'user', 'yudisium'])
+        // 3. Kueri Utama: Mengambil data biodata yang berstatus Yudisium 'Lulus' pada tahun kelulusan terpilih
+        $query = Biodata::with(['dataAkademik', 'prodi', 'company', 'user', 'yudisium'])
             ->whereHas('yudisium', function ($q) {
                 $q->where('proses_yudisium', 'Lulus');
             })
             // Filter Wajib: Hanya tampilkan data alumni untuk tahun kelulusan yang sedang dipilih di dropdown
             ->when($semesterTerpilih, function ($query, $semesterTerpilih) {
-                $query->whereHas('dataAkademik', function ($q) use ($semesterTerpilih) {
-                    $q->where('tahun_akademik_lulus', $semesterTerpilih);
+                $query->where(function ($q) use ($semesterTerpilih) {
+                    $q->where('tahun_lulus', $semesterTerpilih)
+                        ->orWhereHas('dataAkademik', function ($qa) use ($semesterTerpilih) {
+                            $qa->where('tahun_akademik_lulus', $semesterTerpilih);
+                        });
                 });
             })
             // Filter Pencarian (Nama Lengkap, NIM, atau Akun LinkedIn)
             ->when($pencarian, function ($query, $pencarian) {
                 $query->where(function ($w) use ($pencarian) {
-                    $w->whereHas('dataAkademik', function ($q) use ($pencarian) {
-                        $q->where('nama', 'like', "%{$pencarian}%")
-                            ->orWhere('nim', 'like', "%{$pencarian}%");
-                    })
+                    $w->where('nim', 'like', "%{$pencarian}%")
+                        ->orWhere('nama', 'like', "%{$pencarian}%")
+                        ->orWhereHas('dataAkademik', function ($q) use ($pencarian) {
+                            $q->where('nama', 'like', "%{$pencarian}%")
+                                ->orWhere('nim', 'like', "%{$pencarian}%");
+                        })
                         ->orWhere('linkedin_username', 'like', "%{$pencarian}%")
                         ->orWhere('linkedin_url', 'like', "%{$pencarian}%");
                 });
@@ -88,6 +93,7 @@ class DaftarAlumniController extends Controller
         $daftarProdi = Prodi::orderBy('kode_prodi', 'asc')->get();
 
         return Inertia::render('AdminBiroTiga/AlumniIndex', [
+            'biodatas' => $alumnis,
             'alumnis' => $alumnis,
             'daftarSemester' => $daftarSemester,
             'semesterCounts' => $semesterCounts,

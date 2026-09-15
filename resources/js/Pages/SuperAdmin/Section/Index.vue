@@ -16,12 +16,16 @@ import SectionModal from './Components/SectionModal.vue';
 
 // Properti yang dikirimkan oleh SuperAdmin\KelolaSection\KelolaSectionController
 const props = defineProps({
-    // Daftar seluruh section kuesioner beserta relasi questionnaire dan jumlah pertanyaan
+    // Daftar seluruh section kuesioner beserta relasi kuesioner dan jumlah pertanyaan
     sections: {
         type: Array,
         default: () => [],
     },
     // Daftar seluruh instrumen kuesioner aktif
+    kuesioners: {
+        type: Array,
+        default: () => [],
+    },
     questionnaires: {
         type: Array,
         default: () => [],
@@ -48,8 +52,8 @@ const filteredSections = computed(() => {
     return props.sections.filter((sec) => {
         const matchTitle = sec.title?.toLowerCase().includes(query);
         const matchOrder = sec.order?.toString().includes(query);
-        const matchQuestionnaire = sec.questionnaire?.title?.toLowerCase().includes(query);
-        return matchTitle || matchOrder || matchQuestionnaire;
+        const matchKuesioner = (sec.kuesioner?.title || sec.questionnaire?.title)?.toLowerCase().includes(query);
+        return matchTitle || matchOrder || matchKuesioner;
     });
 });
 
@@ -57,7 +61,7 @@ const filteredSections = computed(() => {
  * Menghitung total keseluruhan pertanyaan dari seluruh section yang ada.
  */
 const totalQuestionsCount = computed(() => {
-    return props.sections.reduce((sum, sec) => sum + (sec.questions_count || 0), 0);
+    return props.sections.reduce((sum, sec) => sum + (sec.subpertanyaans_count ?? sec.questions_count ?? 0), 0);
 });
 
 // ========================================================
@@ -145,7 +149,7 @@ const handleMoveSection = (sec, direction) => {
  * @param {Object} sec - Section yang akan dihapus
  */
 const handleDeleteSection = (sec) => {
-    const questionCount = sec.questions_count || 0;
+    const questionCount = sec.subpertanyaans_count ?? sec.questions_count ?? 0;
     
     // Susun pesan peringatan jika terdapat pertanyaan di dalam section
     const warningHtml = questionCount > 0 
@@ -359,7 +363,7 @@ const handleDeleteSection = (sec) => {
                                         </h3>
                                         <!-- Badge Kuesioner Induk -->
                                         <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-gray-100 text-gray-600 border border-gray-200">
-                                            {{ sec.questionnaire?.title || 'Kuesioner Umum' }} ({{ sec.questionnaire?.year || '-' }})
+                                            {{ sec.kuesioner?.title || sec.questionnaire?.title || 'Kuesioner Umum' }} ({{ sec.kuesioner?.year || sec.questionnaire?.year || '-' }})
                                         </span>
                                     </div>
 
@@ -367,87 +371,88 @@ const handleDeleteSection = (sec) => {
                                         <!-- Jumlah Butir Pertanyaan -->
                                         <div class="flex items-center gap-1.5">
                                             <svg class="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path></svg>
-                                            <span class="font-bold text-gray-700">{{ sec.questions_count || 0 }}</span> Butir Pertanyaan
+                                            <span class="font-bold text-gray-700">{{ sec.subpertanyaans_count ?? sec.questions_count ?? 0 }}</span> Butir Pertanyaan
                                         </div>
 
                                         <span class="text-gray-300">•</span>
 
                                         <!-- Tautan Langsung ke Kelola Pertanyaan di Section Ini -->
                                         <Link
-                                            :href="`/superadmin/pertanyaan?sec_id=${sec.id}`"
-                                            class="text-[#005B3C] hover:underline font-bold inline-flex items-center gap-1"
-                                        >
-                                            <span>Buka Daftar Soal</span>
-                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
-                                        </Link>
-                                    </div>
-                                </div>
-                            </div>
+                                             :href="`/superadmin/pertanyaan?sec_id=${sec.id}`"
+                                             class="text-[#005B3C] hover:underline font-bold inline-flex items-center gap-1"
+                                         >
+                                             <span>Buka Daftar Soal</span>
+                                             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
+                                         </Link>
+                                     </div>
+                                 </div>
+                             </div>
 
-                            <!-- Bagian Kanan: Kontrol Reorder & Tombol Aksi CRUD -->
-                            <div class="flex items-center justify-end gap-2.5 border-t md:border-t-0 pt-4 md:pt-0 border-gray-100 shrink-0">
-                                
-                                <!-- Grup Tombol Reorder Urutan (Naik / Turun) -->
-                                <div class="flex items-center bg-gray-50 p-1 rounded-xl border border-gray-200">
-                                    <!-- Tombol Naik (Up) -->
-                                    <button
-                                        type="button"
-                                        title="Pindahkan Posisi ke Atas"
-                                        :disabled="index === 0 || isReordering"
-                                        @click="handleMoveSection(sec, 'up')"
-                                        class="p-1.5 rounded-lg text-gray-600 hover:text-[#005B3C] hover:bg-white disabled:opacity-30 disabled:hover:bg-transparent transition-all cursor-pointer disabled:cursor-not-allowed"
-                                    >
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 15l7-7 7 7"></path></svg>
-                                    </button>
+                             <!-- Bagian Kanan: Kontrol Reorder & Tombol Aksi CRUD -->
+                             <div class="flex items-center justify-end gap-2.5 border-t md:border-t-0 pt-4 md:pt-0 border-gray-100 shrink-0">
+                                 
+                                 <!-- Grup Tombol Reorder Urutan (Naik / Turun) -->
+                                 <div class="flex items-center bg-gray-50 p-1 rounded-xl border border-gray-200">
+                                     <!-- Tombol Naik (Up) -->
+                                     <button
+                                         type="button"
+                                         title="Pindahkan Posisi ke Atas"
+                                         :disabled="index === 0 || isReordering"
+                                         @click="handleMoveSection(sec, 'up')"
+                                         class="p-1.5 rounded-lg text-gray-600 hover:text-[#005B3C] hover:bg-white disabled:opacity-30 disabled:hover:bg-transparent transition-all cursor-pointer disabled:cursor-not-allowed"
+                                     >
+                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 15l7-7 7 7"></path></svg>
+                                     </button>
 
-                                    <div class="h-3 w-px bg-gray-200 mx-0.5"></div>
+                                     <div class="h-3 w-px bg-gray-200 mx-0.5"></div>
 
-                                    <!-- Tombol Turun (Down) -->
-                                    <button
-                                        type="button"
-                                        title="Pindahkan Posisi ke Bawah"
-                                        :disabled="index === filteredSections.length - 1 || isReordering"
-                                        @click="handleMoveSection(sec, 'down')"
-                                        class="p-1.5 rounded-lg text-gray-600 hover:text-[#005B3C] hover:bg-white disabled:opacity-30 disabled:hover:bg-transparent transition-all cursor-pointer disabled:cursor-not-allowed"
-                                    >
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"></path></svg>
-                                    </button>
-                                </div>
+                                     <!-- Tombol Turun (Down) -->
+                                     <button
+                                         type="button"
+                                         title="Pindahkan Posisi ke Bawah"
+                                         :disabled="index === filteredSections.length - 1 || isReordering"
+                                         @click="handleMoveSection(sec, 'down')"
+                                         class="p-1.5 rounded-lg text-gray-600 hover:text-[#005B3C] hover:bg-white disabled:opacity-30 disabled:hover:bg-transparent transition-all cursor-pointer disabled:cursor-not-allowed"
+                                     >
+                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"></path></svg>
+                                     </button>
+                                 </div>
 
-                                <!-- Tombol Sunting (Edit) -->
-                                <button
-                                    type="button"
-                                    @click="openEditModal(sec)"
-                                    title="Sunting Bagian"
-                                    class="p-2.5 text-gray-600 hover:text-[#005B3C] hover:bg-emerald-50 rounded-xl border border-gray-200 hover:border-emerald-200 transition-all cursor-pointer"
-                                >
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
-                                </button>
+                                 <!-- Tombol Sunting (Edit) -->
+                                 <button
+                                     type="button"
+                                     @click="openEditModal(sec)"
+                                     title="Sunting Bagian"
+                                     class="p-2.5 text-gray-600 hover:text-[#005B3C] hover:bg-emerald-50 rounded-xl border border-gray-200 hover:border-emerald-200 transition-all cursor-pointer"
+                                 >
+                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+                                 </button>
 
-                                <!-- Tombol Hapus (Delete) -->
-                                <button
-                                    type="button"
-                                    @click="handleDeleteSection(sec)"
-                                    title="Hapus Bagian"
-                                    class="p-2.5 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-xl border border-gray-200 hover:border-red-200 transition-all cursor-pointer"
-                                >
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </main>
+                                 <!-- Tombol Hapus (Delete) -->
+                                 <button
+                                     type="button"
+                                     @click="handleDeleteSection(sec)"
+                                     title="Hapus Bagian"
+                                     class="p-2.5 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-xl border border-gray-200 hover:border-red-200 transition-all cursor-pointer"
+                                 >
+                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                 </button>
+                             </div>
+                         </div>
+                     </div>
+                 </div>
+             </div>
+         </main>
 
-        <!-- Modal Dialog Tambah / Edit Section -->
-        <SectionModal
-            :show="showSectionModal"
-            :isEdit="isEditSection"
-            :section="selectedSection"
-            :questionnaires="questionnaires"
-            :nextOrder="nextAvailableOrder"
-            @close="closeSectionModal"
-        />
+         <!-- Modal Dialog Tambah / Edit Section -->
+         <SectionModal
+             :show="showSectionModal"
+             :isEdit="isEditSection"
+             :section="selectedSection"
+             :kuesioners="kuesioners && kuesioners.length ? kuesioners : questionnaires"
+             :questionnaires="kuesioners && kuesioners.length ? kuesioners : questionnaires"
+             :nextOrder="nextAvailableOrder"
+             @close="closeSectionModal"
+         />
     </div>
 </template>

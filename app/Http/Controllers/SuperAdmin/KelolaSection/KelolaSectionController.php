@@ -3,8 +3,8 @@
 namespace App\Http\Controllers\SuperAdmin\KelolaSection;
 
 use App\Http\Controllers\Controller;
-use App\Models\Questionnaire;
-use App\Models\QuestionSection;
+use App\Models\KelompokPertanyaan;
+use App\Models\Kuesioner;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -14,7 +14,7 @@ use Inertia\Response;
  * Class KelolaSectionController
  *
  * Fungsi:
- * Controller untuk mengelola seluruh siklus hidup Bagian Kuesioner (QuestionSection)
+ * Controller untuk mengelola seluruh siklus hidup Bagian Kuesioner (KelompokPertanyaan)
  * pada instrumen Tracer Study bagi pengguna berhak akses SuperAdmin.
  *
  * Cakupan Operasi:
@@ -35,20 +35,21 @@ class KelolaSectionController extends Controller
     public function index(Request $request): Response
     {
         // 1. Ambil seluruh data section berurutan beserta relasi kuesioner dan total pertanyaan
-        $sections = QuestionSection::with('questionnaire')
-            ->withCount('questions')
+        $sections = KelompokPertanyaan::with('kuesioner')
+            ->withCount('subpertanyaans')
             ->orderBy('order', 'asc')
             ->get();
 
         // 2. Ambil daftar kuesioner aktif untuk pilihan dropdown saat menambah atau mengedit section
-        $questionnaires = Questionnaire::orderBy('year', 'desc')
+        $kuesioners = Kuesioner::orderBy('year', 'desc')
             ->orderBy('id', 'desc')
             ->get(['id', 'title', 'year', 'is_active']);
 
         // 3. Render halaman Vue dengan data yang dibutuhkan
         return Inertia::render('SuperAdmin/Section/Index', [
             'sections' => $sections,
-            'questionnaires' => $questionnaires,
+            'kuesioners' => $kuesioners,
+            'questionnaires' => $kuesioners,
         ]);
     }
 
@@ -62,19 +63,28 @@ class KelolaSectionController extends Controller
     {
         // Validasi input form section baru
         $validated = $request->validate([
-            'questionnaire_id' => 'required|exists:kuesioners,id',
+            'kuesioner_id' => 'nullable|exists:kuesioners,id',
+            'questionnaire_id' => 'nullable|exists:kuesioners,id',
             'title' => 'required|string|max:255',
             'order' => 'nullable|integer|min:1',
         ]);
 
+        $kuesionerId = $validated['kuesioner_id'] ?? $validated['questionnaire_id'] ?? null;
+        if (! $kuesionerId) {
+            return redirect()->back()->withErrors(['kuesioner_id' => 'Kuesioner induk wajib dipilih.']);
+        }
+
+        $validated['kuesioner_id'] = $kuesionerId;
+        $validated['questionnaire_id'] = $kuesionerId;
+
         // Jika nomor urutan dikosongkan oleh pengguna, tentukan nomor urut berikutnya secara otomatis
         if (empty($validated['order'])) {
-            $maxOrder = QuestionSection::where('questionnaire_id', $validated['questionnaire_id'])->max('order') ?? 0;
+            $maxOrder = KelompokPertanyaan::where('kuesioner_id', $kuesionerId)->max('order') ?? 0;
             $validated['order'] = $maxOrder + 1;
         }
 
         // Buat record section baru di database
-        QuestionSection::create($validated);
+        KelompokPertanyaan::create($validated);
 
         return redirect()->back()->with('success', 'Bagian kuesioner baru berhasil ditambahkan.');
     }
@@ -83,20 +93,25 @@ class KelolaSectionController extends Controller
      * Memperbarui data judul atau urutan section kuesioner yang sudah ada.
      *
      * @param  Request  $request  Objek HTTP request berisi data pembaruan
-     * @param  int  $id  ID primary key dari QuestionSection yang diperbarui
+     * @param  int  $id  ID primary key dari KelompokPertanyaan yang diperbarui
      * @return RedirectResponse Redirect kembali dengan feedback notifikasi
      */
     public function update(Request $request, int $id): RedirectResponse
     {
         // Cari record section berdasarkan ID
-        $section = QuestionSection::findOrFail($id);
+        $section = KelompokPertanyaan::findOrFail($id);
 
         // Validasi masukan data perubahan
         $validated = $request->validate([
-            'questionnaire_id' => 'required|exists:kuesioners,id',
+            'kuesioner_id' => 'nullable|exists:kuesioners,id',
+            'questionnaire_id' => 'nullable|exists:kuesioners,id',
             'title' => 'required|string|max:255',
             'order' => 'nullable|integer|min:1',
         ]);
+
+        $kuesionerId = $validated['kuesioner_id'] ?? $validated['questionnaire_id'] ?? $section->kuesioner_id;
+        $validated['kuesioner_id'] = $kuesionerId;
+        $validated['questionnaire_id'] = $kuesionerId;
 
         // Jika order tidak diisi, jangan timpa nilai urutan yang sudah ada
         if (empty($validated['order'])) {
@@ -112,21 +127,21 @@ class KelolaSectionController extends Controller
     /**
      * Menghapus section kuesioner beserta pertanyaan-pertanyaan yang bernaung di bawahnya.
      *
-     * @param  int  $id  ID primary key QuestionSection yang akan dihapus
+     * @param  int  $id  ID primary key KelompokPertanyaan yang akan dihapus
      * @return RedirectResponse Redirect kembali dengan pesan konfirmasi penghapusan
      */
     public function destroy(int $id): RedirectResponse
     {
         // Temukan data section yang dimaksud
-        $section = QuestionSection::findOrFail($id);
+        $section = KelompokPertanyaan::findOrFail($id);
 
         // Bersihkan opsi jawaban dari setiap pertanyaan dalam section ini untuk integritas relasi
-        foreach ($section->questions as $question) {
-            $question->options()->delete();
+        foreach ($section->subpertanyaans as $subpertanyaan) {
+            $subpertanyaan->detils()->delete();
         }
 
         // Hapus seluruh pertanyaan dalam section
-        $section->questions()->delete();
+        $section->subpertanyaans()->delete();
 
         // Hapus section itu sendiri
         $section->delete();
@@ -150,12 +165,12 @@ class KelolaSectionController extends Controller
             ]);
 
             // Ambil section target yang sedang dipindahkan
-            $currentSection = QuestionSection::findOrFail($validated['id']);
+            $currentSection = KelompokPertanyaan::findOrFail($validated['id']);
             $operator = $validated['direction'] === 'up' ? '<' : '>';
             $sortOrder = $validated['direction'] === 'up' ? 'desc' : 'asc';
 
             // Temukan section tetangga langsung dalam kuesioner yang sama
-            $adjacentSection = QuestionSection::where('kuesioner_id', $currentSection->kuesioner_id)
+            $adjacentSection = KelompokPertanyaan::where('kuesioner_id', $currentSection->kuesioner_id)
                 ->where('order', $operator, $currentSection->order)
                 ->orderBy('order', $sortOrder)
                 ->first();
@@ -179,7 +194,7 @@ class KelolaSectionController extends Controller
             ]);
 
             foreach ($validated['orders'] as $item) {
-                QuestionSection::where('id', $item['id'])->update(['order' => $item['order']]);
+                KelompokPertanyaan::where('id', $item['id'])->update(['order' => $item['order']]);
             }
 
             return redirect()->back()->with('success', 'Seluruh susunan urutan bagian kuesioner berhasil diperbarui.');

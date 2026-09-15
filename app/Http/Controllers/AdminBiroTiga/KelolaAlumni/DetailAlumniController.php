@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\AdminBiroTiga\KelolaAlumni;
 
 use App\Http\Controllers\Controller;
-use App\Models\Alumni;
+use App\Models\Biodata;
 use Inertia\Inertia;
 
 /**
@@ -20,9 +20,10 @@ class DetailAlumniController extends Controller
      */
     public function tampilkanDetailAlumni($id)
     {
-        $alumni = Alumni::with(['dataAkademik.yudisium', 'yudisium', 'prodi', 'company', 'user'])->findOrFail($id);
+        $alumni = Biodata::with(['dataAkademik.yudisium', 'yudisium', 'orangTua', 'prodi', 'company', 'user'])->findOrFail($id);
 
         return Inertia::render('AdminBiroTiga/AlumniShow', [
+            'biodata' => $alumni,
             'alumni' => $alumni,
         ]);
     }

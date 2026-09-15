@@ -2,19 +2,19 @@
 
 namespace Tests\Feature;
 
-use App\Models\Alumni;
+use App\Models\Biodata;
 use App\Models\DataAkademik;
 use App\Models\Prodi;
 use App\Models\ProdiQuestion;
 use App\Models\ProdiQuestionSection;
 use App\Models\User;
-use Illuminate\Foundation\Testing\DatabaseMigrations;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
 use Tests\TestCase;
 
 class AdminProdiKuesionerTest extends TestCase
 {
-    use DatabaseMigrations;
+    use RefreshDatabase;
 
     protected Prodi $prodiSI;
 
@@ -26,7 +26,7 @@ class AdminProdiKuesionerTest extends TestCase
 
     protected User $alumniUser;
 
-    protected Alumni $alumni;
+    protected Biodata $alumni;
 
     protected ProdiQuestionSection $sectionSI;
 
@@ -75,13 +75,14 @@ class AdminProdiKuesionerTest extends TestCase
             'nomor_telepon' => '081234567890',
             'alamat_saat_ini' => 'Jl. Dr. Wahidin',
             'nik' => '3471012345670002',
-            'ipk' => 3.80,
+            'ip_kumulatif' => 3.80,
             'tahun_akademik_lulus' => 'Genap 2024/2025',
         ]);
 
-        $this->alumni = Alumni::create([
+        $this->alumni = Biodata::create([
             'user_id' => $this->alumniUser->id,
             'nim' => '72200001',
+            'nama' => 'Alumni SI',
             'prodi_id' => $this->prodiSI->id,
         ]);
 
@@ -194,7 +195,7 @@ class AdminProdiKuesionerTest extends TestCase
 
         $submitResponse->assertRedirect('/alumni/dashboard');
         $this->assertDatabaseHas('prodi_responses', [
-            'alumni_id' => $this->alumni->id,
+            'biodata_id' => $this->alumni->id,
             'prodi_question_id' => $qSI->id,
             'answer_text' => 'Sangat Relevan',
         ]);
@@ -287,13 +288,13 @@ class AdminProdiKuesionerTest extends TestCase
         $response->assertStatus(200);
 
         $this->assertDatabaseHas('prodi_responses', [
-            'alumni_id' => $this->alumni->id,
+            'biodata_id' => $this->alumni->id,
             'prodi_question_id' => $qNama->id,
             'answer_text' => $this->alumni->dataAkademik->nama,
         ]);
 
         $this->assertDatabaseHas('prodi_responses', [
-            'alumni_id' => $this->alumni->id,
+            'biodata_id' => $this->alumni->id,
             'prodi_question_id' => $qNim->id,
             'answer_text' => $this->alumni->nim,
         ]);

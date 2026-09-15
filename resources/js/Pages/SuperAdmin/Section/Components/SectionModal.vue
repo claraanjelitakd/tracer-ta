@@ -7,7 +7,7 @@
 -->
 <script setup>
 import { useForm } from '@inertiajs/vue3';
-import { watch } from 'vue';
+import { computed, watch } from 'vue';
 import Swal from 'sweetalert2';
 
 // Definisi properti yang diterima dari komponen induk
@@ -28,6 +28,10 @@ const props = defineProps({
         default: null,
     },
     // Daftar instrumen kuesioner aktif untuk pilihan dropdown
+    kuesioners: {
+        type: Array,
+        default: () => [],
+    },
     questionnaires: {
         type: Array,
         default: () => [],
@@ -42,9 +46,14 @@ const props = defineProps({
 // Event yang dipancarkan ke komponen induk
 const emit = defineEmits(['close', 'saved']);
 
+const kuesionerList = computed(() => {
+    return props.kuesioners && props.kuesioners.length ? props.kuesioners : props.questionnaires;
+});
+
 // Inisialisasi state form reaktif menggunakan useForm dari Inertia
 const form = useForm({
     id: null,
+    kuesioner_id: '',
     questionnaire_id: '',
     title: '',
     order: null,
@@ -61,8 +70,10 @@ watch(
 
             if (props.isEdit && props.section) {
                 // Mode Edit: Salin data section terpilih ke dalam formulir
+                const kid = props.section.kuesioner_id || props.section.questionnaire_id || '';
                 form.id = props.section.id;
-                form.questionnaire_id = props.section.questionnaire_id;
+                form.kuesioner_id = kid;
+                form.questionnaire_id = kid;
                 form.title = props.section.title;
                 form.order = props.section.order;
             } else {
@@ -70,7 +81,9 @@ watch(
                 form.reset();
                 form.id = null;
                 // Pilih kuesioner pertama sebagai default jika tersedia
-                form.questionnaire_id = props.questionnaires.length > 0 ? props.questionnaires[0].id : '';
+                const firstId = kuesionerList.value.length > 0 ? kuesionerList.value[0].id : '';
+                form.kuesioner_id = firstId;
+                form.questionnaire_id = firstId;
                 form.title = '';
                 form.order = props.nextOrder;
             }
@@ -192,21 +205,22 @@ const handleSubmit = () => {
                         Kuesioner Induk <span class="text-red-500">*</span>
                     </label>
                     <select
-                        v-model="form.questionnaire_id"
+                        v-model="form.kuesioner_id"
+                        @change="form.questionnaire_id = form.kuesioner_id"
                         class="w-full px-4 py-3 rounded-xl border text-sm font-medium focus:ring-2 focus:ring-[#005B3C] focus:border-transparent bg-gray-50/50"
-                        :class="form.errors.questionnaire_id ? 'border-red-400 bg-red-50/30' : 'border-gray-200'"
+                        :class="(form.errors.kuesioner_id || form.errors.questionnaire_id) ? 'border-red-400 bg-red-50/30' : 'border-gray-200'"
                     >
                         <option value="" disabled>-- Pilih Kuesioner --</option>
                         <option 
-                            v-for="q in questionnaires" 
+                            v-for="q in kuesionerList" 
                             :key="q.id" 
                             :value="q.id"
                         >
                             {{ q.title }} (Tahun {{ q.year }}) {{ q.is_active ? '— [Aktif]' : '' }}
                         </option>
                     </select>
-                    <p v-if="form.errors.questionnaire_id" class="text-xs text-red-500 font-semibold mt-1">
-                        {{ form.errors.questionnaire_id }}
+                    <p v-if="form.errors.kuesioner_id || form.errors.questionnaire_id" class="text-xs text-red-500 font-semibold mt-1">
+                        {{ form.errors.kuesioner_id || form.errors.questionnaire_id }}
                     </p>
                 </div>
 

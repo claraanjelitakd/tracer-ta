@@ -3,13 +3,14 @@
 namespace App\Http\Controllers\SuperAdmin\Dashboard;
 
 use App\Http\Controllers\Controller;
-use App\Models\Alumni;
+use App\Models\Biodata;
+use App\Models\KelompokPertanyaan;
 use App\Models\Prodi;
-use App\Models\Question;
-use App\Models\QuestionSection;
-use App\Models\Response;
+use App\Models\RefSubpertanyaan2021;
+use App\Models\Tracer;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
+use Inertia\Response;
 
 /**
  * Class DashboardController (SuperAdmin)
@@ -27,17 +28,17 @@ class DashboardController extends Controller
     /**
      * Tampilkan Dashboard Superadmin beserta metrik ringkasan sistem.
      *
-     * @return \Inertia\Response
+     * @return Response
      */
     public function tampilkanDashboard(Request $request)
     {
         $user = $request->user();
 
         // 1. Menghitung ringkasan statistik kuesioner dan partisipasi
-        $totalPertanyaan = Question::count();
-        $totalSections = QuestionSection::count();
-        $totalAlumni = Alumni::count();
-        $totalResponden = Response::distinct('alumni_id')->count('alumni_id');
+        $totalPertanyaan = RefSubpertanyaan2021::count();
+        $totalSections = KelompokPertanyaan::count();
+        $totalAlumni = Biodata::count();
+        $totalResponden = Tracer::distinct('biodata_id')->count('biodata_id');
         $totalProdi = Prodi::count();
 
         // 2. Mengembalikan view dasbor Superadmin

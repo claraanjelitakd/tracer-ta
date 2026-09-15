@@ -13,7 +13,7 @@ class ProdiResponse extends Model
     use HasFactory;
 
     protected $fillable = [
-        'alumni_id',
+        'biodata_id',
         'prodi_question_id',
         'answer_text',
         'answer_json',
@@ -23,9 +23,9 @@ class ProdiResponse extends Model
         'answer_json' => 'array',
     ];
 
-    public function alumni()
+    public function biodata()
     {
-        return $this->belongsTo(Alumni::class);
+        return $this->belongsTo(Biodata::class, 'biodata_id');
     }
 
     public function question()
