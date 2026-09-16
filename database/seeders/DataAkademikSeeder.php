@@ -5,10 +5,15 @@ namespace Database\Seeders;
 use App\Models\Biodata;
 use App\Models\DataAkademik;
 use App\Models\Kabupaten;
-use App\Models\Province;
+use App\Models\Propinsi;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 
+/**
+ * Seeder DataAkademik
+ *
+ * Mengisi data master riwayat akademik mahasiswa/alumni UKDW.
+ */
 class DataAkademikSeeder extends Seeder
 {
     /**
@@ -19,13 +24,13 @@ class DataAkademikSeeder extends Seeder
         $alumniUsers = User::where('role', 'alumni')->get();
 
         // Ambil wilayah untuk relasi ID yang valid
-        $diy = Province::where('kode_provinsi', '34')->orWhere('nama_provinsi', 'LIKE', '%Yogyakarta%')->first();
+        $diy = Propinsi::where('kode_provinsi', '34')->orWhere('nama_provinsi', 'LIKE', '%Yogyakarta%')->first();
         $sleman = Kabupaten::where('kode_kabupaten', '34.04')->orWhere('nama_kabupaten', 'LIKE', '%Sleman%')->first();
 
-        $jakarta = Province::where('kode_provinsi', '31')->orWhere('nama_provinsi', 'LIKE', '%Jakarta%')->first();
+        $jakarta = Propinsi::where('kode_provinsi', '31')->orWhere('nama_provinsi', 'LIKE', '%Jakarta%')->first();
         $jakpus = Kabupaten::where('kode_kabupaten', '31.71')->orWhere('nama_kabupaten', 'LIKE', '%Jakarta Pusat%')->first();
 
-        $aceh = Province::where('kode_provinsi', '11')->orWhere('nama_provinsi', 'LIKE', '%Aceh%')->first();
+        $aceh = Propinsi::where('kode_provinsi', '11')->orWhere('nama_provinsi', 'LIKE', '%Aceh%')->first();
         $acehSelatan = Kabupaten::where('kode_kabupaten', '11.01')->orWhere('nama_kabupaten', 'LIKE', '%Aceh Selatan%')->first();
 
         // Wilayah referensi per alumni secara bergantian
@@ -113,7 +118,7 @@ class DataAkademikSeeder extends Seeder
                     'kelurahan' => $lokasi['kel'],
                     'kecamatan' => $lokasi['kec'],
                     'kabupaten_id' => $lokasi['kab'],
-                    'provinsi_id' => $lokasi['prov'],
+                    'propinsi_id' => $lokasi['prov'],
                     'kode_pos' => $lokasi['kodepos'],
 
                     // Data Asal Sekolah

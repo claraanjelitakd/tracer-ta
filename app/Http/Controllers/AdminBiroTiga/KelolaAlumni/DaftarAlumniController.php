@@ -45,7 +45,7 @@ class DaftarAlumniController extends Controller
         }
 
         // 3. Kueri Utama: Mengambil data biodata yang berstatus Yudisium 'Lulus' pada tahun kelulusan terpilih
-        $query = Biodata::with(['dataAkademik', 'prodi', 'company', 'user', 'yudisium'])
+        $query = Biodata::with(['dataAkademik', 'prodi', 'perusahaan', 'user', 'yudisium'])
             ->whereHas('yudisium', function ($q) {
                 $q->where('proses_yudisium', 'Lulus');
             })

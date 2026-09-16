@@ -11,15 +11,15 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('yudisiums', function (Blueprint $table) {
+        Schema::table('yudisium', function (Blueprint $table) {
             $colsToDrop = [];
-            if (Schema::hasColumn('yudisiums', 'dosen_pembimbing_3')) {
+            if (Schema::hasColumn('yudisium', 'dosen_pembimbing_3')) {
                 $colsToDrop[] = 'dosen_pembimbing_3';
             }
-            if (Schema::hasColumn('yudisiums', 'dosen_penguji_3')) {
+            if (Schema::hasColumn('yudisium', 'dosen_penguji_3')) {
                 $colsToDrop[] = 'dosen_penguji_3';
             }
-            if (Schema::hasColumn('yudisiums', 'dosen_penguji_4')) {
+            if (Schema::hasColumn('yudisium', 'dosen_penguji_4')) {
                 $colsToDrop[] = 'dosen_penguji_4';
             }
             if (! empty($colsToDrop)) {
@@ -33,7 +33,7 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('yudisiums', function (Blueprint $table) {
+        Schema::table('yudisium', function (Blueprint $table) {
             $table->string('dosen_pembimbing_3')->nullable();
             $table->string('dosen_penguji_3')->nullable();
             $table->string('dosen_penguji_4')->nullable();

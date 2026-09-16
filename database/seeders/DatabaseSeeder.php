@@ -6,6 +6,11 @@ use App\Models\Prodi;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 
+/**
+ * Seeder Utama Database
+ *
+ * Menjalankan seluruh seeder master data, kuesioner, dan data awal aplikasi.
+ */
 class DatabaseSeeder extends Seeder
 {
     /**
@@ -38,16 +43,18 @@ class DatabaseSeeder extends Seeder
             );
         }
 
+        // 2. Seed Master Wilayah & UMP
         $this->call([
             WilayahSeeder::class,
             UmpSeeder::class,
         ]);
 
+        // 3. Seed Master Pengguna, Perusahaan, dan Data Alumni
         $this->call([
             UserSeeder::class,
-            CompanySeeder::class,
+            PerusahaanSeeder::class,
             DataAkademikSeeder::class,
-            AlumniSeeder::class,
+            BiodataSeeder::class,
             DataOrangTuaSeeder::class,
             YudisiumSeeder::class,
         ]);

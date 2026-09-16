@@ -15,7 +15,7 @@ return new class extends Migration
             $table->foreignId('prodi_id')
                 ->nullable()
                 ->after('role')
-                ->constrained('prodis')
+                ->constrained('prodi')
                 ->nullOnDelete();
         });
     }

@@ -40,7 +40,7 @@ class HandleInertiaRequests extends Middleware
             'auth' => [
                 'user' => $request->user() ? array_merge(
                     $request->user()->only('id', 'name', 'username', 'email', 'role', 'must_change_password'),
-                    ['alumni' => $request->user()->alumni()->with(['prodi', 'company', 'company.province', 'company.kabupaten', 'dataAkademik'])->first()]
+                    ['alumni' => $request->user()->biodata()->with(['prodi', 'perusahaan', 'perusahaan.propinsi', 'perusahaan.kabupaten', 'dataAkademik'])->first()]
                 ) : null,
             ],
             'flash' => [

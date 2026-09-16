@@ -20,7 +20,7 @@ class DetailAlumniController extends Controller
      */
     public function tampilkanDetailAlumni($id)
     {
-        $alumni = Biodata::with(['dataAkademik.yudisium', 'yudisium', 'orangTua', 'prodi', 'company', 'user'])->findOrFail($id);
+        $alumni = Biodata::with(['dataAkademik.yudisium', 'yudisium', 'orangTua', 'prodi', 'perusahaan', 'user'])->findOrFail($id);
 
         return Inertia::render('AdminBiroTiga/AlumniShow', [
             'biodata' => $alumni,

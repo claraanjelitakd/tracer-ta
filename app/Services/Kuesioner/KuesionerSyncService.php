@@ -12,24 +12,24 @@ use App\Models\Tracer;
  * KuesionerSyncService
  *
  * Fungsi: Menyinkronkan data profil biodata alumni (Data Akademik, Akun User, Perusahaan, dan Atasan)
- * secara otomatis ke tabel `tracers` untuk kelompok instrumen F1 s/d F2H, F5B..F5D, F510, dan BIO_*.
+ * secara otomatis ke tabel `tracer` untuk kelompok instrumen F1 s/d F2H, F5B..F5D, F510, dan BIO_*.
  */
 class KuesionerSyncService
 {
     /**
-     * Menyinkronkan data profil biodata alumni ke tabel tracers untuk pertanyaan identitas dan pekerjaan.
+     * Menyinkronkan data profil biodata alumni ke tabel tracer untuk pertanyaan identitas dan pekerjaan.
      *
      * @param  Biodata  $biodata  Model biodata yang akan disinkronkan datanya.
      */
     public static function syncProfileResponses(Biodata $biodata): void
     {
         $biodata->refresh();
-        $biodata->load(['dataAkademik', 'yudisium', 'company.province', 'company.kabupaten', 'atasan', 'user', 'prodi']);
+        $biodata->load(['dataAkademik', 'yudisium', 'perusahaan.propinsi', 'perusahaan.kabupaten', 'atasan', 'user', 'prodi']);
 
         $alamatPerusahaanParts = array_filter([
-            $biodata->company?->alamat,
-            $biodata->company?->kabupaten?->nama_kabupaten,
-            $biodata->company?->province?->nama_provinsi,
+            $biodata->perusahaan?->alamat,
+            $biodata->perusahaan?->kabupaten?->nama_kabupaten,
+            $biodata->perusahaan?->propinsi?->nama_provinsi,
             $biodata->zipcode,
         ]);
         $alamatPerusahaan = ! empty($alamatPerusahaanParts) ? implode(', ', $alamatPerusahaanParts) : null;
@@ -66,19 +66,19 @@ class KuesionerSyncService
             'BIO_NPWP' => $biodata->npwp,
 
             // Relasi ke Perusahaan & Atasan
-            'F2E' => $biodata->company?->nama_perusahaan,
-            'F5B' => $biodata->company?->nama_perusahaan,
+            'F2E' => $biodata->perusahaan?->nama_perusahaan,
+            'F5B' => $biodata->perusahaan?->nama_perusahaan,
             'F2E1' => $biodata->atasan?->nama,
             'F2E2' => $biodata->atasan?->telepon,
             'F2E3' => $biodata->atasan?->email,
             'F2F' => $alamatPerusahaan,
             'F510' => $alamatPerusahaan,
-            'F5a1' => $biodata->company?->province_id ? (string) $biodata->company->province_id : null,
-            'F5a2' => $biodata->company?->kabupaten_id ? (string) $biodata->company->kabupaten_id : null,
+            'F5a1' => $biodata->perusahaan?->propinsi_id ? (string) $biodata->perusahaan->propinsi_id : null,
+            'F5a2' => $biodata->perusahaan?->kabupaten_id ? (string) $biodata->perusahaan->kabupaten_id : null,
             'F2G' => $biodata->posisi_jabatan,
             'F5C' => $biodata->posisi_jabatan,
-            'F2H' => $biodata->company?->skala,
-            'F5D' => $biodata->company?->skala,
+            'F2H' => $biodata->perusahaan?->skala,
+            'F5D' => $biodata->perusahaan?->skala,
         ];
 
         foreach ($profileMap as $code => $val) {
@@ -114,7 +114,7 @@ class KuesionerSyncService
 
     /**
      * Menyinkronkan data akademik alumni (Nama, NIM, Tahun Kelulusan)
-     * secara otomatis ke tabel `prodi_responses`.
+     * secara otomatis ke tabel `prodi_response`.
      */
     public static function syncProdiResponses(Biodata $biodata): void
     {

@@ -14,43 +14,35 @@ use Inertia\Response;
 /**
  * DaftarAlumniSuperAdminController
  *
- * Fungsi: Menampilkan daftar seluruh data alumni dari seluruh Program Studi bagi Super Admin.
- * Fitur:
- * 1. Filter Program Studi, Tahun Kelulusan, Semester (Gasal/Genap), Status Kuesioner (Selesai/Belum).
- * 2. Pencarian cepat (NIM atau Nama Lengkap).
- * 3. Ringkasan statistik (Total Alumni, Selesai, Belum Selesai, Persentase Selesai).
- * 4. Navigasi langsung ke detail kuesioner individual untuk audit jawaban.
+ * Fungsi:
+ * Menampilkan daftar seluruh alumni terpadu untuk Super Admin lengkap dengan filter Prodi,
+ * Tahun Kelulusan, Semester Lulus, Pencarian Nama/NIM, serta audit status kelengkapan data.
  */
 class DaftarAlumniSuperAdminController extends Controller
 {
     /**
-     * Menampilkan Halaman Daftar Alumni Super Admin
-     *
-     * @return Response
+     * Tampilkan Halaman Index Daftar Alumni
      */
-    public function index(Request $request)
+    public function index(Request $request): Response
     {
         $pencarian = $request->input('search');
-        $tahunTerpilih = $request->input('tahun', 'all');
-        $semesterTerpilih = $request->input('semester', 'all');
-        $statusTerpilih = $request->input('status', 'all');
-        $prodiIdTerpilih = $request->input('prodi_id', 'all');
+        $tahunTerpilih = $request->input('tahun');
+        $semesterTerpilih = $request->input('semester');
+        $statusTerpilih = $request->input('status');
+        $prodiIdTerpilih = $request->input('prodi_id');
 
-        // 1. Ambil daftar tahun akademik lulus unik (misal "2023/2024", "2024/2025")
-        $rawTahunAkademik = DataAkademik::whereNotNull('tahun_akademik_lulus')
-            ->distinct()
-            ->pluck('tahun_akademik_lulus')
-            ->values();
+        // 1. Ambil list tahun kelulusan unik dari data akademik untuk dropdown filter
+        $daftarTahun = DataAkademik::whereNotNull('tahun_lulus')
+            ->orWhereNotNull('tahun_akademik_lulus')
+            ->pluck('tahun_lulus')
+            ->filter()
+            ->map(function ($item) {
+                if (preg_match('/(\d{4})/', (string) $item, $matches)) {
+                    return $matches[1];
+                }
 
-        // Ekstrak tahun unik (misal: jika ada "Gasal 2023/2024" atau "2023/2024", ekstrak bagian tahun "2023/2024")
-        $daftarTahun = $rawTahunAkademik->map(function ($item) {
-            // Ambil format tahun YYYY/YYYY atau YYYY
-            if (preg_match('/(\d{4}\/\d{4}|\d{4})/', $item, $matches)) {
-                return $matches[1];
-            }
-
-            return trim($item);
-        })->unique()->sortDesc()->values()->all();
+                return trim($item);
+            })->unique()->sortDesc()->values()->all();
 
         // 2. Kueri data biodata dengan relasi lengkap
         $query = Biodata::with([
@@ -59,8 +51,8 @@ class DaftarAlumniSuperAdminController extends Controller
             'yudisium',
             'orangTua',
             'prodi',
-            'company.province',
-            'company.kabupaten',
+            'perusahaan.propinsi',
+            'perusahaan.kabupaten',
             'atasan',
             'user',
         ]);
@@ -144,7 +136,7 @@ class DaftarAlumniSuperAdminController extends Controller
                 'tahun_lulus' => $alumni->dataAkademik?->tahun_lulus ?? '-',
                 'ipk' => $alumni->dataAkademik?->ipk ?? '-',
                 'status_yudisium' => $alumni->dataAkademik?->yudisium?->proses_yudisium ?? 'Lulus',
-                'perusahaan' => $alumni->company?->nama_perusahaan ?? '-',
+                'perusahaan' => $alumni->perusahaan?->nama_perusahaan ?? '-',
                 'posisi_jabatan' => $alumni->posisi_jabatan ?? '-',
                 'kelengkapan' => $evaluasi,
             ];

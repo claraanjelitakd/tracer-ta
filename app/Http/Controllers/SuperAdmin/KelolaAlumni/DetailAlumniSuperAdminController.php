@@ -5,13 +5,13 @@ namespace App\Http\Controllers\SuperAdmin\KelolaAlumni;
 use App\Http\Controllers\Controller;
 use App\Models\Atasan;
 use App\Models\Biodata;
-use App\Models\Company;
 use App\Models\DataOrangTua;
 use App\Models\Kabupaten;
 use App\Models\Kuesioner;
+use App\Models\Perusahaan;
 use App\Models\ProdiQuestionSection;
 use App\Models\ProdiResponse;
-use App\Models\Province;
+use App\Models\Propinsi;
 use App\Models\Tracer;
 use App\Services\Kuesioner\KelengkapanTracerService;
 use App\Services\Kuesioner\KuesionerSyncService;
@@ -48,8 +48,8 @@ class DetailAlumniSuperAdminController extends Controller
             'dataAkademik.orangTua',
             'yudisium',
             'orangTua',
-            'company.province',
-            'company.kabupaten',
+            'perusahaan.propinsi',
+            'perusahaan.kabupaten',
             'atasan',
             'user',
             'prodi',
@@ -67,7 +67,6 @@ class DetailAlumniSuperAdminController extends Controller
             ->keyBy('question_id');
 
         // Ambil seluruh section dan pertanyaan dari kuesioner aktif
-        $alumniProdiId = $alumni->prodi_id;
         $kuesioner = Kuesioner::where('is_active', true)
             ->with(['sections' => function ($secQuery) {
                 $secQuery->orderBy('order', 'asc')
@@ -100,10 +99,6 @@ class DetailAlumniSuperAdminController extends Controller
                             $hasAnswer = true;
                             $displayAnswer = implode(', ', $resp->answer_json);
                         }
-                    }
-
-                    if ($isMandatory && $hasAnswer) {
-                        // Respon wajib terjawab
                     }
 
                     $subpertanyaansList[] = [
@@ -163,7 +158,8 @@ class DetailAlumniSuperAdminController extends Controller
             'kelurahan' => $alumni->kelurahan ?? $dataAkademik?->kelurahan ?? '',
             'kecamatan' => $alumni->kecamatan ?? $dataAkademik?->kecamatan ?? '',
             'kabupaten_id' => $alumni->kabupaten_id ?? $dataAkademik?->kabupaten_id ?? '',
-            'provinsi_id' => $alumni->provinsi_id ?? $dataAkademik?->provinsi_id ?? '',
+            'propinsi_id' => $alumni->propinsi_id ?? $dataAkademik?->propinsi_id ?? '',
+            'provinsi_id' => $alumni->propinsi_id ?? $dataAkademik?->propinsi_id ?? '',
             'kode_pos' => $alumni->kode_pos ?? $dataAkademik?->kode_pos ?? '',
             'nomor_telepon' => $alumni->nomor_telepon ?? $dataAkademik?->nomor_telepon ?? '',
             'email_pribadi' => $alumni->email_pribadi ?? $alumni->email ?? $dataAkademik?->email_pribadi ?? '',
@@ -199,7 +195,8 @@ class DetailAlumniSuperAdminController extends Controller
             'alamat_orang_tua' => $orangTua?->alamat ?? '',
             'kota_orang_tua' => $orangTua?->kota ?? '',
             'kabupaten_id_orang_tua' => $orangTua?->kabupaten_id ?? '',
-            'provinsi_id_orang_tua' => $orangTua?->provinsi_id ?? '',
+            'propinsi_id_orang_tua' => $orangTua?->propinsi_id ?? '',
+            'provinsi_id_orang_tua' => $orangTua?->propinsi_id ?? '',
             'kode_pos_orang_tua' => $orangTua?->kode_pos ?? '',
             'nomor_telepon_orang_tua' => $orangTua?->nomor_telepon ?? '',
 
@@ -215,12 +212,12 @@ class DetailAlumniSuperAdminController extends Controller
             'zipcode' => $alumni->zipcode ?? '',
 
             // Data Perusahaan
-            'nama_perusahaan' => $alumni->company?->nama_perusahaan ?? '',
-            'company_alamat' => $alumni->company?->alamat ?? '',
-            'company_skala' => $alumni->company?->skala ?? '',
-            'company_province_id' => $alumni->company?->province_id ?? '',
-            'company_kabupaten_id' => $alumni->company?->kabupaten_id ?? '',
-            'company_status_verifikasi' => $alumni->company?->status_verifikasi ?? '',
+            'nama_perusahaan' => $alumni->perusahaan?->nama_perusahaan ?? '',
+            'perusahaan_alamat' => $alumni->perusahaan?->alamat ?? '',
+            'perusahaan_skala' => $alumni->perusahaan?->skala ?? '',
+            'perusahaan_propinsi_id' => $alumni->perusahaan?->propinsi_id ?? '',
+            'perusahaan_kabupaten_id' => $alumni->perusahaan?->kabupaten_id ?? '',
+            'perusahaan_status_verifikasi' => $alumni->perusahaan?->status_verifikasi ?? '',
 
             // Data Atasan
             'nama_atasan' => $atasan?->nama ?? '',
@@ -319,9 +316,9 @@ class DetailAlumniSuperAdminController extends Controller
             ];
         }
 
-        $provinces = Province::orderBy('nama_provinsi', 'asc')->get();
+        $propinsis = Propinsi::orderBy('nama_provinsi', 'asc')->get();
         $kabupatens = Kabupaten::orderBy('nama_kabupaten', 'asc')->get();
-        $companies = Company::select('id', 'nama_perusahaan', 'province_id', 'kabupaten_id', 'alamat', 'kode_pos', 'skala', 'status_verifikasi')->get();
+        $perusahaans = Perusahaan::select('id', 'nama_perusahaan', 'propinsi_id', 'kabupaten_id', 'alamat', 'kode_pos', 'skala', 'status_verifikasi')->get();
 
         return Inertia::render('SuperAdmin/Alumni/Show', [
             'biodata' => $alumni,
@@ -331,9 +328,11 @@ class DetailAlumniSuperAdminController extends Controller
             'prodiSections' => $prodiSectionsWithAnswers,
             'prodiEvaluasi' => $prodiEvaluasi,
             'formData' => $formData,
-            'provinces' => $provinces,
+            'propinsis' => $propinsis,
+            'provinces' => $propinsis,
             'kabupatens' => $kabupatens,
-            'companies' => $companies,
+            'perusahaans' => $perusahaans,
+            'companies' => $perusahaans,
         ]);
     }
 
@@ -355,7 +354,7 @@ class DetailAlumniSuperAdminController extends Controller
             'alamat' => ! empty($data['alamat_orang_tua']) ? $data['alamat_orang_tua'] : null,
             'kota' => ! empty($data['kota_orang_tua']) ? $data['kota_orang_tua'] : null,
             'kabupaten_id' => ! empty($data['kabupaten_id_orang_tua']) ? $data['kabupaten_id_orang_tua'] : null,
-            'provinsi_id' => ! empty($data['provinsi_id_orang_tua']) ? $data['provinsi_id_orang_tua'] : null,
+            'propinsi_id' => ! empty($data['propinsi_id_orang_tua']) ? $data['propinsi_id_orang_tua'] : (! empty($data['provinsi_id_orang_tua']) ? $data['provinsi_id_orang_tua'] : null),
             'kode_pos' => ! empty($data['kode_pos_orang_tua']) ? $data['kode_pos_orang_tua'] : null,
             'nomor_telepon' => ! empty($data['nomor_telepon_orang_tua']) ? $data['nomor_telepon_orang_tua'] : null,
         ];
@@ -365,28 +364,28 @@ class DetailAlumniSuperAdminController extends Controller
         );
 
         // 2. Tangani Data Perusahaan
-        $companyId = $biodata->company_id;
+        $perusahaanId = $biodata->perusahaan_id;
         if (! empty($data['nama_perusahaan'])) {
-            $company = Company::firstOrCreate(
+            $perusahaan = Perusahaan::firstOrCreate(
                 ['nama_perusahaan' => $data['nama_perusahaan']],
                 [
-                    'province_id' => $data['company_province_id'] ?? null,
-                    'kabupaten_id' => $data['company_kabupaten_id'] ?? null,
-                    'alamat' => $data['company_alamat'] ?? null,
-                    'skala' => $data['company_skala'] ?? null,
+                    'propinsi_id' => $data['perusahaan_propinsi_id'] ?? ($data['company_province_id'] ?? null),
+                    'kabupaten_id' => $data['perusahaan_kabupaten_id'] ?? ($data['company_kabupaten_id'] ?? null),
+                    'alamat' => $data['perusahaan_alamat'] ?? ($data['company_alamat'] ?? null),
+                    'skala' => $data['perusahaan_skala'] ?? ($data['company_skala'] ?? null),
                     'status_verifikasi' => 'Terverifikasi',
                 ]
             );
 
             // Perbarui detail alamat/wilayah perusahaan jika sudah ada
-            $company->update([
-                'province_id' => ! empty($data['company_province_id']) ? $data['company_province_id'] : null,
-                'kabupaten_id' => ! empty($data['company_kabupaten_id']) ? $data['company_kabupaten_id'] : null,
-                'alamat' => ! empty($data['company_alamat']) ? $data['company_alamat'] : null,
-                'skala' => ! empty($data['company_skala']) ? $data['company_skala'] : null,
+            $perusahaan->update([
+                'propinsi_id' => ! empty($data['perusahaan_propinsi_id']) ? $data['perusahaan_propinsi_id'] : (! empty($data['company_province_id']) ? $data['company_province_id'] : null),
+                'kabupaten_id' => ! empty($data['perusahaan_kabupaten_id']) ? $data['perusahaan_kabupaten_id'] : (! empty($data['company_kabupaten_id']) ? $data['company_kabupaten_id'] : null),
+                'alamat' => ! empty($data['perusahaan_alamat']) ? $data['perusahaan_alamat'] : (! empty($data['company_alamat']) ? $data['company_alamat'] : null),
+                'skala' => ! empty($data['perusahaan_skala']) ? $data['perusahaan_skala'] : (! empty($data['company_skala']) ? $data['company_skala'] : null),
             ]);
 
-            $companyId = $company->id;
+            $perusahaanId = $perusahaan->id;
         }
 
         // 3. Tangani Data Atasan
@@ -419,14 +418,14 @@ class DetailAlumniSuperAdminController extends Controller
             'kelurahan' => ! empty($data['kelurahan']) ? $data['kelurahan'] : null,
             'kecamatan' => ! empty($data['kecamatan']) ? $data['kecamatan'] : null,
             'kabupaten_id' => ! empty($data['kabupaten_id']) ? $data['kabupaten_id'] : null,
-            'provinsi_id' => ! empty($data['provinsi_id']) ? $data['provinsi_id'] : null,
+            'propinsi_id' => ! empty($data['propinsi_id']) ? $data['propinsi_id'] : (! empty($data['provinsi_id']) ? $data['provinsi_id'] : null),
             'kode_pos' => ! empty($data['kode_pos']) ? $data['kode_pos'] : null,
             'agama' => ! empty($data['agama']) ? $data['agama'] : null,
             'nik' => ! empty($data['nik']) ? $data['nik'] : null,
             'no_kk' => ! empty($data['no_kk']) ? $data['no_kk'] : null,
             'no_bpjs' => ! empty($data['no_bpjs']) ? $data['no_bpjs'] : null,
             'npwp' => ! empty($data['npwp']) ? $data['npwp'] : null,
-            'company_id' => $companyId,
+            'perusahaan_id' => $perusahaanId,
             'atasan_id' => $atasanId,
             'posisi_jabatan' => ! empty($data['posisi_jabatan']) ? $data['posisi_jabatan'] : null,
             'jenis_pekerjaan' => ! empty($data['jenis_pekerjaan']) ? $data['jenis_pekerjaan'] : null,

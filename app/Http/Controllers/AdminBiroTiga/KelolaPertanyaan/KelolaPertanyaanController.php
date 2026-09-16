@@ -69,7 +69,7 @@ class KelolaPertanyaanController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'kelompok_pertanyaan_id' => 'required|exists:kelompok_pertanyaans,id',
+            'kelompok_pertanyaan_id' => 'required|exists:kelompok_pertanyaan,id',
             'kode_pertanyaan' => 'required|string|unique:ref_subpertanyaan2021,kode_pertanyaan|max:50',
             'subpertanyaan' => 'required|string',
             'type' => 'required|string',
@@ -100,7 +100,7 @@ class KelolaPertanyaanController extends Controller
         $subpertanyaan = RefSubpertanyaan2021::findOrFail($id);
 
         $validated = $request->validate([
-            'kelompok_pertanyaan_id' => 'required|exists:kelompok_pertanyaans,id',
+            'kelompok_pertanyaan_id' => 'required|exists:kelompok_pertanyaan,id',
             'kode_pertanyaan' => 'required|string|max:50|unique:ref_subpertanyaan2021,kode_pertanyaan,'.$subpertanyaan->id,
             'subpertanyaan' => 'required|string',
             'type' => 'required|string',

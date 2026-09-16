@@ -4,7 +4,7 @@ namespace App\Http\Controllers\AdminBiroTiga\KelolaAlumni;
 
 use App\Http\Controllers\Controller;
 use App\Models\Biodata;
-use App\Models\Company;
+use App\Models\Perusahaan;
 use App\Services\LinkedIn\LinkedInService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -68,16 +68,16 @@ class SinkronisasiLinkedinController extends Controller
             if ($request->filled('current_company')) {
                 $namaPerusahaan = trim($request->current_company);
 
-                $perusahaan = Company::where('nama_perusahaan', 'like', $namaPerusahaan)->first();
+                $perusahaan = Perusahaan::where('nama_perusahaan', 'like', $namaPerusahaan)->first();
 
                 if (! $perusahaan) {
-                    $perusahaan = Company::create([
+                    $perusahaan = Perusahaan::create([
                         'nama_perusahaan' => $namaPerusahaan,
                         'sektor' => $request->input('industry'),
                     ]);
                 }
 
-                $alumni->company_id = $perusahaan->id;
+                $alumni->perusahaan_id = $perusahaan->id;
             }
 
             $alumni->save();

@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 /**
- * Model Tracer (tracers)
+ * Model Tracer (tracer)
  *
  * Mengelola data jawaban kuesioner tracer study alumni.
  */
@@ -14,7 +14,7 @@ class Tracer extends Model
 {
     use HasFactory;
 
-    protected $table = 'tracers';
+    protected $table = 'tracer';
 
     protected $fillable = [
         'biodata_id',

@@ -63,8 +63,8 @@ class KelolaSectionController extends Controller
     {
         // Validasi input form section baru
         $validated = $request->validate([
-            'kuesioner_id' => 'nullable|exists:kuesioners,id',
-            'questionnaire_id' => 'nullable|exists:kuesioners,id',
+            'kuesioner_id' => 'nullable|exists:kuesioner,id',
+            'questionnaire_id' => 'nullable|exists:kuesioner,id',
             'title' => 'required|string|max:255',
             'order' => 'nullable|integer|min:1',
         ]);
@@ -103,8 +103,8 @@ class KelolaSectionController extends Controller
 
         // Validasi masukan data perubahan
         $validated = $request->validate([
-            'kuesioner_id' => 'nullable|exists:kuesioners,id',
-            'questionnaire_id' => 'nullable|exists:kuesioners,id',
+            'kuesioner_id' => 'nullable|exists:kuesioner,id',
+            'questionnaire_id' => 'nullable|exists:kuesioner,id',
             'title' => 'required|string|max:255',
             'order' => 'nullable|integer|min:1',
         ]);
@@ -160,7 +160,7 @@ class KelolaSectionController extends Controller
         // Skenario 1: Pemindahan posisi satu tingkat naik ('up') atau turun ('down')
         if ($request->has(['id', 'direction'])) {
             $validated = $request->validate([
-                'id' => 'required|exists:kelompok_pertanyaans,id',
+                'id' => 'required|exists:kelompok_pertanyaan,id',
                 'direction' => 'required|in:up,down',
             ]);
 
@@ -189,7 +189,7 @@ class KelolaSectionController extends Controller
         if ($request->has('orders')) {
             $validated = $request->validate([
                 'orders' => 'required|array',
-                'orders.*.id' => 'required|exists:kelompok_pertanyaans,id',
+                'orders.*.id' => 'required|exists:kelompok_pertanyaan,id',
                 'orders.*.order' => 'required|integer',
             ]);
 

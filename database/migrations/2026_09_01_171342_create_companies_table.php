@@ -6,13 +6,16 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
+    /**
+     * Run the migrations.
+     */
     public function up(): void
     {
-        Schema::create('companies', function (Blueprint $table) {
+        Schema::create('perusahaan', function (Blueprint $table) {
             $table->id();
             $table->string('nama_perusahaan');
-            $table->foreignId('province_id')->nullable()->constrained()->nullOnDelete();
-            $table->foreignId('kabupaten_id')->nullable()->constrained()->nullOnDelete();
+            $table->foreignId('propinsi_id')->nullable()->constrained('propinsi')->nullOnDelete();
+            $table->foreignId('kabupaten_id')->nullable()->constrained('kabupaten')->nullOnDelete();
             $table->text('alamat')->nullable();
             $table->string('kode_pos', 15)->nullable();
             $table->string('sektor')->nullable();
@@ -20,8 +23,11 @@ return new class extends Migration
         });
     }
 
+    /**
+     * Reverse the migrations.
+     */
     public function down(): void
     {
-        Schema::dropIfExists('companies');
+        Schema::dropIfExists('perusahaan');
     }
 };

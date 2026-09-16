@@ -130,7 +130,7 @@ class KelolaSectionProdiController extends Controller
 
         if ($request->has(['id', 'direction'])) {
             $validated = $request->validate([
-                'id' => 'required|exists:prodi_question_sections,id',
+                'id' => 'required|exists:prodi_question_section,id',
                 'direction' => 'required|in:up,down',
             ]);
 
@@ -158,7 +158,7 @@ class KelolaSectionProdiController extends Controller
         if ($request->has('orders')) {
             $validated = $request->validate([
                 'orders' => 'required|array',
-                'orders.*.id' => 'required|exists:prodi_question_sections,id',
+                'orders.*.id' => 'required|exists:prodi_question_section,id',
                 'orders.*.order' => 'required|integer',
             ]);
 

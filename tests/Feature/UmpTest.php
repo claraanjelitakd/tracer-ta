@@ -2,7 +2,7 @@
 
 namespace Tests\Feature;
 
-use App\Models\Province;
+use App\Models\Propinsi;
 use App\Models\Ump;
 use Database\Seeders\UmpSeeder;
 use Database\Seeders\WilayahSeeder;
@@ -14,11 +14,11 @@ class UmpTest extends TestCase
     use RefreshDatabase;
 
     /**
-     * Test relasi foreign key kode_provinsi antara Ump dan Province.
+     * Test relasi foreign key kode_provinsi antara Ump dan Propinsi.
      */
     public function test_can_create_ump_with_foreign_key_to_kode_provinsi(): void
     {
-        $province = Province::create([
+        $propinsi = Propinsi::create([
             'kode_provinsi' => '31',
             'nama_provinsi' => 'DKI Jakarta',
         ]);
@@ -30,15 +30,15 @@ class UmpTest extends TestCase
             'catatan' => null,
         ]);
 
-        $this->assertDatabaseHas('umps', [
+        $this->assertDatabaseHas('ump', [
             'kode_provinsi' => '31',
             'tahun' => 2026,
             'besaran' => '5729876.00',
         ]);
 
-        $this->assertEquals('DKI Jakarta', $ump->province->nama_provinsi);
-        $this->assertEquals('5729876.00', (string) $province->ump->besaran);
-        $this->assertCount(1, $province->umps);
+        $this->assertEquals('DKI Jakarta', $ump->propinsi->nama_provinsi);
+        $this->assertEquals('5729876.00', (string) $propinsi->ump->besaran);
+        $this->assertCount(1, $propinsi->umps);
     }
 
     /**

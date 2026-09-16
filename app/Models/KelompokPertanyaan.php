@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 /**
- * Model KelompokPertanyaan (kelompok_pertanyaans)
+ * Model KelompokPertanyaan (kelompok_pertanyaan)
  *
  * Mengelola seksi / kelompok pertanyaan (misal: Kelompok 1 s/d 10).
  */
@@ -14,7 +14,7 @@ class KelompokPertanyaan extends Model
 {
     use HasFactory;
 
-    protected $table = 'kelompok_pertanyaans';
+    protected $table = 'kelompok_pertanyaan';
 
     protected $fillable = [
         'kuesioner_id',

@@ -3,9 +3,14 @@
 namespace Database\Seeders;
 
 use App\Models\Kabupaten;
-use App\Models\Province;
+use App\Models\Propinsi;
 use Illuminate\Database\Seeder;
 
+/**
+ * Seeder Wilayah
+ *
+ * Mengimpor data referensi Master Propinsi dan Kabupaten/Kota dari file CSV.
+ */
 class WilayahSeeder extends Seeder
 {
     /**
@@ -13,32 +18,32 @@ class WilayahSeeder extends Seeder
      */
     public function run(): void
     {
-        // 1. Impor Data Provinsi
+        // 1. Impor Data Propinsi
         $provinsiCsvFile = base_path('provinsi.csv');
         if (file_exists($provinsiCsvFile)) {
             $provinsiData = array_map('str_getcsv', file($provinsiCsvFile));
             // Hapus header
             $headerProvinsi = array_shift($provinsiData);
 
-            $this->command->info('Mulai memasukkan data provinsi...');
+            $this->command->info('Mulai memasukkan data propinsi...');
             $provInserted = 0;
             foreach ($provinsiData as $row) {
                 if (count($row) >= 2) {
-                    Province::updateOrCreate(
+                    Propinsi::updateOrCreate(
                         ['kode_provinsi' => $row[0]],
                         ['nama_provinsi' => $row[1]]
                     );
                     $provInserted++;
                 }
             }
-            $this->command->info("Selesai! $provInserted provinsi diproses.");
+            $this->command->info("Selesai! $provInserted propinsi diproses.");
         } else {
             $this->command->error('File provinsi.csv tidak ditemukan di direktori root!');
         }
 
-        // 2. Load semua provinsi ke memory agar tidak query berulang-ulang
-        $provinces = Province::whereNotNull('kode_provinsi')->get()->keyBy('kode_provinsi');
-        $this->command->info('Berhasil memuat '.$provinces->count().' provinsi dari database.');
+        // 2. Load semua propinsi ke memory agar tidak query berulang-ulang
+        $propinsis = Propinsi::whereNotNull('kode_provinsi')->get()->keyBy('kode_provinsi');
+        $this->command->info('Berhasil memuat '.$propinsis->count().' propinsi dari database.');
 
         // 3. Impor Data Kabupaten/Kota
         $kabupatenCsvFile = base_path('kabupaten_kota.csv');
@@ -62,21 +67,21 @@ class WilayahSeeder extends Seeder
                     $kodeProvinsiArr = explode('.', $kodeKabupaten);
                     $kodeProvinsi = $kodeProvinsiArr[0]; // contoh: "11"
 
-                    // Ambil dari collection yang sudah di-load di memory (Sangat Cepat)
-                    $provinsi = $provinces->get($kodeProvinsi);
+                    // Ambil dari collection yang sudah di-load di memory
+                    $propinsi = $propinsis->get($kodeProvinsi);
 
-                    if ($provinsi) {
+                    if ($propinsi) {
                         $kab = Kabupaten::where('kode_kabupaten', $kodeKabupaten)->first();
                         if (! $kab) {
                             Kabupaten::create([
                                 'kode_kabupaten' => $kodeKabupaten,
-                                'province_id' => $provinsi->id,
+                                'propinsi_id' => $propinsi->id,
                                 'nama_kabupaten' => $namaKabupaten,
                             ]);
                             $inserted++;
                         } else {
                             $kab->update([
-                                'province_id' => $provinsi->id,
+                                'propinsi_id' => $propinsi->id,
                                 'nama_kabupaten' => $namaKabupaten,
                             ]);
                             $updated++;

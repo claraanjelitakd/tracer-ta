@@ -5,11 +5,16 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
+/**
+ * Model Yudisium
+ *
+ * Mengelola data kelulusan yudisium, tugas akhir, dan dosen pembimbing/penguji.
+ */
 class Yudisium extends Model
 {
     use HasFactory;
 
-    protected $table = 'yudisiums';
+    protected $table = 'yudisium';
 
     protected $guarded = ['id'];
 

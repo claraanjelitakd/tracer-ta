@@ -54,12 +54,12 @@ const formatRupiah = (val) => {
     return 'Rp ' + num.toLocaleString('id-ID');
 };
 
-// Menghitung total salary / total nominal untuk pertanyaan multiple_number (F13 dll)
+// Menghitung total nominal untuk pertanyaan bertipe multiple_number secara dinamis
 const getMultipleNumberTotal = (q) => {
     if (!props.form.answers[q.id] || typeof props.form.answers[q.id] !== 'object') return 0;
     let total = 0;
     (q.detils || q.options)?.forEach(opt => {
-        const optCode = opt.kode_opsi || opt.code;
+        const optCode = opt.kode_opsi || opt.code || opt.id;
         const val = props.form.answers[q.id][optCode];
         if (val !== null && val !== '' && !isNaN(val)) {
             const num = parseInt(val, 10);

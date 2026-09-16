@@ -11,7 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('atasans', function (Blueprint $table) {
+        Schema::create('atasan', function (Blueprint $table) {
             $table->id();
 
             // Relasi ke User Login (bisa null jika belum dibuatkan akun)
@@ -30,6 +30,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('atasans');
+        Schema::dropIfExists('atasan');
     }
 };

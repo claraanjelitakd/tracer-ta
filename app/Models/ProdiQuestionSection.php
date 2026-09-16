@@ -12,6 +12,8 @@ class ProdiQuestionSection extends Model
 {
     use HasFactory;
 
+    protected $table = 'prodi_question_section';
+
     protected $fillable = [
         'prodi_id',
         'title',

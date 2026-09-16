@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 /**
- * Model Kuesioner (kuesioners)
+ * Model Kuesioner (kuesioner)
  *
  * Mengelola instrumen kuesioner tracer study (misal: Tracer Study UKDW 2021).
  */
@@ -14,7 +14,7 @@ class Kuesioner extends Model
 {
     use HasFactory;
 
-    protected $table = 'kuesioners';
+    protected $table = 'kuesioner';
 
     protected $fillable = [
         'title',
@@ -34,9 +34,14 @@ class Kuesioner extends Model
     /**
      * Relasi ke kelompok pertanyaan (KelompokPertanyaan / QuestionSection).
      */
-    public function kelompokPertanyaans()
+    public function kelompokPertanyaan()
     {
         return $this->hasMany(KelompokPertanyaan::class, 'kuesioner_id')->orderBy('order');
+    }
+
+    public function kelompokPertanyaans()
+    {
+        return $this->kelompokPertanyaan();
     }
 
     /**
@@ -44,7 +49,7 @@ class Kuesioner extends Model
      */
     public function sections()
     {
-        return $this->kelompokPertanyaans();
+        return $this->kelompokPertanyaan();
     }
 
     /**

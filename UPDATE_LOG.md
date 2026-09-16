@@ -1,5 +1,45 @@
 # UPDATE LOG - SERU (Sistem Ekosistem Rekam Jejak Alumni)
 
+## [2026-09-16] Singularisasi Nama Tabel Database, Refactor Penuh Perusahaan & Propinsi, serta Pembersihan Entitas Biodata
+- **Singularisasi Nama Tabel Basis Data Custom (Tanpa Akhiran `-s`)**:
+  - Seluruh 27 berkas migrasi database diselaraskan menggunakan nama tabel tunggal/singular (Bahasa Indonesia & domain), tanpa akhiran `-s`, kecuali tabel bawaan Laravel framework (`users`, `cache`, `sessions`, `jobs`):
+    - `biodatas` $\rightarrow$ `biodata`
+    - `companies` $\rightarrow$ `perusahaan`
+    - `provinces` $\rightarrow$ `propinsi`
+    - `kabupatens` $\rightarrow$ `kabupaten`
+    - `atasans` $\rightarrow$ `atasan`
+    - `tracers` $\rightarrow$ `tracer`
+    - `kuesioners` $\rightarrow$ `kuesioner`
+    - `kelompok_pertanyaans` $\rightarrow$ `kelompok_pertanyaan`
+    - `umps` $\rightarrow$ `ump`
+    - `data_akademiks` $\rightarrow$ `data_akademik`
+    - `data_orang_tuas` $\rightarrow$ `data_orang_tua`
+    - `yudisiums` $\rightarrow$ `yudisium`
+    - `prodis` $\rightarrow$ `prodi`
+    - `prodi_question_sections` $\rightarrow$ `prodi_question_section`
+    - `prodi_questions` $\rightarrow$ `prodi_question`
+    - `prodi_question_options` $\rightarrow$ `prodi_question_option`
+    - `prodi_responses` $\rightarrow$ `prodi_response`
+    - `question_mappings` & database VIEW `v_question_mappings`
+  - Seluruh model Eloquent dikonfigurasi dengan deklarasi eksplisit `protected $table = 'nama_tabel_singular';`.
+  - Seluruh Foreign Key diselaraskan (`perusahaan_id`, `propinsi_id`, `kabupaten_id`, `biodata_id`, `kuesioner_id`, `kelompok_pertanyaan_id`, `prodi_question_section_id`, `prodi_question_id`, dll.).
+- **Refactoring Penuh `Company` $\rightarrow$ `Perusahaan`**:
+  - Membuat model [Perusahaan.php](file:///c:/study/tracerstudy/app/Models/Perusahaan.php) dan menghapus `Company.php` (tanpa menggunakan class extend/wrapper legacy).
+  - Mengganti seluruh seeder (`PerusahaanSeeder.php`), controller (`SimpanProfilController`, `ProfilController`, `DetailAlumniSuperAdminController`, `DaftarAlumniController`, `DetailAlumniController`, `SimpanJawabanController`), services (`KuesionerSyncService`), relasi, dan tests.
+- **Refactoring Penuh `Province` $\rightarrow$ `Propinsi`**:
+  - Membuat model [Propinsi.php](file:///c:/study/tracerstudy/app/Models/Propinsi.php) dan menghapus `Province.php`.
+  - Memperbarui relasi `Kabupaten`, `Perusahaan`, `Ump`, dan `Biodata`.
+  - Menyediakan accessor compatibility (`province_id` $\rightarrow$ `propinsi_id`) untuk keandalan frontend.
+- **Pembersihan Bersih `Alumni` $\rightarrow$ `Biodata`**:
+  - Menghapus berkas `database/seeders/AlumniSeeder.php` yang redundan.
+  - Memastikan seluruh controller, middleware (`HandleInertiaRequests`), services, seeder, dan test suite merujuk ke entitas `Biodata`.
+- **Pengujian & Verifikasi Kualitas Kode**:
+  - `php artisan migrate:fresh --seed` berjalan sukses 100% tanpa error.
+  - Seluruh 38 skenario automated unit & feature tests di PHPUnit lulus 100% (203 assertions).
+  - Standarisasi format kode PHP diformat dengan Laravel Pint (`vendor/bin/pint --format agent`).
+  - Pembuatan bundle asset frontend Vite (`npm run build`) sukses tanpa error.
+  - Pembaruan dokumen [ERD.md](file:///c:/study/tracerstudy/ERD.md) dan [README.md](file:///c:/study/tracerstudy/README.md).
+
 ## [2026-09-16] Refactoring Penuh Entitas Alumni Menjadi Biodata & Penyesuaian Kolom Seeding
 - **Refactor Entitas `Alumni` $\rightarrow$ `Biodata` Tanpa Kehilangan Data & Foreign Key**:
   - Model `App\Models\Alumni` direfaktor menjadi `App\Models\Biodata` ([Biodata.php](file:///c:/study/tracerstudy/app/Models/Biodata.php)).

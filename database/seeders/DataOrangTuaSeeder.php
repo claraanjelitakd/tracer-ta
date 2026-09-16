@@ -7,6 +7,11 @@ use App\Models\DataOrangTua;
 use App\Models\Kabupaten;
 use Illuminate\Database\Seeder;
 
+/**
+ * Seeder DataOrangTua
+ *
+ * Mengisi data kontak dan identitas orang tua mahasiswa/alumni.
+ */
 class DataOrangTuaSeeder extends Seeder
 {
     /**
@@ -41,7 +46,7 @@ class DataOrangTuaSeeder extends Seeder
                     'alamat' => $akademik->alamat_saat_ini,
                     'kota' => $akademik->kabupaten_id ? (Kabupaten::find($akademik->kabupaten_id)?->nama_kabupaten ?? 'Sleman') : 'Sleman',
                     'kabupaten_id' => $akademik->kabupaten_id,
-                    'provinsi_id' => $akademik->provinsi_id,
+                    'propinsi_id' => $akademik->propinsi_id,
                     'kode_pos' => $akademik->kode_pos ?? '55281',
                     'nomor_telepon' => '0813'.rand(1000, 9999).str_pad((string) $index, 4, '0', STR_PAD_LEFT),
                 ]

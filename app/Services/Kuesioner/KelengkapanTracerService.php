@@ -51,11 +51,11 @@ class KelengkapanTracerService
     public static function evaluasiProfil(Biodata $biodata): array
     {
         $biodata->refresh();
-        $biodata->load(['dataAkademik.orangTua', 'company.province', 'company.kabupaten', 'atasan', 'user', 'prodi']);
+        $biodata->load(['dataAkademik.orangTua', 'perusahaan.propinsi', 'perusahaan.kabupaten', 'atasan', 'user', 'prodi']);
 
         $dataAkademik = $biodata->dataAkademik;
         $orangTua = $dataAkademik?->orangTua ?? $biodata->orangTua;
-        $company = $biodata->company;
+        $perusahaan = $biodata->perusahaan;
         $atasan = $biodata->atasan;
 
         $fields = [
@@ -83,17 +83,17 @@ class KelengkapanTracerService
             'Nomor Telepon Orang Tua' => $orangTua?->nomor_telepon,
 
             // Data Perusahaan & Atasan
-            'Nama Perusahaan' => $company?->nama_perusahaan,
-            'Alamat Perusahaan' => $company?->alamat,
-            'Skala Perusahaan' => $company?->skala,
-            'Provinsi Perusahaan' => $company?->province_id,
-            'Kabupaten Perusahaan' => $company?->kabupaten_id,
+            'Nama Perusahaan' => $perusahaan?->nama_perusahaan,
+            'Alamat Perusahaan' => $perusahaan?->alamat,
+            'Skala Perusahaan' => $perusahaan?->skala,
+            'Provinsi Perusahaan' => $perusahaan?->propinsi_id,
+            'Kabupaten Perusahaan' => $perusahaan?->kabupaten_id,
             'Nama Atasan' => $atasan?->nama,
             'Email Atasan' => $atasan?->email,
             'Nomor Telepon Atasan' => $atasan?->telepon,
             'Posisi Jabatan' => $biodata->posisi_jabatan,
 
-            // Data Media Sosial & Profesional Alumni (Tabel biodatas)
+            // Data Media Sosial & Profesional Alumni (Tabel biodata)
             'Bidang Keahlian (Expertise)' => $biodata->expert,
             'Minat & Ketertarikan' => $biodata->minat,
             'LinkedIn Profil URL' => $biodata->linkedin_url,
@@ -136,7 +136,7 @@ class KelengkapanTracerService
      */
     public static function evaluasiKuesionerWajib(Biodata $biodata): array
     {
-        // Pastikan respon profil tersinkron ke tabel tracers
+        // Pastikan respon profil tersinkron ke tabel tracer
         KuesionerSyncService::syncProfileResponses($biodata);
 
         // Ambil ID dan respon pertanyaan alumni

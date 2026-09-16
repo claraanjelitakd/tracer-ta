@@ -12,6 +12,8 @@ class ProdiResponse extends Model
 {
     use HasFactory;
 
+    protected $table = 'prodi_response';
+
     protected $fillable = [
         'biodata_id',
         'prodi_question_id',

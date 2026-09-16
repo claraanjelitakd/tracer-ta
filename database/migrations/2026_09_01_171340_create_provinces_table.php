@@ -6,9 +6,12 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
+    /**
+     * Run the migrations.
+     */
     public function up(): void
     {
-        Schema::create('provinces', function (Blueprint $table) {
+        Schema::create('propinsi', function (Blueprint $table) {
             $table->id();
             $table->string('kode_provinsi')->unique()->nullable();
             $table->string('nama_provinsi');
@@ -16,8 +19,11 @@ return new class extends Migration
         });
     }
 
+    /**
+     * Reverse the migrations.
+     */
     public function down(): void
     {
-        Schema::dropIfExists('provinces');
+        Schema::dropIfExists('propinsi');
     }
 };

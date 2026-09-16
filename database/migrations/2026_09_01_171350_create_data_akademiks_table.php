@@ -8,7 +8,7 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('data_akademiks', function (Blueprint $table) {
+        Schema::create('data_akademik', function (Blueprint $table) {
             $table->id();
             // NIM sebagai primary identifier
             $table->string('nim')->unique();
@@ -30,8 +30,8 @@ return new class extends Migration
             $table->text('alamat_saat_ini')->nullable();
             $table->string('kelurahan')->nullable();
             $table->string('kecamatan')->nullable();
-            $table->foreignId('kabupaten_id')->nullable()->constrained('kabupatens')->nullOnDelete();
-            $table->foreignId('provinsi_id')->nullable()->constrained('provinces')->nullOnDelete();
+            $table->foreignId('kabupaten_id')->nullable()->constrained('kabupaten')->nullOnDelete();
+            $table->foreignId('propinsi_id')->nullable()->constrained('propinsi')->nullOnDelete();
             $table->string('kode_pos')->nullable();
 
             // Identitas Negara/Institusi
@@ -61,6 +61,6 @@ return new class extends Migration
 
     public function down(): void
     {
-        Schema::dropIfExists('data_akademiks');
+        Schema::dropIfExists('data_akademik');
     }
 };

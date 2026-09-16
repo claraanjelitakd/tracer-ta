@@ -11,12 +11,12 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('yudisiums', function (Blueprint $table) {
+        Schema::create('yudisium', function (Blueprint $table) {
             $table->id();
 
-            // Relasi ke tabel data_akademiks (NIM)
+            // Relasi ke tabel data_akademik (NIM)
             $table->string('nim')->unique();
-            $table->foreign('nim')->references('nim')->on('data_akademiks')->cascadeOnDelete();
+            $table->foreign('nim')->references('nim')->on('data_akademik')->cascadeOnDelete();
 
             // Dosen
             $table->string('dosen_pembimbing_1')->nullable();
@@ -48,6 +48,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('yudisiums');
+        Schema::dropIfExists('yudisium');
     }
 };

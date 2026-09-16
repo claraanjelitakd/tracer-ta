@@ -22,7 +22,7 @@ class KelolaOpsiProdiController extends Controller
         $user = Auth::user();
 
         $validated = $request->validate([
-            'question_id' => 'required|exists:prodi_questions,id',
+            'question_id' => 'required|exists:prodi_question,id',
             'option_text' => 'required|string',
             'code' => 'nullable|string|max:50',
             'jump_to' => 'nullable|string|max:50',

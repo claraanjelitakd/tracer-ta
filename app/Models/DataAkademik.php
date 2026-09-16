@@ -5,9 +5,16 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
+/**
+ * Model DataAkademik
+ *
+ * Mengelola data master riwayat akademik mahasiswa/alumni UKDW.
+ */
 class DataAkademik extends Model
 {
     use HasFactory;
+
+    protected $table = 'data_akademik';
 
     protected $fillable = [
         'nim',
@@ -26,7 +33,7 @@ class DataAkademik extends Model
         'kelurahan',
         'kecamatan',
         'kabupaten_id',
-        'provinsi_id',
+        'propinsi_id',
         'kode_pos',
         'nik',
         'no_kk',
@@ -64,5 +71,15 @@ class DataAkademik extends Model
     public function orangTua()
     {
         return $this->hasOne(DataOrangTua::class, 'nim', 'nim');
+    }
+
+    public function propinsi()
+    {
+        return $this->belongsTo(Propinsi::class, 'propinsi_id');
+    }
+
+    public function kabupaten()
+    {
+        return $this->belongsTo(Kabupaten::class, 'kabupaten_id');
     }
 }

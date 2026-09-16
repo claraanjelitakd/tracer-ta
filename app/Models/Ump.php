@@ -7,10 +7,17 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+/**
+ * Model Ump
+ *
+ * Mengelola data Upah Minimum Provinsi (UMP) per wilayah dan tahun.
+ */
 class Ump extends Model
 {
     /** @use HasFactory<UmpFactory> */
     use HasFactory;
+
+    protected $table = 'ump';
 
     protected $fillable = [
         'kode_provinsi',
@@ -33,10 +40,15 @@ class Ump extends Model
     }
 
     /**
-     * Relasi ke Provinsi berdasarkan kode_provinsi.
+     * Relasi ke Propinsi berdasarkan kode_provinsi.
      */
+    public function propinsi(): BelongsTo
+    {
+        return $this->belongsTo(Propinsi::class, 'kode_provinsi', 'kode_provinsi');
+    }
+
     public function province(): BelongsTo
     {
-        return $this->belongsTo(Province::class, 'kode_provinsi', 'kode_provinsi');
+        return $this->propinsi();
     }
 }

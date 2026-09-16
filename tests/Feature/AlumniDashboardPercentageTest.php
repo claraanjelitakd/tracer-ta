@@ -3,9 +3,9 @@
 namespace Tests\Feature;
 
 use App\Models\Biodata;
-use App\Models\Company;
 use App\Models\DataAkademik;
 use App\Models\DataOrangTua;
+use App\Models\Perusahaan;
 use App\Models\Prodi;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -79,13 +79,13 @@ class AlumniDashboardPercentageTest extends TestCase
             'nomor_telepon' => '08129876543',
         ]);
 
-        $company = Company::create([
+        $perusahaan = Perusahaan::create([
             'nama_perusahaan' => 'PT Teknologi Nusantara',
             'alamat' => 'Jl. Gejayan No. 1',
             'skala' => 'Nasional',
         ]);
 
-        $this->alumni->update(['company_id' => $company->id]);
+        $this->alumni->update(['perusahaan_id' => $perusahaan->id]);
     }
 
     public function test_dashboard_renders_percentages_correctly(): void

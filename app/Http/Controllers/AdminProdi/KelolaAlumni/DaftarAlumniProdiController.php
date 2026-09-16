@@ -207,8 +207,8 @@ class DaftarAlumniProdiController extends Controller
             'dataAkademik.orangTua',
             'yudisium',
             'orangTua',
-            'company.province',
-            'company.kabupaten',
+            'perusahaan.propinsi',
+            'perusahaan.kabupaten',
             'atasan',
             'user',
             'prodi',
@@ -216,7 +216,7 @@ class DaftarAlumniProdiController extends Controller
             ->where('prodi_id', $prodiId)
             ->findOrFail($id);
 
-        // Pastikan respon profil tersinkron ke tabel responses
+        // Pastikan respon profil tersinkron ke tabel tracer
         KuesionerSyncService::syncProfileResponses($alumni);
 
         // Ambil evaluasi kelengkapan terpadu
@@ -264,15 +264,12 @@ class DaftarAlumniProdiController extends Controller
                         'kode_pertanyaan' => $subpertanyaan->kode_pertanyaan,
                         'subpertanyaan' => $subpertanyaan->subpertanyaan,
                         'type' => $subpertanyaan->type,
+                        'kelompok' => $subpertanyaan->kelompok,
                         'is_mandatory' => $isMandatory,
                         'is_answered' => $hasAnswer,
-                        'answer_text' => $displayAnswer,
-                        'options' => $subpertanyaan->detils->map(function ($opt) {
-                            return [
-                                'code' => $opt->kode_opsi ?? $opt->code,
-                                'text' => $opt->option_text,
-                            ];
-                        }),
+                        'answer' => $displayAnswer,
+                        'answer_json' => $resp?->answer_json,
+                        'detils' => $subpertanyaan->detils,
                     ];
                 }
 
@@ -282,7 +279,7 @@ class DaftarAlumniProdiController extends Controller
 
                 $univSectionsWithAnswers[] = [
                     'id' => $section->id,
-                    'title' => $section->title ?? $section->section,
+                    'section' => $section->section,
                     'order' => $section->order,
                     'subpertanyaans' => $subpertanyaansList,
                     'unanswered_mandatory_count' => $unansweredCount,
@@ -400,7 +397,8 @@ class DaftarAlumniProdiController extends Controller
             'kelurahan' => $alumni->kelurahan ?? $dataAkademik?->kelurahan ?? '',
             'kecamatan' => $alumni->kecamatan ?? $dataAkademik?->kecamatan ?? '',
             'kabupaten_id' => $alumni->kabupaten_id ?? $dataAkademik?->kabupaten_id ?? '',
-            'provinsi_id' => $alumni->provinsi_id ?? $dataAkademik?->provinsi_id ?? '',
+            'propinsi_id' => $alumni->propinsi_id ?? $dataAkademik?->propinsi_id ?? '',
+            'provinsi_id' => $alumni->propinsi_id ?? $dataAkademik?->propinsi_id ?? '',
             'kode_pos' => $alumni->kode_pos ?? $dataAkademik?->kode_pos ?? '',
             'nomor_telepon' => $alumni->nomor_telepon ?? $dataAkademik?->nomor_telepon ?? '',
             'email_pribadi' => $alumni->email_pribadi ?? $alumni->email ?? $dataAkademik?->email_pribadi ?? '',
@@ -435,7 +433,8 @@ class DaftarAlumniProdiController extends Controller
             'alamat_orang_tua' => $orangTua?->alamat ?? '',
             'kota_orang_tua' => $orangTua?->kota ?? '',
             'kabupaten_id_orang_tua' => $orangTua?->kabupaten_id ?? '',
-            'provinsi_id_orang_tua' => $orangTua?->provinsi_id ?? '',
+            'propinsi_id_orang_tua' => $orangTua?->propinsi_id ?? '',
+            'provinsi_id_orang_tua' => $orangTua?->propinsi_id ?? '',
             'kode_pos_orang_tua' => $orangTua?->kode_pos ?? '',
             'nomor_telepon_orang_tua' => $orangTua?->nomor_telepon ?? '',
 
@@ -451,10 +450,10 @@ class DaftarAlumniProdiController extends Controller
             'zipcode' => $alumni->zipcode ?? '',
 
             // Data Perusahaan
-            'nama_perusahaan' => $alumni->company?->nama_perusahaan ?? '',
-            'company_alamat' => $alumni->company?->alamat ?? '',
-            'company_skala' => $alumni->company?->skala ?? '',
-            'company_status_verifikasi' => $alumni->company?->status_verifikasi ?? '',
+            'nama_perusahaan' => $alumni->perusahaan?->nama_perusahaan ?? '',
+            'perusahaan_alamat' => $alumni->perusahaan?->alamat ?? '',
+            'perusahaan_skala' => $alumni->perusahaan?->skala ?? '',
+            'perusahaan_status_verifikasi' => $alumni->perusahaan?->status_verifikasi ?? '',
 
             // Data Atasan
             'nama_atasan' => $atasan?->nama ?? '',

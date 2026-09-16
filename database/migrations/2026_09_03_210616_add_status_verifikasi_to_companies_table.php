@@ -11,7 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('companies', function (Blueprint $table) {
+        Schema::table('perusahaan', function (Blueprint $table) {
             $table->enum('status_verifikasi', ['Menunggu Verifikasi', 'Terverifikasi', 'Ditolak'])
                 ->default('Menunggu Verifikasi')
                 ->comment('Status verifikasi legalitas perusahaan dari Biro 3');
@@ -23,7 +23,7 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('companies', function (Blueprint $table) {
+        Schema::table('perusahaan', function (Blueprint $table) {
             $table->dropColumn('status_verifikasi');
         });
     }

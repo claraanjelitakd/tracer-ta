@@ -4,8 +4,15 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
+/**
+ * Model DataOrangTua
+ *
+ * Mengelola data kontak dan identitas orang tua mahasiswa/alumni.
+ */
 class DataOrangTua extends Model
 {
+    protected $table = 'data_orang_tua';
+
     protected $fillable = [
         'nim',
         'nama_orang_tua',
@@ -13,7 +20,7 @@ class DataOrangTua extends Model
         'alamat',
         'kota',
         'kabupaten_id',
-        'provinsi_id',
+        'propinsi_id',
         'kode_pos',
         'nomor_telepon',
     ];
@@ -32,5 +39,15 @@ class DataOrangTua extends Model
     public function biodata()
     {
         return $this->hasOne(Biodata::class, 'nim', 'nim');
+    }
+
+    public function propinsi()
+    {
+        return $this->belongsTo(Propinsi::class, 'propinsi_id');
+    }
+
+    public function kabupaten()
+    {
+        return $this->belongsTo(Kabupaten::class, 'kabupaten_id');
     }
 }

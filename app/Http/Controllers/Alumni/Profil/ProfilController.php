@@ -3,9 +3,9 @@
 namespace App\Http\Controllers\Alumni\Profil;
 
 use App\Http\Controllers\Controller;
-use App\Models\Company;
 use App\Models\Kabupaten;
-use App\Models\Province;
+use App\Models\Perusahaan;
+use App\Models\Propinsi;
 use Illuminate\Http\Request;
 
 /**
@@ -22,9 +22,9 @@ class ProfilController extends Controller
     public function tampilkanHalamanProfil(Request $request)
     {
         $pengguna = $request->user();
-        $biodata = $pengguna->biodata()->with(['prodi', 'company', 'company.province', 'company.kabupaten', 'dataAkademik', 'yudisium', 'orangTua', 'atasan'])->first();
+        $biodata = $pengguna->biodata()->with(['prodi', 'perusahaan', 'perusahaan.propinsi', 'perusahaan.kabupaten', 'dataAkademik', 'yudisium', 'orangTua', 'atasan'])->first();
 
-        $provinsi = Province::all();
+        $propinsi = Propinsi::all();
         $kabupaten = Kabupaten::all();
         $dataAkademik = $biodata?->dataAkademik;
         $orangTua = $biodata?->orangTua ?? $biodata?->dataAkademik?->orangTua;
@@ -54,7 +54,8 @@ class ProfilController extends Controller
             'kelurahan' => $biodata?->kelurahan ?? ($dataAkademik?->kelurahan ?? ''),
             'kecamatan' => $biodata?->kecamatan ?? ($dataAkademik?->kecamatan ?? ''),
             'kabupaten_id' => $biodata?->kabupaten_id ?? ($dataAkademik?->kabupaten_id ?? ''),
-            'provinsi_id' => $biodata?->provinsi_id ?? ($dataAkademik?->provinsi_id ?? ''),
+            'propinsi_id' => $biodata?->propinsi_id ?? ($dataAkademik?->propinsi_id ?? ''),
+            'provinsi_id' => $biodata?->propinsi_id ?? ($dataAkademik?->propinsi_id ?? ''),
             'kode_pos' => $biodata?->kode_pos ?? ($dataAkademik?->kode_pos ?? ''),
             'nomor_telepon' => $biodata?->nomor_telepon ?? ($dataAkademik?->nomor_telepon ?? ''),
             'email' => $biodata?->email ?? ($biodata?->email_pribadi ?? ($dataAkademik?->email_pribadi ?? '')),
@@ -91,7 +92,8 @@ class ProfilController extends Controller
             'alamat_orang_tua' => $orangTua?->alamat ?? '',
             'kota_orang_tua' => $orangTua?->kota ?? '',
             'kabupaten_id_orang_tua' => $orangTua?->kabupaten_id ?? '',
-            'provinsi_id_orang_tua' => $orangTua?->provinsi_id ?? '',
+            'propinsi_id_orang_tua' => $orangTua?->propinsi_id ?? '',
+            'provinsi_id_orang_tua' => $orangTua?->propinsi_id ?? '',
             'kode_pos_orang_tua' => $orangTua?->kode_pos ?? '',
             'nomor_telepon_orang_tua' => $orangTua?->nomor_telepon ?? '',
 
@@ -107,12 +109,19 @@ class ProfilController extends Controller
             'jenis_pekerjaan' => $biodata?->jenis_pekerjaan ?? '',
             'zipcode' => $biodata?->zipcode ?? '',
 
-            'nama_perusahaan' => $biodata?->company?->nama_perusahaan ?? '',
-            'company_alamat' => $biodata?->company?->alamat ?? '',
-            'company_skala' => $biodata?->company?->skala ?? '',
-            'company_province_id' => $biodata?->company?->province_id ?? '',
-            'company_kabupaten_id' => $biodata?->company?->kabupaten_id ?? '',
-            'company_status_verifikasi' => $biodata?->company?->status_verifikasi ?? '',
+            'nama_perusahaan' => $biodata?->perusahaan?->nama_perusahaan ?? '',
+            'perusahaan_alamat' => $biodata?->perusahaan?->alamat ?? '',
+            'perusahaan_skala' => $biodata?->perusahaan?->skala ?? '',
+            'perusahaan_propinsi_id' => $biodata?->perusahaan?->propinsi_id ?? '',
+            'perusahaan_kabupaten_id' => $biodata?->perusahaan?->kabupaten_id ?? '',
+            'perusahaan_status_verifikasi' => $biodata?->perusahaan?->status_verifikasi ?? '',
+
+            // Fallback key untuk kompatibilitas frontend
+            'company_alamat' => $biodata?->perusahaan?->alamat ?? '',
+            'company_skala' => $biodata?->perusahaan?->skala ?? '',
+            'company_province_id' => $biodata?->perusahaan?->propinsi_id ?? '',
+            'company_kabupaten_id' => $biodata?->perusahaan?->kabupaten_id ?? '',
+            'company_status_verifikasi' => $biodata?->perusahaan?->status_verifikasi ?? '',
 
             // Data Atasan
             'nama_atasan' => $atasan?->nama ?? '',
@@ -120,16 +129,18 @@ class ProfilController extends Controller
             'telepon_atasan' => $atasan?->telepon ?? '',
         ];
 
-        // Get all companies for Autocomplete
-        $companies = Company::select('id', 'nama_perusahaan', 'province_id', 'kabupaten_id', 'alamat', 'kode_pos', 'skala', 'status_verifikasi')->get();
+        // Get all perusahaan for Autocomplete
+        $perusahaans = Perusahaan::select('id', 'nama_perusahaan', 'propinsi_id', 'kabupaten_id', 'alamat', 'kode_pos', 'skala', 'status_verifikasi')->get();
 
         return inertia('Alumni/Profil/Index', [
             'biodataData' => $biodata,
             'alumniData' => $biodata,
             'formData' => $formData,
-            'provinces' => $provinsi,
+            'propinsis' => $propinsi,
+            'provinces' => $propinsi,
             'kabupatens' => $kabupaten,
-            'companies' => $companies,
+            'perusahaans' => $perusahaans,
+            'companies' => $perusahaans,
         ]);
     }
 }

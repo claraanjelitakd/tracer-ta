@@ -30,12 +30,12 @@ class SimpanPertanyaanProdiController extends Controller
                 'required',
                 'string',
                 'max:50',
-                Rule::unique('prodi_questions', 'code')->where('prodi_id', $user->prodi_id),
+                Rule::unique('prodi_question', 'code')->where('prodi_id', $user->prodi_id),
             ],
             'question_text' => 'required|string',
-            'type' => 'required|string|in:single_choice,multiple_choice,text,number,rating_5,radio_input',
+            'type' => 'required|string|in:text,textarea,number,single_choice,radio_input,radio_text,multiple_choice,dropdown,searchable_select,rating_5,multiple_number,matrix,matrix_dual,multiple_textbox,date,time,file,header',
             'is_required' => 'boolean',
-            'prodi_question_section_id' => 'nullable|exists:prodi_question_sections,id',
+            'prodi_question_section_id' => 'nullable|exists:prodi_question_section,id',
             'order' => 'nullable|integer',
         ]);
 
@@ -102,14 +102,14 @@ class SimpanPertanyaanProdiController extends Controller
                 'required',
                 'string',
                 'max:50',
-                Rule::unique('prodi_questions', 'code')
+                Rule::unique('prodi_question', 'code')
                     ->where('prodi_id', $user->prodi_id)
                     ->ignore($question->id),
             ],
             'question_text' => 'required|string',
-            'type' => 'required|string|in:single_choice,multiple_choice,text,number,rating_5,radio_input',
+            'type' => 'required|string|in:text,textarea,number,single_choice,radio_input,radio_text,multiple_choice,dropdown,searchable_select,rating_5,multiple_number,matrix,matrix_dual,multiple_textbox,date,time,file,header',
             'is_required' => 'boolean',
-            'prodi_question_section_id' => 'nullable|exists:prodi_question_sections,id',
+            'prodi_question_section_id' => 'nullable|exists:prodi_question_section,id',
             'order' => 'nullable|integer',
         ]);
 

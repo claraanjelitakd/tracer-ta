@@ -5,9 +5,16 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
+/**
+ * Model Atasan
+ *
+ * Mengelola data profil pimpinan/atasan langsung alumni di tempat kerja.
+ */
 class Atasan extends Model
 {
     use HasFactory;
+
+    protected $table = 'atasan';
 
     protected $fillable = [
         'user_id',
@@ -27,8 +34,13 @@ class Atasan extends Model
     /**
      * Relasi ke Biodata yang dibawahi oleh atasan ini
      */
+    public function biodata()
+    {
+        return $this->hasMany(Biodata::class, 'atasan_id');
+    }
+
     public function biodatas()
     {
-        return $this->hasMany(Biodata::class);
+        return $this->biodata();
     }
 }

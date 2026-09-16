@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('ref_subpertanyaan2021', function (Blueprint $table) {
             $table->id();
             $table->char('kelompok', 3); // Merujuk ke kode kelompok kuesioner (Kelompok 1..9)
-            $table->foreignId('kelompok_pertanyaan_id')->nullable()->constrained('kelompok_pertanyaans')->cascadeOnDelete();
+            $table->foreignId('kelompok_pertanyaan_id')->nullable()->constrained('kelompok_pertanyaan')->cascadeOnDelete();
             $table->string('kode_pertanyaan', 20)->unique();
             $table->text('subpertanyaan');
             $table->string('type', 50); // text, radio, radio_input, multiple_choice, number, matrix, matrix_dual, multiple_textbox, header

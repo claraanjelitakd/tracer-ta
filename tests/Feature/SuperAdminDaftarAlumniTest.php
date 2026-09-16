@@ -202,13 +202,13 @@ class SuperAdminDaftarAlumniTest extends TestCase
             ->post(route('superadmin.alumni.profile.update', $this->alumni->id), $payload);
 
         $response->assertRedirect();
-        $this->assertDatabaseHas('biodatas', [
+        $this->assertDatabaseHas('biodata', [
             'id' => $this->alumni->id,
             'nama' => 'Budi Santoso Diperbarui',
             'nomor_telepon' => '081234567890',
             'posisi_jabatan' => 'Lead Engineer',
         ]);
-        $this->assertDatabaseHas('companies', [
+        $this->assertDatabaseHas('perusahaan', [
             'nama_perusahaan' => 'PT Teknologi Unggul',
             'alamat' => 'Jl. Solo KM 10',
         ]);

@@ -4,13 +4,18 @@ namespace Database\Seeders;
 
 use App\Models\Atasan;
 use App\Models\Biodata;
-use App\Models\Company;
 use App\Models\Kabupaten;
+use App\Models\Perusahaan;
 use App\Models\Prodi;
-use App\Models\Province;
+use App\Models\Propinsi;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 
+/**
+ * Seeder Biodata
+ *
+ * Mengisi data profil biodata alumni untuk sistem Tracer Study UKDW.
+ */
 class BiodataSeeder extends Seeder
 {
     /**
@@ -19,16 +24,16 @@ class BiodataSeeder extends Seeder
     public function run(): void
     {
         $alumniUsers = User::where('role', 'alumni')->get();
-        $companies = Company::all();
+        $perusahaans = Perusahaan::all();
 
         // Ambil wilayah untuk relasi ID yang valid
-        $diy = Province::where('kode_provinsi', '34')->orWhere('nama_provinsi', 'LIKE', '%Yogyakarta%')->first();
+        $diy = Propinsi::where('kode_provinsi', '34')->orWhere('nama_provinsi', 'LIKE', '%Yogyakarta%')->first();
         $sleman = Kabupaten::where('kode_kabupaten', '34.04')->orWhere('nama_kabupaten', 'LIKE', '%Sleman%')->first();
 
-        $jakarta = Province::where('kode_provinsi', '31')->orWhere('nama_provinsi', 'LIKE', '%Jakarta%')->first();
+        $jakarta = Propinsi::where('kode_provinsi', '31')->orWhere('nama_provinsi', 'LIKE', '%Jakarta%')->first();
         $jakpus = Kabupaten::where('kode_kabupaten', '31.71')->orWhere('nama_kabupaten', 'LIKE', '%Jakarta Pusat%')->first();
 
-        $aceh = Province::where('kode_provinsi', '11')->orWhere('nama_provinsi', 'LIKE', '%Aceh%')->first();
+        $aceh = Propinsi::where('kode_provinsi', '11')->orWhere('nama_provinsi', 'LIKE', '%Aceh%')->first();
         $acehSelatan = Kabupaten::where('kode_kabupaten', '11.01')->orWhere('nama_kabupaten', 'LIKE', '%Aceh Selatan%')->first();
 
         $lokasiList = [
@@ -101,11 +106,11 @@ class BiodataSeeder extends Seeder
                 }
             }
 
-            // Assign company secara bergantian jika ada perusahaan
-            $companyId = null;
-            if ($companies->isNotEmpty()) {
-                $comp = $companies[$index % $companies->count()];
-                $companyId = $comp->id;
+            // Assign perusahaan secara bergantian jika ada perusahaan
+            $perusahaanId = null;
+            if ($perusahaans->isNotEmpty()) {
+                $comp = $perusahaans[$index % $perusahaans->count()];
+                $perusahaanId = $comp->id;
             }
 
             // Buat atau kaitkan data atasan
@@ -133,7 +138,7 @@ class BiodataSeeder extends Seeder
                     'email_pribadi' => strtolower(str_replace(' ', '', explode(' ', $user->name)[0])).($index + 1).'@gmail.com',
                     'alamat' => 'Jl. Kenanga No. '.($index + 12).', RT 03/RW 05',
                     'kabupaten_id' => $lokasi['kab'],
-                    'provinsi_id' => $lokasi['prov'],
+                    'propinsi_id' => $lokasi['prov'],
                     'kelurahan' => $lokasi['kel'],
                     'kecamatan' => $lokasi['kec'],
                     'kode_pos' => $lokasi['kodepos'],
@@ -148,7 +153,7 @@ class BiodataSeeder extends Seeder
                     'linkedin_username' => $cleanUsername,
                     'expert' => $expertList[$index % count($expertList)],
                     'minat' => $minatList[$index % count($minatList)],
-                    'company_id' => $companyId,
+                    'perusahaan_id' => $perusahaanId,
                     'atasan_id' => $atasan?->id,
                     'posisi_jabatan' => $jabatanList[$index % count($jabatanList)],
                     'jenis_pekerjaan' => ($parsedInfo && $parsedInfo['kode_prodi'] === '31') ? 'Gerejawi' : null,

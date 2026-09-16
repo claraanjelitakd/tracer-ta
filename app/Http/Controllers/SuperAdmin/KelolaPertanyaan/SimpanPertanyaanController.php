@@ -27,10 +27,10 @@ class SimpanPertanyaanController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'kelompok_pertanyaan_id' => 'required|exists:kelompok_pertanyaans,id',
+            'kelompok_pertanyaan_id' => 'required|exists:kelompok_pertanyaan,id',
             'kode_pertanyaan' => 'required|string|max:50|unique:ref_subpertanyaan2021,kode_pertanyaan',
             'subpertanyaan' => 'required|string',
-            'type' => 'required|string|in:single_choice,multiple_choice,text,number,searchable_select,radio_input,multiple_number,matrix_dual,rating_5',
+            'type' => 'required|string|in:text,textarea,number,single_choice,radio_input,radio_text,multiple_choice,dropdown,searchable_select,rating_5,multiple_number,matrix,matrix_dual,multiple_textbox,date,time,file,header',
             'wajib' => 'required|boolean',
             'order' => 'nullable|integer',
         ]);
@@ -39,7 +39,7 @@ class SimpanPertanyaanController extends Controller
             $validated['order'] = (RefSubpertanyaan2021::where('kelompok_pertanyaan_id', $validated['kelompok_pertanyaan_id'])->max('order') ?? 0) + 1;
         }
 
-        $subpertanyaan = RefSubpertanyaan2021::create($validated);
+        RefSubpertanyaan2021::create($validated);
 
         return redirect()->back()->with('success', 'Pertanyaan baru berhasil ditambahkan.');
     }
@@ -55,10 +55,10 @@ class SimpanPertanyaanController extends Controller
         $subpertanyaan = RefSubpertanyaan2021::findOrFail($id);
 
         $validated = $request->validate([
-            'kelompok_pertanyaan_id' => 'required|exists:kelompok_pertanyaans,id',
+            'kelompok_pertanyaan_id' => 'required|exists:kelompok_pertanyaan,id',
             'kode_pertanyaan' => 'required|string|max:50|unique:ref_subpertanyaan2021,kode_pertanyaan,'.$subpertanyaan->id,
             'subpertanyaan' => 'required|string',
-            'type' => 'required|string|in:single_choice,multiple_choice,text,number,searchable_select,radio_input,multiple_number,matrix_dual,rating_5',
+            'type' => 'required|string|in:text,textarea,number,single_choice,radio_input,radio_text,multiple_choice,dropdown,searchable_select,rating_5,multiple_number,matrix,matrix_dual,multiple_textbox,date,time,file,header',
             'wajib' => 'required|boolean',
             'order' => 'nullable|integer',
         ]);

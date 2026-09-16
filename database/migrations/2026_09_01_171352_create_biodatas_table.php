@@ -11,16 +11,16 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('biodatas', function (Blueprint $table) {
+        Schema::create('biodata', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
 
-            // Relasi ke tabel data_akademiks (NIM)
-            $table->string('nim')->unique()->comment('NIM - referensi ke data_akademiks');
-            $table->foreign('nim')->references('nim')->on('data_akademiks')->cascadeOnDelete();
+            // Relasi ke tabel data_akademik (NIM)
+            $table->string('nim')->unique()->comment('NIM - referensi ke data_akademik');
+            $table->foreign('nim')->references('nim')->on('data_akademik')->cascadeOnDelete();
 
             // Program Studi & Periode
-            $table->foreignId('prodi_id')->nullable()->constrained('prodis')->nullOnDelete();
+            $table->foreignId('prodi_id')->nullable()->constrained('prodi')->nullOnDelete();
             $table->string('kode_prodi', 10)->nullable();
             $table->string('tahun_lulus', 10)->nullable();
 
@@ -30,8 +30,8 @@ return new class extends Migration
             $table->string('email')->nullable();
             $table->string('email_pribadi')->nullable();
             $table->text('alamat')->nullable();
-            $table->foreignId('kabupaten_id')->nullable()->constrained('kabupatens')->nullOnDelete();
-            $table->foreignId('provinsi_id')->nullable()->constrained('provinces')->nullOnDelete();
+            $table->foreignId('kabupaten_id')->nullable()->constrained('kabupaten')->nullOnDelete();
+            $table->foreignId('propinsi_id')->nullable()->constrained('propinsi')->nullOnDelete();
             $table->string('kelurahan')->nullable();
             $table->string('kecamatan')->nullable();
             $table->string('kode_pos')->nullable();
@@ -52,7 +52,7 @@ return new class extends Migration
             // Profesional, Karier & Keahlian
             $table->string('expert')->nullable()->comment('Keahlian Spesifik');
             $table->string('minat')->nullable()->comment('Minat/Interest');
-            $table->foreignId('company_id')->nullable()->constrained('companies')->nullOnDelete()->comment('Perusahaan tempat bekerja');
+            $table->foreignId('perusahaan_id')->nullable()->constrained('perusahaan')->nullOnDelete()->comment('Perusahaan tempat bekerja');
             $table->string('posisi_jabatan')->nullable();
             $table->string('jenis_pekerjaan')->nullable();
             $table->string('zipcode')->nullable()->comment('Kode Pos Wilayah Kerja');
@@ -66,6 +66,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('biodatas');
+        Schema::dropIfExists('biodata');
     }
 };

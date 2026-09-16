@@ -115,7 +115,7 @@ class AdminProdiKuesionerTest extends TestCase
         ]);
 
         $response->assertRedirect();
-        $this->assertDatabaseHas('prodi_question_sections', [
+        $this->assertDatabaseHas('prodi_question_section', [
             'title' => 'Fasilitas & Lab Komputer SI',
             'prodi_id' => $this->prodiSI->id,
         ]);
@@ -133,13 +133,13 @@ class AdminProdiKuesionerTest extends TestCase
         ]);
 
         $response->assertRedirect();
-        $this->assertDatabaseHas('prodi_questions', [
+        $this->assertDatabaseHas('prodi_question', [
             'code' => 'PSI-01',
             'prodi_id' => $this->prodiSI->id,
             'prodi_question_section_id' => $this->sectionSI->id,
         ]);
 
-        $this->assertDatabaseHas('prodi_question_options', [
+        $this->assertDatabaseHas('prodi_question_option', [
             'option_text' => 'Sangat Puas',
         ]);
     }
@@ -194,7 +194,7 @@ class AdminProdiKuesionerTest extends TestCase
         ]);
 
         $submitResponse->assertRedirect('/alumni/dashboard');
-        $this->assertDatabaseHas('prodi_responses', [
+        $this->assertDatabaseHas('prodi_response', [
             'biodata_id' => $this->alumni->id,
             'prodi_question_id' => $qSI->id,
             'answer_text' => 'Sangat Relevan',
@@ -287,13 +287,13 @@ class AdminProdiKuesionerTest extends TestCase
         $response = $this->actingAs($this->adminSI)->get("/prodi/alumni/{$this->alumni->id}");
         $response->assertStatus(200);
 
-        $this->assertDatabaseHas('prodi_responses', [
+        $this->assertDatabaseHas('prodi_response', [
             'biodata_id' => $this->alumni->id,
             'prodi_question_id' => $qNama->id,
             'answer_text' => $this->alumni->dataAkademik->nama,
         ]);
 
-        $this->assertDatabaseHas('prodi_responses', [
+        $this->assertDatabaseHas('prodi_response', [
             'biodata_id' => $this->alumni->id,
             'prodi_question_id' => $qNim->id,
             'answer_text' => $this->alumni->nim,

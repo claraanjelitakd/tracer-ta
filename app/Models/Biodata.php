@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 /**
- * Model Biodata (tabel: biodatas)
+ * Model Biodata (tabel: biodata)
  *
  * Mengelola data profil aktif alumni untuk sistem Tracer Study UKDW.
  */
@@ -14,7 +14,7 @@ class Biodata extends Model
 {
     use HasFactory;
 
-    protected $table = 'biodatas';
+    protected $table = 'biodata';
 
     protected $fillable = [
         'user_id',
@@ -28,7 +28,7 @@ class Biodata extends Model
         'email_pribadi',
         'alamat',
         'kabupaten_id',
-        'provinsi_id',
+        'propinsi_id',
         'kelurahan',
         'kecamatan',
         'kode_pos',
@@ -43,7 +43,7 @@ class Biodata extends Model
         'linkedin_username',
         'expert',
         'minat',
-        'company_id',
+        'perusahaan_id',
         'atasan_id',
         'posisi_jabatan',
         'jenis_pekerjaan',
@@ -75,11 +75,27 @@ class Biodata extends Model
     }
 
     /**
-     * Relasi ke Company (Perusahaan tempat bekerja).
+     * Relasi ke Perusahaan tempat bekerja.
      */
-    public function company()
+    public function perusahaan()
     {
-        return $this->belongsTo(Company::class);
+        return $this->belongsTo(Perusahaan::class, 'perusahaan_id');
+    }
+
+    /**
+     * Relasi ke Propinsi tempat tinggal alumni.
+     */
+    public function propinsi()
+    {
+        return $this->belongsTo(Propinsi::class, 'propinsi_id');
+    }
+
+    /**
+     * Relasi ke Kabupaten tempat tinggal alumni.
+     */
+    public function kabupaten()
+    {
+        return $this->belongsTo(Kabupaten::class, 'kabupaten_id');
     }
 
     /**
@@ -109,17 +125,33 @@ class Biodata extends Model
     /**
      * Relasi ke Tracer (Jawaban Kuesioner Universitas).
      */
-    public function tracers()
+    public function tracer()
     {
         return $this->hasMany(Tracer::class, 'biodata_id');
     }
 
     /**
+     * Relasi ke Tracer (Plural alias untuk kompatibilitas template jika diperlukan).
+     */
+    public function tracers()
+    {
+        return $this->tracer();
+    }
+
+    /**
      * Relasi ke ProdiResponse (Jawaban Kuesioner Khusus Prodi).
+     */
+    public function prodiResponse()
+    {
+        return $this->hasMany(ProdiResponse::class, 'biodata_id');
+    }
+
+    /**
+     * Relasi ke ProdiResponse (Plural alias).
      */
     public function prodiResponses()
     {
-        return $this->hasMany(ProdiResponse::class, 'biodata_id');
+        return $this->prodiResponse();
     }
 
     /**

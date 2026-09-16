@@ -11,7 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('umps', function (Blueprint $table) {
+        Schema::create('ump', function (Blueprint $table) {
             $table->id();
             $table->string('kode_provinsi');
             $table->integer('tahun')->default(2026);
@@ -21,7 +21,7 @@ return new class extends Migration
 
             $table->foreign('kode_provinsi')
                 ->references('kode_provinsi')
-                ->on('provinces')
+                ->on('propinsi')
                 ->cascadeOnUpdate()
                 ->cascadeOnDelete();
 
@@ -34,6 +34,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('umps');
+        Schema::dropIfExists('ump');
     }
 };

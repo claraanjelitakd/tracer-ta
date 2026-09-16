@@ -11,9 +11,9 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('tracers', function (Blueprint $table) {
+        Schema::create('tracer', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('biodata_id')->constrained('biodatas')->cascadeOnDelete();
+            $table->foreignId('biodata_id')->constrained('biodata')->cascadeOnDelete();
             $table->foreignId('question_id')->nullable()->constrained('ref_subpertanyaan2021')->cascadeOnDelete();
             $table->string('nim', 20); // Ref NIM dari biodata / data akademik alumni
             $table->char('kelompok', 3); // Ref kode kelompok induk (F2, F17, F5, F18, BIO, dll)
@@ -36,6 +36,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('tracers');
+        Schema::dropIfExists('tracer');
     }
 };
