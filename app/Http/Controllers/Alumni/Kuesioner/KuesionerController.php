@@ -9,20 +9,29 @@ use App\Models\Tracer;
 use App\Services\Kuesioner\KuesionerSyncService;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
+use Inertia\Response;
 
 /**
  * KuesionerController
  *
- * Fungsi: Menampilkan daftar pertanyaan kuesioner kepada alumni.
- * Tujuan: Menyediakan data kuesioner yang sudah diformat rapi dari sisi backend sehingga Frontend (Vue) tidak perlu melakukan logika kompleks.
+ * Fungsi: Menampilkan formulir kuesioner tracer study kepada alumni.
+ * Tanggung Jawab:
+ * 1. Memvalidasi profil biodata alumni yang sedang login.
+ * 2. Melakukan sinkronisasi data profil alumni ke tabel respon kuesioner.
+ * 3. Mengambil seksi kuesioner aktif mulai dari seksi 3 (Waktu Mulai Mencari Kerja).
+ * 4. Mempersiapkan jawaban awal (prefilled answers) dari data tracer yang sudah tersimpan
+ *    atau data pemetaan (QuestionMapping) profil alumni.
  */
 class KuesionerController extends Controller
 {
     /**
-     * Menampilkan Halaman Kuesioner
+     * Menampilkan Halaman Kuesioner Tracer Study Alumni
+     *
+     * @return Response
      */
     public function tampilkanKuesioner()
     {
+        // 1. Ambil data pengguna dan relasi profil biodata
         $pengguna = Auth::user();
         $biodata = $pengguna->biodata;
 
@@ -32,12 +41,11 @@ class KuesionerController extends Controller
 
         $biodata->load(['dataAkademik', 'yudisium', 'perusahaan.propinsi', 'perusahaan.kabupaten', 'atasan', 'user']);
 
-        // Sinkronisasi otomatis data profil (Identitas & Perusahaan/Atasan) ke tabel tracer
+        // 2. Sinkronisasi otomatis data profil (Identitas & Perusahaan/Atasan) ke tabel tracer
         KuesionerSyncService::syncProfileResponses($biodata);
 
-        // Ambil kuesioner aktif mulai dari Section 3 (Waktu Mulai Mencari Kerja).
-        // Section 1 (Identitas) & Section 2 (Perusahaan & Atasan) tidak perlu diisi ulang
-        // karena sudah terisi dari profil alumni dan tersimpan otomatis di tracer.
+        // 3. Ambil data kuesioner aktif (mulai dari Section 3 ke atas)
+        // Catatan: Section 1 (Identitas) & Section 2 (Perusahaan/Atasan) dikelola dari halaman Profil
         $kuesioner = Kuesioner::where('is_active', true)
             ->with(['sections' => function ($query) {
                 $query->where('order', '>=', 3)
@@ -49,6 +57,7 @@ class KuesionerController extends Controller
             }])
             ->first();
 
+        // 4. Jika tidak ada kuesioner yang aktif, kembalikan tampilan dengan pesan error
         if (! $kuesioner) {
             return Inertia::render('Alumni/Kuesioner', [
                 'error' => 'Tidak ada kuesioner aktif saat ini.',
@@ -58,15 +67,15 @@ class KuesionerController extends Controller
             ]);
         }
 
-        // Ambil jawaban yang sudah ada
+        // 5. Ambil data respon jawaban yang sudah tersimpan sebelumnya di tabel tracer
         $jawabanTersimpan = Tracer::where('biodata_id', $biodata->id)
             ->get()
             ->keyBy('question_id');
 
-        // Ambil mapping untuk prefill otomatis dari database
+        // 6. Ambil aturan pemetaan kolom database untuk prefill otomatis
         $pemetaan = QuestionMapping::all()->keyBy('question_id');
 
-        // Merakit default jawaban di backend agar Vue murni sebagai UI
+        // 7. Merakit data jawaban awal ($jawabanAwal) terstruktur per butir pertanyaan
         $jawabanAwal = [];
         if ($kuesioner) {
             foreach ($kuesioner->sections as $bagian) {

@@ -18,7 +18,7 @@ return new class extends Migration
             $table->foreignId('user_id')->nullable()->constrained()->nullOnDelete();
 
             $table->string('nama')->comment('Nama Atasan');
-            $table->string('email')->unique()->comment('Email Atasan');
+            $table->string('email')->nullable()->comment('Email Atasan');
             $table->string('telepon')->nullable()->comment('Nomor Telepon Atasan');
 
             $table->timestamps();

@@ -17,9 +17,18 @@ class Prodi extends Model
     protected $table = 'prodi';
 
     protected $fillable = [
+        'fakultas_id',
         'kode_prodi',
         'nama_prodi',
     ];
+
+    /**
+     * Relasi ke Fakultas penaung Program Studi.
+     */
+    public function fakultas()
+    {
+        return $this->belongsTo(RefFakultas::class, 'fakultas_id');
+    }
 
     public function biodata()
     {

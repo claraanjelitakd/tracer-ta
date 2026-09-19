@@ -1,0 +1,195 @@
+Nama Negara,Ibu Kota,Kode Negara (ISO 2),Benua
+Afganistan,Kabul,AF,Asia
+Arab Saudi,Riyadh,SA,Asia
+Armenia,Yerevan,AM,Asia
+Azerbaijan,Baku,AZ,Asia
+Bahrain,Manama,BH,Asia
+Bangladesh,Dhaka,BD,Asia
+Bhutan,Thimphu,BT,Asia
+Brunei Darussalam,Bandar Seri Begawan,BN,Asia
+Filipina,Manila,PH,Asia
+Georgia,Tbilisi,GE,Asia
+India,New Delhi,IN,Asia
+Indonesia,Jakarta,ID,Asia
+Irak,Baghdad,IQ,Asia
+Iran,Teheran,IR,Asia
+Israel,Yerusalem,IL,Asia
+Jepang,Tokyo,JP,Asia
+Kamboja,Phnom Penh,KH,Asia
+Kazakhstan,Astana,KZ,Asia
+Kirgizstan,Bishkek,KG,Asia
+Korea Selatan,Seoul,KR,Asia
+Korea Utara,Pyongyang,KP,Asia
+Kuwait,Kuwait City,KW,Asia
+Laos,Vientiane,LA,Asia
+Libanon,Beirut,LB,Asia
+Maladewa,Male,MV,Asia
+Malaysia,Kuala Lumpur,MY,Asia
+Mesir,Kairo,EG,Afrika/Asia
+Mongolia,Ulaanbaatar,MN,Asia
+Myanmar,Naypyidaw,MM,Asia
+Nepal,Kathmandu,NP,Asia
+Oman,Muscat,OM,Asia
+Pakistan,Islamabad,PK,Asia
+Palestina,Ramallah,PS,Asia
+Qatar,Doha,QA,Asia
+Siprus,Nicosia,CY,Asia
+Singapura,Singapura,SG,Asia
+Sri Lanka,Sri Jayawardenepura Kotte,LK,Asia
+Suriah,Dramaskus,SY,Asia
+Taiwan,Taipei,TW,Asia
+Tajikistan,Dushanbe,TJ,Asia
+Thailand,Bangkok,TH,Asia
+Timor Leste,Dili,TL,Asia
+Tiongkok,Beijing,CN,Asia
+Turki,Ankara,TR,Asia/Eropa
+Turkmenistan,Ashgabat,TM,Asia
+Uni Emirat Arab,Abu Dhabi,AE,Asia
+Uzbekistan,Tashkent,UZ,Asia
+Vietnam,Hanoi,VN,Asia
+Yaman,Sanaa,YE,Asia
+Yordania,Amman,JO,Asia
+Afrika Selatan,Pretoria,ZA,Afrika
+Aljazair,Algiers,DZ,Afrika
+Angola,Luanda,AO,Afrika
+Benin,Porto-Novo,BJ,Afrika
+Botswana,Gaborone,BW,Afrika
+Burkina Faso,Ouagadougou,BF,Afrika
+Burundi,Gitega,BI,Afrika
+Chad,N'Djamena,TD,Afrika
+Eritrea,Asmara,ER,Afrika
+Eswatini,Mbabane,SZ,Afrika
+Etiopia,Addis Ababa,ET,Afrika
+Gabon,Libreville,GA,Afrika
+Gambia,Banjul,GM,Afrika
+Ghana,Accra,GH,Afrika
+Guinea,Conakry,GN,Afrika
+Guinea-Bissau,Bissau,GW,Afrika
+Guinea Khatulistiwa,Malabo,GQ,Afrika
+Jibuti,Djibouti,DJ,Afrika
+Kamerun,Yaounde,CM,Afrika
+Kenya,Nairobi,KE,Afrika
+Komoro,Moroni,KM,Afrika
+Republik Kongo,Brazzaville,CG,Afrika
+Republik Demokratik Kongo,Kinshasa,CD,Afrika
+Pantai Gading,Yamoussoukro,CI,Afrika
+Lesotho,Maseru,LS,Afrika
+Liberia,Monrovia,LR,Afrika
+Libia,Tripoli,LY,Afrika
+Madagaskar,Antananarivo,MG,Afrika
+Malawi,Lilongwe,MW,Afrika
+Mali,Bamako,ML,Afrika
+Maroko,Rabat,MA,Afrika
+Mauritania,Nouakchott,MR,Afrika
+Mauritius,Port Louis,MU,Afrika
+Mozambik,Maputo,MZ,Afrika
+Namibia,Windhoek,NA,Afrika
+Niger,Niamey,NE,Afrika
+Nigeria,Abuja,NG,Afrika
+Republik Afrika Tengah,Bangui,CF,Afrika
+Rwanda,Kigali,RW,Afrika
+Sao Tome dan Principe,Sao Tome,ST,Afrika
+Senegal,Dakar,SN,Afrika
+Seychelles,Victoria,SC,Afrika
+Sierra Leone,Freetown,SL,Afrika
+Somalia,Mogadishu,SO,Afrika
+Sudan,Khartoum,SD,Afrika
+Sudan Selatan,Juba,SS,Afrika
+Tanzania,Dodoma,TZ,Afrika
+Togo,Lome,TG,Afrika
+Tunisia,Tunis,TN,Afrika
+Uganda,Kampala,UG,Afrika
+Zambia,Lusaka,ZM,Afrika
+Zimbabwe,Harare,ZW,Afrika
+Albania,Tirana,AL,Eropa
+Andorra,Andorra la Vella,AD,Eropa
+Austria,Wina,AT,Eropa
+Belanda,Amsterdam,NL,Eropa
+Belarus,Minsk,BY,Eropa
+Belgia,Brussel,BE,Eropa
+Bosnia dan Herzegovina,Sarajevo,BA,Eropa
+Bulgaria,Sofia,BG,Eropa
+Ceko,Praga,CZ,Eropa
+Denmark,Kopenhagen,DK,Eropa
+Estonia,Tallinn,EE,Eropa
+Finlandia,Helsinki,FI,Eropa
+Hongaria,Budapest,HU,Eropa
+Inggris,London,GB,Eropa
+Irlandia,Dublin,IE,Eropa
+Islandia,Reykjavik,IS,Eropa
+Italia,Roma,IT,Eropa
+Jerman,Berlin,DE,Eropa
+Kroasia,Zagreb,HR,Eropa
+Latvia,Riga,LV,Eropa
+Liechtenstein,Vaduz,LI,Eropa
+Lituania,Vilnius,LT,Eropa
+Luksemburg,Luksemburg,LU,Eropa
+Makedonia Utara,Skopje,MK,Eropa
+Malta,Valletta,MT,Eropa
+Moldova,Chisinau,MD,Eropa
+Monako,Monako,MC,Eropa
+Montenegro,Podgorica,ME,Eropa
+Norwegia,Oslo,NO,Eropa
+Prancis,Paris,FR,Eropa
+Polandia,Warsawa,PL,Eropa
+Portugal,Lisabon,PT,Eropa
+Rumania,Bukares,RO,Eropa
+Rusia,Moskow,RU,Eropa/Asia
+San Marino,San Marino,SM,Eropa
+Serbia,Belgrad,RS,Eropa
+Slovakia,Bratislava,SK,Eropa
+Slovenia,Ljubljana,SI,Eropa
+Spanyol,Madrid,ES,Eropa
+Swedia,Stockholm,SE,Eropa
+Swiss,Bern,CH,Eropa
+Ukraina,Kyiv,UA,Eropa
+Vatikan,Vatikan,VA,Eropa
+"Amerika Serikat,""Washington, D.C."",US,Amerika Utara"
+Antigua dan Barbuda,St. John's,AG,Amerika Utara
+Bahama,Nassau,BS,Amerika Utara
+Barbados,Bridgetown,BB,Amerika Utara
+Belize,Belmopan,BZ,Amerika Utara
+Dominika,Roseau,DM,Amerika Utara
+El Salvador,San Salvador,SV,Amerika Utara
+Grenada,St. George's,GD,Amerika Utara
+Guatemala,Guatemala City,GT,Amerika Utara
+Haiti,Port-au-Prince,HT,Amerika Utara
+Honduras,Tegucigalpa,HN,Amerika Utara
+Jamaika,Kingston,JM,Amerika Utara
+Kanada,Ottawa,CA,Amerika Utara
+Kosta Rika,San Jose,CR,Amerika Utara
+Kuba,Havana,CU,Amerika Utara
+Meksiko,Mexico City,MX,Amerika Utara
+Nikaragua,Managua,NI,Amerika Utara
+Panama,Panama City,PA,Amerika Utara
+Republik Dominika,Santo Domingo,DO,Amerika Utara
+Saint Kitts dan Nevis,Basseterre,KN,Amerika Utara
+Saint Lucia,Castries,LC,Amerika Utara
+Saint Vincent dan Grenadines,Kingstown,VC,Amerika Utara
+Trinidad dan Tobago,Port of Spain,TT,Amerika Utara
+Argentina,Buenos Aires,AR,Amerika Selatan
+Bolivia,Sucre,BO,Amerika Selatan
+Brasil,Brasilia,BR,Amerika Selatan
+Cile,Santiago,CL,Amerika Selatan
+Ekuador,Quito,EC,Amerika Selatan
+Guyana,Georgetown,GY,Amerika Selatan
+Kolombia,Bogota,CO,Amerika Selatan
+Paraguay,Asuncion,PY,Amerika Selatan
+Peru,Lima,PE,Amerika Selatan
+Suriname,Paramaribo,SR,Amerika Selatan
+Uruguay,Montevideo,UY,Amerika Selatan
+Venezuela,Caracas,VE,Amerika Selatan
+Australia,Canberra,AU,Oseania
+Fiji,Suva,FJ,Oseania
+Kiribati,Tarawa Atoll,KI,Oseania
+Kepulauan Marshall,Majuro,MH,Oseania
+Mikronesia,Palikir,FM,Oseania
+Nauru,Yaren,NR,Oseania
+Palau,Ngerulmud,PW,Oseania
+Papua Nugini,Port Moresby,PG,Oseania
+Samoa,Apia,WS,Oseania
+Selandia Baru,Wellington,NZ,Oseania
+Kepulauan Solomon,Honiara,SB,Oseania
+Tonga,Nuku'alofa,TO,Oseania
+Tuvalu,Funafuti,TV,Oseania
+Vanuatu,Port Vila,VU,Oseania

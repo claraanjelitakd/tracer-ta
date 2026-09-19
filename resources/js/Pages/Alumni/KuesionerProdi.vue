@@ -6,6 +6,7 @@
 import { Head, Link, useForm } from '@inertiajs/vue3';
 import { ref, computed } from 'vue';
 import Swal from 'sweetalert2';
+import Navbar from './Components/Navbar.vue';
 
 const props = defineProps({
     alumni: Object,
@@ -125,6 +126,23 @@ const progressStats = computed(() => {
     };
 });
 
+// Helper multiple_choice / checkbox
+const isCheckboxChecked = (qId, optionText) => {
+    return Array.isArray(form.answers[qId]) && form.answers[qId].includes(optionText);
+};
+
+const toggleCheckboxOption = (qId, optionText) => {
+    if (!Array.isArray(form.answers[qId])) {
+        form.answers[qId] = [];
+    }
+    const idx = form.answers[qId].indexOf(optionText);
+    if (idx > -1) {
+        form.answers[qId].splice(idx, 1);
+    } else {
+        form.answers[qId].push(optionText);
+    }
+};
+
 // Submit jawaban kuesioner prodi
 const submitKuesionerProdi = () => {
     if (!isAllRequiredAnswered()) {
@@ -168,26 +186,8 @@ const submitKuesionerProdi = () => {
     <Head :title="'Kuesioner Program Studi ' + (prodi?.nama_prodi || '')" />
 
     <div class="min-h-screen bg-[#E8F5E9] font-sans text-gray-900 antialiased flex flex-col relative pb-28 md:pb-32">
-        <!-- Top Navigation Bar -->
-        <header class="sticky top-0 z-50 w-full shadow-md bg-white">
-            <nav class="bg-[#005B3C] py-2.5 sm:py-3 transition-all">
-                <div class="max-w-5xl mx-auto px-4 flex justify-between items-center">
-                    <div class="flex items-center gap-2.5 sm:gap-3">
-                        <div class="bg-white p-1.5 rounded-xl shadow-xs">
-                            <img src="/uploads/logo/logo-ukdw.png" onerror="this.src='https://www.ukdw.ac.id/wp-content/uploads/2017/10/logo-ukdw.png'" alt="UKDW Logo" class="h-7 w-7 sm:h-9 sm:w-9 object-contain">
-                        </div>
-                        <div>
-                            <span class="text-white font-black text-lg sm:text-xl tracking-wide block">Tracer Study UKDW</span>
-                            <span class="text-emerald-200 text-xs font-semibold">Kuesioner Program Studi {{ prodi?.nama_prodi }}</span>
-                        </div>
-                    </div>
-
-                    <Link href="/alumni/dashboard" class="px-3.5 py-1.5 sm:px-4 sm:py-2 bg-white/15 text-white hover:bg-white/25 font-bold rounded-xl transition-colors text-xs sm:text-sm">
-                        Kembali ke Dashboard
-                    </Link>
-                </div>
-            </nav>
-        </header>
+        <!-- Navigasi Utama Terpadu Alumni -->
+        <Navbar />
 
         <!-- Main Form Area -->
         <main class="flex-1 px-4 sm:px-6 w-full max-w-4xl mx-auto mt-4 sm:mt-8">
@@ -313,14 +313,15 @@ const submitKuesionerProdi = () => {
                                     <input 
                                         type="checkbox" 
                                         :value="opt.option_text" 
-                                        v-model="form.answers[q.id]" 
+                                        :checked="isCheckboxChecked(q.id, opt.option_text)"
+                                        @change="toggleCheckboxOption(q.id, opt.option_text)"
                                         class="sr-only"
                                     >
                                     <div 
                                         class="p-4 rounded-2xl font-bold text-sm sm:text-base transition-all flex flex-col items-center justify-center text-center shadow-xs"
                                         :class="[
-                                            Array.isArray(form.answers[q.id]) && form.answers[q.id].includes(opt.option_text)
-                                                ? 'bg-[#005B3C] text-white shadow-md'
+                                            isCheckboxChecked(q.id, opt.option_text)
+                                                ? 'bg-[#005B3C] text-white shadow-md' 
                                                 : 'bg-gray-50 text-gray-700 hover:bg-emerald-50 hover:text-[#005B3C]'
                                         ]"
                                     >

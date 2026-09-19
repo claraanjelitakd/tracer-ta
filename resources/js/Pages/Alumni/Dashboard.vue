@@ -12,6 +12,7 @@
 // - Link   : Komponen navigasi pengganti <a href> agar pindah halaman tanpa reload layar putih
 // - router : Untuk mengirim perintah cepat ke backend (seperti logout, delete, POST)
 import { Head, Link, router } from '@inertiajs/vue3';
+import Navbar from './Components/Navbar.vue';
 
 /**
  * ====================================================================
@@ -98,36 +99,22 @@ const logout = () => {
 <template>
     <Head title="Dashboard Alumni - Tracer Study" />
 
-    <div class="min-h-screen bg-slate-50 relative overflow-hidden">
-        <!-- Background Banner -->
-        <div class="absolute top-0 left-0 w-full h-80 bg-[#0D542B] rounded-b-[40%] shadow-lg z-0 transform -translate-y-16"></div>
+    <div class="min-h-screen bg-slate-50 relative overflow-hidden pb-16">
+        <!-- Navbar Terpadu Alumni -->
+        <Navbar :user="user" />
 
-        <!-- Navbar Minimal -->
-        <nav class="relative z-10 bg-transparent">
-            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div class="flex justify-between h-20">
-                    <div class="flex items-center space-x-3">
-                        <img src="/uploads/landing/2.png" alt="Logo" class="h-10 w-10 object-contain drop-shadow-md bg-white rounded-full p-1" onerror="this.style.display='none'" />
-                        <span class="text-white font-bold text-xl tracking-wide drop-shadow-md">Tracer Study UKDW</span>
-                    </div>
-                    <div class="flex items-center space-x-6">
-                        <span class="text-white font-medium text-sm hidden md:block drop-shadow-md">{{ user.name }}</span>
-                        <button @click="logout" class="px-4 py-2 bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white text-sm font-semibold rounded-full transition-colors shadow-sm">Logout</button>
-                    </div>
-                </div>
-            </div>
-        </nav>
-
-        <!-- Main Content -->
-        <main class="relative z-10 max-w-7xl mx-auto py-10 px-4 sm:px-6 lg:px-8 mt-2">
-            
-            <!-- Welcome Header -->
+        <!-- Background Banner & Welcome Header -->
+        <div class="w-full bg-[#0D542B] pt-10 pb-24 px-4 sm:px-6 lg:px-8 text-center relative shadow-sm">
             <transition appear name="fade-down">
-                <div class="text-center mb-10">
-                    <h2 class="text-3xl md:text-4xl font-extrabold text-white drop-shadow tracking-tight mb-3">Selamat datang kembali, {{ user.name }}!</h2>
-                    <p class="text-green-50 text-base md:text-lg max-w-2xl mx-auto drop-shadow-sm font-normal">Terima kasih telah berkontribusi. Mari lengkapi data Anda untuk membantu peningkatan kualitas pendidikan kampus kita tercinta.</p>
+                <div class="max-w-3xl mx-auto">
+                    <h2 class="text-3xl md:text-4xl font-extrabold text-white tracking-tight mb-3">Selamat datang kembali, {{ user.name }}!</h2>
+                    <p class="text-green-100 text-sm md:text-base font-medium">Terima kasih telah berkontribusi. Mari lengkapi data Anda untuk membantu peningkatan mutu dan akreditasi kampus kita tercinta.</p>
                 </div>
             </transition>
+        </div>
+
+        <!-- Main Content -->
+        <main class="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-12">
 
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
                 <!-- ======================================================= -->

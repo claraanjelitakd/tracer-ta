@@ -191,7 +191,16 @@ const statusYudisium = computed(() => {
                         </p>
                     </div>
 
-                    <div class="shrink-0">
+                    <div class="flex items-center gap-3 shrink-0 flex-wrap">
+                        <a 
+                            :href="`/superadmin/alumni/${alumni.id}/export-excel`"
+                            class="inline-flex items-center gap-2 px-5 py-2.5 bg-[#FDC700] hover:bg-[#e5b400] text-black text-xs font-extrabold rounded-xl transition-all shadow-sm"
+                            title="Download seluruh butir pertanyaan & jawaban mahasiswa ini ke file Excel (CSV)"
+                        >
+                            <svg class="w-4 h-4 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                            <span>Download Excel Jawaban</span>
+                        </a>
+
                         <Link 
                             href="/superadmin/alumni"
                             class="inline-flex items-center px-5 py-2.5 bg-white/15 hover:bg-white/25 border border-white/20 text-white text-xs font-bold rounded-xl transition-all"

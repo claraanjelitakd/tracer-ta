@@ -171,8 +171,12 @@ Dokumentasi lengkap diagram relasi antar tabel (ERD Mermaid), kamus data (*data 
 👉 **[`ERD.md`](file:///c:/study/tracerstudy/ERD.md)**
 
 Ringkasan relasi utama:
-- **`users` (1:1) $\rightarrow$ `biodata`**: Profil alumni (28 kolom identitas, kontak, kependudukan, karier).
+- **`ref_fakultas` (1:N) $\rightarrow$ `prodi`**: Master data 7 fakultas UKDW terhubung ke program studi.
+- **`prodi` (1:N) $\rightarrow$ `biodata`**: Program studi alumni UKDW.
+- **`users` (1:1) $\rightarrow$ `biodata`**: Profil alumni (identitas lengkap, kontak, kependudukan, karier, Take Home Pay).
 - **`data_akademik` (1:1) $\rightarrow$ `biodata`**: Pangkalan data akademik resmi terhubung via `nim`.
+- **`data_orang_tua` (1:1) $\rightarrow$ `biodata`**: Data orang tua/wali alumni terhubung via `orang_tua_id` & `nim`.
+- **`yudisium` (1:1) $\rightarrow$ `biodata`**: Data yudisium, dosen, dan tugas akhir terhubung via `yudisium_id` & `nim`.
 - **`biodata` (1:N) $\rightarrow$ `tracer`**: Respon pengisian kuesioner tracer study tingkat universitas.
 - **`biodata` (1:N) $\rightarrow$ `prodi_response`**: Respon pengisian kuesioner evaluasi program studi.
 - **`prodi` (1:N) $\rightarrow$ `prodi_question_section` $\rightarrow$ `prodi_question`**: Manajemen kuesioner mandiri prodi.
@@ -261,11 +265,23 @@ Komponen pengisian kuesioner dipecah secara modular untuk memudahkan pemeliharaa
 
 ---
 
+---
+
+## Dokumen Pemetaan Pertanyaan & Arsitektur Form
+Untuk referensi lengkap seluruh butir pertanyaan Tracer Study Dikti (`F1` s/d `F18`, `F24A`, `F24B`), letak komponen Vue, kolom basis data, dan aturan sinkronisasi:
+👉 **[DAFTAR_PERTANYAAN_MAPPING.md](file:///c:/study/tracerstudy/DAFTAR_PERTANYAAN_MAPPING.md)**
+
+---
+
 ## Panduan Pencarian Cepat Kode (Quick Navigation)
 
+- Ingin mengubah tampilan navigasi utama alumni (Dashboard, Profil, Kuesioner Univ & Prodi)? Buka [`resources/js/Pages/Alumni/Components/Navbar.vue`](file:///c:/study/tracerstudy/resources/js/Pages/Alumni/Components/Navbar.vue).
+- Ingin melihat peta lengkap kode pertanyaan Dikti & letak Vue formnya? Buka [`DAFTAR_PERTANYAAN_MAPPING.md`](file:///c:/study/tracerstudy/DAFTAR_PERTANYAAN_MAPPING.md).
+- Ingin mengubah form profil dan karier alumni? Buka [`resources/js/Pages/Alumni/Profil/Components/FormKarier.vue`](file:///c:/study/tracerstudy/resources/js/Pages/Alumni/Profil/Components/FormKarier.vue).
 - Ingin mengubah tampilan/input kuesioner tracer alumni? Buka [`resources/js/Pages/Alumni/Components/Kuesioner/KartuPertanyaan.vue`](file:///c:/study/tracerstudy/resources/js/Pages/Alumni/Components/Kuesioner/KartuPertanyaan.vue).
 - Ingin mengubah tabel perbandingan F17? Buka [`resources/js/Pages/Alumni/Components/Kuesioner/TabelF17.vue`](file:///c:/study/tracerstudy/resources/js/Pages/Alumni/Components/Kuesioner/TabelF17.vue).
-- Ingin melihat logika sinkronisasi data akademik? Buka [`app/Services/Kuesioner/KuesionerSyncService.php`](file:///c:/study/tracerstudy/app/Services/Kuesioner/KuesionerSyncService.php).
-- Ingin melihat controller kuesioner prodi alumni? Buka [`app/Http/Controllers/Alumni/Kuesioner/KuesionerProdiController.php`](file:///c:/study/tracerstudy/app/Http/Controllers/Alumni/Kuesioner/KuesionerProdiController.php).
+- Ingin melihat logika sinkronisasi data profil vs kuesioner? Buka [`app/Services/Kuesioner/KuesionerSyncService.php`](file:///c:/study/tracerstudy/app/Services/Kuesioner/KuesionerSyncService.php).
+- Ingin melihat controller kuesioner prodi alumni? Buka [`app/Http/Controllers/Alumni/KuesionerProdi/KuesionerProdiController.php`](file:///c:/study/tracerstudy/app/Http/Controllers/Alumni/KuesionerProdi/KuesionerProdiController.php).
 - Ingin mengedit tampilan Admin Prodi? Buka folder [`resources/js/Pages/AdminProdi/`](file:///c:/study/tracerstudy/resources/js/Pages/AdminProdi/).
 - Ingin mengedit seeder kuesioner program studi? Buka [`database/seeders/ProdiQuestionnaireSeeder.php`](file:///c:/study/tracerstudy/database/seeders/ProdiQuestionnaireSeeder.php).
+

@@ -1,0 +1,237 @@
+<?php
+
+namespace Tests\Feature;
+
+use App\Models\Atasan;
+use App\Models\Biodata;
+use App\Models\DataAkademik;
+use App\Models\Prodi;
+use App\Models\RefFakultas;
+use App\Models\RefSubpertanyaan2021;
+use App\Models\Tracer;
+use App\Models\User;
+use App\Services\Kuesioner\KuesionerSyncService;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Hash;
+use Tests\TestCase;
+
+/**
+ * AlumniProfileEnhancementTest
+ *
+ * Menguji integrasi fitur RefFakultas, perapian tabel Biodata, Take Home Pay (Gaji),
+ * penguncian NIK (read-only), serta auto-fill data Atasan saat memilih Owner/Wiraswasta.
+ */
+class AlumniProfileEnhancementTest extends TestCase
+{
+    use RefreshDatabase;
+
+    protected User $alumniUser;
+
+    protected Biodata $biodata;
+
+    protected Prodi $prodi;
+
+    protected RefFakultas $fakultas;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        // 1. Buat Fakultas & Prodi
+        $this->fakultas = RefFakultas::create([
+            'kode_fakultas' => '7',
+            'nama_fakultas' => 'Fakultas Teknologi Informasi',
+        ]);
+
+        $this->prodi = Prodi::create([
+            'fakultas_id' => $this->fakultas->id,
+            'kode_prodi' => '71',
+            'nama_prodi' => 'Informatika',
+        ]);
+
+        // 2. Buat User & Data Akademik
+        $this->alumniUser = User::create([
+            'name' => 'Clara Anjelita',
+            'email' => 'clara@ukdw.ac.id',
+            'username' => '71200001',
+            'password' => Hash::make('password123'),
+            'role' => 'alumni',
+            'prodi_id' => $this->prodi->id,
+            'must_change_password' => false,
+        ]);
+
+        $dataAkademik = DataAkademik::create([
+            'nim' => '71200001',
+            'nama' => 'Clara Anjelita',
+            'tempat_lahir' => 'Sleman',
+            'tanggal_lahir' => '2001-08-15',
+            'jenis_kelamin' => 'Perempuan',
+            'golongan_darah' => 'O',
+            'warga_negara' => 'WNI',
+            'nik' => '3404100000000001',
+            'nisn' => '0031234567',
+        ]);
+
+        $this->biodata = Biodata::create([
+            'user_id' => $this->alumniUser->id,
+            'nim' => '71200001',
+            'prodi_id' => $this->prodi->id,
+            'kode_prodi' => '71',
+            'nama' => 'Clara Anjelita',
+            'nik' => '3404100000000001',
+            'email_pribadi' => 'clara.pribadi@gmail.com',
+            'nomor_telepon' => '081292090001',
+        ]);
+    }
+
+    /**
+     * Test relasi Fakultas -> Prodi -> Biodata.
+     */
+    public function test_fakultas_and_prodi_relation(): void
+    {
+        $this->assertNotNull($this->prodi->fakultas);
+        $this->assertEquals('Fakultas Teknologi Informasi', $this->prodi->fakultas->nama_fakultas);
+        $this->assertEquals('7', $this->prodi->fakultas->kode_fakultas);
+    }
+
+    /**
+     * Test NIK bersifat read-only dan tidak dapat diubah oleh alumni.
+     */
+    public function test_nik_cannot_be_modified_by_alumni(): void
+    {
+        $response = $this->actingAs($this->alumniUser)->post('/alumni/profile', [
+            'nama' => 'Clara Anjelita Updated',
+            'nik' => '9999999999999999', // mencoba mengganti NIK
+            'nomor_telepon' => '081292090002',
+        ]);
+
+        $response->assertRedirect();
+        $this->biodata->refresh();
+
+        // NIK harus tetap bernilai asli
+        $this->assertEquals('3404100000000001', $this->biodata->nik);
+        $this->assertEquals('081292090002', $this->biodata->nomor_telepon);
+    }
+
+    /**
+     * Test saat alumni memilih posisi Owner, data Atasan otomatis terisi dengan data alumni.
+     */
+    public function test_atasan_is_autofilled_when_position_is_owner(): void
+    {
+        $response = $this->actingAs($this->alumniUser)->post('/alumni/profile', [
+            'nama' => 'Clara Anjelita',
+            'email_pribadi' => 'clara.pribadi@gmail.com',
+            'nomor_telepon' => '081292090001',
+            'nama_perusahaan' => 'PT Clara Startup Digital',
+            'posisi_jabatan' => 'Owner',
+            'gaji' => '8500000',
+            // Data atasan sengaja dikosongkan untuk menguji auto-fill
+            'nama_atasan' => '',
+            'email_atasan' => '',
+            'telepon_atasan' => '',
+        ]);
+
+        $response->assertRedirect();
+        $this->biodata->refresh();
+
+        $this->assertEquals('Owner', $this->biodata->posisi_jabatan);
+        $this->assertEquals(8500000, $this->biodata->gaji);
+        $this->assertNotNull($this->biodata->atasan_id);
+
+        $atasan = Atasan::find($this->biodata->atasan_id);
+        $this->assertNotNull($atasan);
+        $this->assertEquals('Clara Anjelita', $atasan->nama);
+        $this->assertEquals('clara.pribadi@gmail.com', $atasan->email);
+        $this->assertEquals('081292090001', $atasan->telepon);
+    }
+
+    /**
+     * Test sinkronisasi Take Home Pay (Gaji) ke kuesioner Tracer F505.
+     */
+    public function test_gaji_syncs_to_tracer_f505(): void
+    {
+        $qF505 = RefSubpertanyaan2021::create([
+            'section_kode' => '4',
+            'kelompok' => 'F5',
+            'kode_pertanyaan' => 'F505',
+            'subpertanyaan' => 'Berapa rata-rata pendapatan anda per bulan ? (take home pay)?',
+            'type' => 'number',
+            'keterangan' => 'Nominal Take Home Pay',
+            'wajib' => 1,
+            'order' => 25,
+        ]);
+
+        $this->biodata->update(['gaji' => 9500000]);
+        KuesionerSyncService::syncProfileResponses($this->biodata);
+
+        $tracer = Tracer::where('biodata_id', $this->biodata->id)
+            ->where('kode_pertanyaan', 'F505')
+            ->first();
+
+        $this->assertNotNull($tracer);
+        $this->assertEquals('9500000', $tracer->answer);
+    }
+
+    /**
+     * Test input gaji dalam satuan ribuan (misal 5000) otomatis dinormalisasi menjadi 5000000.
+     */
+    public function test_gaji_input_in_thousands_standardized_to_full_nominal(): void
+    {
+        $response = $this->actingAs($this->alumniUser)->post('/alumni/profile', [
+            'nama' => 'Clara Anjelita',
+            'gaji' => '5000', // ketik dalam ribuan
+        ]);
+
+        $response->assertRedirect();
+        $this->biodata->refresh();
+
+        $this->assertEquals(5000000, $this->biodata->gaji);
+    }
+
+    /**
+     * Test sinkronisasi F11 (Jenis Perusahaan) dan F5C (Wiraswasta) ke tabel tracer.
+     */
+    public function test_f11_and_wiraswasta_f5c_syncs_to_tracer(): void
+    {
+        $qF11 = RefSubpertanyaan2021::create([
+            'kelompok' => 'F11',
+            'kode_pertanyaan' => 'F11',
+            'subpertanyaan' => 'Apa jenis perusahaan/instansi/institusi tempat Anda bekerja sekarang?',
+            'type' => 'radio',
+            'wajib' => 1,
+            'order' => 30,
+        ]);
+
+        $qF5C = RefSubpertanyaan2021::create([
+            'kelompok' => 'F5',
+            'kode_pertanyaan' => 'F5C',
+            'subpertanyaan' => 'Bila berwiraswasta, apa posisi/jabatan Anda saat ini?',
+            'type' => 'text',
+            'wajib' => 0,
+            'order' => 31,
+        ]);
+
+        $response = $this->actingAs($this->alumniUser)->post('/alumni/profile', [
+            'nama' => 'Clara Anjelita',
+            'nama_perusahaan' => 'PT Clara Inovasi Teknologi',
+            'perusahaan_jenis_perusahaan' => 'Perusahaan swasta',
+            'kategori_pekerjaan' => 'Wiraswasta',
+            'posisi_wiraswasta' => 'Chief Executive Officer',
+        ]);
+
+        $response->assertRedirect();
+        $this->biodata->refresh();
+
+        $this->assertEquals('Wiraswasta', $this->biodata->kategori_pekerjaan);
+        $this->assertEquals('Chief Executive Officer', $this->biodata->posisi_wiraswasta);
+        $this->assertEquals('Perusahaan swasta', $this->biodata->perusahaan->jenis_perusahaan);
+
+        $tracerF11 = Tracer::where('biodata_id', $this->biodata->id)->where('kode_pertanyaan', 'F11')->first();
+        $this->assertNotNull($tracerF11);
+        $this->assertEquals('Perusahaan swasta', $tracerF11->answer);
+
+        $tracerF5C = Tracer::where('biodata_id', $this->biodata->id)->where('kode_pertanyaan', 'F5C')->first();
+        $this->assertNotNull($tracerF5C);
+        $this->assertEquals('Chief Executive Officer', $tracerF5C->answer);
+    }
+}

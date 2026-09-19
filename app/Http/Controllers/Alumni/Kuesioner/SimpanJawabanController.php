@@ -10,6 +10,7 @@ use App\Models\QuestionMapping;
 use App\Models\RefSubpertanyaan2021;
 use App\Models\Tracer;
 use App\Services\Kuesioner\KuesionerSyncService;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 
 /**
@@ -36,10 +37,55 @@ class SimpanJawabanController extends Controller
     }
 
     /**
+     * Mengonversi input jawaban apa pun ke bentuk string yang bersih dan aman dari exception array-to-string.
+     *
+     * @param  mixed  $value  Nilai input (array, object, string, number, dll.)
+     * @return string Nilai string representasi jawaban
+     */
+    private function flattenToString(mixed $value): string
+    {
+        if (is_array($value)) {
+            // 1. Jika memiliki struktur radio_input (selected / pilihan & input / text)
+            if (isset($value['selected']) || isset($value['pilihan'])) {
+                $sel = $value['selected'] ?? ($value['pilihan'] ?? '');
+                $inp = $value['input'] ?? ($value['text'] ?? '');
+                if (is_scalar($sel) && trim((string) $sel) !== '') {
+                    $selStr = trim((string) $sel);
+
+                    return (is_scalar($inp) && trim((string) $inp) !== '')
+                        ? $selStr.': '.trim((string) $inp)
+                        : $selStr;
+                }
+            }
+
+            // 2. Jika merupakan array umum, ekstrak secara rekursif
+            $parts = [];
+            foreach ($value as $item) {
+                $str = $this->flattenToString($item);
+                if ($str !== '') {
+                    $parts[] = $str;
+                }
+            }
+
+            return implode(', ', array_unique($parts));
+        }
+
+        // 3. Jika skalar (string / number / float) dan bukan boolean
+        if (is_scalar($value) && ! is_bool($value)) {
+            return trim((string) $value);
+        }
+
+        return '';
+    }
+
+    /**
      * Method pemroses utama penyimpanan jawaban kuesioner alumni
+     *
+     * @return RedirectResponse
      */
     public function simpanJawabanKuesioner(Request $request)
     {
+        // 1. Validasi keberadaan profil alumni
         $pengguna = $request->user();
         $biodata = $pengguna->biodata;
 
@@ -47,11 +93,13 @@ class SimpanJawabanController extends Controller
             return redirect()->back()->with('error', 'Data biodata alumni tidak ditemukan.');
         }
 
+        // 2. Ambil data array jawaban dari request form
         $jawabanMasuk = $request->input('answers', []);
         if (empty($jawabanMasuk) || ! is_array($jawabanMasuk)) {
             return redirect()->back()->with('error', 'Tidak ada data jawaban yang dikirim.');
         }
 
+        // 3. Filter key numerik (ID subpertanyaan) dan muat model data pertanyaan dari database
         $kumpulanIdPertanyaan = array_filter(array_keys($jawabanMasuk), 'is_numeric');
 
         $subpertanyaanModels = RefSubpertanyaan2021::whereIn('id', $kumpulanIdPertanyaan)
@@ -59,12 +107,13 @@ class SimpanJawabanController extends Controller
             ->get()
             ->keyBy('id');
 
-        // Ambil mapping kolom khusus untuk tabel biodata, data_akademik, perusahaan, atasan
+        // 4. Ambil aturan pemetaan kolom khusus (QuestionMapping) untuk sinkronisasi otomatis
         $pemetaan = QuestionMapping::whereIn('table_name', ['biodata', 'biodatas', 'alumnis', 'data_akademik', 'data_akademiks', 'perusahaan', 'companies', 'atasan', 'atasans'])
             ->whereIn('question_id', $kumpulanIdPertanyaan)
             ->get()
             ->keyBy('question_id');
 
+        // 5. Penampung data update tabel profil terkait
         $dataUpdateBiodata = [];
         $dataUpdateAkademik = [];
         $dataUpdatePerusahaan = [];
@@ -101,7 +150,10 @@ class SimpanJawabanController extends Controller
                     if (is_array($jawaban)) {
                         $processedArray = [];
                         foreach ($jawaban as $item) {
-                            $textItem = (string) $item;
+                            $textItem = $this->flattenToString($item);
+                            if ($textItem === '') {
+                                continue;
+                            }
                             $isLainnya = str_contains(strtolower($textItem), 'lainnya')
                                 || str_contains(strtolower($textItem), 'tuliskan')
                                 || str_contains(strtolower($textItem), '...')
@@ -113,17 +165,25 @@ class SimpanJawabanController extends Controller
                                 $processedArray[] = $textItem;
                             }
                         }
-                        $answerJson = array_values(array_unique($processedArray));
-                        $answerText = implode(', ', $answerJson);
+                        if (! empty($processedArray)) {
+                            $answerJson = array_values(array_unique($processedArray));
+                            $answerText = implode(', ', $answerJson);
+                        }
+                    } elseif (is_scalar($jawaban) && ! is_bool($jawaban) && trim((string) $jawaban) !== '') {
+                        $textVal = trim((string) $jawaban);
+                        $answerJson = [$textVal];
+                        $answerText = $textVal;
                     }
                     break;
 
+                case 'rating_5':
                 case 'single_choice':
                 case 'radio':
                 case 'dropdown':
                 case 'searchable_select':
-                    if ($jawaban !== null && trim((string) $jawaban) !== '') {
-                        $textVal = (string) $jawaban;
+                    $textVal = $this->flattenToString($jawaban);
+
+                    if ($textVal !== '') {
                         $isLainnya = str_contains(strtolower($textVal), 'lainnya')
                             || str_contains(strtolower($textVal), 'tuliskan')
                             || str_contains(strtolower($textVal), '...')
@@ -142,12 +202,14 @@ class SimpanJawabanController extends Controller
                     if (is_array($jawaban)) {
                         $pilihan = $jawaban['pilihan'] ?? ($jawaban['selected'] ?? null);
                         $input = $jawaban['input'] ?? ($jawaban['text'] ?? null);
-                        if (! empty($pilihan)) {
-                            $answerText = ! empty($input) ? $pilihan.': '.$input : $pilihan;
+                        if (is_scalar($pilihan) && trim((string) $pilihan) !== '') {
+                            $pilihanStr = trim((string) $pilihan);
+                            $inputStr = (is_scalar($input) && trim((string) $input) !== '') ? trim((string) $input) : '';
+                            $answerText = $inputStr !== '' ? $pilihanStr.': '.$inputStr : $pilihanStr;
                             $answerJson = $jawaban;
                         }
-                    } elseif ($jawaban !== null && trim((string) $jawaban) !== '') {
-                        $answerText = (string) $jawaban;
+                    } elseif (is_scalar($jawaban) && ! is_bool($jawaban) && trim((string) $jawaban) !== '') {
+                        $answerText = trim((string) $jawaban);
                     }
                     break;
 
@@ -157,8 +219,8 @@ class SimpanJawabanController extends Controller
                     if (is_array($jawaban)) {
                         $answerJson = $jawaban;
                         $answerText = json_encode($jawaban, JSON_UNESCAPED_UNICODE);
-                    } elseif ($jawaban !== null && trim((string) $jawaban) !== '') {
-                        $answerText = (string) $jawaban;
+                    } elseif (is_scalar($jawaban) && ! is_bool($jawaban) && trim((string) $jawaban) !== '') {
+                        $answerText = trim((string) $jawaban);
                     }
                     break;
 
@@ -172,6 +234,9 @@ class SimpanJawabanController extends Controller
                         });
 
                         foreach ($jawaban as $optKey => $val) {
+                            if (is_array($val)) {
+                                continue;
+                            }
                             $numVal = is_numeric($val) ? (float) $val : 0;
                             // Jika nilai diinput ribuan (< 1.000.000 dan > 0), kalikan 1000
                             if ($numVal > 0 && $numVal < 1000000) {
@@ -192,19 +257,32 @@ class SimpanJawabanController extends Controller
                     break;
 
                 default:
-                    if ($jawaban !== null && trim((string) $jawaban) !== '') {
-                        $answerText = (string) $jawaban;
+                    $textVal = $this->flattenToString($jawaban);
+                    if ($textVal !== '') {
+                        $answerText = $textVal;
+                    }
+                    if (is_array($jawaban)) {
+                        $answerJson = $jawaban;
                     }
                     break;
             }
 
             if ($answerText === null && $answerJson === null) {
                 Tracer::where('biodata_id', $biodata->id)
-                    ->where('question_id', $subpertanyaan->id)
+                    ->where(function ($q) use ($subpertanyaan) {
+                        $q->where('question_id', $subpertanyaan->id)
+                            ->orWhere('kode_pertanyaan', $subpertanyaan->kode_pertanyaan);
+                    })
                     ->delete();
 
                 continue;
             }
+
+            // Pastikan tidak ada data duplikat dengan kode_pertanyaan yang sama sebelum updateOrCreate
+            Tracer::where('biodata_id', $biodata->id)
+                ->where('kode_pertanyaan', $subpertanyaan->kode_pertanyaan)
+                ->where('question_id', '!=', $subpertanyaan->id)
+                ->delete();
 
             Tracer::updateOrCreate(
                 [
@@ -261,17 +339,22 @@ class SimpanJawabanController extends Controller
         }
 
         if (! empty($dataUpdateAtasan)) {
+            $namaAtasan = ! empty($dataUpdateAtasan['nama']) ? $dataUpdateAtasan['nama'] : ($biodata->atasan?->nama ?? 'Atasan');
+            $emailAtasan = ! empty($dataUpdateAtasan['email']) ? $dataUpdateAtasan['email'] : ($biodata->atasan?->email ?? null);
+            $teleponAtasan = ! empty($dataUpdateAtasan['telepon']) ? $dataUpdateAtasan['telepon'] : ($biodata->atasan?->telepon ?? null);
+
             if ($biodata->atasan_id && $biodata->atasan) {
-                $biodata->atasan->update($dataUpdateAtasan);
-            } elseif (! empty($dataUpdateAtasan['nama']) || ! empty($dataUpdateAtasan['email'])) {
-                $emailAtasan = $dataUpdateAtasan['email'] ?? ('atasan_'.$biodata->nim.'@tracerstudy.ukdw.ac.id');
-                $atasan = Atasan::firstOrCreate(
-                    ['email' => $emailAtasan],
-                    [
-                        'nama' => $dataUpdateAtasan['nama'] ?? 'Atasan',
-                        'telepon' => $dataUpdateAtasan['telepon'] ?? null,
-                    ]
-                );
+                $biodata->atasan->update([
+                    'nama' => $namaAtasan,
+                    'email' => $emailAtasan,
+                    'telepon' => $teleponAtasan,
+                ]);
+            } elseif (! empty($namaAtasan) || ! empty($emailAtasan)) {
+                $atasan = Atasan::create([
+                    'nama' => $namaAtasan,
+                    'email' => $emailAtasan,
+                    'telepon' => $teleponAtasan,
+                ]);
                 $biodata->update(['atasan_id' => $atasan->id]);
             }
         }

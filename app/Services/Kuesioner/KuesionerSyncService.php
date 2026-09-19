@@ -26,22 +26,30 @@ class KuesionerSyncService
         $biodata->refresh();
         $biodata->load(['dataAkademik', 'yudisium', 'perusahaan.propinsi', 'perusahaan.kabupaten', 'atasan', 'user', 'prodi']);
 
-        $alamatPerusahaanParts = array_filter([
-            $biodata->perusahaan?->alamat,
-            $biodata->perusahaan?->kabupaten?->nama_kabupaten,
-            $biodata->perusahaan?->propinsi?->nama_provinsi,
-            $biodata->zipcode,
-        ]);
+        $isLuarNegeri = ($biodata->perusahaan?->jenis_lokasi === 'Luar Negeri');
+
+        $alamatPerusahaanParts = $isLuarNegeri
+            ? array_filter([
+                $biodata->perusahaan?->alamat,
+                $biodata->perusahaan?->negara,
+                $biodata->zipcode,
+            ])
+            : array_filter([
+                $biodata->perusahaan?->alamat,
+                $biodata->perusahaan?->kabupaten?->nama_kabupaten,
+                $biodata->perusahaan?->propinsi?->nama_provinsi,
+                $biodata->zipcode,
+            ]);
         $alamatPerusahaan = ! empty($alamatPerusahaanParts) ? implode(', ', $alamatPerusahaanParts) : null;
 
-        $tempatLahir = $biodata->dataAkademik?->tempat_lahir;
-        $tanggalLahir = $biodata->dataAkademik?->tanggal_lahir
-            ? date('d-m-Y', strtotime($biodata->dataAkademik->tanggal_lahir))
-            : null;
+        $tempatLahir = $biodata->tempat_lahir ?? $biodata->dataAkademik?->tempat_lahir;
+        $tglLahirRaw = $biodata->tanggal_lahir ?? $biodata->dataAkademik?->tanggal_lahir;
+        $tanggalLahir = $tglLahirRaw ? date('d-m-Y', strtotime($tglLahirRaw)) : null;
 
         $jenisKelamin = null;
-        if ($biodata->dataAkademik?->jenis_kelamin) {
-            $jk = strtoupper(trim($biodata->dataAkademik->jenis_kelamin));
+        $jkRaw = $biodata->jenis_kelamin ?? $biodata->dataAkademik?->jenis_kelamin;
+        if ($jkRaw) {
+            $jk = strtoupper(trim($jkRaw));
             $jenisKelamin = in_array($jk, ['L', 'LAKI-LAKI', 'PRIA']) ? 'Pria' : 'Wanita';
         }
 
@@ -50,6 +58,18 @@ class KuesionerSyncService
             : ($biodata->tahun_lulus ?? ($biodata->dataAkademik?->tahun_lulus ? (string) $biodata->dataAkademik->tahun_lulus : null));
 
         $tahunLulus = $biodata->tahun_lulus ?? ($biodata->dataAkademik?->tahun_lulus ? (string) $biodata->dataAkademik->tahun_lulus : null);
+
+        $gajiTakeHomePay = $biodata->gaji ? (string) $biodata->gaji : null;
+
+        $isWiraswasta = ($biodata->kategori_pekerjaan === 'Wiraswasta') || in_array(strtolower((string) $biodata->posisi_jabatan), ['owner', 'founder', 'wiraswasta', 'wirausaha', 'wiraswasta / wirausaha', 'owner / founder']);
+
+        $posisiJabatanPekerja = ! $isWiraswasta ? $biodata->posisi_jabatan : ($biodata->posisi_jabatan ?: 'Direksi');
+        $posisiWiraswasta = $isWiraswasta ? ($biodata->posisi_wiraswasta ?: $biodata->posisi_jabatan) : null;
+
+        $jenisPerusahaan = $biodata->perusahaan?->jenis_perusahaan;
+        if ($jenisPerusahaan === '5' || strtolower((string) $jenisPerusahaan) === 'lainnya') {
+            $jenisPerusahaan = $biodata->perusahaan?->jenis_perusahaan_lainnya ?: 'Lainnya';
+        }
 
         $profileMap = [
             'F1' => $biodata->nim,
@@ -75,10 +95,14 @@ class KuesionerSyncService
             'F510' => $alamatPerusahaan,
             'F5a1' => $biodata->perusahaan?->propinsi_id ? (string) $biodata->perusahaan->propinsi_id : null,
             'F5a2' => $biodata->perusahaan?->kabupaten_id ? (string) $biodata->perusahaan->kabupaten_id : null,
-            'F2G' => $biodata->posisi_jabatan,
-            'F5C' => $biodata->posisi_jabatan,
+            'F2G' => $posisiJabatanPekerja,
+            'F5C' => $posisiWiraswasta,
             'F2H' => $biodata->perusahaan?->skala,
             'F5D' => $biodata->perusahaan?->skala,
+            'F11' => $jenisPerusahaan,
+
+            // F505: Take Home Pay (Single Field dari Biodata Alumni)
+            'F505' => $gajiTakeHomePay,
         ];
 
         foreach ($profileMap as $code => $val) {
@@ -89,9 +113,23 @@ class KuesionerSyncService
 
             if ($val === null || trim((string) $val) === '') {
                 Tracer::where('biodata_id', $biodata->id)
-                    ->where('question_id', $question->id)
+                    ->where(function ($q) use ($question) {
+                        $q->where('question_id', $question->id)
+                            ->orWhere('kode_pertanyaan', $question->kode_pertanyaan);
+                    })
                     ->delete();
             } else {
+                $answerJson = null;
+                if ($code === 'F505') {
+                    $answerJson = ['F5051' => (string) $val];
+                }
+
+                // Hapus baris dengan kode_pertanyaan sama tetapi id pertanyaan berbeda jika ada
+                Tracer::where('biodata_id', $biodata->id)
+                    ->where('kode_pertanyaan', $question->kode_pertanyaan)
+                    ->where('question_id', '!=', $question->id)
+                    ->delete();
+
                 Tracer::updateOrCreate(
                     ['biodata_id' => $biodata->id, 'question_id' => $question->id],
                     [
@@ -100,7 +138,7 @@ class KuesionerSyncService
                         'kode_pertanyaan' => $question->kode_pertanyaan,
                         'subpertanyaan' => $question->subpertanyaan,
                         'answer' => (string) $val,
-                        'answer_json' => null,
+                        'answer_json' => $answerJson,
                         'keterangan' => $question->keterangan,
                         'tahun_lulus' => $tahunLulus,
                     ]

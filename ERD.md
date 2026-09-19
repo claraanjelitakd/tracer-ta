@@ -27,13 +27,33 @@ erDiagram
     }
 
     %% ==========================================
-    %% 2. MASTER DATA & WILAYAH
+    %% 2. MASTER DATA, FAKULTAS & WILAYAH
     %% ==========================================
+    ref_fakultas ||--o{ prodi : "menaungi (fakultas_id)"
     propinsi ||--o{ kabupaten : "memiliki (propinsi_id)"
     propinsi ||--o| ump : "memiliki standar UMP (kode_provinsi)"
+    ref_negara ||--o{ perusahaan : "lokasi internasional (negara)"
     prodi ||--o{ biodata : "memiliki alumni (prodi_id)"
-    propinsi ||--o{ biodata : "domisili alumni (provinsi_id)"
+    propinsi ||--o{ biodata : "domisili alumni (propinsi_id)"
     kabupaten ||--o{ biodata : "domisili alumni (kabupaten_id)"
+
+    ref_fakultas {
+        bigint id PK
+        string kode_fakultas UK "1, 2, 3, 4, 6, 7, 8"
+        string nama_fakultas
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    ref_negara {
+        bigint id PK
+        string nama_negara UK
+        string ibu_kota "nullable"
+        string kode_iso2 "nullable, char(2)"
+        string benua "nullable"
+        timestamp created_at
+        timestamp updated_at
+    }
 
     propinsi {
         bigint id PK
@@ -53,9 +73,9 @@ erDiagram
 
     prodi {
         bigint id PK
+        bigint fakultas_id FK "nullable, references ref_fakultas.id"
         string kode_prodi UK
         string nama_prodi
-        string jenjang "S1, S2, Profesi"
         timestamp created_at
         timestamp updated_at
     }
@@ -74,8 +94,8 @@ erDiagram
     %% 3. ENTITAS BIODATA & PROFIL ALUMNI
     %% ==========================================
     data_akademik ||--|| biodata : "sinkronisasi data (nim)"
-    biodata ||--o| yudisium : "status yudisium (nim)"
-    biodata ||--o| data_orang_tua : "kontak wali (nim)"
+    biodata ||--o| yudisium : "status yudisium (yudisium_id/nim)"
+    biodata ||--o| data_orang_tua : "kontak wali (orang_tua_id/nim)"
     perusahaan ||--o{ biodata : "tempat bekerja (perusahaan_id)"
     atasan ||--o{ biodata : "atasan langsung (atasan_id)"
 
@@ -83,22 +103,30 @@ erDiagram
         bigint id PK
         bigint user_id FK "references users.id"
         string nim UK "references data_akademik.nim"
+        bigint orang_tua_id FK "nullable"
+        bigint yudisium_id FK "nullable"
         bigint prodi_id FK "nullable"
         string kode_prodi "nullable"
         string tahun_lulus "nullable"
         string nama "nullable"
+        string tempat_lahir "nullable"
+        date tanggal_lahir "nullable"
+        string jenis_kelamin "nullable"
+        string golongan_darah "nullable"
+        string warga_negara "WNI"
         string nomor_telepon "nullable"
         string email "nullable"
         string email_pribadi "nullable"
         text alamat "nullable"
         bigint kabupaten_id FK "nullable"
-        bigint provinsi_id FK "nullable"
+        bigint propinsi_id FK "nullable"
         string kelurahan "nullable"
         string kecamatan "nullable"
         string kode_pos "nullable"
         string agama "nullable"
-        string nik "nullable"
+        string nik "nullable (read-only)"
         string no_kk "nullable"
+        string nisn "nullable"
         string no_bpjs "nullable"
         string npwp "nullable"
         string instagram_url "nullable"
@@ -110,6 +138,7 @@ erDiagram
         bigint perusahaan_id FK "nullable"
         bigint atasan_id FK "nullable"
         string posisi_jabatan "nullable"
+        unsigned_bigint gaji "nullable (Take Home Pay)"
         string jenis_pekerjaan "nullable"
         string zipcode "nullable"
         timestamp created_at
@@ -175,6 +204,8 @@ erDiagram
     perusahaan {
         bigint id PK
         string nama_perusahaan
+        string jenis_lokasi "Dalam Negeri, Luar Negeri"
+        string negara "Indonesia / nama negara"
         text alamat "nullable"
         bigint propinsi_id FK "nullable"
         bigint kabupaten_id FK "nullable"
@@ -255,7 +286,7 @@ erDiagram
 
     tracer {
         bigint id PK
-        bigint biodata_id FK "references biodata.id"
+        bigint biodata_id FK "references biodata.id, UK [biodata_id, question_id], UK [biodata_id, kode_pertanyaan]"
         bigint question_id FK "references ref_subpertanyaan2021.id"
         string nim
         string kelompok "char(3), misal: BIO, F1, F2, F17"
@@ -330,8 +361,10 @@ erDiagram
 ### A. Modul Akun & Wilayah Master
 1. **`users`**: Menyimpan kredensial autentikasi, role pengguna (`superadmin`, `admin_biro3`, `admin_prodi`, `alumni`), status wajib ubah password, dan referensi `prodi_id` untuk admin program studi.
 2. **`prodi`**: Master data program studi di lingkungan UKDW (misal: Sistem Informasi, Informatika, Teologi, Manajemen, dll.).
-3. **`propinsi`** & **`kabupaten`**: Master data batas wilayah administratif Republik Indonesia (38 Provinsi dan ratusan Kabupaten/Kota).
-4. **`ump`**: Data Upah Minimum Provinsi (UMP) tahun 2026 terhubung via foreign key `kode_provinsi` untuk evaluasi kesesuaian gaji `F505A`.
+3. **`ref_fakultas`**: Master data fakultas di UKDW yang menaungi program studi.
+4. **`ref_negara`**: Master data referensi negara seluruh dunia (193 negara, kode ISO 2, ibu kota, dan benua) dari `daftar_negara_dunia.csv` untuk perusahaan internasional dan kewarganegaraan alumni.
+5. **`propinsi`** & **`kabupaten`**: Master data batas wilayah administratif Republik Indonesia (38 Provinsi dan ratusan Kabupaten/Kota).
+6. **`ump`**: Data Upah Minimum Provinsi (UMP) tahun 2026 terhubung via foreign key `kode_provinsi` untuk evaluasi kesesuaian gaji `F505A`.
 
 ---
 

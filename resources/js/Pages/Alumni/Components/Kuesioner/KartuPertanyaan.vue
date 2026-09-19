@@ -145,11 +145,60 @@ const handleRadioOptionSelect = (qId, optId, optText = null) => {
     props.form.answers[qId].input = props.form.answers[qId].inputs[optId] ?? '';
 };
 
+// Helper format input angka nominal langsung di dalam text box
+const formatNumberWithDots = (val) => {
+    if (val === null || val === undefined || val === '') return '';
+    const clean = String(val).replace(/[^0-9]/g, '');
+    if (!clean) return '';
+    const num = Number(clean);
+    return isNaN(num) ? '' : new Intl.NumberFormat('id-ID').format(num);
+};
+
+// Handler saat alumni mengetik di kolom multiple_number
+const handleMultipleNumberInput = (qId, optCode, event) => {
+    if (!props.form.answers[qId] || typeof props.form.answers[qId] !== 'object') {
+        props.form.answers[qId] = {};
+    }
+    const rawVal = event.target.value;
+    const cleanDigits = rawVal.replace(/[^0-9]/g, '');
+    if (!cleanDigits) {
+        props.form.answers[qId][optCode] = '';
+        event.target.value = '';
+        return;
+    }
+    let num = Number(cleanDigits);
+
+    // Jika user mengetik angka satuan kecil (contoh: 5), langsung muncul format ribuan 5.000 di dalam text box dan bisa diedit
+    if (num > 0 && num < 1000 && !rawVal.includes('000')) {
+        num = num * 1000;
+    }
+
+    props.form.answers[qId][optCode] = num;
+    event.target.value = new Intl.NumberFormat('id-ID').format(num);
+};
+
 // Helper upload berkas / file
 const handleFileUpload = (qId, event) => {
     const file = event.target.files?.[0];
     if (file) {
         props.form.answers[qId] = file.name;
+    }
+};
+
+// Helper multiple_choice / checkbox
+const isCheckboxChecked = (qId, optionText) => {
+    return Array.isArray(props.form.answers[qId]) && props.form.answers[qId].includes(optionText);
+};
+
+const toggleCheckboxOption = (qId, optionText) => {
+    if (!Array.isArray(props.form.answers[qId])) {
+        props.form.answers[qId] = [];
+    }
+    const idx = props.form.answers[qId].indexOf(optionText);
+    if (idx > -1) {
+        props.form.answers[qId].splice(idx, 1);
+    } else {
+        props.form.answers[qId].push(optionText);
     }
 };
 </script>
@@ -415,13 +464,14 @@ const handleFileUpload = (qId, event) => {
                     <input 
                         type="checkbox" 
                         :value="opt.option_text" 
-                        v-model="form.answers[subpertanyaan.id]" 
+                        :checked="isCheckboxChecked(subpertanyaan.id, opt.option_text)"
+                        @change="toggleCheckboxOption(subpertanyaan.id, opt.option_text)"
                         class="sr-only"
                     >
                     <div 
                         class="h-full p-3.5 sm:p-5 rounded-xl sm:rounded-2xl font-bold text-sm sm:text-lg transition-all duration-200 flex flex-col items-center justify-center text-center shadow-xs"
                         :class="[
-                            Array.isArray(form.answers[subpertanyaan.id]) && form.answers[subpertanyaan.id].includes(opt.option_text)
+                            isCheckboxChecked(subpertanyaan.id, opt.option_text)
                                 ? 'bg-[#005B3C] text-white shadow-md hover:bg-[#00482f]' 
                                 : 'bg-gray-50/90 text-gray-700 hover:bg-emerald-50 hover:text-[#005B3C] hover:shadow-sm'
                         ]"
@@ -431,12 +481,12 @@ const handleFileUpload = (qId, event) => {
                             <input 
                                 type="text"
                                 v-model="form.answers[subpertanyaan.id + '_custom']"
-                                @click.stop="() => { if (!Array.isArray(form.answers[subpertanyaan.id])) form.answers[subpertanyaan.id] = []; if (!form.answers[subpertanyaan.id].includes(opt.option_text)) form.answers[subpertanyaan.id].push(opt.option_text); }"
-                                @focus="() => { if (!Array.isArray(form.answers[subpertanyaan.id])) form.answers[subpertanyaan.id] = []; if (!form.answers[subpertanyaan.id].includes(opt.option_text)) form.answers[subpertanyaan.id].push(opt.option_text); }"
+                                @click.stop="() => { if (!isCheckboxChecked(subpertanyaan.id, opt.option_text)) toggleCheckboxOption(subpertanyaan.id, opt.option_text); }"
+                                @focus="() => { if (!isCheckboxChecked(subpertanyaan.id, opt.option_text)) toggleCheckboxOption(subpertanyaan.id, opt.option_text); }"
                                 placeholder="..."
                                 class="w-14 sm:w-20 py-0.5 sm:py-1.5 px-1.5 sm:px-2 text-center font-black rounded-lg sm:rounded-xl text-xs sm:text-base font-mono shadow-xs focus:outline-none transition-all"
                                 :class="[
-                                    Array.isArray(form.answers[subpertanyaan.id]) && form.answers[subpertanyaan.id].includes(opt.option_text)
+                                    isCheckboxChecked(subpertanyaan.id, opt.option_text)
                                         ? 'bg-white text-gray-900 ring-2 ring-[#FFD700] shadow-sm'
                                         : 'bg-white text-gray-800 border border-gray-300 focus:ring-2 focus:ring-[#005B3C]'
                                 ]"
@@ -446,7 +496,7 @@ const handleFileUpload = (qId, event) => {
                         <span v-else>{{ opt.option_text }}</span>
 
                         <div 
-                            v-if="!getSplitDotsText(opt.option_text).hasDots && Array.isArray(form.answers[subpertanyaan.id]) && form.answers[subpertanyaan.id].includes(opt.option_text) && (opt.option_text.toLowerCase().includes('lainnya') || opt.option_text.toLowerCase().includes('tuliskan') || opt.option_text.includes('...') || opt.option_text.includes('…'))" 
+                            v-if="!getSplitDotsText(opt.option_text).hasDots && isCheckboxChecked(subpertanyaan.id, opt.option_text) && (opt.option_text.toLowerCase().includes('lainnya') || opt.option_text.toLowerCase().includes('tuliskan') || opt.option_text.includes('...') || opt.option_text.includes('…'))" 
                             class="w-full mt-2.5 sm:mt-4" 
                             @click.stop
                         >
@@ -529,42 +579,42 @@ const handleFileUpload = (qId, event) => {
             </div>
         </div>
 
-        <!-- TIPE INPUT: Multiple Number (Take Home Pay Gaji F13) -->
+        <!-- TIPE INPUT: Multiple Number (Take Home Pay Gaji F13 / F505) -->
         <div v-else-if="subpertanyaan.type === 'multiple_number'" class="space-y-4 sm:space-y-6">
-            <div class="p-3 sm:p-4 rounded-xl sm:rounded-2xl bg-amber-50/80 border border-amber-200/80 text-amber-900 flex items-start gap-2.5 sm:gap-3 text-xs sm:text-sm">
-                <span class="text-base sm:text-lg">💡</span>
+            <div class="p-3.5 sm:p-4 rounded-xl sm:rounded-2xl bg-emerald-50/90 border border-emerald-200/80 text-emerald-950 flex items-start gap-3 text-xs sm:text-sm">
                 <div>
-                    <p class="font-bold">Panduan Pengisian Penghasilan (Satuan Ribuan):</p>
-                    <p class="text-[11px] sm:text-xs text-amber-800 mt-0.5">
-                        Ketik dalam ribuan rupiah. Contoh: Jika gaji <strong>Rp 5.000.000</strong>, cukup ketik <strong>5000</strong> di kolom yang sesuai.
+                    <p class="font-bold text-emerald-900">Petunjuk Pengisian Penghasilan (Take Home Pay):</p>
+                    <p class="text-[11px] sm:text-xs text-emerald-800 mt-1 leading-relaxed">
+                        Ketik nominal pada kolom di bawah. Anda dapat mengetik dalam format ribuan (misal: ketik <strong>5</strong> akan otomatis menjadi <strong>5.000</strong>) atau mengetik nominal penuh (misal: <strong>5.000.000</strong>). Format titik ribuan tertata otomatis dan angka <strong>000</strong> dapat diedit langsung sesuai nominal sebenarnya.
                     </p>
                 </div>
             </div>
 
-            <div class="grid grid-cols-1 gap-2.5 sm:gap-4">
+            <div class="grid grid-cols-1 gap-3 sm:gap-4">
                 <div 
                     v-for="opt in (subpertanyaan.detils || subpertanyaan.options)" 
                     :key="opt.id"
-                    class="flex flex-col sm:flex-row sm:items-center justify-between p-3.5 sm:p-5 bg-gray-50/90 rounded-xl sm:rounded-2xl gap-2 sm:gap-4 shadow-xs"
+                    class="flex flex-col md:flex-row md:items-center justify-between p-3.5 sm:p-5 bg-gray-50/90 rounded-xl sm:rounded-2xl gap-3 sm:gap-4 shadow-xs"
                 >
                     <div class="flex-1">
                         <div class="font-bold text-gray-800 text-sm sm:text-base">{{ opt.option_text }}</div>
-                        <div v-if="form.answers[subpertanyaan.id]?.[opt.kode_opsi || opt.code]" class="text-xs font-bold text-[#005B3C] mt-0.5">
-                            Terbaca: {{ getMultipleNumberItemPreview(form.answers[subpertanyaan.id]?.[opt.kode_opsi || opt.code]) }}
+                        <div v-if="form.answers[subpertanyaan.id]?.[opt.kode_opsi || opt.code || opt.id]" class="text-xs font-bold text-[#005B3C] mt-1">
+                            Terbaca: {{ getMultipleNumberItemPreview(form.answers[subpertanyaan.id]?.[opt.kode_opsi || opt.code || opt.id]) }} / bulan
                         </div>
                     </div>
-                    <div class="w-full sm:w-72">
+
+                    <div class="w-full md:w-80">
+                        <!-- Input Box Terformat Langsung -->
                         <div class="relative w-full flex items-center rounded-lg sm:rounded-xl bg-white border border-gray-200 shadow-xs focus-within:ring-2 focus-within:ring-[#005B3C] focus-within:border-transparent transition-all overflow-hidden">
-                            <span class="pl-3 pr-1 font-bold text-gray-400 select-none text-sm sm:text-base">Rp</span>
+                            <span class="pl-3.5 pr-1 font-bold text-gray-400 select-none text-sm sm:text-base">Rp</span>
                             <input 
-                                type="number" 
-                                v-model="form.answers[subpertanyaan.id][opt.kode_opsi || opt.code]"
-                                @keydown="filterNumberInput"
-                                min="0"
+                                type="text" 
+                                :value="formatNumberWithDots(form.answers[subpertanyaan.id]?.[opt.kode_opsi || opt.code || opt.id])"
+                                @input="handleMultipleNumberInput(subpertanyaan.id, opt.kode_opsi || opt.code || opt.id, $event)"
                                 placeholder="0"
-                                class="w-full py-2 sm:py-2.5 px-2 bg-transparent font-mono font-bold border-0 focus:ring-0 text-right text-base sm:text-lg text-gray-900 placeholder-gray-300"
+                                class="w-full py-2.5 sm:py-3 px-2 bg-transparent font-mono font-black border-0 focus:ring-0 text-right text-base sm:text-lg text-gray-900 placeholder-gray-300 tracking-wide"
                             >
-                            <span class="pr-3 pl-1.5 font-mono font-bold text-gray-500 select-none text-sm sm:text-base bg-gray-100/80 py-2 sm:py-2.5 border-l border-gray-200">.000</span>
+                            <span class="pr-3.5 pl-1 text-xs font-semibold text-gray-400 select-none">/ bln</span>
                         </div>
                     </div>
                 </div>

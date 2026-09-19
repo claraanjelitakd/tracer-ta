@@ -15,11 +15,11 @@ import { Head, useForm, usePage, Link } from '@inertiajs/vue3';
 import { computed, ref, watch } from 'vue';
 import Swal from 'sweetalert2';
 
-// Mengimpor 4 Komponen Anak (Child Components) yang dipecah agar kodenya rapi:
 import FormPribadi from './Components/FormPribadi.vue';
 import FormAkademik from './Components/FormAkademik.vue';
 import FormOrangTua from './Components/FormOrangTua.vue';
 import FormKarier from './Components/FormKarier.vue';
+import Navbar from '../Components/Navbar.vue';
 
 /**
  * ====================================================================
@@ -36,6 +36,7 @@ const props = defineProps({
     formData: Object,
     provinces: Array,
     kabupatens: Array,
+    negaras: Array,
     companies: Array,
 });
 
@@ -106,7 +107,7 @@ watch(activeTab, (newTab) => {
  * - Dijalankan saat tombol hijau "Simpan Perubahan" diklik (@click="submit")
  * - Mengirim seluruh isi objek 'form' via POST ke URL '/alumni/profile'
  * - Ditangkap di Backend oleh:
- *   👉 App\Http\Controllers\Alumni\Profil\SimpanProfilController.php (method simpanProfil)
+ *   App\Http\Controllers\Alumni\Profil\SimpanProfilController.php (method simpanProfil)
  */
 const submit = () => {
     form.post('/alumni/profile', {
@@ -148,24 +149,8 @@ const submit = () => {
     <Head title="Profil Alumni - Tracer Study" />
 
     <div class="min-h-screen bg-[#f8fafc] pb-24">
-        <!-- Navbar Minimal -->
-        <nav class="bg-white/80 backdrop-blur-lg shadow-sm border-b border-gray-100 sticky top-0 z-50">
-            <div class="w-full px-4 sm:px-6 lg:px-8 max-w-[1400px] mx-auto">
-                <div class="flex justify-between h-20">
-                    <div class="flex items-center space-x-4">
-                        <Link href="/alumni/dashboard" class="text-gray-600 hover:text-[#005B3C] p-2 rounded-full transition-colors flex items-center font-medium">
-                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
-                            Kembali
-                        </Link>
-                    </div>
-                    <div class="flex items-center space-x-6">
-                        <div class="hidden sm:flex items-center">
-                            <span class="text-gray-900 font-bold text-sm">{{ user.name }}</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </nav>
+        <!-- Navigasi Utama Terpadu Alumni -->
+        <Navbar :user="user" />
 
         <!-- Header Profil -->
         <header class="bg-gradient-to-r from-[#005B3C] to-[#007b55] pt-12 pb-24 relative overflow-hidden">
@@ -195,33 +180,33 @@ const submit = () => {
                     <button type="button" @click="activeTab = 'pribadi'" :class="activeTab === 'pribadi' ? 'border-[#005B3C] text-[#005B3C]' : 'border-transparent text-gray-400 hover:text-gray-700'" class="whitespace-nowrap py-5 px-8 border-b-2 font-bold text-sm transition-all flex-1 text-center">
                         Identitas & Alamat
                     </button>
+                    <button type="button" @click="activeTab = 'karier'" :class="activeTab === 'karier' ? 'border-[#005B3C] text-[#005B3C]' : 'border-transparent text-gray-400 hover:text-gray-700'" class="whitespace-nowrap py-5 px-8 border-b-2 font-bold text-sm transition-all flex-1 text-center">
+                        Karier & Jejaring
+                    </button>
                     <button type="button" @click="activeTab = 'akademik'" :class="activeTab === 'akademik' ? 'border-[#005B3C] text-[#005B3C]' : 'border-transparent text-gray-400 hover:text-gray-700'" class="whitespace-nowrap py-5 px-8 border-b-2 font-bold text-sm transition-all flex-1 text-center">
                         Akademik & Yudisium
                     </button>
                     <button type="button" @click="activeTab = 'orangtua'" :class="activeTab === 'orangtua' ? 'border-[#005B3C] text-[#005B3C]' : 'border-transparent text-gray-400 hover:text-gray-700'" class="whitespace-nowrap py-5 px-8 border-b-2 font-bold text-sm transition-all flex-1 text-center">
                         Data Orang Tua
                     </button>
-                    <button type="button" @click="activeTab = 'karier'" :class="activeTab === 'karier' ? 'border-[#005B3C] text-[#005B3C]' : 'border-transparent text-gray-400 hover:text-gray-700'" class="whitespace-nowrap py-5 px-8 border-b-2 font-bold text-sm transition-all flex-1 text-center">
-                        Karier & Jejaring
-                    </button>
                 </div>
 
                 <!-- Tab Contents -->
                 <div class="p-8 md:p-12 min-h-[500px]">
                     <div v-show="activeTab === 'pribadi'">
-                        <FormPribadi :form="form" :provinces="provinces" :kabupatens="kabupatens" />
+                        <FormPribadi :form="form" :provinces="provinces" :kabupatens="kabupatens" :negaras="negaras" />
                     </div>
-                    
+
+                    <div v-show="activeTab === 'karier'">
+                        <FormKarier :form="form" :provinces="provinces" :kabupatens="kabupatens" :negaras="negaras" :companies="companies" :alumniData="alumniData" />
+                    </div>
+
                     <div v-show="activeTab === 'akademik'">
                         <FormAkademik :form="form" />
                     </div>
-                    
+
                     <div v-show="activeTab === 'orangtua'">
                         <FormOrangTua :form="form" :provinces="provinces" :kabupatens="kabupatens" />
-                    </div>
-                    
-                    <div v-show="activeTab === 'karier'">
-                        <FormKarier :form="form" :provinces="provinces" :kabupatens="kabupatens" :companies="companies" :alumniData="alumniData" />
                     </div>
                 </div>
 

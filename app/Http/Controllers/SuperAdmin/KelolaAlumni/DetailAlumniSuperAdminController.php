@@ -19,6 +19,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /**
  * DetailAlumniSuperAdminController
@@ -427,7 +428,9 @@ class DetailAlumniSuperAdminController extends Controller
             'npwp' => ! empty($data['npwp']) ? $data['npwp'] : null,
             'perusahaan_id' => $perusahaanId,
             'atasan_id' => $atasanId,
+            'kategori_pekerjaan' => ! empty($data['kategori_pekerjaan']) ? $data['kategori_pekerjaan'] : null,
             'posisi_jabatan' => ! empty($data['posisi_jabatan']) ? $data['posisi_jabatan'] : null,
+            'posisi_wiraswasta' => ! empty($data['posisi_wiraswasta']) ? $data['posisi_wiraswasta'] : null,
             'jenis_pekerjaan' => ! empty($data['jenis_pekerjaan']) ? $data['jenis_pekerjaan'] : null,
             'expert' => ! empty($data['expert']) ? $data['expert'] : null,
             'minat' => ! empty($data['minat']) ? $data['minat'] : null,
@@ -444,5 +447,157 @@ class DetailAlumniSuperAdminController extends Controller
         KuesionerSyncService::syncProfileResponses($biodata);
 
         return redirect()->back()->with('success', 'Data profil mahasiswa berhasil diperbarui oleh Super Admin.');
+    }
+
+    /**
+     * Download Excel / CSV Semua Butir Pertanyaan & Jawaban per Alumni
+     *
+     * @param  int|string  $id
+     * @return StreamedResponse
+     */
+    public function exportExcel($id)
+    {
+        $alumni = Biodata::with([
+            'dataAkademik.yudisium',
+            'dataAkademik.orangTua',
+            'yudisium',
+            'orangTua',
+            'perusahaan.propinsi',
+            'perusahaan.kabupaten',
+            'atasan',
+            'user',
+            'prodi',
+        ])->findOrFail($id);
+
+        KuesionerSyncService::syncProfileResponses($alumni);
+
+        // Ambil seluruh jawaban kuesioner umum
+        $savedResponses = Tracer::where('biodata_id', $alumni->id)
+            ->get()
+            ->keyBy('question_id');
+
+        $kuesioner = Kuesioner::where('is_active', true)
+            ->with(['sections' => function ($secQuery) {
+                $secQuery->orderBy('order', 'asc')
+                    ->with(['subpertanyaans' => function ($qQuery) {
+                        $qQuery->orderBy('order', 'asc')
+                            ->with('detils');
+                    }]);
+            }])
+            ->first();
+
+        // Kuesioner Prodi
+        $savedProdiResponses = ProdiResponse::where('biodata_id', $alumni->id)
+            ->get()
+            ->keyBy('prodi_question_id');
+
+        $prodiSections = $alumni->prodi_id
+            ? ProdiQuestionSection::where('prodi_id', $alumni->prodi_id)
+                ->with(['questions' => function ($qQuery) {
+                    $qQuery->orderBy('order', 'asc')->with('options');
+                }])
+                ->orderBy('order', 'asc')
+                ->get()
+            : collect([]);
+
+        $nim = preg_replace('/[^a-zA-Z0-9_-]/', '_', (string) $alumni->nim);
+        $nama = preg_replace('/[^a-zA-Z0-9_-]/', '_', (string) ($alumni->nama ?? 'Alumni'));
+        $filename = "Jawaban_Kuesioner_{$nim}_{$nama}.csv";
+
+        return response()->streamDownload(function () use ($kuesioner, $savedResponses, $prodiSections, $savedProdiResponses) {
+            $handle = fopen('php://output', 'w');
+
+            // Write UTF-8 BOM agar Excel Windows membuka dengan rapi tanpa masalah encoding karakter
+            fprintf($handle, chr(0xEF).chr(0xBB).chr(0xBF));
+
+            // Header Kolom
+            fputcsv($handle, [
+                'No',
+                'Kategori / Section',
+                'Kode Pertanyaan',
+                'Pertanyaan',
+                'Tipe Pertanyaan',
+                'Status Wajib',
+                'Status Jawaban',
+                'Jawaban Alumni',
+            ]);
+
+            $no = 1;
+
+            // 1. Kuesioner Umum Tracer Study Universitas
+            if ($kuesioner) {
+                foreach ($kuesioner->sections as $section) {
+                    $sectionName = $section->section ?: 'Bagian Kuesioner';
+                    foreach ($section->subpertanyaans as $sub) {
+                        $resp = $savedResponses->get($sub->id);
+                        $isMandatory = KelengkapanTracerService::isMandatoryQuestion($sub->kode_pertanyaan);
+
+                        $answerText = '';
+                        $status = 'Belum Dijawab';
+
+                        if ($resp) {
+                            if (! empty($resp->answer_text) && trim((string) $resp->answer_text) !== '') {
+                                $answerText = (string) $resp->answer_text;
+                                $status = 'Terjawab';
+                            } elseif (is_array($resp->answer_json) && count($resp->answer_json) > 0) {
+                                $answerText = implode(', ', $resp->answer_json);
+                                $status = 'Terjawab';
+                            }
+                        }
+
+                        fputcsv($handle, [
+                            $no++,
+                            $sectionName,
+                            $sub->kode_pertanyaan,
+                            $sub->subpertanyaan,
+                            $sub->type ?: 'text',
+                            $isMandatory ? 'Wajib' : 'Opsional',
+                            $status,
+                            $answerText,
+                        ]);
+                    }
+                }
+            }
+
+            // 2. Kuesioner Khusus Program Studi
+            if ($prodiSections->isNotEmpty()) {
+                foreach ($prodiSections as $pSection) {
+                    $pSectionTitle = 'Kuesioner Prodi: '.($pSection->title ?: 'Section');
+                    foreach ($pSection->questions as $pQuestion) {
+                        $pResp = $savedProdiResponses->get($pQuestion->id);
+                        $pMandatory = (bool) $pQuestion->is_required;
+
+                        $answerText = '';
+                        $status = 'Belum Dijawab';
+
+                        if ($pResp) {
+                            if (! empty($pResp->answer_text) && trim((string) $pResp->answer_text) !== '') {
+                                $answerText = (string) $pResp->answer_text;
+                                $status = 'Terjawab';
+                            } elseif (is_array($pResp->answer_json) && count($pResp->answer_json) > 0) {
+                                $answerText = implode(', ', $pResp->answer_json);
+                                $status = 'Terjawab';
+                            }
+                        }
+
+                        fputcsv($handle, [
+                            $no++,
+                            $pSectionTitle,
+                            $pQuestion->code ?: '-',
+                            $pQuestion->question_text,
+                            $pQuestion->type ?: 'text',
+                            $pMandatory ? 'Wajib' : 'Opsional',
+                            $status,
+                            $answerText,
+                        ]);
+                    }
+                }
+            }
+
+            fclose($handle);
+        }, $filename, [
+            'Content-Type' => 'text/csv; charset=UTF-8',
+            'Content-Disposition' => "attachment; filename=\"{$filename}\"",
+        ]);
     }
 }

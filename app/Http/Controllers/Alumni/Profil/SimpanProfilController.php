@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Atasan;
 use App\Models\DataOrangTua;
 use App\Models\Perusahaan;
+use App\Models\Yudisium;
 use App\Services\Kuesioner\KuesionerSyncService;
 use Illuminate\Http\Request;
 
@@ -28,10 +29,7 @@ class SimpanProfilController extends Controller
 
         $dataTervalidasi = $request->all();
 
-        // 1. Data Akademik & Data Yudisium bersifat data induk (Read-Only)
-        // dan tidak dimodifikasi melalui form tracer alumni.
-
-        // 2. Simpan Data Orang Tua (Simpan null jika field dikosongkan)
+        // 1. Simpan Data Orang Tua (Simpan null jika field dikosongkan)
         $dataOrangTua = [
             'nama_orang_tua' => ! empty($dataTervalidasi['nama_orang_tua']) ? $dataTervalidasi['nama_orang_tua'] : null,
             'pekerjaan' => ! empty($dataTervalidasi['pekerjaan_orang_tua']) ? $dataTervalidasi['pekerjaan_orang_tua'] : null,
@@ -42,57 +40,133 @@ class SimpanProfilController extends Controller
             'kode_pos' => ! empty($dataTervalidasi['kode_pos_orang_tua']) ? $dataTervalidasi['kode_pos_orang_tua'] : null,
             'nomor_telepon' => ! empty($dataTervalidasi['nomor_telepon_orang_tua']) ? $dataTervalidasi['nomor_telepon_orang_tua'] : null,
         ];
-        DataOrangTua::updateOrCreate(
+        $orangTuaModel = DataOrangTua::updateOrCreate(
             ['nim' => $biodata->nim],
             $dataOrangTua
         );
 
+        // Cari relasi Yudisium berdasarkan NIM jika belum terhubung
+        $yudisiumModel = Yudisium::where('nim', $biodata->nim)->first();
+
         // =========================================================================================
-        // 3. TANGANI PERUSAHAAN
+        // 2. TANGANI PERUSAHAAN (DALAM NEGERI VS LUAR NEGERI)
         // =========================================================================================
         $idPerusahaan = null;
 
         // Cek apakah alumni mengisi nama perusahaan pada FormKarier
         if (! empty($dataTervalidasi['nama_perusahaan'])) {
+            $jenisLokasi = ! empty($dataTervalidasi['perusahaan_jenis_lokasi']) ? $dataTervalidasi['perusahaan_jenis_lokasi'] : (! empty($dataTervalidasi['company_jenis_lokasi']) ? $dataTervalidasi['company_jenis_lokasi'] : 'Dalam Negeri');
+            $rawNegara = ! empty($dataTervalidasi['perusahaan_negara']) ? $dataTervalidasi['perusahaan_negara'] : (! empty($dataTervalidasi['company_negara']) ? $dataTervalidasi['company_negara'] : null);
+            $negara = 'Indonesia';
+            if ($jenisLokasi === 'Luar Negeri') {
+                $negara = ($rawNegara && strtolower((string) $rawNegara) !== 'indonesia') ? $rawNegara : 'Singapura';
+            }
+
+            $propinsiId = $jenisLokasi === 'Luar Negeri'
+                ? null
+                : (! empty($dataTervalidasi['perusahaan_propinsi_id']) ? $dataTervalidasi['perusahaan_propinsi_id'] : (! empty($dataTervalidasi['company_province_id']) ? $dataTervalidasi['company_province_id'] : null));
+
+            $kabupatenId = $jenisLokasi === 'Luar Negeri'
+                ? null
+                : (! empty($dataTervalidasi['perusahaan_kabupaten_id']) ? $dataTervalidasi['perusahaan_kabupaten_id'] : (! empty($dataTervalidasi['company_kabupaten_id']) ? $dataTervalidasi['company_kabupaten_id'] : null));
+
+            $jenisPerusahaan = ! empty($dataTervalidasi['perusahaan_jenis_perusahaan']) ? $dataTervalidasi['perusahaan_jenis_perusahaan'] : (! empty($dataTervalidasi['company_jenis_perusahaan']) ? $dataTervalidasi['company_jenis_perusahaan'] : null);
+            $jenisPerusahaanLainnya = ! empty($dataTervalidasi['perusahaan_jenis_perusahaan_lainnya']) ? $dataTervalidasi['perusahaan_jenis_perusahaan_lainnya'] : (! empty($dataTervalidasi['company_jenis_perusahaan_lainnya']) ? $dataTervalidasi['company_jenis_perusahaan_lainnya'] : null);
+
             $perusahaan = Perusahaan::firstOrCreate(
                 ['nama_perusahaan' => $dataTervalidasi['nama_perusahaan']],
                 [
-                    'propinsi_id' => $dataTervalidasi['perusahaan_propinsi_id'] ?? ($dataTervalidasi['company_province_id'] ?? null),
-                    'kabupaten_id' => $dataTervalidasi['perusahaan_kabupaten_id'] ?? ($dataTervalidasi['company_kabupaten_id'] ?? null),
+                    'propinsi_id' => $propinsiId,
+                    'kabupaten_id' => $kabupatenId,
                     'alamat' => $dataTervalidasi['perusahaan_alamat'] ?? ($dataTervalidasi['company_alamat'] ?? null),
                     'skala' => $dataTervalidasi['perusahaan_skala'] ?? ($dataTervalidasi['company_skala'] ?? null),
+                    'jenis_perusahaan' => $jenisPerusahaan,
+                    'jenis_perusahaan_lainnya' => $jenisPerusahaanLainnya,
+                    'jenis_lokasi' => $jenisLokasi,
+                    'negara' => $negara,
                 ]
             );
             $perusahaan->update([
-                'propinsi_id' => ! empty($dataTervalidasi['perusahaan_propinsi_id']) ? $dataTervalidasi['perusahaan_propinsi_id'] : (! empty($dataTervalidasi['company_province_id']) ? $dataTervalidasi['company_province_id'] : null),
-                'kabupaten_id' => ! empty($dataTervalidasi['perusahaan_kabupaten_id']) ? $dataTervalidasi['perusahaan_kabupaten_id'] : (! empty($dataTervalidasi['company_kabupaten_id']) ? $dataTervalidasi['company_kabupaten_id'] : null),
+                'propinsi_id' => $propinsiId,
+                'kabupaten_id' => $kabupatenId,
                 'alamat' => ! empty($dataTervalidasi['perusahaan_alamat']) ? $dataTervalidasi['perusahaan_alamat'] : (! empty($dataTervalidasi['company_alamat']) ? $dataTervalidasi['company_alamat'] : null),
                 'skala' => ! empty($dataTervalidasi['perusahaan_skala']) ? $dataTervalidasi['perusahaan_skala'] : (! empty($dataTervalidasi['company_skala']) ? $dataTervalidasi['company_skala'] : null),
+                'jenis_perusahaan' => $jenisPerusahaan,
+                'jenis_perusahaan_lainnya' => $jenisPerusahaanLainnya,
+                'jenis_lokasi' => $jenisLokasi,
+                'negara' => $negara,
             ]);
             $idPerusahaan = $perusahaan->id;
         }
 
-        // 4. Tangani Data Atasan (Supervisor)
+        // =========================================================================================
+        // 3. TANGANI DATA ATASAN (SUPERVISOR / AUTO-FILL OWNER)
+        // =========================================================================================
         $idAtasan = null;
-        if (! empty($dataTervalidasi['nama_atasan'])) {
-            $atasan = ! empty($biodata->atasan_id)
-                ? Atasan::find($biodata->atasan_id)
-                : null;
+        $kategoriPekerjaan = ! empty($dataTervalidasi['kategori_pekerjaan']) ? $dataTervalidasi['kategori_pekerjaan'] : null;
+        $posisiJabatan = ! empty($dataTervalidasi['posisi_jabatan']) ? $dataTervalidasi['posisi_jabatan'] : null;
+        $posisiWiraswasta = ! empty($dataTervalidasi['posisi_wiraswasta']) ? $dataTervalidasi['posisi_wiraswasta'] : null;
+        if ($posisiWiraswasta === 'Lainnya' && ! empty($dataTervalidasi['posisi_wiraswasta_lainnya'])) {
+            $posisiWiraswasta = $dataTervalidasi['posisi_wiraswasta_lainnya'];
+        }
 
-            if ($atasan) {
-                $atasan->update([
-                    'nama' => $dataTervalidasi['nama_atasan'],
-                    'email' => ! empty($dataTervalidasi['email_atasan']) ? $dataTervalidasi['email_atasan'] : null,
-                    'telepon' => ! empty($dataTervalidasi['telepon_atasan']) ? $dataTervalidasi['telepon_atasan'] : null,
+        $isOwnerOrFounder = ($kategoriPekerjaan === 'Wiraswasta') || ($posisiJabatan && in_array(strtolower((string) $posisiJabatan), [
+            'owner',
+            'founder',
+            'wiraswasta',
+            'wirausaha',
+            'wiraswasta / wirausaha',
+            'owner / founder',
+        ]));
+
+        $namaAtasan = ! empty($dataTervalidasi['nama_atasan']) ? $dataTervalidasi['nama_atasan'] : null;
+        $emailAtasan = ! empty($dataTervalidasi['email_atasan']) ? $dataTervalidasi['email_atasan'] : null;
+        $teleponAtasan = ! empty($dataTervalidasi['telepon_atasan']) ? $dataTervalidasi['telepon_atasan'] : null;
+
+        // Jika alumni adalah Owner/Founder/Wiraswasta, otomatis isi data atasan dengan data diri alumni
+        if ($isOwnerOrFounder) {
+            $namaAtasan = $namaAtasan ?: ($dataTervalidasi['nama'] ?? $biodata->nama);
+            $emailAtasan = $emailAtasan ?: ($dataTervalidasi['email_pribadi'] ?? ($biodata->email_pribadi ?? $biodata->email));
+            $teleponAtasan = $teleponAtasan ?: ($dataTervalidasi['nomor_telepon'] ?? $biodata->nomor_telepon);
+        }
+
+        if (! empty($namaAtasan) || ! empty($emailAtasan)) {
+            if ($biodata->atasan_id && $biodata->atasan) {
+                $biodata->atasan->update([
+                    'nama' => $namaAtasan ?: $biodata->atasan->nama,
+                    'email' => $emailAtasan,
+                    'telepon' => $teleponAtasan,
                 ]);
+                $idAtasan = $biodata->atasan->id;
             } else {
                 $atasan = Atasan::create([
-                    'nama' => $dataTervalidasi['nama_atasan'],
-                    'email' => ! empty($dataTervalidasi['email_atasan']) ? $dataTervalidasi['email_atasan'] : null,
-                    'telepon' => ! empty($dataTervalidasi['telepon_atasan']) ? $dataTervalidasi['telepon_atasan'] : null,
+                    'nama' => $namaAtasan ?: 'Atasan',
+                    'email' => $emailAtasan,
+                    'telepon' => $teleponAtasan,
                 ]);
+                $idAtasan = $atasan->id;
             }
-            $idAtasan = $atasan->id;
+        }
+
+        // =========================================================================================
+        // 4. ATURAN NIK: TIDAK DAPAT DIUBAH ALUMNI JIKA SUDAH ADA
+        // =========================================================================================
+        $nikPermanen = ! empty($biodata->nik)
+            ? $biodata->nik
+            : (! empty($dataTervalidasi['nik']) ? $dataTervalidasi['nik'] : null);
+
+        // Gaji / Take Home Pay (bersihkan karakter non-digit dan standarisasi ke nominal Rupiah penuh)
+        $gajiNominal = null;
+        if (isset($dataTervalidasi['gaji']) && $dataTervalidasi['gaji'] !== '') {
+            $cleanGaji = preg_replace('/[^0-9]/', '', (string) $dataTervalidasi['gaji']);
+            if ($cleanGaji !== '') {
+                $gajiInt = (int) $cleanGaji;
+                // Jika alumni menginput dalam satuan ribuan (contoh: 5000 untuk Rp 5.000.000)
+                if ($gajiInt > 0 && $gajiInt < 1000000) {
+                    $gajiInt = $gajiInt * 1000;
+                }
+                $gajiNominal = $gajiInt;
+            }
         }
 
         // =========================================================================================
@@ -100,6 +174,11 @@ class SimpanProfilController extends Controller
         // =========================================================================================
         $biodata->update([
             'nama' => ! empty($dataTervalidasi['nama']) ? $dataTervalidasi['nama'] : $biodata->nama,
+            'tempat_lahir' => ! empty($dataTervalidasi['tempat_lahir']) ? $dataTervalidasi['tempat_lahir'] : null,
+            'tanggal_lahir' => ! empty($dataTervalidasi['tanggal_lahir']) ? $dataTervalidasi['tanggal_lahir'] : null,
+            'jenis_kelamin' => ! empty($dataTervalidasi['jenis_kelamin']) ? $dataTervalidasi['jenis_kelamin'] : null,
+            'golongan_darah' => ! empty($dataTervalidasi['golongan_darah']) ? $dataTervalidasi['golongan_darah'] : null,
+            'warga_negara' => ! empty($dataTervalidasi['warga_negara']) ? $dataTervalidasi['warga_negara'] : ($biodata->warga_negara ?: 'WNI'),
             'nomor_telepon' => ! empty($dataTervalidasi['nomor_telepon']) ? $dataTervalidasi['nomor_telepon'] : null,
             'email' => ! empty($dataTervalidasi['email']) ? $dataTervalidasi['email'] : (! empty($dataTervalidasi['email_pribadi']) ? $dataTervalidasi['email_pribadi'] : null),
             'email_pribadi' => ! empty($dataTervalidasi['email_pribadi']) ? $dataTervalidasi['email_pribadi'] : null,
@@ -110,8 +189,9 @@ class SimpanProfilController extends Controller
             'propinsi_id' => ! empty($dataTervalidasi['propinsi_id']) ? $dataTervalidasi['propinsi_id'] : (! empty($dataTervalidasi['provinsi_id']) ? $dataTervalidasi['provinsi_id'] : null),
             'kode_pos' => ! empty($dataTervalidasi['kode_pos']) ? $dataTervalidasi['kode_pos'] : null,
             'agama' => ! empty($dataTervalidasi['agama']) ? $dataTervalidasi['agama'] : null,
-            'nik' => ! empty($dataTervalidasi['nik']) ? $dataTervalidasi['nik'] : null,
+            'nik' => $nikPermanen,
             'no_kk' => ! empty($dataTervalidasi['no_kk']) ? $dataTervalidasi['no_kk'] : null,
+            'nisn' => ! empty($dataTervalidasi['nisn']) ? $dataTervalidasi['nisn'] : null,
             'no_bpjs' => ! empty($dataTervalidasi['no_bpjs']) ? $dataTervalidasi['no_bpjs'] : null,
             'npwp' => ! empty($dataTervalidasi['npwp']) ? $dataTervalidasi['npwp'] : null,
             'instagram_url' => ! empty($dataTervalidasi['instagram_url']) ? $dataTervalidasi['instagram_url'] : null,
@@ -120,11 +200,16 @@ class SimpanProfilController extends Controller
             'linkedin_username' => ! empty($dataTervalidasi['linkedin_username']) ? $dataTervalidasi['linkedin_username'] : null,
             'expert' => ! empty($dataTervalidasi['expert']) ? $dataTervalidasi['expert'] : null,
             'minat' => ! empty($dataTervalidasi['minat']) ? $dataTervalidasi['minat'] : null,
-            'posisi_jabatan' => ! empty($dataTervalidasi['posisi_jabatan']) ? $dataTervalidasi['posisi_jabatan'] : null,
+            'kategori_pekerjaan' => $kategoriPekerjaan,
+            'posisi_jabatan' => $posisiJabatan,
+            'posisi_wiraswasta' => $posisiWiraswasta,
+            'gaji' => $gajiNominal !== null ? $gajiNominal : null,
             'jenis_pekerjaan' => ! empty($dataTervalidasi['jenis_pekerjaan']) ? $dataTervalidasi['jenis_pekerjaan'] : null,
             'zipcode' => ! empty($dataTervalidasi['zipcode']) ? $dataTervalidasi['zipcode'] : null,
             'perusahaan_id' => $idPerusahaan,
             'atasan_id' => $idAtasan,
+            'orang_tua_id' => $orangTuaModel?->id ?? $biodata->orang_tua_id,
+            'yudisium_id' => $yudisiumModel?->id ?? $biodata->yudisium_id,
         ]);
 
         $biodata->refresh();
@@ -140,29 +225,47 @@ class SimpanProfilController extends Controller
      */
     public function tambahPerusahaanBaru(Request $request)
     {
-        $validated = $request->validate([
+        $jenisLokasi = $request->input('jenis_lokasi', 'Dalam Negeri');
+
+        $rules = [
             'nama_perusahaan' => 'required|string|max:255',
+            'jenis_lokasi' => 'nullable|string|in:Dalam Negeri,Luar Negeri',
+            'negara' => $jenisLokasi === 'Luar Negeri' ? 'required|string|max:100|not_in:Indonesia|exists:ref_negara,nama_negara' : 'nullable|string|max:100',
             'propinsi_id' => 'nullable|exists:propinsi,id',
             'province_id' => 'nullable|exists:propinsi,id',
-            'kabupaten_id' => 'required|exists:kabupaten,id',
-            'kode_pos' => 'required|string|max:15',
+            'kabupaten_id' => $jenisLokasi === 'Luar Negeri' ? 'nullable|exists:kabupaten,id' : 'required|exists:kabupaten,id',
+            'kode_pos' => 'nullable|string|max:15',
             'alamat' => 'nullable|string',
             'skala' => 'nullable|string',
-        ], [
-            'nama_perusahaan.required' => 'Nama perusahaan wajib diisi.',
-            'kabupaten_id.required' => 'Kabupaten/Kota perusahaan wajib dipilih.',
-            'kode_pos.required' => 'Kode pos perusahaan wajib diisi.',
-        ]);
+            'jenis_perusahaan' => 'nullable|string|max:50',
+            'jenis_perusahaan_lainnya' => 'nullable|string|max:150',
+        ];
 
-        $propinsiId = $validated['propinsi_id'] ?? ($validated['province_id'] ?? null);
+        $messages = [
+            'nama_perusahaan.required' => 'Nama perusahaan wajib diisi.',
+            'kabupaten_id.required' => 'Kabupaten/Kota perusahaan wajib dipilih untuk lokasi Dalam Negeri.',
+            'negara.required' => 'Nama negara tempat perusahaan berada wajib dipilih.',
+            'negara.not_in' => 'Indonesia tidak dapat dipilih untuk lokasi Luar Negeri.',
+            'negara.exists' => 'Negara yang dipilih tidak terdaftar dalam master data negara resmi dunia.',
+        ];
+
+        $validated = $request->validate($rules, $messages);
+
+        $propinsiId = $jenisLokasi === 'Luar Negeri' ? null : ($validated['propinsi_id'] ?? ($validated['province_id'] ?? null));
+        $kabupatenId = $jenisLokasi === 'Luar Negeri' ? null : ($validated['kabupaten_id'] ?? null);
+        $negara = $jenisLokasi === 'Luar Negeri' ? $validated['negara'] : 'Indonesia';
 
         $perusahaan = Perusahaan::create([
             'nama_perusahaan' => $validated['nama_perusahaan'],
+            'jenis_lokasi' => $jenisLokasi,
+            'negara' => $negara,
             'propinsi_id' => $propinsiId,
-            'kabupaten_id' => $validated['kabupaten_id'],
+            'kabupaten_id' => $kabupatenId,
             'alamat' => $validated['alamat'] ?? null,
-            'kode_pos' => $validated['kode_pos'],
-            'skala' => $validated['skala'] ?? 'Lokal',
+            'kode_pos' => $validated['kode_pos'] ?? null,
+            'skala' => $validated['skala'] ?? ($jenisLokasi === 'Luar Negeri' ? 'Internasional' : 'Lokal'),
+            'jenis_perusahaan' => $validated['jenis_perusahaan'] ?? null,
+            'jenis_perusahaan_lainnya' => $validated['jenis_perusahaan_lainnya'] ?? null,
             'status_verifikasi' => 'Menunggu Verifikasi',
         ]);
 

@@ -1,6 +1,104 @@
 # UPDATE LOG - SERU (Sistem Ekosistem Rekam Jejak Alumni)
 
-## [2026-09-16] Singularisasi Nama Tabel Database, Refactor Penuh Perusahaan & Propinsi, serta Pembersihan Entitas Biodata
+## [2026-09-19] Standarisasi Dropdown F5C, Navigasi Utama Terpadu Alumni (Unified Navbar), dan Pemetaan Komprehensif Instrumen Kuesioner
+- **Standarisasi Input Posisi / Jabatan Wiraswasta & Startup (F5C) Menjadi Dropdown `<select>`**:
+  - Mengubah kontrol input `posisi_wiraswasta` (`F5C`) pada [FormKarier.vue](file:///c:/study/tracerstudy/resources/js/Pages/Alumni/Profil/Components/FormKarier.vue) dari input teks + tombol pill cepat menjadi dropdown `<select>` standar yang konsisten dan rapi.
+  - Opsi dropdown yang disediakan: `Owner`, `Founder`, `Co-Founder`, `Direktur Utama`, `Pengelola Usaha`, `Freelancer / Konsultan Mandiri`, serta opsi khusus `Lainnya`.
+  - Jika alumni memilih `Lainnya`, sistem menampilkan kolom isian teks tambahan (`posisi_wiraswasta_lainnya`) yang langsung disinkronkan ke backend [SimpanProfilController.php](file:///c:/study/tracerstudy/app/Http/Controllers/Alumni/Profil/SimpanProfilController.php) dan [KuesionerSyncService.php](file:///c:/study/tracerstudy/app/Services/Kuesioner/KuesionerSyncService.php).
+- **Navigasi Utama Terpadu Alumni (Unified `Navbar.vue`)**:
+  - Membuat komponen navigasi terpusat di [Navbar.vue](file:///c:/study/tracerstudy/resources/js/Pages/Alumni/Components/Navbar.vue) untuk memastikan konsistensi tampilan (UI/UX), tata letak, dan branding resmi UKDW di seluruh modul alumni.
+  - Diintegrasikan secara seragam pada 4 halaman utama alumni:
+    1. **Dashboard Alumni** ([Dashboard.vue](file:///c:/study/tracerstudy/resources/js/Pages/Alumni/Dashboard.vue))
+    2. **Kelola Profil Alumni** ([Index.vue](file:///c:/study/tracerstudy/resources/js/Pages/Alumni/Profil/Index.vue))
+    3. **Kuesioner Tracer Study Universitas** ([Kuesioner.vue](file:///c:/study/tracerstudy/resources/js/Pages/Alumni/Kuesioner.vue))
+    4. **Kuesioner Khusus Program Studi** ([KuesionerProdi.vue](file:///c:/study/tracerstudy/resources/js/Pages/Alumni/KuesionerProdi.vue))
+  - Fitur Navbar: Logo resmi UKDW, indikator badge aktif antar halaman (Dashboard, Profil, Kuesioner Universitas, Kuesioner Prodi), nama/NIM alumni aktif, sub-navigasi mobile/tablet responsif, dan modal konfirmasi SweetAlert2 saat keluar (logout).
+- **Dokumentasi Pemetaan Lengkap Instrumen Kuesioner ([DAFTAR_PERTANYAAN_MAPPING.md](file:///c:/study/tracerstudy/DAFTAR_PERTANYAAN_MAPPING.md))**:
+  - Menyusun tabel referensi komprehensif yang memetakan seluruh butir pertanyaan Tracer Study Dikti (`F1` s/d `F18`, `F24A`, `F24B`, dll.), identitas alumni, dan kuesioner program studi.
+  - Merinci relasi kode pertanyaan, tipe input, komponen Vue pengelola, tabel dan kolom basis data tujuan, hingga alur sinkronisasi dua arah otomatis (`KuesionerSyncService.php`).
+- **Pembaruan Dokumentasi Utama**:
+  - Memperbarui [README.md](file:///c:/study/tracerstudy/README.md) dengan panduan arsitektur instrumen tracer study, daftar komponen form Vue, dan alur navigasi terpadu.
+- **Automated Tests**:
+  - Seluruh 47 feature tests PHPUnit lulus 100% (243 assertions).
+
+## [2026-09-19] F11 Jenis Perusahaan, Pemisahan Peran Pekerja vs Wiraswasta (F2G & F5C), dan Export Excel Jawaban Alumni
+- **Integrasi F11 Jenis Instansi/Perusahaan (`perusahaan.jenis_perusahaan` & `jenis_perusahaan_lainnya`)**:
+  - Menambahkan kolom `jenis_perusahaan` (50) dan `jenis_perusahaan_lainnya` (150) pada tabel `perusahaan` via migrasi `2026_09_19_224000_add_jenis_perusahaan_and_kategori_to_perusahaan_and_biodata.php`.
+  - Mengupdate model [Perusahaan.php](file:///c:/study/tracerstudy/app/Models/Perusahaan.php) dan `SimpanProfilController.php`.
+  - Menambahkan dropdown pilihan standar Dikti di [FormKarier.vue](file:///c:/study/tracerstudy/resources/js/Pages/Alumni/Profil/Components/FormKarier.vue) dan modal "Tambah Perusahaan Baru": `1 - Instansi pemerintah`, `2 - Organisasi non-profit/LSM`, `3 - Perusahaan swasta`, `4 - Wiraswasta/perusahaan sendiri`, `5 - Lainnya` (dilengkapi input isian teks spesifik), `6 - BUMN/BUMD`, `7 - Institusi/Organisasi Multilateral`.
+  - Otomatis disinkronkan ke butir kuesioner `F11` pada tabel `tracer` via [KuesionerSyncService.php](file:///c:/study/tracerstudy/app/Services/Kuesioner/KuesionerSyncService.php).
+- **Pemisahan Peran Kerja & Posisi Jabatan: Pekerja vs Wiraswasta (`F2G` vs `F5C`)**:
+  - Menambahkan kolom `kategori_pekerjaan` dan `posisi_wiraswasta` pada tabel `biodata`.
+  - Pada form profil [FormKarier.vue](file:///c:/study/tracerstudy/resources/js/Pages/Alumni/Profil/Components/FormKarier.vue):
+    - Menyediakan pemilih kategori peran kerja: **🏢 Pekerja / Karyawan / Profesional** vs **🚀 Wirausaha / Founder / Startup / Usaha Mandiri**.
+    - Jika memilih **Pekerja**: Menampilkan dropdown posisi jabatan struktural `F2G` (`1 - Direksi`, `2 - Top Manager`, `3 - Middle Manager`, `4 - Low Manager`, `5 - Supervisor`, `6 - Staff`) dan mengosongkan `F5C`.
+    - Jika memilih **Wiraswasta**: Menampilkan input teks posisi/jabatan wirausaha `F5C` dengan tombol pilihan cepat (*Owner, Founder, Co-Founder, Direktur Utama, Pengelola Usaha, Freelancer*), otomatis mengisi `F2G` sebagai level pimpinan, dan otomatis mengisi data atasan dengan data diri alumni.
+- **Fitur Download Excel / CSV Jawaban Kuesioner per Alumni untuk Superadmin**:
+  - Menambahkan method `exportExcel($id)` pada [DetailAlumniSuperAdminController.php](file:///c:/study/tracerstudy/app/Http/Controllers/SuperAdmin/KelolaAlumni/DetailAlumniSuperAdminController.php) dan rute `GET /superadmin/alumni/{id}/export-excel`.
+  - Menghasilkan file Excel/CSV stream terformat rapi dengan UTF-8 BOM (`\xEF\xBB\xBF`) berisi kolom: `No`, `Kategori / Section`, `Kode Pertanyaan`, `Pertanyaan`, `Tipe Pertanyaan`, `Status Wajib`, `Status Jawaban`, `Jawaban Alumni` (mencakup kuesioner universitas dan kuesioner khusus program studi).
+  - Menambahkan tombol aksi **Download Excel Jawaban** berwarna kuning khas UKDW di header halaman detail alumni [Show.vue](file:///c:/study/tracerstudy/resources/js/Pages/SuperAdmin/Alumni/Show.vue).
+- **Automated Tests**:
+  - Seluruh 47 feature tests PHPUnit lulus 100% (243 assertions).
+
+## [2026-09-19] Anti-Duplikasi Jawaban Tracer, Perbaikan Unique Constraint Atasan, & Searchable Negara
+- **Eliminasi Duplikasi Jawaban Tracer & Constraint Unik (`tracer_biodata_question_unique`)**:
+  - Membuat migrasi `2026_09_19_221000_add_unique_constraints_to_tracer_table.php` yang membersihkan seluruh potensi baris ganda dan menambahkan indeks unik komposit `['biodata_id', 'question_id']` serta `['biodata_id', 'kode_pertanyaan']` pada tabel `tracer`.
+  - Mengupdate [SimpanJawabanController.php](file:///c:/study/tracerstudy/app/Http/Controllers/Alumni/Kuesioner/SimpanJawabanController.php) dan [KuesionerSyncService.php](file:///c:/study/tracerstudy/app/Services/Kuesioner/KuesionerSyncService.php) dengan mekanisme *clean-before-update* dan `updateOrCreate` berbasis `(biodata_id, question_id)`.
+  - Ketika alumni menjawab pertanyaan yang sudah pernah dijawab, sistem secara otomatis melakukan pembaruan (*in-place update*) pada baris yang sama tanpa pernah menduplikasi data di basis data.
+- **Penanganan Unique Constraint Atasan (`atasan.atasan_email_unique`)**:
+  - Menghapus indeks `unique` pada kolom `email` di tabel `atasan` via migrasi `2026_09_19_215000_remove_unique_from_atasan_email.php` dan memperbarui migrasi dasar `create_atasans_table.php`.
+  - Mengupdate logika `SimpanJawabanController.php` dan `SimpanProfilController.php` agar pembaruan data atasan tidak lagi memicu error duplicate key MySQL (1062) ketika email atasan digunakan bersama atau diisi data dummy.
+- **Integrasi Master Data Negara Dunia (`ref_negara` & `daftar_negara_dunia.csv`)**:
+  - Membuat tabel master `ref_negara` (`id`, `nama_negara`, `ibu_kota`, `kode_iso2`, `benua`, `timestamps`) via migrasi `2026_09_19_220000_create_ref_negara_table.php`.
+  - Membuat model [RefNegara.php](file:///c:/study/tracerstudy/app/Models/RefNegara.php) dan seeder `RefNegaraSeeder.php` yang membaca data 193 negara dunia secara otomatis dari `daftar_negara_dunia.csv`.
+  - Mengalirkan master data negara ke [ProfilController.php](file:///c:/study/tracerstudy/app/Http/Controllers/Alumni/Profil/ProfilController.php) untuk kebutuhan dropdown & autocomplete form profil alumni.
+  - **Searchable Dropdown Negara (Sesuai Template Provinsi & Kabupaten)** di [FormKarier.vue](file:///c:/study/tracerstudy/resources/js/Pages/Alumni/Profil/Components/FormKarier.vue):
+    - Komponen pencarian negara interaktif dengan ikon pencarian, filter real-time, highlight negara aktif, kode ISO 2, dan benua.
+    - Opsi negara untuk **Luar Negeri** mengecualikan `Indonesia` sehingga negara asal tidak bisa dipilih sebagai negara asing.
+    - Pilihan negara dibatasi secara ketat (*strict selection*) hanya pada 193 negara resmi yang terdaftar di basis data master `ref_negara` (tidak dapat menginput negara sembarangan).
+    - Modal SweetAlert2 "Tambah Perusahaan Baru" juga menggunakan dropdown negara resmi yang mengecualikan Indonesia dan divalidasi ketat di backend `SimpanProfilController.php`.
+- **Dukungan Perusahaan Dalam Negeri vs Luar Negeri (`perusahaan.jenis_lokasi` & `perusahaan.negara`)**:
+  - Menambahkan kolom `jenis_lokasi` (`Dalam Negeri` / `Luar Negeri`) dan `negara` pada tabel `perusahaan` via migrasi `2026_09_19_214000_add_jenis_lokasi_and_negara_to_perusahaan_table.php`.
+  - Memperbarui model [Perusahaan.php](file:///c:/study/tracerstudy/app/Models/Perusahaan.php) dan seeder `PerusahaanSeeder.php` dengan data contoh perusahaan internasional (Google Singapore, Grab Singapore, Rakuten Tokyo).
+  - Pada form profil [FormKarier.vue](file:///c:/study/tracerstudy/resources/js/Pages/Alumni/Profil/Components/FormKarier.vue):
+    - Menyediakan tombol seleksi interaktif `🇮🇩 Dalam Negeri` dan `✈️ Luar Negeri`.
+    - Jika memilih `Luar Negeri`, input Nama Negara (`company_negara`) ditampilkan, sedangkan dropdown Provinsi dan Kabupaten/Kota dinonaktifkan/disembunyikan serta dikosongkan (`null`).
+    - Modal popup "Tambah Perusahaan Baru" (SweetAlert2) mendukung pemilihan lokasi Dalam/Luar Negeri dan input nama negara secara langsung.
+  - Memperbarui [KuesionerSyncService.php](file:///c:/study/tracerstudy/app/Services/Kuesioner/KuesionerSyncService.php) agar alumni yang bekerja di luar negeri menghasilkan alamat perusahaan berformat nama negara, dan mengisi `F5a1`/`F5a2` secara adaptif.
+- **Restrukturisasi Urutan Tab Profil Alumni (UX Streamlined Flow)**:
+  - Mengubah urutan tab pada [Index.vue](file:///c:/study/tracerstudy/resources/js/Pages/Alumni/Profil/Index.vue) agar alumni langsung diarahkan ke riwayat pekerjaan setelah mengisi data diri:
+    1. **Identitas & Alamat** (`pribadi`)
+    2. **Karier & Pekerjaan** (`karier`)
+    3. **Akademik & Yudisium** (`akademik`)
+    4. **Data Orang Tua** (`orangtua`)
+- **Penyempurnaan UI Format Angka Ribuan & Pembersihan Emoticon**:
+  - Menghilangkan emoticon `💰` pada teks pratinjau gaji di form karier dan kuesioner.
+  - Menambahkan panduan instruksi format ribuan yang jelas dan mudah dipahami.
+- **Automated Tests**:
+  - Seluruh 44 feature tests PHPUnit lulus 100% (224 assertions).
+
+## [2026-09-19] Integrasi RefFakultas, Pengayaan Kolom Biodata, Take Home Pay, Penguncian NIK, dan Auto-Fill Atasan Owner
+- **Master Fakultas (`ref_fakultas`) & Relasi ke Program Studi (`prodi`)**:
+  - Membuat tabel `ref_fakultas` (`id`, `kode_fakultas`, `nama_fakultas`, `timestamps`).
+  - Menambahkan kolom `fakultas_id` (FK ke `ref_fakultas`) pada tabel `prodi`.
+  - Membuat model [RefFakultas.php](file:///c:/study/tracerstudy/app/Models/RefFakultas.php) dan memperbarui relasi di [Prodi.php](file:///c:/study/tracerstudy/app/Models/Prodi.php).
+  - Membuat seeder `RefFakultasSeeder.php` yang mengisi 7 fakultas resmi UKDW dan memetakan `fakultas_id` pada seluruh `prodi` secara otomatis berdasarkan digit pertama `kode_prodi` (Kode 1: Bisnis, 2: Arsitektur & Desain, 3: Theologi, 4: Bioteknologi, 6: Kedokteran, 7: FTI, 8: FKH).
+- **Pengayaan Kolom Tabel `biodata` & Relasi Langsung**:
+  - Menambahkan kolom `tempat_lahir`, `tanggal_lahir`, `jenis_kelamin`, `golongan_darah`, `warga_negara`, `nisn`, `gaji`, serta foreign key `orang_tua_id` dan `yudisium_id` pada tabel `biodata`.
+  - Memperbarui model [Biodata.php](file:///c:/study/tracerstudy/app/Models/Biodata.php) dengan deklarasi `$fillable` lengkap dan relasi `orangTua()`, `yudisium()`, serta `prodi.fakultas`.
+- **Penguncian NIK Alumni (Read-Only)**:
+  - NIK alumni diatur permanen (read-only/disabled) pada form frontend [FormPribadi.vue](file:///c:/study/tracerstudy/resources/js/Pages/Alumni/Profil/Components/FormPribadi.vue) dan dilindungi dari perubahan di backend [SimpanProfilController.php](file:///c:/study/tracerstudy/app/Http/Controllers/Alumni/Profil/SimpanProfilController.php).
+- **Perluasan Posisi Jabatan & Auto-Fill Data Atasan Owner**:
+  - Menambahkan opsi jabatan baru di [FormKarier.vue](file:///c:/study/tracerstudy/resources/js/Pages/Alumni/Profil/Components/FormKarier.vue): `Owner`, `Founder`, `Wiraswasta / Wirausaha`.
+  - Jika alumni memilih posisi `Owner` / `Founder` / `Wiraswasta`, kolom Data Atasan Langsung (`nama_atasan`, `email_atasan`, `telepon_atasan`) otomatis terisi dengan data diri alumni (nama, email, nomor telepon) baik di sisi antarmuka (Vue watcher) maupun di backend Laravel.
+- **Penyederhanaan Take Home Pay (`F505`) & Eliminasi Redundansi Kuesioner Section 4**:
+  - Menyediakan input single Take Home Pay bulanan (`gaji`) pada form profil [FormKarier.vue](file:///c:/study/tracerstudy/resources/js/Pages/Alumni/Profil/Components/FormKarier.vue) dan kuesioner [KartuPertanyaan.vue](file:///c:/study/tracerstudy/resources/js/Pages/Alumni/Components/Kuesioner/KartuPertanyaan.vue).
+  - Format ribuan (`.000`) muncul langsung di dalam kotak input teks dan dapat diedit fleksibel, menghapus badge terpisah `.000` dan tombol preset pilihan cepat agar tampilan bersih.
+  - Memperbarui perhitungan pratinjau `💰 Terbaca: Rp ... / bulan` secara real-time saat alumni mulai mengetik angka tanpa harus menunggu form disimpan.
+  - Memperbarui [KuesionerSyncService.php](file:///c:/study/tracerstudy/app/Services/Kuesioner/KuesionerSyncService.php) agar Take Home Pay dan seluruh data pekerjaan/atasan di Section 4 (`F5a1`, `F5a2`, `F510`, `F5B`, `F5C`, `F5D`, `F2E`, `F2E1`, `F2E2`, `F2E3`, `F2F`, `F2G`, `F2H`) otomatis tersinkronisasi dari profil biodata ke tabel `tracer`.
+- **Automated Tests**:
+  - Membuat feature test [AlumniProfileEnhancementTest.php](file:///c:/study/tracerstudy/tests/Feature/AlumniProfileEnhancementTest.php).
+  - Seluruh 43 automated feature tests di PHPUnit lulus 100% (222 assertions).
 - **Singularisasi Nama Tabel Basis Data Custom (Tanpa Akhiran `-s`)**:
   - Seluruh 27 berkas migrasi database diselaraskan menggunakan nama tabel tunggal/singular (Bahasa Indonesia & domain), tanpa akhiran `-s`, kecuali tabel bawaan Laravel framework (`users`, `cache`, `sessions`, `jobs`):
     - `biodatas` $\rightarrow$ `biodata`

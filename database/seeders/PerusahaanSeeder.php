@@ -154,21 +154,53 @@ class PerusahaanSeeder extends Seeder
                 'skala' => 'Lokal',
                 'status_verifikasi' => 'Terverifikasi',
             ],
+            // ==========================================
+            // Perusahaan di Luar Negeri (International / Abroad)
+            // ==========================================
             [
-                'nama_perusahaan' => 'CV Samudera Selatan Digital',
-                'propinsi_id' => $aceh->id,
-                'kabupaten_id' => $acehSelatan->id,
-                'alamat' => 'Jl. Teuku Umar No. 8, Tapaktuan, Aceh Selatan',
-                'kode_pos' => '23714',
-                'skala' => 'Lokal',
+                'nama_perusahaan' => 'Google Asia Pacific Pte. Ltd.',
+                'propinsi_id' => null,
+                'kabupaten_id' => null,
+                'alamat' => '70 Pasir Panjang Rd, #03-71 Mapletree Business City II',
+                'kode_pos' => '117371',
+                'skala' => 'Internasional',
+                'jenis_lokasi' => 'Luar Negeri',
+                'negara' => 'Singapura',
+                'status_verifikasi' => 'Terverifikasi',
+            ],
+            [
+                'nama_perusahaan' => 'Grab Holdings Inc. (Singapore HQ)',
+                'propinsi_id' => null,
+                'kabupaten_id' => null,
+                'alamat' => '3 Media Close, Grab@Singapore HQ',
+                'kode_pos' => '138498',
+                'skala' => 'Internasional',
+                'jenis_lokasi' => 'Luar Negeri',
+                'negara' => 'Singapura',
+                'status_verifikasi' => 'Terverifikasi',
+            ],
+            [
+                'nama_perusahaan' => 'Rakuten Group, Inc. (Tokyo HQ)',
+                'propinsi_id' => null,
+                'kabupaten_id' => null,
+                'alamat' => '1-14-1 Tamagawa, Setagaya-ku, Tokyo',
+                'kode_pos' => '158-0094',
+                'skala' => 'Internasional',
+                'jenis_lokasi' => 'Luar Negeri',
+                'negara' => 'Jepang',
                 'status_verifikasi' => 'Terverifikasi',
             ],
         ];
 
         foreach ($perusahaans as $perusahaan) {
+            $data = array_merge([
+                'jenis_lokasi' => 'Dalam Negeri',
+                'negara' => 'Indonesia',
+            ], $perusahaan);
+
             Perusahaan::updateOrCreate(
-                ['nama_perusahaan' => $perusahaan['nama_perusahaan']],
-                $perusahaan
+                ['nama_perusahaan' => $data['nama_perusahaan']],
+                $data
             );
         }
     }

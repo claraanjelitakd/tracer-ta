@@ -24,6 +24,10 @@ class Perusahaan extends Model
         'kode_pos',
         'sektor',
         'skala',
+        'jenis_perusahaan',
+        'jenis_perusahaan_lainnya',
+        'jenis_lokasi',
+        'negara',
         'status_verifikasi',
     ];
 

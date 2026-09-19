@@ -199,7 +199,7 @@ const getF17ComparisonBadge = (valA, valB) => {
                                     Tingkat kompetensi yang Anda kuasai saat lulus
                                 </div>
                                 <div class="flex items-center justify-between max-w-[240px] mx-auto px-1 text-xs font-bold text-emerald-900">
-                                    <span class="text-[11px] text-emerald-700 font-medium">1 (Sangat Rendah)</span>
+                                    <span class="text-[11px] text-emerald-700 font-medium">(Sangat Rendah) 1 </span>
                                     <div class="flex gap-4">
                                         <span class="w-6 text-center">2</span>
                                         <span class="w-6 text-center">3</span>

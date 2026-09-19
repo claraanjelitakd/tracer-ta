@@ -22,7 +22,8 @@
 defineProps({
     form: Object,
     provinces: Array,
-    kabupatens: Array
+    kabupatens: Array,
+    negaras: Array,
 });
 
 const inputClass = "block w-full border border-gray-200 bg-white rounded-xl shadow-xs focus:border-[#005B3C] focus:ring focus:ring-[#005B3C]/10 px-4 py-3 text-sm text-gray-800 font-medium transition-colors";
@@ -49,7 +50,7 @@ const labelClass = "block text-sm font-semibold text-gray-700 mb-1.5";
                 </div>
                 <div>
                     <label :class="labelClass">Nomor Induk Kependudukan (NIK)</label>
-                    <input type="text" v-model="form.nik" :class="inputClass" placeholder="16 Digit NIK" />
+                    <input type="text" :value="form.nik" disabled :class="lockedInputClass" placeholder="16 Digit NIK" title="NIK bersifat permanen dan tidak dapat diubah" />
                 </div>
                 <div>
                     <label :class="labelClass">Nomor Pokok Wajib Pajak (NPWP)</label>
@@ -99,7 +100,14 @@ const labelClass = "block text-sm font-semibold text-gray-700 mb-1.5";
                 </div>
                 <div>
                     <label :class="labelClass">Kewarganegaraan</label>
-                    <input type="text" v-model="form.warga_negara" :class="inputClass" placeholder="WNI / WNA" />
+                    <input type="text" v-model="form.warga_negara" list="daftar-kewarganegaraan" :class="inputClass" placeholder="WNI / WNA (Pilih/Ketik Negara)" />
+                    <datalist id="daftar-kewarganegaraan">
+                        <option value="WNI (Indonesia)">WNI (Indonesia)</option>
+                        <option value="WNA">WNA</option>
+                        <option v-for="neg in negaras" :key="neg.id" :value="`WNA (${neg.nama_negara})`">
+                            {{ neg.nama_negara }} ({{ neg.benua || 'Dunia' }})
+                        </option>
+                    </datalist>
                 </div>
             </div>
         </div>

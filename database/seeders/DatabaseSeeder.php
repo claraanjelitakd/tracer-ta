@@ -43,8 +43,10 @@ class DatabaseSeeder extends Seeder
             );
         }
 
-        // 2. Seed Master Wilayah & UMP
+        // 2. Seed Master Fakultas, Wilayah, Negara & Hubungkan ke Prodi
         $this->call([
+            RefFakultasSeeder::class,
+            RefNegaraSeeder::class,
             WilayahSeeder::class,
             UmpSeeder::class,
         ]);

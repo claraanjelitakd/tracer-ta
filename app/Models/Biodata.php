@@ -19,10 +19,17 @@ class Biodata extends Model
     protected $fillable = [
         'user_id',
         'nim',
+        'orang_tua_id',
+        'yudisium_id',
         'prodi_id',
         'kode_prodi',
         'tahun_lulus',
         'nama',
+        'tempat_lahir',
+        'tanggal_lahir',
+        'jenis_kelamin',
+        'golongan_darah',
+        'warga_negara',
         'nomor_telepon',
         'email',
         'email_pribadi',
@@ -35,6 +42,7 @@ class Biodata extends Model
         'agama',
         'nik',
         'no_kk',
+        'nisn',
         'no_bpjs',
         'npwp',
         'instagram_url',
@@ -46,8 +54,11 @@ class Biodata extends Model
         'perusahaan_id',
         'atasan_id',
         'posisi_jabatan',
+        'kategori_pekerjaan',
+        'posisi_wiraswasta',
         'jenis_pekerjaan',
         'zipcode',
+        'gaji',
     ];
 
     /**
@@ -111,14 +122,22 @@ class Biodata extends Model
      */
     public function yudisium()
     {
+        if ($this->yudisium_id) {
+            return $this->belongsTo(Yudisium::class, 'yudisium_id');
+        }
+
         return $this->hasOne(Yudisium::class, 'nim', 'nim');
     }
 
     /**
-     * Relasi ke Data Orang Tua (menggunakan NIM).
+     * Relasi ke Data Orang Tua.
      */
     public function orangTua()
     {
+        if ($this->orang_tua_id) {
+            return $this->belongsTo(DataOrangTua::class, 'orang_tua_id');
+        }
+
         return $this->hasOne(DataOrangTua::class, 'nim', 'nim');
     }
 

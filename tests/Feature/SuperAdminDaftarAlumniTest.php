@@ -213,4 +213,21 @@ class SuperAdminDaftarAlumniTest extends TestCase
             'alamat' => 'Jl. Solo KM 10',
         ]);
     }
+
+    /**
+     * Test superadmin dapat mengunduh file Excel/CSV rekap seluruh butir pertanyaan & jawaban per alumni.
+     */
+    public function test_superadmin_can_export_alumni_answers_excel(): void
+    {
+        $response = $this->actingAs($this->superadmin)
+            ->get(route('superadmin.alumni.export-excel', $this->alumni->id));
+
+        $response->assertStatus(200);
+        $response->assertHeader('content-type', 'text/csv; charset=UTF-8');
+
+        $content = $response->streamedContent();
+        $this->assertStringContainsString('Kode Pertanyaan', $content);
+        $this->assertStringContainsString('Jawaban Alumni', $content);
+        $this->assertStringContainsString('F24A', $content);
+    }
 }

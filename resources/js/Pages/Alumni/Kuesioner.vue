@@ -13,7 +13,7 @@
 <script setup>
 import { ref, computed, watch, onMounted } from 'vue';
 import { Head, useForm } from '@inertiajs/vue3';
-import Navbar from './Components/Kuesioner/Navbar.vue';
+import Navbar from './Components/Navbar.vue';
 import Stepper from './Components/Kuesioner/Stepper.vue';
 import Banner from './Components/Kuesioner/Banner.vue';
 import TabelF17 from './Components/Kuesioner/TabelF17.vue';
@@ -67,11 +67,18 @@ const getInitialAnswers = () => {
         }
     }
 
-    // Normalisasi struktur radio_input & multiple_number
+    // Normalisasi struktur radio_input, multiple_number, dan checkbox/multiple_choice
     if (props.questionnaire?.sections) {
         props.questionnaire.sections.forEach(sec => {
             (sec.subpertanyaans || sec.questions)?.forEach(q => {
                 const options = q.detils || q.options;
+
+                if (['checkbox', 'multiple_choice'].includes(q.type)) {
+                    if (!Array.isArray(base[q.id])) {
+                        base[q.id] = (base[q.id] && typeof base[q.id] === 'string') ? [base[q.id]] : [];
+                    }
+                }
+
                 if (['radio_input', 'radio_text'].includes(q.type)) {
                     if (!base[q.id] || typeof base[q.id] !== 'object') {
                         base[q.id] = { selected: '', input: '', inputs: {} };
@@ -419,34 +426,52 @@ const getRadioInputVal = (qId, optId) => {
     return form.answers[qId].inputs[optId] ?? '';
 };
 
-// Memeriksa apakah satu butir pertanyaan sudah terjawab dengan valid
+// ===============================================================================================
+// HELPER VALIDASI BUTIR PERTANYAAN & STATUS KELENGKAPAN SEKSI
+// ===============================================================================================
+
+/**
+ * Memeriksa apakah satu butir pertanyaan sudah terjawab secara valid oleh alumni.
+ * Fungsi ini mengecek isi nilai form.answers berdasarkan tipe input butir pertanyaan.
+ * 
+ * @param {Object} q Objek data subpertanyaan
+ * @returns {Boolean} true jika pertanyaan telah terisi jawaban valid
+ */
 const isQuestionAnswered = (q) => {
-    if (!q) return true;
+    if (!q) return false;
+    // Tipe header tidak memerlukan input jawaban
     if (q.type === 'header') return true;
+    // Pertanyaan yang disembunyikan oleh jump logic dianggap selesai
     if (!isQuestionVisible(q.id)) return true;
-    const isReq = q.wajib ?? q.is_required;
-    if (!isReq) return true;
 
     const ans = form.answers[q.id];
 
     switch (q.type) {
+        // Skala Skor 1 s/d 5 (Likert)
         case 'rating_5': {
             const n = Number(ans);
             return !isNaN(n) && n >= 1 && n <= 5;
         }
 
+        // Isian Teks Bebas
         case 'text': {
             return ans !== undefined && ans !== null && ans.toString().trim() !== '';
         }
 
+        // Isian Angka / Numerik
         case 'number': {
             return ans !== undefined && ans !== null && ans.toString().trim() !== '' && !isNaN(ans);
         }
 
+        // Tanggal, Waktu, Berkas, dan Searchable Dropdown
+        case 'date':
+        case 'time':
+        case 'file':
         case 'searchable_select': {
             return ans !== undefined && ans !== null && ans.toString().trim() !== '';
         }
 
+        // Pilihan Tunggal / Radio
         case 'radio':
         case 'single_choice': {
             if (!ans || typeof ans !== 'string' || ans.trim() === '') return false;
@@ -458,6 +483,7 @@ const isQuestionAnswered = (q) => {
             return true;
         }
 
+        // Pilihan Ganda / Checkbox (Bisa memilih lebih dari satu)
         case 'checkbox':
         case 'multiple_choice': {
             if (!Array.isArray(ans) || ans.length === 0) return false;
@@ -472,6 +498,7 @@ const isQuestionAnswered = (q) => {
             return true;
         }
 
+        // Pilihan Radio dengan Kolom Isian Tambahan (radio_input / radio_text)
         case 'radio_input':
         case 'radio_text': {
             if (!ans || typeof ans !== 'object' || !ans.selected) return false;
@@ -485,25 +512,42 @@ const isQuestionAnswered = (q) => {
             return true;
         }
 
+        // Input Gaji & Nominal Penghasilan (Multiple Number F13)
         case 'multiple_number': {
             return getMultipleNumberTotal(q) > 0;
         }
 
+        // Matriks Tabel & Multiple Textbox
+        case 'matrix':
+        case 'matrix_dual':
+        case 'multiple_textbox': {
+            if (!ans || typeof ans !== 'object') return false;
+            return Object.values(ans).some(v => v !== undefined && v !== null && v.toString().trim() !== '');
+        }
+
+        // Default: Pastikan nilai ada dan tidak string kosong
         default:
-            return ans !== undefined && ans !== null && ans !== '';
+            return ans !== undefined && ans !== null && ans.toString().trim() !== '';
     }
 };
 
-// Memeriksa apakah seluruh pertanyaan wajib di suatu section sudah terjawab
+/**
+ * Memeriksa apakah seluruh pertanyaan wajib di suatu section sudah terjawab lengkap.
+ * 
+ * @param {Object} section Objek seksi kuesioner
+ * @returns {Boolean} true jika seksi kuesioner sudah lengkap terisi
+ */
 const isSectionAnswered = (section) => {
     const questions = section?.subpertanyaans || section?.questions;
-    if (!section || !questions || questions.length === 0) return true;
+    if (!section || !questions || questions.length === 0) return false;
 
+    // 1. Khusus Instrumen F2 (Metode Pembelajaran)
     const isF2 = questions.some(q => (q.kode_pertanyaan || q.code) === 'F2' || ((q.kode_pertanyaan || q.code) && (q.kode_pertanyaan || q.code).startsWith('F21')));
     if (isF2) {
         return f2QuestionsList.value.length > 0 && f2QuestionsList.value.every(q => isQuestionAnswered(q));
     }
 
+    // 2. Khusus Instrumen F17 (Evaluasi Kompetensi Dual Matrix A vs B)
     const isF17 = questions.some(q => {
         const c = q.kode_pertanyaan || q.code;
         return c === 'F17' || (c && (c.toLowerCase().startsWith('f17a') || c.toLowerCase().startsWith('f17b') || c.startsWith('F17-')));
@@ -512,25 +556,38 @@ const isSectionAnswered = (section) => {
         return f17AspectPairs.value.length > 0 && f17CompletedCount.value === f17AspectPairs.value.length;
     }
 
+    // 3. Seksi Pertanyaan Standar
     const visibleQuestions = questions.filter(q => q.type !== 'header' && isQuestionVisible(q.id));
     if (visibleQuestions.length === 0) return true;
 
+    // Jika ada butir yang secara eksplisit bertanda wajib
     const requiredQuestions = visibleQuestions.filter(q => (q.wajib ?? q.is_required));
     if (requiredQuestions.length > 0) {
         return requiredQuestions.every(q => isQuestionAnswered(q));
     }
 
-    return visibleQuestions.some(q => isQuestionAnswered(q));
+    // Jika tidak ada tanda wajib khusus, semua pertanyaan yang terlihat wajib dijawab agar seksi berstatus selesai
+    return visibleQuestions.every(q => isQuestionAnswered(q));
 };
 
-// Menentukan status selesai suatu section
+/**
+ * Menentukan status selesai suatu section (digunakan oleh Stepper dan Navigasi).
+ * 
+ * @param {Number} index Indeks posisi seksi
+ * @returns {Boolean} true jika seksi sudah lengkap terisi
+ */
 const isSectionCompleted = (index) => {
     const sec = props.questionnaire?.sections?.[index];
     if (!sec) return false;
-    return completedSectionIndices.value.has(index) || isSectionAnswered(sec);
+    return isSectionAnswered(sec);
 };
 
-// Menentukan warna konektor garis antar section
+/**
+ * Menentukan warna hijau konektor garis antar section pada Stepper.
+ * 
+ * @param {Number} index Indeks posisi seksi
+ * @returns {Boolean} true jika garis penghubung aktif / selesai
+ */
 const isLineCompleted = (index) => {
     const currentCompleted = isSectionCompleted(index);
     const nextCompleted = isSectionCompleted(index + 1);
@@ -538,20 +595,21 @@ const isLineCompleted = (index) => {
     const nextActive = (activeSectionIndex.value === index + 1);
 
     return (currentCompleted && (nextCompleted || nextActive)) || 
-           (currentActive && nextCompleted) || 
            (index < activeSectionIndex.value && currentCompleted);
 };
 
-// Sinkronisasi status kelengkapan seluruh section berdasarkan data jawaban
+/**
+ * Sinkronisasi status kelengkapan seluruh section secara berkala.
+ */
 const syncSectionCompletion = () => {
     if (!props.questionnaire?.sections) return;
+    const newCompleted = new Set();
     props.questionnaire.sections.forEach((sec, idx) => {
         if (isSectionAnswered(sec)) {
-            completedSectionIndices.value.add(idx);
-        } else if (idx === activeSectionIndex.value) {
-            completedSectionIndices.value.delete(idx);
+            newCompleted.add(idx);
         }
     });
+    completedSectionIndices.value = newCompleted;
     saveCompletedSections();
 };
 
