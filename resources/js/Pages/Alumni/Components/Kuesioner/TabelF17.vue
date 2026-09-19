@@ -190,22 +190,24 @@ const getF17ComparisonBadge = (valA, valB) => {
                     <thead>
                         <tr class="border-b border-gray-200">
                             <!-- Header Kolom A (Penguasaan Saat Lulus) -->
-                            <th class="py-4 px-4 w-[330px] bg-emerald-50/70 text-left border-r border-gray-200">
+                            <th class="py-4 px-4 w-[340px] bg-emerald-50/80 text-left border-r border-gray-200">
                                 <div class="flex items-center gap-2 mb-1">
-                                    <span class="w-6 h-6 rounded-md bg-[#005B3C] text-white flex items-center justify-center text-xs font-black">A</span>
+                                    <span class="w-6 h-6 rounded-md bg-[#005B3C] text-white flex items-center justify-center text-xs font-black shadow-xs">A</span>
                                     <span class="font-black text-emerald-950 text-sm">Penguasaan Saat Lulus</span>
                                 </div>
-                                <div class="text-xs text-emerald-800 font-medium mb-3">
+                                <div class="text-xs text-emerald-800 font-medium mb-2.5 leading-tight">
                                     Tingkat kompetensi yang Anda kuasai saat lulus
                                 </div>
-                                <div class="flex items-center justify-between max-w-[240px] mx-auto px-1 text-xs font-bold text-emerald-900">
-                                    <span class="text-[11px] text-emerald-700 font-medium">(Sangat Rendah) 1 </span>
-                                    <div class="flex gap-4">
-                                        <span class="w-6 text-center">2</span>
-                                        <span class="w-6 text-center">3</span>
-                                        <span class="w-6 text-center">4</span>
+                                <div class="max-w-[240px] mx-auto bg-white/80 p-2 rounded-xl border border-emerald-200/80 shadow-2xs">
+                                    <div class="flex items-center justify-between text-[10px] font-bold text-emerald-700 mb-1 px-1">
+                                        <span>1 (Sangat Rendah)</span>
+                                        <span>5 (Sangat Tinggi)</span>
                                     </div>
-                                    <span class="text-[11px] text-emerald-700 font-medium">5 (Sangat Tinggi)</span>
+                                    <div class="flex items-center justify-between">
+                                        <span v-for="score in 5" :key="'hdr_a_' + score" class="w-8 sm:w-10 text-center text-xs font-black text-emerald-950">
+                                            {{ score }}
+                                        </span>
+                                    </div>
                                 </div>
                             </th>
 
@@ -215,22 +217,24 @@ const getF17ComparisonBadge = (valA, valB) => {
                             </th>
 
                             <!-- Header Kolom B (Tingkat Kebutuhan Saat Ini) -->
-                            <th class="py-4 px-4 w-[330px] bg-blue-50/70 text-left border-l border-gray-200">
+                            <th class="py-4 px-4 w-[340px] bg-blue-50/80 text-left border-l border-gray-200">
                                 <div class="flex items-center gap-2 mb-1">
-                                    <span class="w-6 h-6 rounded-md bg-blue-700 text-white flex items-center justify-center text-xs font-black">B</span>
+                                    <span class="w-6 h-6 rounded-md bg-blue-700 text-white flex items-center justify-center text-xs font-black shadow-xs">B</span>
                                     <span class="font-black text-blue-950 text-sm">Kebutuhan Saat Ini</span>
                                 </div>
-                                <div class="text-xs text-blue-800 font-medium mb-3">
+                                <div class="text-xs text-blue-800 font-medium mb-2.5 leading-tight">
                                     Tingkat kebutuhan pada bidang pekerjaan Anda
                                 </div>
-                                <div class="flex items-center justify-between max-w-[240px] mx-auto px-1 text-xs font-bold text-blue-900">
-                                    <span class="text-[11px] text-blue-700 font-medium">1 (Sangat Rendah)</span>
-                                    <div class="flex gap-4">
-                                        <span class="w-6 text-center">2</span>
-                                        <span class="w-6 text-center">3</span>
-                                        <span class="w-6 text-center">4</span>
+                                <div class="max-w-[240px] mx-auto bg-white/80 p-2 rounded-xl border border-blue-200/80 shadow-2xs">
+                                    <div class="flex items-center justify-between text-[10px] font-bold text-blue-700 mb-1 px-1">
+                                        <span>1 (Sangat Rendah)</span>
+                                        <span>5 (Sangat Tinggi)</span>
                                     </div>
-                                    <span class="text-[11px] text-blue-700 font-medium">5 (Sangat Tinggi)</span>
+                                    <div class="flex items-center justify-between">
+                                        <span v-for="score in 5" :key="'hdr_b_' + score" class="w-8 sm:w-10 text-center text-xs font-black text-blue-950">
+                                            {{ score }}
+                                        </span>
+                                    </div>
                                 </div>
                             </th>
                         </tr>
