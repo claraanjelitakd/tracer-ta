@@ -2,6 +2,13 @@
 
 Semua perubahan besar pada sistem dicatat dalam dokumen ini.
 
+## [2026-09-20] - Penyempurnaan Antarmuka Audit Alumni Super Admin (Tata Letak Statis, Konsistensi Form Profil, Dropdown Seksi Langsung Nama, & Standar Data Table Bersih)
+**Modul Super Admin (/superadmin/alumni/{id}):**
+- **Tata Letak Statis & Stabil**: Menghilangkan *negative margin* (`-mt-10`) dan tumpang tindih kontainer untuk menghilangkan pergeseran layar (*pull/drag elastic bouncing*).
+- **Konsistensi Form Profil**: Menghapus pembungkus kartu ganda sehingga form data pribadi, akademik, orang tua, dan karier memiliki lebar dan padding 100% konsisten dan simetris.
+- **Filter Dropdown Seksi Langsung Nama**: Mengganti deretan tombol seksi horizontal dengan dropdown `<select>` yang menampilkan langsung nama bagian/seksi pada Kuesioner Universitas maupun Program Studi.
+- **Standar Data Table Bersih**: Menghilangkan warna mencolok berlebihan pada tabel, menggantinya dengan gaya tabel data standar (header abu-abu terang, baris data putih bergaris tipis, badge status merah/hijau minimalis, dan header pemisah kuning lembut UKDW).
+
 ## [2026-09-20] - Redesain Audit Detail Alumni Super Admin (DataTables Excel-Style View, Urutan Tab Baru, Header Kuning & Highlight Merah)
 **Modul Super Admin (/superadmin/alumni/{id}):**
 - Urutan Tab Baru: 1. Detail Profile (default), 2. Kuesioner Universitas, 3. Kuesioner Program Studi: [Nama Prodi].

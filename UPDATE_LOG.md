@@ -1,5 +1,25 @@
 # UPDATE LOG - SERU (Sistem Ekosistem Rekam Jejak Alumni)
 
+## [2026-09-20] Penyempurnaan Antarmuka Audit Alumni Super Admin (Tata Letak Statis/Stabil, Konsistensi Form Profil, Dropdown Seksi Langsung Nama, & Standar Data Table Bersih)
+- **Stabilitas Tata Letak Bebas Pergeseran (*Layout Stays in Place*) ([Show.vue](file:///c:/study/tracerstudy/resources/js/Pages/SuperAdmin/Alumni/Show.vue))**:
+  - Menghilangkan *negative margin* (`-mt-10`) dan tumpang tindih kontainer yang sebelumnya memicu efek ketarik (*pull/drag elastic bouncing*).
+  - Menstandarkan tinggi *header solid* dengan border pemisah bawah yang rapi serta padding halaman utama statis dan teratur (`py-6 px-4 sm:px-6 lg:px-8`).
+- **Konsistensi Ukuran & Lebar Form Profil (Tab 1: Detail Profile) ([Show.vue](file:///c:/study/tracerstudy/resources/js/Pages/SuperAdmin/Alumni/Show.vue))**:
+  - Menghapus pembungkus kartu ganda (*double padding wrapper*) di sekeliling komponen form anak (`FormPribadi`, `FormAkademik`, `FormOrangTua`, `FormKarier`).
+  - Menghasilkan keseragaman ukuran kartu 100% simetris, presisi, dan proporsional di semua bagian sub-tab profil tanpa nested margin.
+- **Filter Bagian Berbasis Dropdown Dinamis & Nama Seksi Langsung ([Show.vue](file:///c:/study/tracerstudy/resources/js/Pages/SuperAdmin/Alumni/Show.vue))**:
+  - Mengganti deretan tombol seksi horizontal yang menumpuk dengan komponen **Dropdown `<select>` modern**.
+  - Menampilkan **nama seksi/bagian secara langsung** (misal: *"Kondisi Kerja Saat Ini"*, *"Mendapatkan Pekerjaan"*, dsb.) baik pada Kuesioner Universitas maupun Kuesioner Program Studi.
+  - Menghilangkan label teknis mentah (*"Seksi 1: ..."*), menyelaraskan format kuesioner universitas sama seperti kuesioner prodi.
+- **Desain Data Table Standar, Bersih & Profesional (Tanpa Warna Mencolok Berlebihan)**:
+  - Membersihkan palet warna tabel: menggunakan header netral abu-abu terang (`bg-gray-50 text-gray-700 border-b border-gray-200`), baris data putih bersih standar (`bg-white hover:bg-gray-50/80 border-b border-gray-100`), dan tipografi hitam tegas yang mudah dibaca.
+  - Header pemisah seksi menggunakan warna kuning lembut UKDW (`bg-amber-100/75 text-amber-950 font-bold`) dengan nama seksi langsung dan status kelengkapan.
+  - Butir belum dijawab ditandai dengan badge status merah minimalis (`bg-rose-50 text-rose-700 border border-rose-200`) dan strip `-` merah lembut tanpa mewarnai seluruh baris tabel secara berlebihan.
+  - Butir terjawab ditandai dengan badge hijau teratur (`bg-emerald-50 text-emerald-700 border border-emerald-200`) dan teks jawaban tebal.
+- **Quality & Automated Testing**:
+  - Seluruh 54 tests PHPUnit Feature & Unit lulus 100% (298 assertions).
+  - Asset Vite frontend terkompilasi bersih (0 error).
+
 ## [2026-09-20] Redesain Detail Audit Alumni Super Admin (DataTables Excel-Style View, Urutan Tab Baru, Header Kuning & Highlight Merah)
 - **Restrukturisasi Urutan Tab Detail Alumni ([Show.vue](file:///c:/study/tracerstudy/resources/js/Pages/SuperAdmin/Alumni/Show.vue))**:
   - Menyusun urutan tab terpadu:
