@@ -530,11 +530,18 @@ const statusYudisium = computed(() => {
                                                 </td>
                                                 <td class="py-3 px-4 text-center border-r border-gray-200">
                                                     <span 
-                                                        class="px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase inline-flex items-center gap-1"
-                                                        :class="q.is_answered ? 'bg-emerald-100 text-emerald-800' : 'bg-red-100 text-red-800 font-black'"
+                                                        v-if="q.is_answered" 
+                                                        class="font-black text-sm text-[#0D542B]"
+                                                        title="Terjawab"
                                                     >
-                                                        <span class="w-1.5 h-1.5 rounded-full" :class="q.is_answered ? 'bg-emerald-600' : 'bg-red-600'"></span>
-                                                        {{ q.is_answered ? 'Terjawab' : 'Belum Dijawab' }}
+                                                        v
+                                                    </span>
+                                                    <span 
+                                                        v-else 
+                                                        class="font-black text-sm text-red-600"
+                                                        title="Belum Dijawab"
+                                                    >
+                                                        x
                                                     </span>
                                                 </td>
                                                 <td class="py-3 px-4 font-semibold" :class="q.is_answered ? 'text-gray-900' : 'text-rose-500 italic'">
@@ -639,11 +646,18 @@ const statusYudisium = computed(() => {
                                                 </td>
                                                 <td class="py-3 px-4 text-center border-r border-gray-200">
                                                     <span 
-                                                        class="px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase inline-flex items-center gap-1"
-                                                        :class="q.is_answered ? 'bg-emerald-100 text-emerald-800' : 'bg-red-100 text-red-800 font-black'"
+                                                        v-if="q.is_answered" 
+                                                        class="font-black text-sm text-[#0D542B]"
+                                                        title="Terjawab"
                                                     >
-                                                        <span class="w-1.5 h-1.5 rounded-full" :class="q.is_answered ? 'bg-emerald-600' : 'bg-red-600'"></span>
-                                                        {{ q.is_answered ? 'Terjawab' : 'Belum Dijawab' }}
+                                                        v
+                                                    </span>
+                                                    <span 
+                                                        v-else 
+                                                        class="font-black text-sm text-red-600"
+                                                        title="Belum Dijawab"
+                                                    >
+                                                        x
                                                     </span>
                                                 </td>
                                                 <td class="py-3 px-4 font-semibold" :class="q.is_answered ? 'text-gray-900' : 'text-rose-500 italic'">

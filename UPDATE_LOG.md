@@ -1,5 +1,18 @@
 # UPDATE LOG - SERU (Sistem Ekosistem Rekam Jejak Alumni)
 
+## [2026-09-21] Penyederhanaan Status (v dan x) & Kelengkapan 100% 4 Sub-Tab Ekspor Excel
+
+- **Standarisasi Kolom Status Menjadi 'v' dan 'x' Tanpa Titik**:
+  - Mengubah indikator status pada tabel kuesioner universitas dan kuesioner prodi di seluruh stakeholder ([SuperAdmin/Alumni/Show.vue](file:///c:/study/tracerstudy/resources/js/Pages/SuperAdmin/Alumni/Show.vue), [AdminBiroTiga/AlumniShow.vue](file:///c:/study/tracerstudy/resources/js/Pages/AdminBiroTiga/AlumniShow.vue), [AdminFakultas/Alumni/Show.vue](file:///c:/study/tracerstudy/resources/js/Pages/AdminFakultas/Alumni/Show.vue), [AdminProdi/Alumni/Show.vue](file:///c:/study/tracerstudy/resources/js/Pages/AdminProdi/Alumni/Show.vue)) menjadi huruf **`v`** (bold hijau untuk terjawab) dan **`x`** (bold merah untuk belum terjawab) secara bersih tanpa titik bulat (`•`).
+  - Menyelaraskan kolom status pada berkas Excel `.xls` ([AlumniTracerExcelExporter.php](file:///c:/study/tracerstudy/app/Services/Export/AlumniTracerExcelExporter.php)) menjadi `v` dan `x`.
+- **Ekspor Excel (.xls) 100% Lengkap Mencakup Seluruh 4 Sub-Bagian Profil**:
+  - Menyusun 4 sub-bagian grid identitas lengkap di lembar kerja Excel:
+    1. **Data Diri & Kontak Pribadi**: NIM, Nama Lengkap, NIK (KTP), NPWP, No. Kartu Keluarga (KK), No. BPJS/Asuransi, NISN, Jenis Kelamin, Tempat Lahir, Tanggal Lahir, Agama, Golongan Darah, Kewarganegaraan, Nomor Telepon/WA, Email Pribadi, Email Kampus/Mahasiswa, LinkedIn (URL/Username), Media Sosial Lainnya (IG & FB), Bidang Keahlian (*Expert*), Minat, dan Alamat Lengkap Domisili.
+    2. **Data Akademik & Kelulusan**: Program Studi, Fakultas, Angkatan Masuk, Status Mahasiswa, Tahun Lulus, Semester Kelulusan, IPK Kumulatif, Total SKS, Total Angka Kualitas, Asal Sekolah (SMA/SMK), Jurusan Asal Sekolah, dan Alamat Lengkap Asal Sekolah (Kota/Kabupaten & Provinsi).
+    3. **Data Orang Tua / Wali**: Nama Lengkap Orang Tua/Wali, Pekerjaan Orang Tua/Wali, Nomor Telepon/WA Orang Tua, Kota Asal Orang Tua, dan Alamat Lengkap Orang Tua beserta Kode Pos.
+    4. **Data Karier, Perusahaan & Atasan**: Status/Kategori Pekerjaan, Posisi/Jabatan, Posisi Wiraswasta, Estimasi Gaji (*Take Home Pay*), Jenis/Bidang Pekerjaan, Nama Perusahaan/Kantor, Sektor Perusahaan, Skala Perusahaan, Jenis Usaha, Jenis Lokasi & Negara Perusahaan, Alamat Lengkap Perusahaan beserta Kode Pos, Nama Atasan Langsung, Kontak Atasan (Telepon & Email), dan Riwayat Pendidikan Lanjut (Tingkat S2/S3/Profesi, Kampus & Prodi Lanjut).
+  - Menerapkan format teks eksplisit Microsoft Excel (`style="mso-number-format:'\@';"`) secara inline pada setiap cell data numerik panjang (NIK, KK, BPJS, NISN, NPWP, Telepon) untuk mencegah konversi notasi ilmiah eksponensial (seperti `3,4041E+15`).
+
 ## [2026-09-21] Rekonstruksi & Kelengkapan 4 Sub-Tab Database Views (v_alumni_profile_summary & v_alumni_audit_rekap)
 
 - **Kelengkapan Penuh 4 Sub-Tab Profil di Database View ([2026_09_20_234000_create_alumni_audit_database_views.php](file:///c:/study/tracerstudy/database/migrations/2026_09_20_234000_create_alumni_audit_database_views.php))**:

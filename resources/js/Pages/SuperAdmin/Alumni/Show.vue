@@ -593,13 +593,13 @@ const statusYudisium = computed(() => {
                                                 </span>
                                             </td>
 
-                                            <!-- Kolom Status -->
+                                            <!-- Kolom Status (v / x) -->
                                             <td v-if="!q.is_header" class="text-center py-2.5 px-3 border-r border-gray-100">
-                                                <span v-if="q.is_answered" class="px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-emerald-50 text-emerald-700 border border-emerald-200">
-                                                    Terjawab
+                                                <span v-if="q.is_answered" class="font-black text-sm text-[#0D542B]" title="Terjawab">
+                                                    v
                                                 </span>
-                                                <span v-else class="px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-rose-50 text-rose-700 border border-rose-200">
-                                                    Belum Dijawab
+                                                <span v-else class="font-black text-sm text-red-600" title="Belum Dijawab">
+                                                    x
                                                 </span>
                                             </td>
 
@@ -752,13 +752,13 @@ const statusYudisium = computed(() => {
                                                 </span>
                                             </td>
 
-                                            <!-- Kolom Status -->
+                                            <!-- Kolom Status (v / x) -->
                                             <td v-if="!q.is_header" class="text-center py-2.5 px-3 border-r border-gray-100">
-                                                <span v-if="q.is_answered" class="px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-emerald-50 text-emerald-700 border border-emerald-200">
-                                                    Terjawab
+                                                <span v-if="q.is_answered" class="font-black text-sm text-[#0D542B]" title="Terjawab">
+                                                    v
                                                 </span>
-                                                <span v-else class="px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-rose-50 text-rose-700 border border-rose-200">
-                                                    Belum Dijawab
+                                                <span v-else class="font-black text-sm text-red-600" title="Belum Dijawab">
+                                                    x
                                                 </span>
                                             </td>
 

@@ -3,6 +3,7 @@
 Semua perubahan besar pada sistem dicatat dalam dokumen ini.
 
 ## [2026-09-21]
+- **Penyederhanaan Status (v dan x) & Kelengkapan 4 Sub-Tab Ekspor Excel**: Menstandarkan indikator status kuesioner pada antarmuka web (Super Admin, Biro 3, Fakultas, Prodi) dan berkas Excel (.xls) menjadi huruf `v` (hijau) dan `x` (merah) tanpa titik bulat (`•`). Menyusun 4 sub-bagian identitas profil di berkas Excel mencakup Data Pribadi, Data Akademik lengkap, Data Orang Tua/Wali, dan Data Karier/Perusahaan/Atasan dengan format teks anti-notasi eksponensial (`mso-number-format:'\@'`).
 - **Kelengkapan 4 Sub-Tab Database Views (`v_alumni_profile_summary` & `v_alumni_audit_rekap`)**: Merekonstruksi `v_alumni_profile_summary` menjadi 78 kolom lengkap mencakup seluruh field dari 4 tab profil (Data Pribadi, Data Akademik lengkap asal sekolah/prodi/fakultas, Data Orang Tua/Wali, dan Data Karier/Perusahaan/Atasan) dengan mengeluarkan entitas yudisium sesuai kebutuhan. Memperbarui `v_alumni_audit_rekap` menjadi 89 kolom untuk master audit seluruh stakeholder.
 - **Full Profile Parity Seluruh Stakeholder**: Mengintegrasikan 4 sub-komponen profil lengkap (`FormPribadi`, `FormAkademik`, `FormOrangTua`, `FormKarier`) ke halaman detail alumni Admin Biro 3, Admin Fakultas, dan Admin Program Studi, lengkap dengan tombol simpan profil terhubung ke backend masing-masing.
 - **Perbaikan Pemotongan Teks Sidebar**: Mengganti batasan `truncate` dengan `break-words leading-tight/leading-snug` pada sidebar Super Admin, Biro 3, Fakultas, dan Prodi sehingga nama pengguna dan instansi tampil utuh.
