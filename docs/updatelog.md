@@ -2,6 +2,14 @@
 
 Semua perubahan besar pada sistem dicatat dalam dokumen ini.
 
+## [2026-09-20] - Navigasi Sidebar Terpadu Super Admin
+**UI/UX & Navigasi:**
+- Mengganti navigasi atas (*top navbar*) pada modul Super Admin dengan **Sidebar Terpadu** (`Sidebar.vue`) tetap di sisi kiri layar (`w-72`).
+- Menyediakan navigasi menu terstruktur (Dashboard, Kelola Kuesioner, Kelola Section, Data Alumni, dan Pintasan Publik).
+- Desain responsif dengan *slide-over drawer* dan *backdrop* khusus perangkat mobile/tablet.
+- Menghubungkan seluruh halaman Super Admin (`Dashboard.vue`, `Pertanyaan/Index.vue`, `Section/Index.vue`, `Alumni/Index.vue`, `Alumni/Show.vue`).
+- Menghapus komponen `Navbar.vue` lama di modul Super Admin.
+
 ## [2026-09-20] - Seeding Perusahaan 15 Kolom, Sinkronisasi Studi Lanjut F18, UI F17 Skala Langsung, & Jump Logic Database-Driven
 **Database & Seeding:**
 - Mengisi 15 kolom lengkap pada `database/seeders/PerusahaanSeeder.php` termasuk provinsi_id, kabupaten_id, kota, provinsi, negara, jenis_lokasi, jenis_perusahaan, skala, kode_pos, dan status_verifikasi.

@@ -10,7 +10,7 @@ import { Head, Link, router } from '@inertiajs/vue3';
 import { ref, computed, watch } from 'vue';
 import Swal from 'sweetalert2';
 
-import Navbar from '@/Pages/SuperAdmin/Components/Navbar.vue';
+import Sidebar from '@/Pages/SuperAdmin/Components/Sidebar.vue';
 import SectionTabs from './Components/SectionTabs.vue';
 import QuestionCard from './Components/QuestionCard.vue';
 import QuestionModal from './Components/QuestionModal.vue';
@@ -353,25 +353,28 @@ const handleDeleteOption = (opt) => {
 <template>
     <Head title="Kelola Kuesioner - Super Admin" />
 
-    <div class="min-h-screen bg-[#f8fafc] flex flex-col font-sans pb-24">
+    <div class="min-h-screen bg-[#f8fafc] flex font-sans">
         
-        <!-- Navbar Terpadu -->
-        <Navbar />
+        <!-- Sidebar Terpadu Super Admin -->
+        <Sidebar />
 
-        <!-- Header Solid Hijau Resmi UKDW #0D542B -->
-        <header class="bg-[#0D542B] text-white pt-10 pb-20">
-            <div class="w-full max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">
-                <h1 class="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
-                    Kelola Kuesioner
-                </h1>
-                <p class="text-white/90 font-medium mt-1 max-w-2xl text-sm sm:text-base leading-relaxed">
-                    Konfigurasi butir pertanyaan, opsi jawaban, dan alur percabangan (*jump logic*) kuesioner Tracer Study.
-                </p>
-            </div>
-        </header>
+        <!-- Area Konten Utama -->
+        <div class="flex-1 flex flex-col min-w-0 lg:pl-72">
+            
+            <!-- Header Solid Hijau Resmi UKDW #0D542B -->
+            <header class="bg-[#0D542B] text-white pt-8 pb-20 px-4 sm:px-6 lg:px-8">
+                <div class="w-full max-w-[1400px] mx-auto">
+                    <h1 class="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
+                        Kelola Kuesioner
+                    </h1>
+                    <p class="text-white/90 font-medium mt-1 max-w-2xl text-sm sm:text-base leading-relaxed">
+                        Konfigurasi butir pertanyaan, opsi jawaban, dan alur percabangan (*jump logic*) kuesioner Tracer Study.
+                    </p>
+                </div>
+            </header>
 
-        <!-- Main Card Container (Mirip Form Profil Alumni) -->
-        <main class="w-full max-w-[1400px] mx-auto -mt-16 px-4 sm:px-6 lg:px-8 relative z-20">
+            <!-- Main Card Container -->
+            <main class="w-full max-w-[1400px] mx-auto -mt-14 px-4 sm:px-6 lg:px-8 pb-20 relative z-20">
             <div class="bg-white rounded-[2rem] shadow-xl border border-gray-100 overflow-hidden relative transition-all duration-300">
                 
                 <!-- Section Tabs (Terintegrasi rapi di bagian atas kartu) -->
@@ -684,5 +687,6 @@ const handleDeleteOption = (opt) => {
             @close="closeOptionModal"
             @saved="closeOptionModal"
         />
+        </div>
     </div>
 </template>

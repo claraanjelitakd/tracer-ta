@@ -1,5 +1,26 @@
 # UPDATE LOG - SERU (Sistem Ekosistem Rekam Jejak Alumni)
 
+## [2026-09-20] Navigasi Sidebar Terpadu Super Admin (Menggantikan Navigasi Atas)
+- **Desain & Implementasi Sidebar Terpadu Super Admin ([Sidebar.vue](file:///c:/study/tracerstudy/resources/js/Pages/SuperAdmin/Components/Sidebar.vue))**:
+  - Mengubah sistem navigasi modul Super Admin dari navigasi atas (*top navigation bar*) menjadi **Sidebar** navigasi tetap (*fixed desktop sidebar* `w-72`) di sisi kiri layar.
+  - Sidebar dilengkapi dengan:
+    - **Header & Branding**: Logo resmi UKDW, judul "Tracer Study UKDW", dan badge indikator "Super Admin".
+    - **Navigasi Menu Utama**: Link menu terstruktur dengan ikon representatif, status aktif warna hijau resmi UKDW `#0D542B` dengan aksen kuning `#FDC700` (Dashboard, Kelola Kuesioner, Kelola Section, dan Data Alumni).
+    - **Pintasan Publik**: Tombol pintas cepat "Lihat Beranda Publik" (`/`).
+    - **Profil Pengguna & Logout Bawah**: Kartu identitas Super Admin dengan avatar inisial, nama, email, serta tombol keluar (*logout*) dengan modal konfirmasi SweetAlert2.
+    - **Responsivitas Mobile / Tablet**: Topbar ringkas khusus mobile dengan tombol hamburger yang membuka *slide-over drawer* berserta *backdrop overlay* interaktif.
+- **Integrasi Penuh di Seluruh Halaman Super Admin**:
+  - [Dashboard.vue](file:///c:/study/tracerstudy/resources/js/Pages/SuperAdmin/Dashboard.vue)
+  - [Pertanyaan/Index.vue](file:///c:/study/tracerstudy/resources/js/Pages/SuperAdmin/Pertanyaan/Index.vue)
+  - [Section/Index.vue](file:///c:/study/tracerstudy/resources/js/Pages/SuperAdmin/Section/Index.vue)
+  - [Alumni/Index.vue](file:///c:/study/tracerstudy/resources/js/Pages/SuperAdmin/Alumni/Index.vue)
+  - [Alumni/Show.vue](file:///c:/study/tracerstudy/resources/js/Pages/SuperAdmin/Alumni/Show.vue)
+- **Pembersihan Kode Usang**:
+  - Menghapus komponen navigasi atas lama `resources/js/Pages/SuperAdmin/Components/Navbar.vue` yang sudah tidak digunakan.
+- **Automated Tests & Asset Build**:
+  - Seluruh 48 tests PHPUnit Feature & Unit lulus 100% (256 assertions).
+  - Vite build selesai sukses (4.91s).
+
 ## [2026-09-20] Seeding Komprehensif Perusahaan (15 Kolom), Sinkronisasi & Standardisasi Studi Lanjut F18, Format Skala Langsung F17, dan Database-Driven Jump Logic
 - **Seeding Komprehensif Master Data Perusahaan 15 Kolom ([PerusahaanSeeder.php](file:///c:/study/tracerstudy/database/seeders/PerusahaanSeeder.php))**:
   - Mengisi seluruh 15 atribut tabel `perusahaan` secara lengkap dan valid: `id`, `nama_perusahaan`, `propinsi_id`, `kabupaten_id`, `alamat`, `kota`, `provinsi`, `negara`, `jenis_lokasi` (Dalam Negeri / Luar Negeri), `jenis_perusahaan`, `jenis_perusahaan_lainnya`, `skala`, `kode_pos`, `status_verifikasi` (`verified`), serta timestamps.

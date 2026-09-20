@@ -11,7 +11,7 @@
 <script setup>
 import { Head, Link, router } from '@inertiajs/vue3';
 import { ref, computed } from 'vue';
-import Navbar from '../Components/Navbar.vue';
+import Sidebar from '../Components/Sidebar.vue';
 
 const props = defineProps({
     alumnis: {
@@ -104,13 +104,16 @@ const resetFilters = () => {
 <template>
     <Head title="Daftar Mahasiswa & Alumni - Super Admin" />
 
-    <div class="min-h-screen bg-[#f8fafc] text-gray-800 font-sans pb-24">
-        <!-- Navbar Resmi Super Admin -->
-        <Navbar />
+    <div class="min-h-screen bg-[#f8fafc] text-gray-800 font-sans flex">
+        <!-- Sidebar Resmi Super Admin -->
+        <Sidebar />
 
-        <!-- Header Solid Hijau Resmi UKDW #0D542B (Tanpa gradasi ramai) -->
-        <header class="bg-[#0D542B] text-white pt-10 pb-20">
-            <div class="w-full max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row md:items-center justify-between gap-6">
+        <!-- Area Konten Utama -->
+        <div class="flex-1 flex flex-col min-w-0 lg:pl-72">
+            
+            <!-- Header Solid Hijau Resmi UKDW #0D542B -->
+            <header class="bg-[#0D542B] text-white pt-8 pb-16 px-4 sm:px-6 lg:px-8">
+                <div class="w-full max-w-[1400px] mx-auto flex flex-col md:flex-row md:items-center justify-between gap-6">
                 <div>
                     <div class="flex items-center gap-2 text-xs text-white/80 font-medium mb-2">
                         <Link href="/superadmin/dashboard" class="hover:underline">Dashboard</Link>
@@ -416,5 +419,6 @@ const resetFilters = () => {
             </div>
 
         </main>
+        </div>
     </div>
 </template>

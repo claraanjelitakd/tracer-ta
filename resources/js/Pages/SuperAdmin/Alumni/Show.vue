@@ -12,7 +12,7 @@
 import { Head, Link, useForm, router } from '@inertiajs/vue3';
 import { ref, computed } from 'vue';
 import Swal from 'sweetalert2';
-import Navbar from '../Components/Navbar.vue';
+import Sidebar from '../Components/Sidebar.vue';
 
 // Mengimpor 4 Komponen Profil Alumni
 import FormPribadi from '../../Alumni/Profil/Components/FormPribadi.vue';
@@ -147,20 +147,23 @@ const statusYudisium = computed(() => {
 <template>
     <Head :title="`Detail Mahasiswa - ${alumni.data_akademik?.nama || alumni.nim} - Super Admin`" />
 
-    <div class="min-h-screen bg-[#f8fafc] text-gray-800 font-sans pb-24">
-        <!-- Navbar Resmi Super Admin -->
-        <Navbar />
+    <div class="min-h-screen bg-[#f8fafc] text-gray-800 font-sans flex">
+        <!-- Sidebar Resmi Super Admin -->
+        <Sidebar />
 
-        <!-- Header Solid Hijau Resmi UKDW #0D542B (Tanpa gradasi) -->
-        <header class="bg-[#0D542B] text-white pt-10 pb-20">
-            <div class="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">
-                <div class="flex items-center gap-2 text-xs text-white/80 font-medium mb-3">
-                    <Link href="/superadmin/dashboard" class="hover:underline">Dashboard</Link>
-                    <span>/</span>
-                    <Link href="/superadmin/alumni" class="hover:underline">Data Alumni</Link>
-                    <span>/</span>
-                    <span class="text-white font-bold">Detail Mahasiswa</span>
-                </div>
+        <!-- Area Konten Utama -->
+        <div class="flex-1 flex flex-col min-w-0 lg:pl-72">
+            
+            <!-- Header Solid Hijau Resmi UKDW #0D542B -->
+            <header class="bg-[#0D542B] text-white pt-8 pb-16 px-4 sm:px-6 lg:px-8">
+                <div class="max-w-[1400px] mx-auto">
+                    <div class="flex items-center gap-2 text-xs text-white/80 font-medium mb-3">
+                        <Link href="/superadmin/dashboard" class="hover:underline">Dashboard</Link>
+                        <span>/</span>
+                        <Link href="/superadmin/alumni" class="hover:underline">Data Alumni</Link>
+                        <span>/</span>
+                        <span class="text-white font-bold">Detail Mahasiswa</span>
+                    </div>
 
                 <div class="flex flex-col md:flex-row md:items-center justify-between gap-5">
                     <div>
@@ -678,5 +681,6 @@ const statusYudisium = computed(() => {
             </div>
 
         </main>
+        </div>
     </div>
 </template>

@@ -10,7 +10,7 @@
 -->
 <script setup>
 import { Head, Link } from '@inertiajs/vue3';
-import Navbar from '@/Pages/SuperAdmin/Components/Navbar.vue';
+import Sidebar from '@/Pages/SuperAdmin/Components/Sidebar.vue';
 
 const props = defineProps({
     user: Object,
@@ -21,14 +21,17 @@ const props = defineProps({
 <template>
     <Head title="Dashboard Super Admin - Tracer Study UKDW" />
 
-    <div class="min-h-screen bg-[#f8fafc] text-gray-800 flex flex-col font-sans pb-24">
+    <div class="min-h-screen bg-[#f8fafc] text-gray-800 flex font-sans">
         
-        <!-- Navbar Terpadu Super Admin -->
-        <Navbar :user="user" />
+        <!-- Sidebar Terpadu Super Admin (Desktop + Mobile Drawer) -->
+        <Sidebar :user="user" />
 
-        <!-- Header Solid Hijau Resmi UKDW #0D542B (Tanpa gradasi berlebih) -->
-        <header class="bg-[#0D542B] text-white pt-10 pb-20">
-            <div class="w-full max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <!-- Area Konten Utama -->
+        <div class="flex-1 flex flex-col min-w-0 lg:pl-72">
+            
+            <!-- Header Solid Hijau Resmi UKDW #0D542B -->
+            <header class="bg-[#0D542B] text-white pt-8 pb-16 px-4 sm:px-6 lg:px-8">
+                <div class="w-full max-w-[1400px] mx-auto flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
                     <div class="inline-flex items-center px-3 py-1 bg-black/20 text-white rounded-full text-xs font-bold uppercase tracking-wider mb-2">
                         Super Administrator
@@ -212,5 +215,6 @@ const props = defineProps({
             </div>
         </footer>
 
+        </div>
     </div>
 </template>

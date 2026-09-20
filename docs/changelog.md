@@ -1,6 +1,7 @@
 # Update Log Tracer Study
 
 ## 20 September 2026
+- **UI/UX (Super Admin Sidebar)**: Mengubah sistem navigasi modul Super Admin dari navigasi atas (*top bar*) menjadi navigasi **Sidebar tetap** (`Sidebar.vue`) di sisi kiri (`w-72`) dengan drawer mobile dan tautan menu terpusat.
 - **Database & Seeding**: Seeding lengkap 15 atribut tabel `perusahaan` (`PerusahaanSeeder.php`), foreign key provinsi/kabupaten, dan perbaikan view `v_alumni_kuesioner_autofill` untuk `BIO_PENDIDIKAN_TINGKAT`.
 - **Feature (Studi Lanjut F18)**: Sinkronisasi 2 arah profil studi lanjut (`pendidikan_tingkat`, `perguruan_tinggi`, `pendidikan_prodi`) ke kuesioner `F18b` dan `F18c` (`KuesionerSyncService` & `KuesionerController`).
 - **UI/UX (Kuesioner)**: Tampilan kartu `F18` ditata bersih (`F18b` & `F18c` 2 kolom, `F18d` input type date).

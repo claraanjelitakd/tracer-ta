@@ -11,7 +11,7 @@ import { Head, Link, router } from '@inertiajs/vue3';
 import { ref, computed } from 'vue';
 import Swal from 'sweetalert2';
 
-import Navbar from '@/Pages/SuperAdmin/Components/Navbar.vue';
+import Sidebar from '@/Pages/SuperAdmin/Components/Sidebar.vue';
 import SectionModal from './Components/SectionModal.vue';
 
 // Properti yang dikirimkan oleh SuperAdmin\KelolaSection\KelolaSectionController
@@ -214,14 +214,17 @@ const handleDeleteSection = (sec) => {
 <template>
     <Head title="Kelola Bagian Kuesioner - Super Admin" />
 
-    <div class="min-h-screen bg-[#f8fafc] flex flex-col font-sans pb-24">
+    <div class="min-h-screen bg-[#f8fafc] flex font-sans">
         
-        <!-- Navbar Terpadu Superadmin -->
-        <Navbar />
+        <!-- Sidebar Terpadu Superadmin -->
+        <Sidebar />
 
-        <!-- Header Solid Hijau Resmi UKDW #0D542B -->
-        <header class="bg-[#0D542B] text-white pt-10 pb-20">
-            <div class="w-full max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row md:items-center justify-between gap-6">
+        <!-- Area Konten Utama -->
+        <div class="flex-1 flex flex-col min-w-0 lg:pl-72">
+            
+            <!-- Header Solid Hijau Resmi UKDW #0D542B -->
+            <header class="bg-[#0D542B] text-white pt-8 pb-20 px-4 sm:px-6 lg:px-8">
+                <div class="w-full max-w-[1400px] mx-auto flex flex-col md:flex-row md:items-center justify-between gap-6">
                 <div>
                     <div class="flex items-center gap-2 mb-2">
                         <Link 
@@ -454,5 +457,6 @@ const handleDeleteSection = (sec) => {
              :nextOrder="nextAvailableOrder"
              @close="closeSectionModal"
          />
+        </div>
     </div>
 </template>
