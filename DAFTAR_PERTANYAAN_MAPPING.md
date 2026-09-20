@@ -33,34 +33,29 @@ Berikut adalah rincian setiap butir pertanyaan standar Dikti, peletakan komponen
 
 | Kode | Pertanyaan / Topik | Tipe Input | Komponen Vue | Tabel & Kolom Database | Keterangan & Aturan Khusus |
 | :---: | :--- | :--- | :--- | :--- | :--- |
-| **F1** | Masa tunggu mendapatkan pekerjaan pertama | `radio_input` / `number` | `KartuPertanyaan.vue`<br>`FormKarier.vue` | `tracer.jawaban`<br>`biodata.lama_menganggur` | Menyimpan bulan sebelum/sesudah lulus. |
-| **F2** | Penekanan metode pembelajaran selama kuliah (Matriks A-H) | `matrix` / `table` | `TabelF2.vue`<br>`KartuPertanyaan.vue` | `tracer.jawaban` (sub: F21 s/d F27) | Skala 1-5 (Sangat Besar s/d Tidak Sama Sekali). |
-| **F2H** | Skala Perusahaan / Instansi Tempat Bekerja | `select` / `radio` | `FormKarier.vue`<br>`KartuPertanyaan.vue` | `perusahaan.kategori`<br>`tracer.jawaban` (F2H) | Pilihan: Lokal/Non-Profit, Nasional, Multinasional/Internasional. Auto-sync ke tabel `perusahaan`. |
-| **F3** | Sumber pencarian pekerjaan (relasi, internet, job fair, dll.) | `checkbox` / `multiple_choice` | `KartuPertanyaan.vue` | `tracer.jawaban` (sub: F301 s/d F313) | Multi-pilihan strategi mencari kerja. |
-| **F4** | Jumlah perusahaan/instansi yang dilamar | `number` / `text` | `KartuPertanyaan.vue`<br>`FormKarier.vue` | `tracer.jawaban`<br>`biodata.jumlah_instansi_dilamar` | Total instansi yang dilamar alumni. |
-| **F4A** | Jumlah respon panggilan wawancara kerja | `number` | `KartuPertanyaan.vue`<br>`FormKarier.vue` | `tracer.jawaban`<br>`biodata.jumlah_instansi_merespon` | Total instansi yang mengundang wawancara. |
-| **F4B** | Jumlah tawaran kerja yang diterima | `number` | `KartuPertanyaan.vue`<br>`FormKarier.vue` | `tracer.jawaban`<br>`biodata.jumlah_instansi_mengundang` | Total offering letter yang didapat. |
-| **F5** | Status situasi saat ini (Bekerja, Wiraswasta, Melanjutkan Studi, Mencari Kerja, Belum Memungkinkan Bekerja) | `select` / `radio` | `FormKarier.vue`<br>`KartuPertanyaan.vue` | `biodata.status_pekerjaan`<br>`tracer.jawaban` (F501 s/d F505) | Menjadi penentu logika percabangan (Jump Logic) form kuesioner. |
-| **F5A** | Melanjutkan studi (Nama Universitas, Jurusan, dll.) | `text` / `select` | `FormKarier.vue`<br>`KartuPertanyaan.vue` | `biodata.tempat_studi`<br>`tracer.jawaban` | Khusus status melanjutkan pendidikan. |
-| **F5B** | Alasan belum memungkinkan bekerja | `radio_text` | `KartuPertanyaan.vue` | `tracer.jawaban` | Pilihan: mengurus keluarga, kesehatan, dll. |
-| **F5C** | Posisi / Jabatan Wiraswasta & Startup | `select` (Dropdown) + `input` Lainnya | `FormKarier.vue`<br>`KartuPertanyaan.vue` | `biodata.posisi_wiraswasta`<br>`tracer.jawaban` (F5C) | **Standard Dropdown**: Owner, Founder, Co-Founder, Direktur Utama, Pengelola Usaha, Freelancer, Lainnya. |
-| **F5D** | Tingkat tempat kerja / wiraswasta | `select` / `radio` | `FormKarier.vue`<br>`KartuPertanyaan.vue` | `biodata.tingkat_tempat_kerja`<br>`tracer.jawaban` | Lokal / Nasional / Multinasional. |
-| **F6** | Hubungan bidang studi dengan pekerjaan | `radio` (Skala 1-5) | `KartuPertanyaan.vue`<br>`FormKarier.vue` | `biodata.hubungan_bidang_studi`<br>`tracer.jawaban` | Sangat Erat s/d Tidak Sama Sekali. |
-| **F7** | Kesesuaian tingkat pendidikan dengan pekerjaan | `radio` (Skala 1-4) | `KartuPertanyaan.vue`<br>`FormKarier.vue` | `biodata.tingkat_pendidikan_pekerjaan`<br>`tracer.jawaban` | Setingkat Lebih Tinggi, Sama, Lebih Rendah. |
-| **F7A** | Kebutuhan kompetensi tambahan | `radio_text` | `KartuPertanyaan.vue` | `tracer.jawaban` | Isian kompetensi yang dirasa kurang. |
-| **F8** | Kriteria utama dalam mencari pekerjaan | `checkbox` / `radio` | `KartuPertanyaan.vue` | `tracer.jawaban` | Gaji, lokasi, prospek karier, minat, dll. |
-| **F9** | Cara mendapatkan pekerjaan saat ini | `radio_text` | `KartuPertanyaan.vue` | `tracer.jawaban` | Iklan, jejaring alumni, magang, dll. |
-| **F10** | Berapa bulan sebelum/setelah lulus mulai mencari kerja | `radio_input` / `number` | `KartuPertanyaan.vue`<br>`FormKarier.vue` | `tracer.jawaban`<br>`biodata.waktu_mulai_mencari_pekerjaan` | Satuan bulan. |
-| **F11** | Jenis perusahaan / instansi tempat kerja | `select` (Dropdown) + `input` Lainnya | `FormKarier.vue`<br>`KartuPertanyaan.vue` | `perusahaan.jenis_perusahaan`<br>`tracer.jawaban` (F1101 s/d F1105) | BUMN, Swasta, Pemerintah, Organisasi Non-Profit, Wiraswasta, Lainnya. |
-| **F12** | Lokasi Tempat Bekerja (Dalam Negeri / Luar Negeri) | `select` + searchable modal/dropdown | `FormKarier.vue`<br>`KartuPertanyaan.vue` | `perusahaan.lokasi_kantor`<br>`perusahaan.provinsi_id`<br>`perusahaan.kabupaten_id`<br>`perusahaan.negara_id` | Auto filter: Dalam Negeri (pilih Prov & Kab) vs Luar Negeri (pilih Negara non-Indonesia). |
-| **F13** | Rata-rata Pendapatan / Take Home Pay per Bulan | `multiple_number` / `number` (Ribuan) | `FormKarier.vue`<br>`KartuPertanyaan.vue` | `biodata.gaji_pertama` / `biodata.gaji_sekarang`<br>`tracer.jawaban` (F1301 s/d F1303) | Format ribuan dinamis, memisahkan gaji pokok, lembur, dan pemasukan lain. |
-| **F14** | Seberapa besar informasi dari kampus membantu | `radio` (Skala 1-5) | `KartuPertanyaan.vue` | `tracer.jawaban` | Evaluasi peran pusat karier kampus. |
-| **F15** | Keterlibatan dalam kegiatan kemahasiswaan/organisasi | `checkbox` / `radio` | `KartuPertanyaan.vue`<br>`FormAkademik.vue` | `tracer.jawaban` | BEM, UKM, HMP, Kegiatan Sosial. |
-| **F16** | Sumber pembiayaan kuliah | `radio_text` | `KartuPertanyaan.vue`<br>`FormAkademik.vue` | `tracer.jawaban`<br>`biodata.biaya_kuliah` | Orang Tua, Beasiswa Pemerintah, Beasiswa UKDW, Bekerja Sendiri. |
-| **F17** | Evaluasi Kompetensi: Saat Lulus (A) vs Diperlukan di Dunia Kerja (B) | `matrix_dual` (Tabel Perbandingan 1-5) | `TabelF17.vue` | `tracer.jawaban` (sub: F1701A..F1728A & F1701B..F1728B) | 28 Aspek Kompetensi (Etika, Bahasa Inggris, IT, Komunikasi, dll.). |
-| **F18** | Saran dan masukan perbaikan untuk UKDW | `textarea` | `KartuPertanyaan.vue` | `biodata.saran`<br>`tracer.jawaban` | Teks terbuka umpan balik kurikulum dan fasilitas. |
-| **F24A** | Data Atasan Langsung (Nama & Jabatan Atasan) | `text` | `FormKarier.vue`<br>`KartuPertanyaan.vue` | `atasan.nama`<br>`atasan.jabatan` | Digunakan untuk survei pengguna lulusan (User Survey). |
-| **F24B** | Kontak Atasan Langsung (Email & Nomor HP Atasan) | `text` / `email` / `tel` | `FormKarier.vue`<br>`KartuPertanyaan.vue` | `atasan.email`<br>`atasan.telepon` | Sistem mencegah error duplicate key jika atasan sama disupervisi banyak alumni. |
+| **F8** | Status situasi saat ini (Bekerja, Wiraswasta, Melanjutkan Studi, Mencari Kerja, Belum Memungkinkan Bekerja) | `radio` | `FormKarier.vue`<br>`KartuPertanyaan.vue` | `biodata.kategori_pekerjaan`<br>`tracer.answer` (F8) | Menjadi penentu logika percabangan (Jump Logic) database: Melanjutkan studi $\rightarrow$ `F18`, Belum bekerja $\rightarrow$ `F10`, Bekerja $\rightarrow$ `F3`. |
+| **F10** | Apakah aktif mencari pekerjaan dalam 4 minggu terakhir | `radio` | `KartuPertanyaan.vue` | `tracer.answer` (F10) | Pilihan Ya/Tidak. Jika Tidak $\rightarrow$ lompat ke `F3`. |
+| **F18** | Pertanyaan Studi Lanjut (Header) | `header` | `KartuPertanyaan.vue` | - | Header instruksi bagi alumni yang melanjutkan pendidikan. |
+| **F18a** | Sumber biaya studi lanjut | `radio` | `KartuPertanyaan.vue` | `tracer.answer` (F18a) | 5 Opsi: Biaya Sendiri / Keluarga, Beasiswa Pemerintah, Beasiswa Swasta, Beasiswa Luar Negeri, Lainnya. |
+| **F18b** | Perguruan Tinggi studi lanjut | `text` | `FormKarier.vue`<br>`KartuPertanyaan.vue` | `biodata.perguruan_tinggi`<br>`tracer.answer` (F18b) | Sinkron otomatis 2 arah dengan data Profil Alumni (`UGM`, `ITB`, dll.). |
+| **F18c** | Program Studi studi lanjut | `text` | `FormKarier.vue`<br>`KartuPertanyaan.vue` | `biodata.pendidikan_prodi`<br>`tracer.answer` (F18c) | Sinkron otomatis 2 arah dengan data Profil Alumni (`Magister Manajemen`, dll.). |
+| **F18d** | Tanggal Masuk studi lanjut | `date` | `KartuPertanyaan.vue` | `tracer.answer` (F18d) | Format tanggal standar HTML5 date picker (`YYYY-MM-DD`). |
+| **F3** | Kapan mulai mencari pekerjaan (sebelum/setelah lulus) | `radio_input` | `KartuPertanyaan.vue` | `tracer.answer`<br>`tracer.answer_json` | Opsi input bulan sebelum/sesudah lulus. Opsi 3 (Tidak mencari kerja) $\rightarrow$ lompat ke `F504`. |
+| **F4** | Bagaimana cara mencari pekerjaan | `multiple_choice` / `checkbox` | `KartuPertanyaan.vue` | `tracer.answer_json` (F4) | Multi-pilihan strategi mencari kerja (iklan, bursa kerja, relasi, dll.). |
+| **F504** | Apakah telah mendapatkan pekerjaan ≤ 6 bulan | `radio` | `KartuPertanyaan.vue` | `tracer.answer` (F504) | Opsi "Ya" $\rightarrow$ `jump_to: 'F502'`, Opsi "Tidak" $\rightarrow$ `jump_to: 'F506'`. |
+| **F502** | Dalam berapa bulan mendapatkan pekerjaan | `number` | `KartuPertanyaan.vue` | `tracer.answer` (F502) | Satuan unit: Bulan. Dilengkapi stepper angka `+` / `-`. |
+| **F505** | Rata-rata pendapatan per bulan (Take Home Pay) | `multiple_number` | `FormKarier.vue`<br>`KartuPertanyaan.vue` | `biodata.gaji`<br>`tracer.answer_json` (F5051..F5053) | Rincian: Pekerjaan Utama, Lembur/Tips, Pekerjaan Lainnya. Format ribuan otomatis. |
+| **F505A**| Kesesuaian Gaji dengan UMR | `radio` | `KartuPertanyaan.vue` | `tracer.answer` (F505A) | Pilihan: Sesuai / Tidak Sesuai. `jump_to: 'F6'`. |
+| **F506** | Dalam berapa bulan mendapatkan pekerjaan (pencarian > 6 bulan) | `number` | `KartuPertanyaan.vue` | `tracer.answer` (F506) | Satuan unit: Bulan. Dilengkapi stepper angka `+` / `-`. |
+| **F6** | Berapa perusahaan/instansi yang sudah dilamar | `number` | `KartuPertanyaan.vue` | `tracer.answer` (F6) | Satuan unit: Perusahaan / Instansi. Grid 2 kolom berpasangan dengan F7. |
+| **F7** | Berapa perusahaan/instansi yang merespons lamaran | `number` | `KartuPertanyaan.vue` | `tracer.answer` (F7) | Satuan unit: Perusahaan / Instansi. Grid 2 kolom berpasangan dengan F6. |
+| **F7A** | Berapa perusahaan/instansi yang mengundang wawancara | `number` | `KartuPertanyaan.vue` | `tracer.answer` (F7A) | Satuan unit: Undangan Wawancara. |
+| **F12** | Sumber dana dalam pembiayaan kuliah | `radio_input` | `KartuPertanyaan.vue` | `tracer.answer`<br>`tracer.answer_json` | Biaya Sendiri/Keluarga, Beasiswa Dikti, Beasiswa UKDW, dll. |
+| **F14** | Seberapa erat hubungan bidang studi dengan pekerjaan | `radio` | `KartuPertanyaan.vue` | `tracer.answer` (F14) | Skala: Sangat Erat, Erat, Cukup Erat, Kurang Erat, Tidak Sama Sekali. |
+| **F15** | Tingkat pendidikan apa yang paling tepat untuk pekerjaan Anda | `radio` | `KartuPertanyaan.vue` | `tracer.answer` (F15) | Setingkat Lebih Tinggi, Tingkat yang Sama, Setingkat Lebih Rendah, Tidak Perlu PT. |
+| **F16** | Alasan mengambil pekerjaan yang tidak sesuai bidang studi | `multiple_choice` | `KartuPertanyaan.vue` | `tracer.answer_json` (F16) | Pilihan majemuk alasan (prospek karier, minat, lokasi, gaji, dll.). |
+| **F17** | Evaluasi Kompetensi: Saat Lulus (A) vs Diperlukan di Dunia Kerja (B) | `matrix_dual` (Tabel Komparasi) | `TabelF17.vue` | `tracer.answer` (F17a1..a7 & F17b1..b7) | 7 Aspek Kompetensi (Etika, Keahlian Bidang Ilmu, Bhs Inggris, IT, Komunikasi, Kerja Tim, Pengembangan Diri) dengan skala langsung 1 s/d 5. |
+| **F2** | Penekanan metode pembelajaran selama kuliah (F21 s/d F27) | `matrix` / `table` | `TabelF2.vue` | `tracer.answer` (F21 s/d F27) | 7 Metode (Perkuliahan, Demonstrasi, Riset, Magang, Praktikum, Lapangan, Diskusi) skala 1 s/d 5. |
 
 ---
 

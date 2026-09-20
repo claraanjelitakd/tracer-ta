@@ -8,6 +8,7 @@ use App\Models\QuestionMapping;
 use App\Models\Tracer;
 use App\Services\Kuesioner\KuesionerSyncService;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -89,8 +90,8 @@ class KuesionerController extends Controller
             ->get()
             ->keyBy('question_id');
 
-        // 6. Ambil aturan pemetaan kolom database untuk prefill otomatis
-        $pemetaan = QuestionMapping::all()->keyBy('question_id');
+        // 6. Ambil data gabungan profil alumni dari database view untuk prefill otomatis
+        $autofillData = DB::table('v_alumni_kuesioner_autofill')->where('user_id', $pengguna->id)->first();
 
         // 7. Merakit data jawaban awal ($jawabanAwal) terstruktur per butir pertanyaan
         $jawabanAwal = [];
@@ -207,16 +208,51 @@ class KuesionerController extends Controller
                                     continue;
                                 }
                                 $numVal = is_numeric($v) ? (float) $v : 0;
-                                $formatted[$k] = ($numVal >= 1000) ? (int) ($numVal / 1000) : (int) $numVal;
+                                if ($numVal > 0 && $numVal < 10000) {
+                                    $numVal = $numVal * 1000;
+                                }
+                                $formatted[$k] = (int) $numVal;
                             }
+
+                            // Fallback jika belum ada jawaban di tracer tetapi profil memiliki data gaji F505
+                            if (empty($formatted) && ! empty($autofillData->F505)) {
+                                $firstOpt = $pertanyaan->detils->first();
+                                $optCode = $firstOpt ? ($firstOpt->kode_opsi ?: ($firstOpt->code ?: $firstOpt->id)) : 'F5051';
+                                $gajiNum = (float) $autofillData->F505;
+                                if ($gajiNum > 0 && $gajiNum < 10000) {
+                                    $gajiNum = $gajiNum * 1000;
+                                }
+                                $formatted[$optCode] = (int) $gajiNum;
+                            }
+
                             $jawabanAwal[$pertanyaan->id] = $formatted;
                         } else {
-                            $jawabanAwal[$pertanyaan->id] = $saved->answer_text ?? '';
+                            $kode = strtoupper($pertanyaan->code ?? $pertanyaan->kode_pertanyaan ?? '');
+                            $val = $saved->answer_text ?? '';
+                            if ($kode === 'F18B' && ! empty($biodata->perguruan_tinggi)) {
+                                $val = $biodata->perguruan_tinggi;
+                            } elseif ($kode === 'F18C' && ! empty($biodata->pendidikan_prodi)) {
+                                $val = $biodata->pendidikan_prodi;
+                            }
+                            $jawabanAwal[$pertanyaan->id] = $val;
                         }
                     } else {
                         // Belum ada jawaban tersimpan sebelumnya, lakukan penyiapan nilai default
-                        if (in_array($pertanyaan->type, ['checkbox', 'multiple_choice', 'matrix', 'matrix_dual', 'multiple_textbox', 'multiple_number'])) {
+                        if (in_array($pertanyaan->type, ['checkbox', 'multiple_choice', 'matrix', 'matrix_dual', 'multiple_textbox'])) {
                             $jawabanAwal[$pertanyaan->id] = [];
+                        } elseif ($pertanyaan->type === 'multiple_number') {
+                            $formatted = [];
+                            $kode = strtoupper($pertanyaan->code ?? $pertanyaan->kode_pertanyaan ?? '');
+                            if ($kode === 'F505' && ! empty($autofillData->F505)) {
+                                $firstOpt = $pertanyaan->detils->first();
+                                $optCode = $firstOpt ? ($firstOpt->kode_opsi ?: ($firstOpt->code ?: $firstOpt->id)) : 'F5051';
+                                $gajiNum = (float) $autofillData->F505;
+                                if ($gajiNum > 0 && $gajiNum < 10000) {
+                                    $gajiNum = $gajiNum * 1000;
+                                }
+                                $formatted[$optCode] = (int) $gajiNum;
+                            }
+                            $jawabanAwal[$pertanyaan->id] = $formatted;
                         } elseif (in_array($pertanyaan->type, ['radio_input', 'radio_text'])) {
                             $inputsObj = [];
                             foreach ($pertanyaan->detils as $o) {
@@ -228,79 +264,39 @@ class KuesionerController extends Controller
                                 'inputs' => $inputsObj,
                             ];
                         } else {
-                            $jawabanAwal[$pertanyaan->id] = '';
+                            $kode = strtoupper($pertanyaan->code ?? $pertanyaan->kode_pertanyaan ?? '');
+                            $val = $autofillData->$kode ?? ($autofillData->{strtolower($kode)} ?? '');
 
-                            // Auto-fill dari database biodata, data_akademik, perusahaan, atau atasan jika ada mapping
-                            if (isset($pemetaan[$pertanyaan->id])) {
-                                $namaKolom = $pemetaan[$pertanyaan->id]->column_name;
-                                $namaTabel = $pemetaan[$pertanyaan->id]->table_name;
-
-                                if (in_array($namaTabel, ['data_akademik', 'data_akademiks'])) {
-                                    $jawabanAwal[$pertanyaan->id] = $biodata->dataAkademik->$namaKolom ?? '';
-                                } elseif (in_array($namaTabel, ['biodata', 'biodatas', 'alumnis'])) {
-                                    $jawabanAwal[$pertanyaan->id] = $biodata->$namaKolom ?? '';
-                                } elseif (in_array($namaTabel, ['perusahaan', 'companies'])) {
-                                    if ($namaKolom === 'alamat' && $biodata->perusahaan) {
-                                        $parts = array_filter([
-                                            $biodata->perusahaan->alamat,
-                                            $biodata->perusahaan->kabupaten?->nama_kabupaten,
-                                            $biodata->perusahaan->propinsi?->nama_provinsi,
-                                            $biodata->zipcode,
-                                        ]);
-                                        $jawabanAwal[$pertanyaan->id] = ! empty($parts) ? implode(', ', $parts) : ($biodata->perusahaan->alamat ?? '');
-                                    } else {
-                                        $jawabanAwal[$pertanyaan->id] = $biodata->perusahaan->$namaKolom ?? '';
-                                    }
-                                } elseif (in_array($namaTabel, ['atasan', 'atasans'])) {
-                                    $jawabanAwal[$pertanyaan->id] = $biodata->atasan->$namaKolom ?? '';
-                                } elseif ($namaTabel === 'users') {
-                                    $jawabanAwal[$pertanyaan->id] = $pengguna->$namaKolom ?? '';
+                            // Autofill profil untuk Studi Lanjut F18
+                            if (empty($val)) {
+                                if ($kode === 'F18B') {
+                                    $val = $biodata->perguruan_tinggi ?? '';
+                                } elseif ($kode === 'F18C') {
+                                    $val = $biodata->pendidikan_prodi ?? '';
                                 }
                             }
 
-                            // Fallback eksplisit per kode bila belum terpetakan
-                            if (empty($jawabanAwal[$pertanyaan->id])) {
-                                switch ($pertanyaan->code) {
-                                    case 'F1':
-                                        $jawabanAwal[$pertanyaan->id] = $biodata->nim ?? '';
-                                        break;
-                                    case 'F2A':
-                                        $jawabanAwal[$pertanyaan->id] = $biodata->dataAkademik?->nama ?? $pengguna->name ?? '';
-                                        break;
-                                    case 'F2B':
-                                        $jawabanAwal[$pertanyaan->id] = $biodata->dataAkademik?->nomor_telepon ?? '';
-                                        break;
-                                    case 'F2C':
-                                        $jawabanAwal[$pertanyaan->id] = $biodata->dataAkademik?->email_pribadi ?? $pengguna->email ?? '';
-                                        break;
-                                    case 'F2D':
-                                        $jawabanAwal[$pertanyaan->id] = $biodata->dataAkademik?->alamat_saat_ini ?? '';
-                                        break;
-                                    case 'F2E':
-                                        $jawabanAwal[$pertanyaan->id] = $biodata->perusahaan?->nama_perusahaan ?? '';
-                                        break;
-                                    case 'F2E1':
-                                        $jawabanAwal[$pertanyaan->id] = $biodata->atasan?->nama ?? '';
-                                        break;
-                                    case 'F2E2':
-                                        $jawabanAwal[$pertanyaan->id] = $biodata->atasan?->telepon ?? '';
-                                        break;
-                                    case 'F2E3':
-                                        $jawabanAwal[$pertanyaan->id] = $biodata->atasan?->email ?? '';
-                                        break;
-                                    case 'F2F':
-                                        if ($biodata->perusahaan) {
-                                            $parts = array_filter([
-                                                $biodata->perusahaan->alamat,
-                                                $biodata->perusahaan->kabupaten?->nama_kabupaten,
-                                                $biodata->perusahaan->propinsi?->nama_provinsi,
-                                                $biodata->zipcode,
-                                            ]);
-                                            $jawabanAwal[$pertanyaan->id] = ! empty($parts) ? implode(', ', $parts) : ($biodata->perusahaan->alamat ?? '');
-                                        }
-                                        break;
+                            // Normalisasi F8 jika ada data kategori_pekerjaan di biodata
+                            if ($kode === 'F8' && ! empty($val)) {
+                                $matchedOpt = $pertanyaan->detils->first(function ($opt) use ($val) {
+                                    return strcasecmp($opt->option_text, $val) === 0 || str_starts_with(strtolower($opt->option_text), strtolower($val));
+                                });
+                                $val = $matchedOpt ? $matchedOpt->option_text : $val;
+                            }
+
+                            // Normalisasi F505A jika ada rekomendasi kesesuaian UMR
+                            if ($kode === 'F505A') {
+                                if (! empty($val)) {
+                                    $matchedOpt = $pertanyaan->detils->first(function ($opt) use ($val) {
+                                        return strcasecmp($opt->option_text, $val) === 0 || strcasecmp($opt->kode_opsi, $val) === 0;
+                                    });
+                                    $val = $matchedOpt ? $matchedOpt->option_text : $val;
+                                } elseif (! empty($autofillData->F505)) {
+                                    $val = 'Sesuai';
                                 }
                             }
+
+                            $jawabanAwal[$pertanyaan->id] = $val;
                         }
                     }
                 }

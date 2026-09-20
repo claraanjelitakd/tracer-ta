@@ -215,8 +215,8 @@ class AlumniKuesionerMultipleNumberTest extends TestCase
             $initialAnswers = $page->toArray()['props']['initialAnswers'];
             $qAnswers = $initialAnswers[$this->questionF13->id];
 
-            $this->assertEquals(6000, $qAnswers['F13-01']);
-            $this->assertEquals(500, $qAnswers['F13-02']);
+            $this->assertEquals(6000000, $qAnswers['F13-01']);
+            $this->assertEquals(500000, $qAnswers['F13-02']);
             $this->assertEquals(0, $qAnswers['F13-03']);
         });
     }

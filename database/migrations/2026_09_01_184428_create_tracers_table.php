@@ -11,24 +11,28 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('tracer', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('biodata_id')->constrained('biodata')->cascadeOnDelete();
-            $table->foreignId('question_id')->nullable()->constrained('ref_subpertanyaan2021')->cascadeOnDelete();
-            $table->string('nim', 20); // Ref NIM dari biodata / data akademik alumni
-            $table->char('kelompok', 3); // Ref kode kelompok induk (F2, F17, F5, F18, BIO, dll)
-            $table->string('kode_pertanyaan', 20); // Ref kode butir pertanyaan (F1, F21, F17a1, dll)
-            $table->text('subpertanyaan'); // Teks pertanyaan disamakan dengan tabel induk
-            $table->text('answer')->nullable(); // Jawaban teks tunggal alumni
-            $table->json('answer_json')->nullable(); // Jawaban struktur json (array checkbox/matriks)
-            $table->string('keterangan', 100)->nullable(); // Keterangan disamakan dengan tabel induk
-            $table->string('tahun_lulus', 10)->nullable(); // Tahun kelulusan dari data akademik
-            $table->timestamps();
+        if (! Schema::hasTable('tracer')) {
+            Schema::create('tracer', function (Blueprint $table) {
+                $table->id();
+                $table->foreignId('biodata_id')->constrained('biodata')->cascadeOnDelete();
+                $table->foreignId('question_id')->nullable()->constrained('ref_subpertanyaan2021')->cascadeOnDelete();
+                $table->string('nim', 20);
+                $table->char('kelompok', 3);
+                $table->string('kode_pertanyaan', 20);
+                $table->text('subpertanyaan');
+                $table->text('answer')->nullable();
+                $table->json('answer_json')->nullable();
+                $table->string('keterangan', 100)->nullable();
+                $table->string('tahun_lulus', 10)->nullable();
+                $table->timestamps();
 
-            $table->index(['biodata_id', 'kode_pertanyaan']);
-            $table->index('nim');
-            $table->index('kelompok');
-        });
+                $table->unique(['biodata_id', 'question_id'], 'tracer_biodata_question_unique');
+                $table->unique(['biodata_id', 'kode_pertanyaan'], 'tracer_biodata_kode_pertanyaan_unique');
+                $table->index(['biodata_id', 'kode_pertanyaan']);
+                $table->index('nim');
+                $table->index('kelompok');
+            });
+        }
     }
 
     /**

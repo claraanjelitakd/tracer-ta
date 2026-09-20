@@ -76,7 +76,6 @@ class AlumniProfileEnhancementTest extends TestCase
             'user_id' => $this->alumniUser->id,
             'nim' => '71200001',
             'prodi_id' => $this->prodi->id,
-            'kode_prodi' => '71',
             'nama' => 'Clara Anjelita',
             'nik' => '3404100000000001',
             'email_pribadi' => 'clara.pribadi@gmail.com',
@@ -233,5 +232,66 @@ class AlumniProfileEnhancementTest extends TestCase
         $tracerF5C = Tracer::where('biodata_id', $this->biodata->id)->where('kode_pertanyaan', 'F5C')->first();
         $this->assertNotNull($tracerF5C);
         $this->assertEquals('Chief Executive Officer', $tracerF5C->answer);
+    }
+
+    /**
+     * Test pengisian profil kategori Melanjutkan Pendidikan lengkap dengan tingkat, PT, prodi, dan atasan/dosen pembimbing.
+     */
+    public function test_melanjutkan_pendidikan_profile_and_atasan_saves_properly(): void
+    {
+        $qF18b = RefSubpertanyaan2021::create([
+            'section_kode' => '10',
+            'kelompok' => 'F18',
+            'kode_pertanyaan' => 'F18b',
+            'subpertanyaan' => 'Perguruan Tinggi',
+            'type' => 'text',
+            'wajib' => 1,
+            'order' => 68,
+        ]);
+
+        $qF18c = RefSubpertanyaan2021::create([
+            'section_kode' => '10',
+            'kelompok' => 'F18',
+            'kode_pertanyaan' => 'F18c',
+            'subpertanyaan' => 'Program Studi',
+            'type' => 'text',
+            'wajib' => 1,
+            'order' => 69,
+        ]);
+
+        $response = $this->actingAs($this->alumniUser)->post('/alumni/profile', [
+            'nama' => 'Clara Anjelita',
+            'kategori_pekerjaan' => 'Melanjutkan Pendidikan',
+            'pendidikan_tingkat' => 'S2',
+            'perguruan_tinggi' => 'Universitas Gadjah Mada',
+            'pendidikan_prodi' => 'Magister Ilmu Komputer',
+            'nama_atasan' => 'Prof. Dr. Ir. Pembimbing Utama',
+            'email_atasan' => 'pembimbing@ugm.ac.id',
+            'telepon_atasan' => '081234567899',
+        ]);
+
+        $response->assertRedirect();
+        $this->biodata->refresh();
+
+        $this->assertEquals('Melanjutkan Pendidikan', $this->biodata->kategori_pekerjaan);
+        $this->assertEquals('S2', $this->biodata->pendidikan_tingkat);
+        $this->assertEquals('Universitas Gadjah Mada', $this->biodata->perguna_tinggi ?? $this->biodata->perguruan_tinggi);
+        $this->assertEquals('Magister Ilmu Komputer', $this->biodata->pendidikan_prodi);
+
+        // Pastikan atasan/dosen pembimbing tetap tersimpan dengan baik
+        $this->assertNotNull($this->biodata->atasan_id);
+        $atasan = Atasan::find($this->biodata->atasan_id);
+        $this->assertEquals('Prof. Dr. Ir. Pembimbing Utama', $atasan->nama);
+        $this->assertEquals('pembimbing@ugm.ac.id', $atasan->email);
+        $this->assertEquals('081234567899', $atasan->telepon);
+
+        // Pastikan sinkronisasi ke tracer F18b dan F18c berjalan
+        $tracerF18b = Tracer::where('biodata_id', $this->biodata->id)->where('kode_pertanyaan', 'F18b')->first();
+        $this->assertNotNull($tracerF18b);
+        $this->assertEquals('Universitas Gadjah Mada', $tracerF18b->answer);
+
+        $tracerF18c = Tracer::where('biodata_id', $this->biodata->id)->where('kode_pertanyaan', 'F18c')->first();
+        $this->assertNotNull($tracerF18c);
+        $this->assertEquals('Magister Ilmu Komputer', $tracerF18c->answer);
     }
 }

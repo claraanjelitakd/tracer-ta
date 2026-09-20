@@ -201,9 +201,24 @@ Ringkasan relasi utama:
   - `TabelF2.vue`: Matriks 7 baris x 5 skala penilaian untuk metode pembelajaran (`F21` s.d. `F27`).
   - `TabelF17.vue`: Dual-matrix komparasi 7 baris x 5 skala penilaian untuk kompetensi (`F17a1`..`a7` vs `F17b1`..`b7`).
   - `F505` (`multiple_number`): Rincian Take Home Pay (Pekerjaan Utama, Lembur & Tips, Pekerjaan Lainnya) dengan input ribuan rupiah (`.000`), preview nominal Rupiah, dan kalkulasi total otomatis.
-- **Alur Percabangan Jump Logic**:
-  - `F504` ("Ya" $\rightarrow$ `F502`, `F505`, `F505A`; "Tidak" $\rightarrow$ `F506`).
-  - `F3`, `F8`, `F10` mengatur kelanjutan ke seksi berikutnya secara dinamis.
+- **Urutan 10 Seksi Kuesioner Tracer Study**:
+  1. Seksi 1: Identitas & Biodata Mahasiswa (Dikelola terpusat di form Profil)
+  2. Seksi 2: Status Pekerjaan Saat Ini (`F8`, `F10`)
+  3. Seksi 3: Waktu Mulai & Cara Mencari Pekerjaan (`F3`, `F4`)
+  4. Seksi 4: Mendapatkan Pekerjaan & Data Pekerjaan (`F504`, `F502`, `F505`, `F505A`, `F506`)
+  5. Seksi 5: Riwayat Lamaran Pekerjaan (`F6`, `F7`, `F7A`)
+  6. Seksi 6: Studi Lanjut (`F18`, `F18a`, `F18b`, `F18c`, `F18d`)
+  7. Seksi 7: Pembiayaan Kuliah (`F12`)
+  8. Seksi 8: Keselarasan & Relevansi Pekerjaan (`F14`, `F15`, `F16`)
+  9. Seksi 9: Evaluasi Kompetensi Lulusan (`F17`, `F17a1..a7`, `F17b1..b7`)
+  10. Seksi 10: Penekanan Metode Pembelajaran (`F2`, `F21` s.d. `F27`)
+
+- **Ekspor Data Jawaban ke Format Microsoft Excel (.xls)**:
+  - Tersedia di detail alumni Super Admin (`/superadmin/alumni/{id}/export-excel`).
+  - Menghasilkan dokumen Spreadsheet XML terstruktur lengkap dengan header metadata alumni (NIM, Nama, Prodi, Fakultas, Tahun Lulus), pewarnaan identitas hijau resmi UKDW `#005B3C`, indikator status jawaban, dan mencakup instrumen kuesioner universitas serta prodi.
+
+- **Proteksi Data Perusahaan Terverifikasi**:
+  - Jika perusahaan berstatus `Terverifikasi`, detail institusi (alamat, skala, jenis perusahaan, zipcode) terkunci di sisi alumni untuk menjaga integritas master data, kecuali jika alumni berposisi sebagai Owner / Founder / Wiraswasta atau perusahaan baru ditambahkan.
 
 ### B. Kuesioner Khusus Program Studi
 - **Database**: Terpisah secara independen agar setiap program studi dapat mengelola instrumen evaluasinya sendiri:
@@ -239,6 +254,17 @@ Komponen pengisian kuesioner dipecah secara modular untuk memudahkan pemeliharaa
 
 ---
 
+## Log Pembaruan (Changelog)
+
+- **v2.4 (Terbaru)**:
+  - Menghilangkan seluruh `jump_to` pada seeder (`RefSubpertanyaanDetilSeeder`) agar semua butir kuesioner dapat ditinjau dan diisi secara utuh.
+  - Menyusun ulang 10 seksi kuesioner sesuai alur logis baru: `F8` &rarr; `F3` &rarr; `F10` &rarr; `F4` &rarr; `F504` &rarr; `F6` &rarr; `F7` &rarr; `F7A` &rarr; `F18` &rarr; `F12` &rarr; `F14` &rarr; `F15` &rarr; `F17` &rarr; `F2` &rarr; `F16`.
+  - Mengimplementasikan proteksi data perusahaan terverifikasi di form karier alumni.
+  - Memperbaiki prefill nominal Take Home Pay (`F505`) dan rekomendasi kesesuaian UMR (`F505A`).
+  - Mengubah format ekspor data jawaban di Super Admin dari CSV menjadi Spreadsheet Microsoft Excel (`.xls`) dengan styling hijau UKDW dan metadata lengkap.
+
+---
+
 ## Manajemen Modul & Peran Pengguna (Roles)
 
 1. **`superadmin`**:
@@ -246,6 +272,7 @@ Komponen pengisian kuesioner dipecah secara modular untuk memudahkan pemeliharaa
    - Kelola Pertanyaan Kuesioner Universitas (`/superadmin/pertanyaan`).
    - Kelola Section Kuesioner Universitas (`/superadmin/sections`).
    - Direktori Seluruh Alumni & Audit Detail Hasil Kuesioner (Kuesioner Univ, Kuesioner Prodi, Profil Mahasiswa) (`/superadmin/alumni/{id}`).
+   - Unduh Rekap Laporan Jawaban Alumni dalam format Microsoft Excel (`.xls`).
 2. **`admin_biro3`**:
    - Dashboard analitik responden kelulusan per periode.
    - Kelola Direktori Alumni tersaring yudisium 'Lulus' (`/biro3/alumni`).
@@ -262,8 +289,6 @@ Komponen pengisian kuesioner dipecah secara modular untuk memudahkan pemeliharaa
    - Pengisian Kuesioner Tracer Study Universitas (`/alumni/kuesioner`).
    - Pengisian Kuesioner Khusus Program Studi (`/alumni/kuesioner-prodi`).
    - Pembaruan Biodata, Data Akademik, Data Orang Tua, dan Karier/Perusahaan (`/alumni/profile`).
-
----
 
 ---
 

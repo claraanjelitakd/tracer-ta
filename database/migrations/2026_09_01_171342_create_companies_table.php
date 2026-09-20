@@ -19,6 +19,12 @@ return new class extends Migration
             $table->text('alamat')->nullable();
             $table->string('kode_pos', 15)->nullable();
             $table->string('sektor')->nullable();
+            $table->string('skala')->nullable()->default('Nasional')->comment('Lokal, Nasional, Internasional');
+            $table->enum('status_verifikasi', ['Menunggu Verifikasi', 'Terverifikasi', 'Ditolak'])->default('Menunggu Verifikasi');
+            $table->enum('jenis_lokasi', ['Dalam Negeri', 'Luar Negeri'])->default('Dalam Negeri');
+            $table->string('negara')->default('Indonesia');
+            $table->string('jenis_perusahaan')->nullable()->comment('Instansi pemerintah, BUMN, Swasta, dll');
+            $table->string('jenis_perusahaan_lainnya')->nullable();
             $table->timestamps();
         });
     }

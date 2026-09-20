@@ -64,38 +64,54 @@ class SimpanProfilController extends Controller
 
             $propinsiId = $jenisLokasi === 'Luar Negeri'
                 ? null
-                : (! empty($dataTervalidasi['perusahaan_propinsi_id']) ? $dataTervalidasi['perusahaan_propinsi_id'] : (! empty($dataTervalidasi['company_province_id']) ? $dataTervalidasi['company_province_id'] : null));
+                : (! empty($dataTervalidasi['company_province_id']) ? $dataTervalidasi['company_province_id'] : (! empty($dataTervalidasi['perusahaan_propinsi_id']) ? $dataTervalidasi['perusahaan_propinsi_id'] : null));
 
             $kabupatenId = $jenisLokasi === 'Luar Negeri'
                 ? null
-                : (! empty($dataTervalidasi['perusahaan_kabupaten_id']) ? $dataTervalidasi['perusahaan_kabupaten_id'] : (! empty($dataTervalidasi['company_kabupaten_id']) ? $dataTervalidasi['company_kabupaten_id'] : null));
+                : (! empty($dataTervalidasi['company_kabupaten_id']) ? $dataTervalidasi['company_kabupaten_id'] : (! empty($dataTervalidasi['perusahaan_kabupaten_id']) ? $dataTervalidasi['perusahaan_kabupaten_id'] : null));
 
-            $jenisPerusahaan = ! empty($dataTervalidasi['perusahaan_jenis_perusahaan']) ? $dataTervalidasi['perusahaan_jenis_perusahaan'] : (! empty($dataTervalidasi['company_jenis_perusahaan']) ? $dataTervalidasi['company_jenis_perusahaan'] : null);
-            $jenisPerusahaanLainnya = ! empty($dataTervalidasi['perusahaan_jenis_perusahaan_lainnya']) ? $dataTervalidasi['perusahaan_jenis_perusahaan_lainnya'] : (! empty($dataTervalidasi['company_jenis_perusahaan_lainnya']) ? $dataTervalidasi['company_jenis_perusahaan_lainnya'] : null);
+            $jenisPerusahaan = ! empty($dataTervalidasi['company_jenis_perusahaan']) ? $dataTervalidasi['company_jenis_perusahaan'] : (! empty($dataTervalidasi['perusahaan_jenis_perusahaan']) ? $dataTervalidasi['perusahaan_jenis_perusahaan'] : null);
+            $jenisPerusahaanLainnya = ! empty($dataTervalidasi['company_jenis_perusahaan_lainnya']) ? $dataTervalidasi['company_jenis_perusahaan_lainnya'] : (! empty($dataTervalidasi['perusahaan_jenis_perusahaan_lainnya']) ? $dataTervalidasi['perusahaan_jenis_perusahaan_lainnya'] : null);
+            $skala = ! empty($dataTervalidasi['company_skala']) ? $dataTervalidasi['company_skala'] : (! empty($dataTervalidasi['perusahaan_skala']) ? $dataTervalidasi['perusahaan_skala'] : null);
+            $alamat = ! empty($dataTervalidasi['company_alamat']) ? $dataTervalidasi['company_alamat'] : (! empty($dataTervalidasi['perusahaan_alamat']) ? $dataTervalidasi['perusahaan_alamat'] : null);
+            $kodePos = ! empty($dataTervalidasi['zipcode']) ? $dataTervalidasi['zipcode'] : (! empty($dataTervalidasi['kode_pos']) ? $dataTervalidasi['kode_pos'] : null);
 
             $perusahaan = Perusahaan::firstOrCreate(
                 ['nama_perusahaan' => $dataTervalidasi['nama_perusahaan']],
                 [
                     'propinsi_id' => $propinsiId,
                     'kabupaten_id' => $kabupatenId,
-                    'alamat' => $dataTervalidasi['perusahaan_alamat'] ?? ($dataTervalidasi['company_alamat'] ?? null),
-                    'skala' => $dataTervalidasi['perusahaan_skala'] ?? ($dataTervalidasi['company_skala'] ?? null),
+                    'alamat' => $alamat,
+                    'kode_pos' => $kodePos,
+                    'skala' => $skala,
                     'jenis_perusahaan' => $jenisPerusahaan,
                     'jenis_perusahaan_lainnya' => $jenisPerusahaanLainnya,
                     'jenis_lokasi' => $jenisLokasi,
                     'negara' => $negara,
+                    'status_verifikasi' => 'Menunggu Verifikasi',
                 ]
             );
-            $perusahaan->update([
-                'propinsi_id' => $propinsiId,
-                'kabupaten_id' => $kabupatenId,
-                'alamat' => ! empty($dataTervalidasi['perusahaan_alamat']) ? $dataTervalidasi['perusahaan_alamat'] : (! empty($dataTervalidasi['company_alamat']) ? $dataTervalidasi['company_alamat'] : null),
-                'skala' => ! empty($dataTervalidasi['perusahaan_skala']) ? $dataTervalidasi['perusahaan_skala'] : (! empty($dataTervalidasi['company_skala']) ? $dataTervalidasi['company_skala'] : null),
-                'jenis_perusahaan' => $jenisPerusahaan,
-                'jenis_perusahaan_lainnya' => $jenisPerusahaanLainnya,
-                'jenis_lokasi' => $jenisLokasi,
-                'negara' => $negara,
-            ]);
+
+            // Jika perusahaan belum terverifikasi atau alumni adalah founder/wiraswasta, perbarui data master
+            $kategoriPekerjaan = $dataTervalidasi['kategori_pekerjaan'] ?? null;
+            $posisiJabatan = $dataTervalidasi['posisi_jabatan'] ?? null;
+            $isOwnerOrFounder = ($kategoriPekerjaan === 'Wiraswasta') || ($posisiJabatan && in_array(strtolower((string) $posisiJabatan), [
+                'owner', 'founder', 'wiraswasta', 'wirausaha', 'wiraswasta / wirausaha', 'owner / founder',
+            ]));
+
+            if ($perusahaan->status_verifikasi !== 'Terverifikasi' || $isOwnerOrFounder) {
+                $perusahaan->update([
+                    'propinsi_id' => $propinsiId,
+                    'kabupaten_id' => $kabupatenId,
+                    'alamat' => $alamat ?: $perusahaan->alamat,
+                    'kode_pos' => $kodePos ?: $perusahaan->kode_pos,
+                    'skala' => $skala ?: $perusahaan->skala,
+                    'jenis_perusahaan' => $jenisPerusahaan ?: $perusahaan->jenis_perusahaan,
+                    'jenis_perusahaan_lainnya' => $jenisPerusahaanLainnya,
+                    'jenis_lokasi' => $jenisLokasi,
+                    'negara' => $negara,
+                ]);
+            }
             $idPerusahaan = $perusahaan->id;
         }
 
@@ -203,6 +219,9 @@ class SimpanProfilController extends Controller
             'kategori_pekerjaan' => $kategoriPekerjaan,
             'posisi_jabatan' => $posisiJabatan,
             'posisi_wiraswasta' => $posisiWiraswasta,
+            'pendidikan_tingkat' => ! empty($dataTervalidasi['pendidikan_tingkat']) ? $dataTervalidasi['pendidikan_tingkat'] : null,
+            'perguruan_tinggi' => ! empty($dataTervalidasi['perguruan_tinggi']) ? $dataTervalidasi['perguruan_tinggi'] : null,
+            'pendidikan_prodi' => ! empty($dataTervalidasi['pendidikan_prodi']) ? $dataTervalidasi['pendidikan_prodi'] : null,
             'gaji' => $gajiNominal !== null ? $gajiNominal : null,
             'jenis_pekerjaan' => ! empty($dataTervalidasi['jenis_pekerjaan']) ? $dataTervalidasi['jenis_pekerjaan'] : null,
             'zipcode' => ! empty($dataTervalidasi['zipcode']) ? $dataTervalidasi['zipcode'] : null,

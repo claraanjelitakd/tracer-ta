@@ -141,7 +141,6 @@ class BiodataSeeder extends Seeder
                     'orang_tua_id' => $dataOrangTua?->id,
                     'yudisium_id' => $yudisium?->id,
                     'tahun_lulus' => $angkatan + 4,
-                    'kode_prodi' => $kodeProdi,
                     'prodi_id' => $prodiId,
                     'nama' => $user->name,
                     'tempat_lahir' => $dataAkademik?->tempat_lahir ?? 'Sleman',

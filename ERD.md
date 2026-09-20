@@ -137,7 +137,12 @@ erDiagram
         string minat "nullable"
         bigint perusahaan_id FK "nullable"
         bigint atasan_id FK "nullable"
+        string kategori_pekerjaan "Pekerja, Wiraswasta, Melanjutkan Pendidikan"
         string posisi_jabatan "nullable"
+        string posisi_wiraswasta "nullable"
+        string pendidikan_tingkat "nullable (Profesi, S2, S3, dll)"
+        string perguruan_tinggi "nullable (Perguruan tinggi studi lanjut)"
+        string pendidikan_prodi "nullable (Program studi studi lanjut)"
         unsigned_bigint gaji "nullable (Take Home Pay)"
         string jenis_pekerjaan "nullable"
         string zipcode "nullable"
@@ -205,15 +210,18 @@ erDiagram
         bigint id PK
         string nama_perusahaan
         string jenis_lokasi "Dalam Negeri, Luar Negeri"
-        string negara "Indonesia / nama negara"
+        string negara "Indonesia / nama negara resmi"
         text alamat "nullable"
         bigint propinsi_id FK "nullable"
         bigint kabupaten_id FK "nullable"
         string kode_pos "nullable"
         string nomor_telepon "nullable"
         string email "nullable"
-        string skala "Regional, Nasional, Multinasional"
-        string status_verifikasi "draft, verified, rejected"
+        string skala "Regional/Lokal, Nasional, Multinasional/Internasional"
+        string sektor "nullable"
+        string jenis_perusahaan "nullable"
+        string jenis_perusahaan_lainnya "nullable"
+        string status_verifikasi "Menunggu Verifikasi, Terverifikasi, Ditolak"
         timestamp created_at
         timestamp updated_at
     }

@@ -42,7 +42,15 @@ defineProps({
                 </h1>
                 <!-- Petunjuk Singkat -->
                 <p class="text-gray-600 font-medium text-xs sm:text-sm mt-1">
-                    {{ description || 'Pilih jawaban yang paling sesuai.' }} Kolom bertanda <span class="text-red-500 font-black">*</span> wajib diisi.
+                    <span v-if="description && !description.toLowerCase().includes('wajib diisi')">
+                        {{ description }} Kolom bertanda <span class="text-red-500 font-black">*</span> wajib diisi.
+                    </span>
+                    <span v-else-if="description">
+                        {{ description }}
+                    </span>
+                    <span v-else>
+                        Pilih jawaban yang paling sesuai. Kolom bertanda <span class="text-red-500 font-black">*</span> wajib diisi.
+                    </span>
                 </p>
             </div>
 

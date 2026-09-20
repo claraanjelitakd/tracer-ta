@@ -201,6 +201,39 @@ const toggleCheckboxOption = (qId, optionText) => {
         props.form.answers[qId].push(optionText);
     }
 };
+
+// Helper pendeteksi satuan unit untuk input angka
+const getNumberUnit = (q) => {
+    const code = (q.kode_pertanyaan || q.code || '').toUpperCase();
+    const text = (q.subpertanyaan || q.question_text || '').toLowerCase();
+
+    if (code === 'F502' || code === 'F506' || text.includes('bulan')) {
+        return 'Bulan';
+    }
+    if (code === 'F6' || code === 'F7' || text.includes('lamar') || text.includes('perusahaan') || text.includes('instansi')) {
+        return 'Perusahaan / Instansi';
+    }
+    if (code === 'F7A' || text.includes('wawancara')) {
+        return 'Undangan Wawancara';
+    }
+    if (text.includes('orang')) {
+        return 'Orang';
+    }
+    if (text.includes('hari')) {
+        return 'Hari';
+    }
+    if (text.includes('tahun')) {
+        return 'Tahun';
+    }
+    return 'Jumlah';
+};
+
+// Helper stepper increment/decrement angka
+const stepNumberInput = (qId, delta) => {
+    const current = Number(props.form.answers[qId]) || 0;
+    const updated = Math.max(0, current + delta);
+    props.form.answers[qId] = updated;
+};
 </script>
 
 <template>
@@ -208,7 +241,7 @@ const toggleCheckboxOption = (qId, optionText) => {
     <div 
         v-if="subpertanyaan.type === 'header'" 
         v-show="isVisible" 
-        class="bg-emerald-50/70 border border-emerald-200/80 p-4 sm:p-6 rounded-2xl sm:rounded-3xl shadow-xs mb-4 sm:mb-6"
+        class="bg-emerald-50/70 border border-emerald-200/80 p-4 sm:p-6 rounded-2xl sm:rounded-3xl shadow-xs"
     >
         <div class="flex items-start gap-3 sm:gap-4">
             <span class="shrink-0 bg-[#005B3C] text-white px-2.5 py-1 rounded-xl text-xs sm:text-sm font-black shadow-xs">
@@ -229,22 +262,22 @@ const toggleCheckboxOption = (qId, optionText) => {
     <div 
         v-else
         v-show="isVisible" 
-        class="bg-white p-5 sm:p-7 md:p-8 rounded-2xl sm:rounded-3xl shadow-xs border border-gray-100 relative z-0"
+        class="bg-white p-5 sm:p-7 md:p-8 rounded-2xl sm:rounded-3xl shadow-xs border border-gray-100 relative z-0 transition-all hover:border-emerald-200"
         :class="[
-            isPaired ? 'flex flex-col justify-between' : 'mb-4 sm:mb-6'
+            isPaired ? 'flex flex-col justify-start' : ''
         ]"
         :style="{ zIndex: subpertanyaan.type === 'searchable_select' ? 10 : 1 }"
     >
         <!-- Header Soal: Kode & Teks Pertanyaan (Format Formal) -->
         <div class="mb-4 sm:mb-6">
-            <div class="flex items-center gap-2 mb-1.5">
+            <div class="flex items-center gap-2 mb-2">
                 <span class="inline-block bg-[#005B3C] text-white text-[10px] sm:text-[11px] font-black uppercase px-2.5 py-0.5 rounded-md tracking-wider shadow-2xs">
                     {{ subpertanyaan.kode_pertanyaan }}
                 </span>
-                <span v-if="subpertanyaan.wajib" class="text-[10px] sm:text-[11px] font-bold text-red-600 bg-red-50 border border-red-100 px-2 py-0.5 rounded-md">
+                <span v-if="subpertanyaan.wajib" class="text-[10px] sm:text-[11px] font-bold text-red-600 bg-red-50 border border-red-200 px-2 py-0.5 rounded-md">
                     Wajib diisi
                 </span>
-                <span v-else class="text-[10px] sm:text-[11px] font-semibold text-gray-400">
+                <span v-else class="text-[10px] sm:text-[11px] font-bold text-slate-500 bg-slate-100 border border-slate-200 px-2 py-0.5 rounded-md">
                     Opsional
                 </span>
             </div>
@@ -265,7 +298,7 @@ const toggleCheckboxOption = (qId, optionText) => {
                 type="text" 
                 v-model="form.answers[subpertanyaan.id]" 
                 :required="subpertanyaan.wajib && isVisible"
-                class="w-full rounded-xl sm:rounded-2xl bg-gray-50/90 p-3.5 sm:p-5 text-gray-900 font-bold focus:bg-white focus:ring-2 focus:ring-[#005B3C] transition-all text-sm sm:text-lg border-0 shadow-xs"
+                class="w-full rounded-xl sm:rounded-2xl bg-gray-50/90 p-3.5 sm:p-5 text-gray-900 font-bold focus:bg-white focus:ring-2 focus:ring-[#005B3C] transition-all text-sm sm:text-base border-0 shadow-xs"
                 placeholder="Ketik jawabanmu di sini..."
             >
         </div>
@@ -281,18 +314,45 @@ const toggleCheckboxOption = (qId, optionText) => {
             ></textarea>
         </div>
 
-        <!-- TIPE INPUT: Angka / Number -->
-        <div v-else-if="subpertanyaan.type === 'number'" :class="{'mt-3 sm:mt-4': isPaired}">
-            <input 
-                type="number" 
-                v-model="form.answers[subpertanyaan.id]" 
-                :required="subpertanyaan.wajib && isVisible"
-                @keydown="filterNumberInput"
-                min="0"
-                class="w-full rounded-xl sm:rounded-2xl bg-gray-50/90 p-3.5 sm:p-5 text-gray-900 font-black font-mono focus:bg-white focus:ring-2 focus:ring-[#005B3C] transition-all text-lg sm:text-2xl text-center border-0 shadow-xs"
-                :class="isPaired ? 'sm:text-2xl' : 'sm:max-w-xs sm:text-xl'"
-                placeholder="0"
-            >
+        <!-- TIPE INPUT: Angka / Number (Desain Modern dengan Stepper & Satuan Unit) -->
+        <div v-else-if="subpertanyaan.type === 'number'" :class="{'mt-2 sm:mt-3': isPaired}">
+            <div class="max-w-md">
+                <div class="flex items-center gap-2 sm:gap-3">
+                    <!-- Tombol Kurang (-) -->
+                    <button 
+                        type="button"
+                        @click="stepNumberInput(subpertanyaan.id, -1)"
+                        class="w-11 h-11 sm:w-12 sm:h-12 rounded-xl bg-gray-100 hover:bg-[#005B3C] text-gray-700 hover:text-white font-black text-lg sm:text-xl flex items-center justify-center transition-all shadow-2xs active:scale-95 shrink-0 focus:outline-none"
+                    >
+                        -
+                    </button>
+
+                    <!-- Input Nilai dengan Unit Satuan Terintegrasi -->
+                    <div class="relative flex-1 flex items-center rounded-xl sm:rounded-2xl bg-gray-50/90 border border-gray-200/90 focus-within:bg-white focus-within:ring-2 focus-within:ring-[#005B3C] focus-within:border-transparent transition-all overflow-hidden p-1 shadow-2xs">
+                        <input 
+                            type="number" 
+                            v-model="form.answers[subpertanyaan.id]" 
+                            :required="subpertanyaan.wajib && isVisible"
+                            @keydown="filterNumberInput"
+                            min="0"
+                            class="w-full bg-transparent py-2.5 sm:py-3 px-3 sm:px-4 text-gray-900 font-black font-mono text-center text-lg sm:text-2xl border-0 focus:ring-0 placeholder-gray-300"
+                            placeholder="0"
+                        >
+                        <span class="pr-3 pl-1 font-bold text-xs sm:text-sm text-emerald-800 bg-emerald-50 px-2 py-1 rounded-lg shrink-0 select-none">
+                            {{ getNumberUnit(subpertanyaan) }}
+                        </span>
+                    </div>
+
+                    <!-- Tombol Tambah (+) -->
+                    <button 
+                        type="button"
+                        @click="stepNumberInput(subpertanyaan.id, 1)"
+                        class="w-11 h-11 sm:w-12 sm:h-12 rounded-xl bg-gray-100 hover:bg-[#005B3C] text-gray-700 hover:text-white font-black text-lg sm:text-xl flex items-center justify-center transition-all shadow-2xs active:scale-95 shrink-0 focus:outline-none"
+                    >
+                        +
+                    </button>
+                </div>
+            </div>
         </div>
 
         <!-- TIPE INPUT: Dropdown Menu -->
@@ -342,7 +402,7 @@ const toggleCheckboxOption = (qId, optionText) => {
                 @change="handleFileUpload(subpertanyaan.id, $event)"
             >
             <label :for="'file_' + subpertanyaan.id" class="cursor-pointer flex flex-col items-center justify-center">
-                <span class="text-3xl mb-2">☁️</span>
+                <svg class="w-8 h-8 text-gray-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg>
                 <span class="font-bold text-sm text-[#005B3C] hover:underline">Klik untuk mengunggah berkas</span>
                 <span class="text-xs text-gray-500 mt-1">PDF, DOC, DOCX, JPG, PNG (Maks. 5MB)</span>
                 <span v-if="form.answers[subpertanyaan.id]" class="mt-2 text-xs font-mono font-bold text-emerald-800 bg-emerald-100 px-2.5 py-1 rounded-lg">
@@ -365,9 +425,9 @@ const toggleCheckboxOption = (qId, optionText) => {
         <div v-else-if="subpertanyaan.type === 'rating_5'" class="space-y-3">
             <div class="p-4 sm:p-6 bg-gray-50/80 rounded-2xl border border-gray-200/80 shadow-2xs">
                 <div class="max-w-xl mx-auto">
-                    <div class="flex items-center justify-between text-xs font-bold text-gray-500 mb-3 px-1">
-                        <span>1 ({{ getScaleGuide(subpertanyaan.kode_pertanyaan).min || 'Sangat Rendah' }})</span>
-                        <span>5 ({{ getScaleGuide(subpertanyaan.kode_pertanyaan).max || 'Sangat Tinggi' }})</span>
+                    <div class="flex items-center justify-between text-xs font-bold text-gray-600 mb-3 px-1">
+                        <span>Sangat Rendah</span>
+                        <span>Sangat Tinggi</span>
                     </div>
                     <div class="flex items-center justify-between gap-2 sm:gap-4">
                         <label 
@@ -647,13 +707,13 @@ const toggleCheckboxOption = (qId, optionText) => {
             </div>
         </div>
 
-        <!-- TIPE INPUT: Matrix (Single scale per row, misal F2 Penekanan Metode Pembelajaran) -->
+        <!-- TIPE INPUT: Matrix (Dinamis dari database detils / options) -->
         <div v-else-if="subpertanyaan.type === 'matrix'" class="space-y-4">
             <div class="overflow-x-auto rounded-2xl border border-gray-200 bg-white shadow-xs">
                 <table class="w-full text-xs sm:text-sm text-left border-collapse min-w-[600px]">
                     <thead class="bg-emerald-50/80 text-emerald-950 font-bold border-b border-gray-200">
                         <tr>
-                            <th class="p-3 sm:p-4 text-left">Metode Pembelajaran</th>
+                            <th class="p-3 sm:p-4 text-left">Aspek Penilaian</th>
                             <th v-for="sc in [
                                 { val: 1, label: 'Sangat Besar' },
                                 { val: 2, label: 'Besar' },
@@ -667,27 +727,25 @@ const toggleCheckboxOption = (qId, optionText) => {
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-100">
-                        <tr v-for="item in [
-                            { key: 'F21', label: 'Perkuliahan' },
-                            { key: 'F22', label: 'Demonstrasi' },
-                            { key: 'F23', label: 'Proyek Riset' },
-                            { key: 'F24', label: 'Magang' },
-                            { key: 'F25', label: 'Praktikum' },
-                            { key: 'F26', label: 'Kerja Lapangan' },
-                            { key: 'F27', label: 'Diskusi' }
-                        ]" :key="item.key" class="hover:bg-gray-50/80 transition-colors">
+                        <tr 
+                            v-for="item in (subpertanyaan.detils || subpertanyaan.options || [])" 
+                            :key="item.kode_opsi || item.id" 
+                            class="hover:bg-gray-50/80 transition-colors"
+                        >
                             <td class="p-3 sm:p-4 font-bold text-gray-800">
-                                <span class="inline-block font-mono text-[11px] bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded mr-2">{{ item.key }}</span>
-                                {{ item.label }}
+                                <span v-if="item.kode_opsi" class="inline-block font-mono text-[11px] bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded mr-2">
+                                    {{ item.kode_opsi }}
+                                </span>
+                                {{ item.option_text }}
                             </td>
                             <td v-for="score in 5" :key="score" class="p-2 sm:p-3 text-center">
                                 <label class="cursor-pointer block py-1">
                                     <input 
                                         type="radio" 
-                                        :name="'matrix_' + subpertanyaan.id + '_' + item.key" 
+                                        :name="'matrix_' + subpertanyaan.id + '_' + (item.kode_opsi || item.id)" 
                                         :value="score"
-                                        :checked="form.answers[subpertanyaan.id]?.[item.key] == score"
-                                        @change="if (!form.answers[subpertanyaan.id] || typeof form.answers[subpertanyaan.id] !== 'object') form.answers[subpertanyaan.id] = {}; form.answers[subpertanyaan.id][item.key] = score"
+                                        :checked="form.answers[subpertanyaan.id]?.[item.kode_opsi || item.id] == score"
+                                        @change="if (!form.answers[subpertanyaan.id] || typeof form.answers[subpertanyaan.id] !== 'object') form.answers[subpertanyaan.id] = {}; form.answers[subpertanyaan.id][item.kode_opsi || item.id] = score"
                                         class="w-4 h-4 sm:w-5 sm:h-5 text-[#005B3C] focus:ring-[#005B3C] accent-[#005B3C]"
                                     >
                                 </label>
@@ -698,24 +756,25 @@ const toggleCheckboxOption = (qId, optionText) => {
             </div>
         </div>
 
-        <!-- TIPE INPUT: Multiple Textbox (F18 Pertanyaan Studi Lanjut) -->
+        <!-- TIPE INPUT: Multiple Textbox (Dinamis dari subpertanyaan.detils) -->
         <div v-else-if="subpertanyaan.type === 'multiple_textbox'" class="space-y-3 sm:space-y-4">
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-                <div v-for="field in [
-                    { key: 'F18A', label: 'Sumber Biaya' },
-                    { key: 'F18B', label: 'Perguruan Tinggi' },
-                    { key: 'F18C', label: 'Program Studi' },
-                    { key: 'F18D', label: 'Tanggal Masuk', type: 'date' }
-                ]" :key="field.key" class="space-y-1">
+                <div 
+                    v-for="field in (subpertanyaan.detils && subpertanyaan.detils.length > 0 ? subpertanyaan.detils : (subpertanyaan.options || []))" 
+                    :key="field.id || field.kode_opsi" 
+                    class="space-y-1"
+                >
                     <label class="block text-xs font-bold text-gray-700">
-                        <span class="inline-block font-mono text-[10px] bg-gray-100 text-gray-600 px-1 py-0.5 rounded mr-1">{{ field.key }}</span>
-                        {{ field.label }}
+                        <span v-if="field.kode_opsi" class="inline-block font-mono text-[10px] bg-gray-100 text-gray-600 px-1 py-0.5 rounded mr-1">
+                            {{ field.kode_opsi }}
+                        </span>
+                        {{ field.option_text }}
                     </label>
                     <input 
-                        :type="field.type || 'text'"
-                        :value="form.answers[subpertanyaan.id]?.[field.key] || ''"
-                        @input="if (!form.answers[subpertanyaan.id] || typeof form.answers[subpertanyaan.id] !== 'object') form.answers[subpertanyaan.id] = {}; form.answers[subpertanyaan.id][field.key] = $event.target.value"
-                        :placeholder="'Masukkan ' + field.label.toLowerCase() + '...'"
+                        :type="(field.kode_opsi && field.kode_opsi.toUpperCase().endsWith('D')) || (field.option_text && field.option_text.toLowerCase().includes('tanggal')) ? 'date' : 'text'"
+                        :value="form.answers[subpertanyaan.id]?.[field.kode_opsi || field.id] || ''"
+                        @input="if (!form.answers[subpertanyaan.id] || typeof form.answers[subpertanyaan.id] !== 'object') form.answers[subpertanyaan.id] = {}; form.answers[subpertanyaan.id][field.kode_opsi || field.id] = $event.target.value"
+                        :placeholder="'Masukkan ' + (field.option_text || '').toLowerCase() + '...'"
                         class="w-full rounded-xl bg-white border border-gray-300 p-2.5 sm:p-3 text-sm focus:ring-2 focus:ring-[#005B3C] focus:border-transparent transition-all font-medium"
                     >
                 </div>

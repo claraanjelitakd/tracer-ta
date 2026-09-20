@@ -9,6 +9,7 @@ use App\Models\ProdiResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Inertia\Response as InertiaResponse;
 
@@ -56,23 +57,27 @@ class KuesionerProdiController extends Controller
             ->get()
             ->keyBy('prodi_question_id');
 
-        // Data akademik default alumni untuk auto-prefill pertanyaan identitas
-        $namaAkademik = $biodata->nama ?? $biodata->dataAkademik?->nama ?? $biodata->user?->name ?? '';
-        $nimAkademik = $biodata->nim ?? $biodata->dataAkademik?->nim ?? '';
-        $tahunLulusAkademik = $biodata->tahun_lulus ?? $biodata->yudisium?->tahun_lulus ?? $biodata->dataAkademik?->tahun_lulus ?? '';
+        // Ambil data terpadu alumni dari Database View
+        $autofill = DB::table('v_alumni_kuesioner_autofill')
+            ->where('biodata_id', $biodata->id)
+            ->first();
+
+        $namaAkademik = $autofill->F2A ?? $biodata->nama ?? $biodata->user?->name ?? '';
+        $nimAkademik = $autofill->F1 ?? $biodata->nim ?? '';
+        $tahunLulusAkademik = $autofill->BIO_TGL_LULUS ?? $biodata->tahun_lulus ?? '';
 
         $initialAnswers = [];
         foreach ($questions as $q) {
             $resp = $existingResponses->get($q->id);
             $qText = strtolower(trim($q->question_text));
 
-            // Cek apakah butir pertanyaan merupakan data akademik otomatis
+            // Cek apakah butir pertanyaan merupakan data identitas/akademik otomatis
             $autoVal = null;
-            if ($q->code === 'PSI-1-01' || $qText === 'nama') {
+            if (str_contains($qText, 'nama') || str_ends_with(strtolower((string) $q->code), '-01')) {
                 $autoVal = $namaAkademik;
-            } elseif ($q->code === 'PSI-1-02' || $qText === 'nim') {
+            } elseif (str_contains($qText, 'nim') || str_ends_with(strtolower((string) $q->code), '-02')) {
                 $autoVal = $nimAkademik;
-            } elseif ($q->code === 'PSI-1-03' || $qText === 'tahun kelulusan' || $qText === 'tahun lulus') {
+            } elseif (str_contains($qText, 'lulus') || str_contains($qText, 'kelulusan') || str_ends_with(strtolower((string) $q->code), '-03')) {
                 $autoVal = $tahunLulusAkademik;
             }
 
@@ -132,6 +137,10 @@ class KuesionerProdiController extends Controller
             return redirect()->back()->with('error', 'Profil alumni tidak valid.');
         }
 
+        $autofill = DB::table('v_alumni_kuesioner_autofill')
+            ->where('biodata_id', $biodata->id)
+            ->first();
+
         $jawabanMasuk = $request->input('answers', []);
         $questions = ProdiQuestion::where('prodi_id', $biodata->prodi_id)->get()->keyBy('id');
 
@@ -168,15 +177,15 @@ class KuesionerProdiController extends Controller
                 $answerValue = trim((string) $jawaban);
             }
 
-            // Fallback otomatis mengambil langsung dari Biodata / Data Akademik jika input kosong
+            // Fallback otomatis mengambil langsung dari Database View jika input kosong
             if ($answerValue === null || $answerValue === '') {
                 $qText = strtolower(trim($q->question_text));
-                if ($q->code === 'PSI-1-01' || $qText === 'nama') {
-                    $answerValue = $biodata->nama ?? $biodata->dataAkademik?->nama ?? $biodata->user?->name;
-                } elseif ($q->code === 'PSI-1-02' || $qText === 'nim') {
-                    $answerValue = $biodata->nim ?? $biodata->dataAkademik?->nim;
-                } elseif ($q->code === 'PSI-1-03' || $qText === 'tahun kelulusan' || $qText === 'tahun lulus') {
-                    $answerValue = $biodata->tahun_lulus ?? $biodata->yudisium?->tahun_lulus ?? $biodata->dataAkademik?->tahun_lulus;
+                if (str_contains($qText, 'nama') || str_ends_with(strtolower((string) $q->code), '-01')) {
+                    $answerValue = $autofill->F2A ?? $biodata->nama ?? $biodata->user?->name;
+                } elseif (str_contains($qText, 'nim') || str_ends_with(strtolower((string) $q->code), '-02')) {
+                    $answerValue = $autofill->F1 ?? $biodata->nim;
+                } elseif (str_contains($qText, 'lulus') || str_contains($qText, 'kelulusan') || str_ends_with(strtolower((string) $q->code), '-03')) {
+                    $answerValue = $autofill->BIO_TGL_LULUS ?? $biodata->tahun_lulus;
                 }
             }
 

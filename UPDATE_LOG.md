@@ -1,6 +1,29 @@
 # UPDATE LOG - SERU (Sistem Ekosistem Rekam Jejak Alumni)
 
-## [2026-09-19] Standarisasi Dropdown F5C, Navigasi Utama Terpadu Alumni (Unified Navbar), dan Pemetaan Komprehensif Instrumen Kuesioner
+## [2026-09-20] Seeding Komprehensif Perusahaan (15 Kolom), Sinkronisasi & Standardisasi Studi Lanjut F18, Format Skala Langsung F17, dan Database-Driven Jump Logic
+- **Seeding Komprehensif Master Data Perusahaan 15 Kolom ([PerusahaanSeeder.php](file:///c:/study/tracerstudy/database/seeders/PerusahaanSeeder.php))**:
+  - Mengisi seluruh 15 atribut tabel `perusahaan` secara lengkap dan valid: `id`, `nama_perusahaan`, `propinsi_id`, `kabupaten_id`, `alamat`, `kota`, `provinsi`, `negara`, `jenis_lokasi` (Dalam Negeri / Luar Negeri), `jenis_perusahaan`, `jenis_perusahaan_lainnya`, `skala`, `kode_pos`, `status_verifikasi` (`verified`), serta timestamps.
+  - Memastikan integritas relasi foreign key dengan `provinsi` dan `kabupaten_kota` serta mencakup ragam sektor (BUMN, Startup/Swasta, Instansi Pemerintah, Multilateral, hingga Perusahaan Luar Negeri).
+- **Sinkronisasi Dua Arah & Standardisasi Studi Lanjut F18 (`F18a` s.d. `F18d`)**:
+  - Menghubungkan profil studi lanjut alumni (`pendidikan_tingkat`, `perguruan_tinggi`, `pendidikan_prodi`) di [FormKarier.vue](file:///c:/study/tracerstudy/resources/js/Pages/Alumni/Profil/Components/FormKarier.vue) dengan pertanyaan kuesioner `F18b` dan `F18c` via [KuesionerSyncService.php](file:///c:/study/tracerstudy/app/Services/Kuesioner/KuesionerSyncService.php) dan [KuesionerController.php](file:///c:/study/tracerstudy/app/Http/Controllers/Alumni/Kuesioner/KuesionerController.php).
+  - Merapikan tata letak tampilan kartu `F18` di [Kuesioner.vue](file:///c:/study/tracerstudy/resources/js/Pages/Alumni/Kuesioner.vue):
+    - `F18a` (Sumber Biaya): Kartu tersendiri (single card).
+    - `F18b` (Perguruan Tinggi) & `F18c` (Program Studi): Ditata berdampingan rapi dalam 2-column grid.
+    - `F18d` (Tanggal Masuk): Menggunakan input tanggal native HTML5 (`type="date"`).
+  - Memperbarui database view `v_alumni_kuesioner_autofill` untuk mendukung pemetaan `BIO_PENDIDIKAN_TINGKAT`.
+- **Format Skala Langsung F17 & Konsistensi UI Kuesioner**:
+  - Mengubah header skala kompetensi pada [TabelF17.vue](file:///c:/study/tracerstudy/resources/js/Pages/Alumni/Components/Kuesioner/TabelF17.vue) menjadi format langsung yang padat dan presisi: `Sangat Rendah 1 2 3 4 5 Sangat Tinggi`.
+  - Menggunakan palet 2-warna resmi UKDW yang bersih: Hijau `#005B3C` (Kompetensi Saat Lulus) dan Kuning/Amber `#FDC700` (Kontribusi PT), serta menghapus redundansi indikator progres aspek.
+  - Standardisasi tombol stepper jumlah (+ / -) pada [KartuPertanyaan.vue](file:///c:/study/tracerstudy/resources/js/Pages/Alumni/Components/Kuesioner/KartuPertanyaan.vue) dengan warna netral `bg-gray-100` dan hover hijau UKDW.
+- **Database-Driven Jump Logic**:
+  - Logika percabangan/lompatan pertanyaan (`jump_to`) sepenuhnya digerakkan oleh metadata database dari `ref_subpertanyaan_detil` tanpa *hardcoded question ID* di frontend.
+- **Pembaruan ERD & Pemetaan Instrumen Pertanyaan**:
+  - Memperbarui kamus data tabel `perusahaan` dan `biodata` pada [ERD.md](file:///c:/study/tracerstudy/ERD.md).
+  - Melengkapi dokumen [DAFTAR_PERTANYAAN_MAPPING.md](file:///c:/study/tracerstudy/DAFTAR_PERTANYAAN_MAPPING.md) dengan seluruh butir kuesioner standar Dikti 2021 dan relasi sinkronisasinya.
+- **Automated Tests**:
+  - 48 tests PHPUnit Feature & Unit lulus 100% (247 assertions).
+
+
 - **Standarisasi Input Posisi / Jabatan Wiraswasta & Startup (F5C) Menjadi Dropdown `<select>`**:
   - Mengubah kontrol input `posisi_wiraswasta` (`F5C`) pada [FormKarier.vue](file:///c:/study/tracerstudy/resources/js/Pages/Alumni/Profil/Components/FormKarier.vue) dari input teks + tombol pill cepat menjadi dropdown `<select>` standar yang konsisten dan rapi.
   - Opsi dropdown yang disediakan: `Owner`, `Founder`, `Co-Founder`, `Direktur Utama`, `Pengelola Usaha`, `Freelancer / Konsultan Mandiri`, serta opsi khusus `Lainnya`.

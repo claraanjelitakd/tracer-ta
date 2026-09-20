@@ -7,6 +7,7 @@ use App\Models\Kabupaten;
 use App\Models\Perusahaan;
 use App\Models\Propinsi;
 use App\Models\RefNegara;
+use App\Models\RefSubpertanyaanDetil;
 use Illuminate\Http\Request;
 
 /**
@@ -65,7 +66,8 @@ class ProfilController extends Controller
             'email_students' => $dataAkademik?->email_students ?? '',
 
             // Data Akademik & Yudisium
-            'kode_prodi' => $biodata?->kode_prodi ?? ($dataAkademik?->program_studi ?? ''),
+            'prodi_id' => $biodata?->prodi_id,
+            'kode_prodi' => $biodata?->prodi?->kode_prodi ?? ($dataAkademik?->program_studi ?? ''),
             'program_studi' => $biodata?->prodi?->nama_prodi ?? ($dataAkademik?->program_studi ?? ''),
             'fakultas' => $biodata?->prodi?->fakultas?->nama_fakultas ?? ($dataAkademik?->fakultas ?? ''),
             'angkatan_masuk' => $dataAkademik?->angkatan_masuk ?? '',
@@ -116,6 +118,9 @@ class ProfilController extends Controller
             'kategori_pekerjaan' => $biodata?->kategori_pekerjaan ?? (in_array(strtolower((string) $biodata?->posisi_jabatan), ['owner', 'founder', 'wiraswasta', 'wirausaha', 'wiraswasta / wirausaha', 'owner / founder']) ? 'Wiraswasta' : 'Pekerja'),
             'posisi_jabatan' => $biodata?->posisi_jabatan ?? '',
             'posisi_wiraswasta' => $biodata?->posisi_wiraswasta ?? (in_array(strtolower((string) $biodata?->posisi_jabatan), ['owner', 'founder', 'wiraswasta', 'wirausaha', 'wiraswasta / wirausaha', 'owner / founder']) ? $biodata?->posisi_jabatan : ''),
+            'pendidikan_tingkat' => $biodata?->pendidikan_tingkat ?? '',
+            'perguruan_tinggi' => $biodata?->perguruan_tinggi ?? '',
+            'pendidikan_prodi' => $biodata?->pendidikan_prodi ?? '',
             'gaji' => $biodata?->gaji ?? '',
             'jenis_pekerjaan' => $biodata?->jenis_pekerjaan ?? '',
             'zipcode' => $biodata?->zipcode ?? '',
@@ -148,8 +153,15 @@ class ProfilController extends Controller
             'telepon_atasan' => $atasan?->telepon ?? '',
         ];
 
+        // Ambil opsi referensi kuesioner resmi dari database (F2G, F2H, F5D, F11, F8)
+        $refOptions = RefSubpertanyaanDetil::whereIn('kode_pertanyaan', ['F2G', 'F2H', 'F5D', 'F11', 'F8', 'f2g', 'f2h', 'f5d', 'f11', 'f8'])
+            ->orderBy('order')
+            ->get(['id', 'kode_pertanyaan', 'kode_opsi', 'option_text', 'order'])
+            ->groupBy(fn ($item) => strtoupper($item->kode_pertanyaan))
+            ->toArray();
+
         // Get all perusahaan for Autocomplete
-        $perusahaans = Perusahaan::select('id', 'nama_perusahaan', 'propinsi_id', 'kabupaten_id', 'alamat', 'kode_pos', 'skala', 'jenis_lokasi', 'negara', 'status_verifikasi')->get();
+        $perusahaans = Perusahaan::select('id', 'nama_perusahaan', 'propinsi_id', 'kabupaten_id', 'alamat', 'kode_pos', 'skala', 'jenis_perusahaan', 'jenis_perusahaan_lainnya', 'jenis_lokasi', 'negara', 'status_verifikasi')->get();
 
         return inertia('Alumni/Profil/Index', [
             'biodataData' => $biodata,
@@ -161,6 +173,7 @@ class ProfilController extends Controller
             'negaras' => $negaras,
             'perusahaans' => $perusahaans,
             'companies' => $perusahaans,
+            'refOptions' => $refOptions,
         ]);
     }
 }

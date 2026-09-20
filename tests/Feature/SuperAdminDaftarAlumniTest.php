@@ -215,7 +215,7 @@ class SuperAdminDaftarAlumniTest extends TestCase
     }
 
     /**
-     * Test superadmin dapat mengunduh file Excel/CSV rekap seluruh butir pertanyaan & jawaban per alumni.
+     * Test superadmin dapat mengunduh file Excel rekap seluruh butir pertanyaan & jawaban per alumni.
      */
     public function test_superadmin_can_export_alumni_answers_excel(): void
     {
@@ -223,11 +223,11 @@ class SuperAdminDaftarAlumniTest extends TestCase
             ->get(route('superadmin.alumni.export-excel', $this->alumni->id));
 
         $response->assertStatus(200);
-        $response->assertHeader('content-type', 'text/csv; charset=UTF-8');
+        $response->assertHeader('content-type', 'application/vnd.ms-excel; charset=UTF-8');
 
         $content = $response->streamedContent();
-        $this->assertStringContainsString('Kode Pertanyaan', $content);
-        $this->assertStringContainsString('Jawaban Alumni', $content);
+        $this->assertStringContainsString('Kode', $content);
+        $this->assertStringContainsString('Respon / Jawaban Alumni', $content);
         $this->assertStringContainsString('F24A', $content);
     }
 }

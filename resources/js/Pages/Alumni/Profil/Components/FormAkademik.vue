@@ -3,12 +3,10 @@
   File: resources/js/Pages/Alumni/Profil/Components/FormAkademik.vue
   
   DIPANGGIL OLEH (Parent Component):
-  👉 resources/js/Pages/Alumni/Profil/Index.vue
-  (Pada baris: <FormAkademik :form="form" />)
+  - resources/js/Pages/Alumni/Profil/Index.vue
   
-  SUMBER ASLI DATA DARI BACKEND:
-  👉 Controller: App\Http\Controllers\Alumni\Profil\ProfilController.php (method index)
-  (Dikirim dari backend sebagai 'formData', lalu dibungkus oleh parent Index.vue menjadi 'useForm')
+  SUMBER DATA DARI BACKEND:
+  - Controller: App\Http\Controllers\Alumni\Profil\ProfilController.php
 -->
 <script setup>
 /**

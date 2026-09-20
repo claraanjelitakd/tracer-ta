@@ -185,12 +185,12 @@ const submitKuesionerProdi = () => {
 <template>
     <Head :title="'Kuesioner Program Studi ' + (prodi?.nama_prodi || '')" />
 
-    <div class="min-h-screen bg-[#E8F5E9] font-sans text-gray-900 antialiased flex flex-col relative pb-28 md:pb-32">
+    <div class="min-h-screen bg-[#E8F5E9] font-sans text-gray-900 antialiased flex flex-col relative pb-16 md:pb-8">
         <!-- Navigasi Utama Terpadu Alumni -->
         <Navbar />
 
         <!-- Main Form Area -->
-        <main class="flex-1 px-4 sm:px-6 w-full max-w-4xl mx-auto mt-4 sm:mt-8">
+        <main class="flex-1 px-4 sm:px-6 w-full max-w-5xl mx-auto mt-4 sm:mt-8">
             
             <!-- Banner Judul Kuesioner Prodi -->
             <div class="mb-6 sm:mb-8 text-center bg-[#005B3C] p-5 sm:p-8 rounded-3xl text-white shadow-sm w-full">
@@ -221,8 +221,8 @@ const submitKuesionerProdi = () => {
 
             <!-- Pesan jika prodi belum memiliki pertanyaan -->
             <div v-if="questions.length === 0" class="bg-white rounded-3xl p-8 sm:p-12 text-center shadow-xs border border-gray-100">
-                <div class="w-16 h-16 rounded-2xl bg-emerald-50 text-[#005B3C] flex items-center justify-center mx-auto mb-4 text-2xl font-black">
-                    🎓
+                <div class="w-16 h-16 rounded-2xl bg-emerald-50 text-[#005B3C] flex items-center justify-center mx-auto mb-4">
+                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l9-5-9-5-9 5 9 5z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z"></path></svg>
                 </div>
                 <h3 class="text-xl font-bold text-gray-800 mb-2">Belum Ada Kuesioner Khusus Prodi</h3>
                 <p class="text-gray-500 text-sm max-w-md mx-auto mb-6">
@@ -452,7 +452,7 @@ const submitKuesionerProdi = () => {
                         :disabled="form.processing"
                         class="w-full sm:w-auto px-8 py-3.5 bg-[#005B3C] hover:bg-[#00482f] text-white font-black rounded-2xl shadow-md transition-all text-sm sm:text-base cursor-pointer disabled:opacity-50"
                     >
-                        {{ form.processing ? 'Menyimpan...' : 'Simpan Jawaban Kuesioner Prodi ✓' }}
+                        {{ form.processing ? 'Menyimpan...' : 'Simpan Jawaban Kuesioner Prodi' }}
                     </button>
                 </div>
             </form>

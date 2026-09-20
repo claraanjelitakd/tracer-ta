@@ -54,13 +54,14 @@ const getInitialCompletedSections = () => {
 
 // Inisialisasi jawaban formulir: gabungkan data backend dengan draft lokal
 const getInitialAnswers = () => {
-    let base = JSON.parse(JSON.stringify(props.initialAnswers || {}));
+    const serverAnswers = JSON.parse(JSON.stringify(props.initialAnswers || {}));
+    let base = { ...serverAnswers };
     if (typeof window !== 'undefined') {
         try {
             const cached = localStorage.getItem(ANSWERS_STORAGE_KEY);
             if (cached) {
                 const parsed = JSON.parse(cached);
-                base = { ...base, ...parsed };
+                base = { ...parsed, ...serverAnswers };
             }
         } catch (e) {
             console.error('Gagal membaca cache jawaban:', e);
@@ -248,7 +249,7 @@ const f17CompletedCount = computed(() => {
     }).length;
 });
 
-// Kelompokkan pertanyaan dalam section: buat berpasangan kanan-kiri khusus F6/F7 dan F18
+// Kelompokkan pertanyaan dalam section: buat berpasangan kanan-kiri khusus F6/F7 dan F18b/F18c
 const groupedQuestions = computed(() => {
     const list = currentSection.value?.subpertanyaans || currentSection.value?.questions;
     if (!list) return [];
@@ -259,8 +260,8 @@ const groupedQuestions = computed(() => {
     while (i < questions.length) {
         const q = questions[i];
         const nextQ = questions[i + 1];
-        const qCode = q.kode_pertanyaan || q.code;
-        const nextQCode = nextQ ? (nextQ.kode_pertanyaan || nextQ.code) : '';
+        const qCode = (q.kode_pertanyaan || q.code || '').toUpperCase();
+        const nextQCode = nextQ ? (nextQ.kode_pertanyaan || nextQ.code || '').toUpperCase() : '';
 
         // Khusus F6 dan F7: buat berdampingan kanan-kiri (grid 2 kolom)
         if (qCode === 'F6' && nextQ && nextQCode === 'F7') {
@@ -269,15 +270,8 @@ const groupedQuestions = computed(() => {
                 items: [q, nextQ]
             });
             i += 2;
-        } else if (qCode === 'F18a' && nextQ && nextQCode === 'F18b') {
-            // Pasangan Studi Lanjut F18A dan F18B
-            groups.push({
-                type: 'pair',
-                items: [q, nextQ]
-            });
-            i += 2;
-        } else if (qCode === 'F18c' && nextQ && nextQCode === 'F18d') {
-            // Pasangan Studi Lanjut F18C dan F18D
+        } else if (qCode === 'F18B' && nextQ && nextQCode === 'F18C') {
+            // Pasangan Studi Lanjut F18b (Perguruan Tinggi) dan F18c (Program Studi)
             groups.push({
                 type: 'pair',
                 items: [q, nextQ]
@@ -294,93 +288,80 @@ const groupedQuestions = computed(() => {
     return groups;
 });
 
-// Evaluasi Logika Percabangan (Branching / Jump Logic)
-const questionOptionMap = computed(() => {
-    const map = {};
-    props.questionnaire?.sections?.forEach(sec => {
-        (sec.subpertanyaans || sec.questions)?.forEach(q => {
-            (q.detils || q.options)?.forEach(opt => {
-                if (opt.jump_to) {
-                    map[q.id + '_' + opt.option_text] = opt.jump_to;
-                }
-            });
+// Daftar urut seluruh butir pertanyaan dari seluruh seksi (untuk navigasi alur jump_to)
+const orderedQuestionsList = computed(() => {
+    if (!props.questionnaire?.sections) return [];
+    const list = [];
+    props.questionnaire.sections.forEach(sec => {
+        (sec.subpertanyaans || sec.questions || []).forEach(q => {
+            list.push(q);
         });
     });
-    return map;
+    return list;
 });
 
-// Menentukan apakah suatu butir pertanyaan terlihat (tidak dilewati oleh alur percabangan)
-const isQuestionVisible = (qId) => {
-    if (!props.questionnaire?.sections) return true;
+// Evaluasi Logika Percabangan (Branching / Jump Logic) Berbasis Data Opsi Database (jump_to)
+const hiddenQuestionIds = computed(() => {
+    const hidden = new Set();
+    const list = orderedQuestionsList.value;
+    if (list.length === 0) return hidden;
 
-    // Aturan khusus F504 -> F502/F505/F505A (jika Ya) vs F506 (jika Tidak)
-    let currentQ = null;
-    let f504Q = null;
-    for (const s of props.questionnaire.sections) {
-        for (const q of (s.subpertanyaans || s.questions || [])) {
-            if (q.id === qId) currentQ = q;
-            if ((q.kode_pertanyaan || q.code) === 'F504') f504Q = q;
+    // Index mapping untuk pencarian cepat target jump_to berdasarkan kode pertanyaan
+    const codeToIndex = {};
+    list.forEach((q, idx) => {
+        const code = (q.kode_pertanyaan || q.code || '').toUpperCase();
+        if (code) {
+            codeToIndex[code] = idx;
         }
-    }
+    });
 
-    if (currentQ && f504Q) {
-        const curCode = currentQ.kode_pertanyaan || currentQ.code;
-        if (['F502', 'F505', 'F505A'].includes(curCode)) {
-            const ansF504 = form.answers[f504Q.id];
-            if (ansF504 !== 'Ya' && ansF504 !== '1') return false;
-        } else if (curCode === 'F506') {
-            const ansF504 = form.answers[f504Q.id];
-            if (ansF504 !== 'Tidak' && ansF504 !== '2') return false;
+    for (let i = 0; i < list.length; i++) {
+        const q = list[i];
+        if (hidden.has(q.id)) continue;
+
+        const options = q.detils || q.options;
+        if (!options || options.length === 0) continue;
+
+        const ans = form.answers[q.id];
+        if (ans === undefined || ans === null || ans === '') continue;
+
+        let selectedOpt = null;
+
+        if (typeof ans === 'string' || typeof ans === 'number') {
+            const ansStr = ans.toString().trim().toLowerCase();
+            selectedOpt = options.find(o => {
+                const optText = (o.option_text || '').trim().toLowerCase();
+                const optCode = (o.kode_opsi || o.code || '').toString().trim().toLowerCase();
+                return optText === ansStr || optCode === ansStr || (ansStr.length > 0 && optText.startsWith(ansStr));
+            });
+        } else if (typeof ans === 'object' && ans.selected) {
+            const selStr = ans.selected.toString().trim().toLowerCase();
+            selectedOpt = options.find(o => {
+                const optText = (o.option_text || '').trim().toLowerCase();
+                const optCode = (o.kode_opsi || o.code || '').toString().trim().toLowerCase();
+                return optText === selStr || optCode === selStr;
+            });
         }
-    }
 
-    for (const sec of props.questionnaire.sections) {
-        const questions = sec.subpertanyaans || sec.questions;
-        if (!questions) continue;
-        for (const q of questions) {
-            if (q.id === qId) return true;
+        // Jika opsi yang dipilih alumni memiliki instruksi jump_to di database
+        if (selectedOpt && selectedOpt.jump_to) {
+            const targetCode = selectedOpt.jump_to.trim().toUpperCase();
+            const targetIdx = codeToIndex[targetCode];
 
-            const selectedAnswer = form.answers[q.id];
-            if (selectedAnswer) {
-                let jumpTarget = null;
-
-                if (typeof selectedAnswer === 'string') {
-                    jumpTarget = questionOptionMap.value[q.id + '_' + selectedAnswer];
-                } else if (typeof selectedAnswer === 'object' && selectedAnswer.selected) {
-                    jumpTarget = questionOptionMap.value[q.id + '_' + selectedAnswer.selected];
-                }
-
-                if (jumpTarget) {
-                    let isSkipped = false;
-                    let foundTarget = false;
-                    let scanning = false;
-
-                    for (const s of props.questionnaire.sections) {
-                        for (const targetQ of (s.subpertanyaans || s.questions || [])) {
-                            if (targetQ.id === q.id) {
-                                scanning = true;
-                                continue;
-                            }
-                            if (scanning) {
-                                if ((targetQ.kode_pertanyaan || targetQ.code) === jumpTarget) {
-                                    foundTarget = true;
-                                    break;
-                                }
-                                if (targetQ.id === qId) {
-                                    isSkipped = true;
-                                    break;
-                                }
-                            }
-                        }
-                        if (foundTarget || isSkipped) break;
-                    }
-
-                    if (isSkipped) return false;
+            if (targetIdx !== undefined && targetIdx > i) {
+                for (let j = i + 1; j < targetIdx; j++) {
+                    hidden.add(list[j].id);
                 }
             }
         }
     }
-    return true;
+
+    return hidden;
+});
+
+// Menentukan apakah suatu butir pertanyaan terlihat (tidak dilewati oleh alur percabangan jump_to)
+const isQuestionVisible = (qId) => {
+    return !hiddenQuestionIds.value.has(qId);
 };
 
 // Menentukan apakah suatu section terlihat (memiliki setidaknya satu pertanyaan yang terlihat)
@@ -474,9 +455,11 @@ const isQuestionAnswered = (q) => {
         // Pilihan Tunggal / Radio
         case 'radio':
         case 'single_choice': {
-            if (!ans || typeof ans !== 'string' || ans.trim() === '') return false;
-            const lower = ans.toLowerCase();
-            if (lower.includes('lainnya') || lower.includes('tuliskan') || ans.includes('...')) {
+            if (ans === undefined || ans === null || ans === '') return false;
+            const str = ans.toString().trim();
+            if (str === '') return false;
+            const lower = str.toLowerCase();
+            if (lower.includes('lainnya') || lower.includes('tuliskan') || str.includes('...')) {
                 const customAns = form.answers[q.id + '_custom'];
                 return customAns !== undefined && customAns !== null && customAns.toString().trim() !== '';
             }
@@ -502,7 +485,7 @@ const isQuestionAnswered = (q) => {
         case 'radio_input':
         case 'radio_text': {
             if (!ans || typeof ans !== 'object' || !ans.selected) return false;
-            const sel = ans.selected;
+            const sel = ans.selected.toString();
             if (sel.includes('...') || sel.includes('…') || sel.toLowerCase().includes('lainnya')) {
                 const options = q.detils || q.options;
                 const matchedOpt = options?.find(o => o.option_text === sel);
@@ -541,22 +524,7 @@ const isSectionAnswered = (section) => {
     const questions = section?.subpertanyaans || section?.questions;
     if (!section || !questions || questions.length === 0) return false;
 
-    // 1. Khusus Instrumen F2 (Metode Pembelajaran)
-    const isF2 = questions.some(q => (q.kode_pertanyaan || q.code) === 'F2' || ((q.kode_pertanyaan || q.code) && (q.kode_pertanyaan || q.code).startsWith('F21')));
-    if (isF2) {
-        return f2QuestionsList.value.length > 0 && f2QuestionsList.value.every(q => isQuestionAnswered(q));
-    }
-
-    // 2. Khusus Instrumen F17 (Evaluasi Kompetensi Dual Matrix A vs B)
-    const isF17 = questions.some(q => {
-        const c = q.kode_pertanyaan || q.code;
-        return c === 'F17' || (c && (c.toLowerCase().startsWith('f17a') || c.toLowerCase().startsWith('f17b') || c.startsWith('F17-')));
-    });
-    if (isF17) {
-        return f17AspectPairs.value.length > 0 && f17CompletedCount.value === f17AspectPairs.value.length;
-    }
-
-    // 3. Seksi Pertanyaan Standar
+    // Ambil pertanyaan non-header yang terlihat
     const visibleQuestions = questions.filter(q => q.type !== 'header' && isQuestionVisible(q.id));
     if (visibleQuestions.length === 0) return true;
 
@@ -579,7 +547,7 @@ const isSectionAnswered = (section) => {
 const isSectionCompleted = (index) => {
     const sec = props.questionnaire?.sections?.[index];
     if (!sec) return false;
-    return isSectionAnswered(sec);
+    return isSectionAnswered(sec) || completedSectionIndices.value.has(index);
 };
 
 /**
@@ -722,7 +690,7 @@ watch(() => form.answers, (newAnswers) => {
 <template>
     <Head title="Kuesioner Tracer Study" />
 
-    <div class="min-h-screen bg-[#E8F5E9] font-sans text-gray-900 antialiased flex flex-col relative pb-28 md:pb-32">
+    <div class="min-h-screen bg-[#E8F5E9] font-sans text-gray-900 antialiased flex flex-col relative pb-20 md:pb-6">
         <!-- Header Atas: Navbar & Stepper Tahapan -->
         <header class="sticky top-0 z-50 w-full shadow-md bg-white">
             <!-- 1. Navbar Atas (Logo UKDW & Tombol Kembali) -->
@@ -741,10 +709,7 @@ watch(() => form.answers, (newAnswers) => {
         </header>
 
         <!-- Area Konten Formulir Utama -->
-        <main 
-            class="flex-1 px-3 py-4 sm:px-4 md:px-6 w-full mx-auto mt-3 sm:mt-6 md:mt-8" 
-            :class="(isF17Section || isF2Section) ? 'max-w-6xl' : 'max-w-5xl'"
-        >
+        <main class="flex-1 px-3 py-4 sm:px-4 md:px-6 w-full mx-auto mt-3 sm:mt-6 md:mt-8 max-w-5xl">
             <!-- Pesan Error jika kuesioner tidak aktif -->
             <div 
                 v-if="error" 
@@ -762,7 +727,7 @@ watch(() => form.answers, (newAnswers) => {
                     :title="currentSection.title"
                 />
 
-                <form @submit.prevent="handleNextOrSubmit" class="space-y-4 sm:space-y-8">
+                <form @submit.prevent="handleNextOrSubmit" class="space-y-4 sm:space-y-6">
                     <!-- 4. Khusus Instrumen F2: Penekanan Metode Pembelajaran Matriks -->
                     <TabelF2 
                         v-if="isF2Section"

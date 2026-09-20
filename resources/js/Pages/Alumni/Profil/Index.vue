@@ -3,12 +3,12 @@
   File: resources/js/Pages/Alumni/Profil/Index.vue
   
   DIRELOAD OLEH BACKEND DARI:
-  👉 Controller Tampil : App\Http\Controllers\Alumni\Profil\ProfilController.php (method index)
-  👉 Route URL (GET)   : /alumni/profile
+  - Controller Tampil : App\Http\Controllers\Alumni\Profil\ProfilController.php (method tampilkanHalamanProfil)
+  - Route URL (GET)   : /alumni/profile
   
   DISIMPAN KE BACKEND OLEH:
-  👉 Controller Simpan : App\Http\Controllers\Alumni\Profil\SimpanProfilController.php (method simpanProfil)
-  👉 Route URL (POST)  : /alumni/profile
+  - Controller Simpan : App\Http\Controllers\Alumni\Profil\SimpanProfilController.php (method simpanProfil)
+  - Route URL (POST)  : /alumni/profile
 -->
 <script setup>
 import { Head, useForm, usePage, Link } from '@inertiajs/vue3';
@@ -38,6 +38,7 @@ const props = defineProps({
     kabupatens: Array,
     negaras: Array,
     companies: Array,
+    refOptions: Object,
 });
 
 const page = usePage();
@@ -191,20 +192,34 @@ const submit = () => {
                     </button>
                 </div>
 
-                <!-- Tab Contents -->
+                <!-- ============================================================= -->
+                <!-- KONTEN TAB FORM PROFIL -->
+                <!-- ============================================================= -->
                 <div class="p-8 md:p-12 min-h-[500px]">
+                    <!-- Tab 1: Identitas & Alamat Pribadi -->
                     <div v-show="activeTab === 'pribadi'">
                         <FormPribadi :form="form" :provinces="provinces" :kabupatens="kabupatens" :negaras="negaras" />
                     </div>
 
+                    <!-- Tab 2: Karier, Pekerjaan & Data Atasan -->
                     <div v-show="activeTab === 'karier'">
-                        <FormKarier :form="form" :provinces="provinces" :kabupatens="kabupatens" :negaras="negaras" :companies="companies" :alumniData="alumniData" />
+                        <FormKarier 
+                            :form="form" 
+                            :provinces="provinces" 
+                            :kabupatens="kabupatens" 
+                            :negaras="negaras" 
+                            :companies="companies" 
+                            :alumniData="alumniData" 
+                            :refOptions="refOptions" 
+                        />
                     </div>
 
+                    <!-- Tab 3: Data Akademik & Yudisium -->
                     <div v-show="activeTab === 'akademik'">
                         <FormAkademik :form="form" />
                     </div>
 
+                    <!-- Tab 4: Data Orang Tua / Wali -->
                     <div v-show="activeTab === 'orangtua'">
                         <FormOrangTua :form="form" :provinces="provinces" :kabupatens="kabupatens" />
                     </div>

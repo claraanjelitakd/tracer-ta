@@ -13,7 +13,8 @@ return new class extends Migration
     {
         Schema::create('prodi', function (Blueprint $table) {
             $table->id();
-            $table->string('kode_prodi', 2)->unique()->comment('Contoh: 71, 72, 11');
+            $table->foreignId('fakultas_id')->nullable()->constrained('ref_fakultas')->nullOnDelete();
+            $table->string('kode_prodi', 10)->unique()->comment('Contoh: 71, 72, 11');
             $table->string('nama_prodi')->comment('Contoh: Informatika, Sistem Informasi');
             $table->timestamps();
         });

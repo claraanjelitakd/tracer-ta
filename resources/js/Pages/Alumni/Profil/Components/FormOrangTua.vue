@@ -3,12 +3,10 @@
   File: resources/js/Pages/Alumni/Profil/Components/FormOrangTua.vue
   
   DIPANGGIL OLEH (Parent Component):
-  👉 resources/js/Pages/Alumni/Profil/Index.vue
-  (Pada baris: <FormOrangTua :form="form" :provinces="provinces" :kabupatens="kabupatens" />)
+  - resources/js/Pages/Alumni/Profil/Index.vue
   
-  SUMBER ASLI DATA DARI BACKEND:
-  👉 Controller: App\Http\Controllers\Alumni\Profil\ProfilController.php (method index)
-  (Menyediakan 'formData', 'provinces', dan 'kabupatens')
+  SUMBER DATA DARI BACKEND:
+  - Controller: App\Http\Controllers\Alumni\Profil\ProfilController.php
 -->
 <script setup>
 /**

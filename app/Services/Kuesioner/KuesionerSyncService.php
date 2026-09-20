@@ -7,6 +7,7 @@ use App\Models\ProdiQuestion;
 use App\Models\ProdiResponse;
 use App\Models\RefSubpertanyaan2021;
 use App\Models\Tracer;
+use Illuminate\Support\Facades\DB;
 
 /**
  * KuesionerSyncService
@@ -23,90 +24,25 @@ class KuesionerSyncService
      */
     public static function syncProfileResponses(Biodata $biodata): void
     {
-        $biodata->refresh();
-        $biodata->load(['dataAkademik', 'yudisium', 'perusahaan.propinsi', 'perusahaan.kabupaten', 'atasan', 'user', 'prodi']);
+        // Ambil data terpadu alumni dari Database View
+        $autofill = DB::table('v_alumni_kuesioner_autofill')
+            ->where('biodata_id', $biodata->id)
+            ->first();
 
-        $isLuarNegeri = ($biodata->perusahaan?->jenis_lokasi === 'Luar Negeri');
-
-        $alamatPerusahaanParts = $isLuarNegeri
-            ? array_filter([
-                $biodata->perusahaan?->alamat,
-                $biodata->perusahaan?->negara,
-                $biodata->zipcode,
-            ])
-            : array_filter([
-                $biodata->perusahaan?->alamat,
-                $biodata->perusahaan?->kabupaten?->nama_kabupaten,
-                $biodata->perusahaan?->propinsi?->nama_provinsi,
-                $biodata->zipcode,
-            ]);
-        $alamatPerusahaan = ! empty($alamatPerusahaanParts) ? implode(', ', $alamatPerusahaanParts) : null;
-
-        $tempatLahir = $biodata->tempat_lahir ?? $biodata->dataAkademik?->tempat_lahir;
-        $tglLahirRaw = $biodata->tanggal_lahir ?? $biodata->dataAkademik?->tanggal_lahir;
-        $tanggalLahir = $tglLahirRaw ? date('d-m-Y', strtotime($tglLahirRaw)) : null;
-
-        $jenisKelamin = null;
-        $jkRaw = $biodata->jenis_kelamin ?? $biodata->dataAkademik?->jenis_kelamin;
-        if ($jkRaw) {
-            $jk = strtoupper(trim($jkRaw));
-            $jenisKelamin = in_array($jk, ['L', 'LAKI-LAKI', 'PRIA']) ? 'Pria' : 'Wanita';
+        if (! $autofill) {
+            return;
         }
-
-        $tanggalLulus = $biodata->dataAkademik?->tanggal_kelulusan
-            ? date('d-m-Y', strtotime($biodata->dataAkademik->tanggal_kelulusan))
-            : ($biodata->tahun_lulus ?? ($biodata->dataAkademik?->tahun_lulus ? (string) $biodata->dataAkademik->tahun_lulus : null));
 
         $tahunLulus = $biodata->tahun_lulus ?? ($biodata->dataAkademik?->tahun_lulus ? (string) $biodata->dataAkademik->tahun_lulus : null);
+        $profileMap = (array) $autofill;
 
-        $gajiTakeHomePay = $biodata->gaji ? (string) $biodata->gaji : null;
-
-        $isWiraswasta = ($biodata->kategori_pekerjaan === 'Wiraswasta') || in_array(strtolower((string) $biodata->posisi_jabatan), ['owner', 'founder', 'wiraswasta', 'wirausaha', 'wiraswasta / wirausaha', 'owner / founder']);
-
-        $posisiJabatanPekerja = ! $isWiraswasta ? $biodata->posisi_jabatan : ($biodata->posisi_jabatan ?: 'Direksi');
-        $posisiWiraswasta = $isWiraswasta ? ($biodata->posisi_wiraswasta ?: $biodata->posisi_jabatan) : null;
-
-        $jenisPerusahaan = $biodata->perusahaan?->jenis_perusahaan;
-        if ($jenisPerusahaan === '5' || strtolower((string) $jenisPerusahaan) === 'lainnya') {
-            $jenisPerusahaan = $biodata->perusahaan?->jenis_perusahaan_lainnya ?: 'Lainnya';
-        }
-
-        $profileMap = [
-            'F1' => $biodata->nim,
-            'F2A' => $biodata->nama ?? $biodata->dataAkademik?->nama,
-            'F2B' => $biodata->nomor_telepon ?? $biodata->dataAkademik?->nomor_telepon,
-            'F2C' => $biodata->email_pribadi ?? $biodata->dataAkademik?->email_pribadi,
-            'F2D' => $biodata->alamat ?? $biodata->dataAkademik?->alamat_saat_ini,
-            'BIO_TEMPAT_LAHIR' => $tempatLahir,
-            'BIO_TANGGAL_LAHIR' => $tanggalLahir,
-            'BIO_JK' => $jenisKelamin,
-            'BIO_TGL_LULUS' => $tanggalLulus,
-            'BIO_JUDUL_TA' => $biodata->yudisium?->judul_ta ?? $biodata->dataAkademik?->judul_skripsi,
-            'BIO_NIK' => $biodata->nik ?? $biodata->dataAkademik?->nik,
-            'BIO_NPWP' => $biodata->npwp,
-
-            // Relasi ke Perusahaan & Atasan
-            'F2E' => $biodata->perusahaan?->nama_perusahaan,
-            'F5B' => $biodata->perusahaan?->nama_perusahaan,
-            'F2E1' => $biodata->atasan?->nama,
-            'F2E2' => $biodata->atasan?->telepon,
-            'F2E3' => $biodata->atasan?->email,
-            'F2F' => $alamatPerusahaan,
-            'F510' => $alamatPerusahaan,
-            'F5a1' => $biodata->perusahaan?->propinsi_id ? (string) $biodata->perusahaan->propinsi_id : null,
-            'F5a2' => $biodata->perusahaan?->kabupaten_id ? (string) $biodata->perusahaan->kabupaten_id : null,
-            'F2G' => $posisiJabatanPekerja,
-            'F5C' => $posisiWiraswasta,
-            'F2H' => $biodata->perusahaan?->skala,
-            'F5D' => $biodata->perusahaan?->skala,
-            'F11' => $jenisPerusahaan,
-
-            // F505: Take Home Pay (Single Field dari Biodata Alumni)
-            'F505' => $gajiTakeHomePay,
-        ];
+        // Hilangkan kolom non-pertanyaan
+        unset($profileMap['user_id'], $profileMap['biodata_id'], $profileMap['nim']);
 
         foreach ($profileMap as $code => $val) {
-            $question = RefSubpertanyaan2021::where('kode_pertanyaan', $code)->first();
+            $question = RefSubpertanyaan2021::whereRaw('LOWER(kode_pertanyaan) = ?', [strtolower($code)])
+                ->first();
+
             if (! $question) {
                 continue;
             }

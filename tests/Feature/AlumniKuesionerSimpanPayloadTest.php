@@ -56,7 +56,6 @@ class AlumniKuesionerSimpanPayloadTest extends TestCase
             'user_id' => $this->user->id,
             'nim' => '821220001',
             'prodi_id' => $prodi->id,
-            'kode_prodi' => '82',
             'tahun_lulus' => '2020',
         ]);
 

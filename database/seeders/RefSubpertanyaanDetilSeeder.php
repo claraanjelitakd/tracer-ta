@@ -31,10 +31,15 @@ class RefSubpertanyaanDetilSeeder extends Seeder
             ['kode_pertanyaan' => 'F2H', 'order' => 2, 'kode_opsi' => '2', 'option_text' => 'Nasional', 'jump_to' => null],
             ['kode_pertanyaan' => 'F2H', 'order' => 3, 'kode_opsi' => '3', 'option_text' => 'Internasional', 'jump_to' => null],
 
+            // F5D (Skala / Tingkat Tempat Kerja)
+            ['kode_pertanyaan' => 'F5D', 'order' => 1, 'kode_opsi' => '1', 'option_text' => 'Regional/Lokal', 'jump_to' => null],
+            ['kode_pertanyaan' => 'F5D', 'order' => 2, 'kode_opsi' => '2', 'option_text' => 'Nasional', 'jump_to' => null],
+            ['kode_pertanyaan' => 'F5D', 'order' => 3, 'kode_opsi' => '3', 'option_text' => 'Internasional', 'jump_to' => null],
+
             // F3 (Waktu mulai mencari kerja)
             ['kode_pertanyaan' => 'F3', 'order' => 1, 'kode_opsi' => '1', 'option_text' => 'Sebelum lulus ... bulan', 'jump_to' => null],
             ['kode_pertanyaan' => 'F3', 'order' => 2, 'kode_opsi' => '2', 'option_text' => 'Sesudah lulus ... bulan', 'jump_to' => null],
-            ['kode_pertanyaan' => 'F3', 'order' => 3, 'kode_opsi' => '3', 'option_text' => 'Saya tidak mencari kerja', 'jump_to' => 'F17'],
+            ['kode_pertanyaan' => 'F3', 'order' => 3, 'kode_opsi' => '3', 'option_text' => 'Saya tidak mencari kerja', 'jump_to' => 'F504'],
 
             // F4 (Cara mencari pekerjaan)
             ['kode_pertanyaan' => 'F4', 'order' => 1, 'kode_opsi' => 'F401', 'option_text' => 'Melalui iklan di koran/majalah, brosur', 'jump_to' => null],
@@ -63,23 +68,30 @@ class RefSubpertanyaanDetilSeeder extends Seeder
             ['kode_pertanyaan' => 'F505', 'order' => 3, 'kode_opsi' => 'F5053', 'option_text' => 'Dari Pekerjaan Lainnya', 'jump_to' => null],
 
             // F505A (Kesesuaian gaji dengan UMR)
-            ['kode_pertanyaan' => 'F505A', 'order' => 1, 'kode_opsi' => '1', 'option_text' => 'Di Bawah', 'jump_to' => null],
-            ['kode_pertanyaan' => 'F505A', 'order' => 2, 'kode_opsi' => '2', 'option_text' => 'Sesuai', 'jump_to' => null],
-            ['kode_pertanyaan' => 'F505A', 'order' => 3, 'kode_opsi' => '3', 'option_text' => 'Di Atas', 'jump_to' => null],
+            ['kode_pertanyaan' => 'F505A', 'order' => 1, 'kode_opsi' => '1', 'option_text' => 'Di Bawah', 'jump_to' => 'F6'],
+            ['kode_pertanyaan' => 'F505A', 'order' => 2, 'kode_opsi' => '2', 'option_text' => 'Sesuai', 'jump_to' => 'F6'],
+            ['kode_pertanyaan' => 'F505A', 'order' => 3, 'kode_opsi' => '3', 'option_text' => 'Di Atas', 'jump_to' => 'F6'],
 
             // F8 (Status pekerjaan saat ini)
-            ['kode_pertanyaan' => 'F8', 'order' => 1, 'kode_opsi' => '1', 'option_text' => 'Bekerja (full time/part time)', 'jump_to' => 'F11'],
-            ['kode_pertanyaan' => 'F8', 'order' => 2, 'kode_opsi' => '2', 'option_text' => 'Belum memungkinkan bekerja', 'jump_to' => 'F11'],
-            ['kode_pertanyaan' => 'F8', 'order' => 3, 'kode_opsi' => '3', 'option_text' => 'Wiraswasta', 'jump_to' => 'F11'],
+            ['kode_pertanyaan' => 'F8', 'order' => 1, 'kode_opsi' => '1', 'option_text' => 'Bekerja (full time/part time)', 'jump_to' => null],
+            ['kode_pertanyaan' => 'F8', 'order' => 2, 'kode_opsi' => '2', 'option_text' => 'Belum memungkinkan bekerja', 'jump_to' => 'F18'],
+            ['kode_pertanyaan' => 'F8', 'order' => 3, 'kode_opsi' => '3', 'option_text' => 'Wiraswasta', 'jump_to' => null],
             ['kode_pertanyaan' => 'F8', 'order' => 4, 'kode_opsi' => '4', 'option_text' => 'Melanjutkan Pendidikan', 'jump_to' => 'F18'],
             ['kode_pertanyaan' => 'F8', 'order' => 5, 'kode_opsi' => '5', 'option_text' => 'Tidak Kerja tetapi sedang mencari kerja', 'jump_to' => 'F3'],
 
             // F10 (Aktif mencari pekerjaan dalam 4 minggu terakhir)
-            ['kode_pertanyaan' => 'F10', 'order' => 1, 'kode_opsi' => '1', 'option_text' => 'Tidak', 'jump_to' => 'F17'],
-            ['kode_pertanyaan' => 'F10', 'order' => 2, 'kode_opsi' => '2', 'option_text' => 'Tidak, tetapi saya sedang menunggu hasil lamaran kerja', 'jump_to' => 'F17'],
-            ['kode_pertanyaan' => 'F10', 'order' => 3, 'kode_opsi' => '3', 'option_text' => 'Ya, saya akan mulai bekerja dalam 2 minggu ke depan', 'jump_to' => 'F11'],
-            ['kode_pertanyaan' => 'F10', 'order' => 4, 'kode_opsi' => '4', 'option_text' => 'Ya, tapi saya belum pasti akan bekerja dalam 2 minggu ke depan', 'jump_to' => 'F11'],
-            ['kode_pertanyaan' => 'F10', 'order' => 5, 'kode_opsi' => '5', 'option_text' => 'Lainnya', 'jump_to' => 'F11'],
+            ['kode_pertanyaan' => 'F10', 'order' => 1, 'kode_opsi' => '1', 'option_text' => 'Tidak', 'jump_to' => 'F3'],
+            ['kode_pertanyaan' => 'F10', 'order' => 2, 'kode_opsi' => '2', 'option_text' => 'Tidak, tetapi saya sedang menunggu hasil lamaran kerja', 'jump_to' => 'F3'],
+            ['kode_pertanyaan' => 'F10', 'order' => 3, 'kode_opsi' => '3', 'option_text' => 'Ya, saya akan mulai bekerja dalam 2 minggu ke depan', 'jump_to' => 'F3'],
+            ['kode_pertanyaan' => 'F10', 'order' => 4, 'kode_opsi' => '4', 'option_text' => 'Ya, tapi saya belum pasti akan bekerja dalam 2 minggu ke depan', 'jump_to' => 'F3'],
+            ['kode_pertanyaan' => 'F10', 'order' => 5, 'kode_opsi' => '5', 'option_text' => 'Lainnya', 'jump_to' => 'F3'],
+
+            // F18a (Sumber biaya studi lanjut)
+            ['kode_pertanyaan' => 'F18a', 'order' => 1, 'kode_opsi' => '1', 'option_text' => 'Biaya Sendiri / Keluarga', 'jump_to' => null],
+            ['kode_pertanyaan' => 'F18a', 'order' => 2, 'kode_opsi' => '2', 'option_text' => 'Beasiswa Pemerintah', 'jump_to' => null],
+            ['kode_pertanyaan' => 'F18a', 'order' => 3, 'kode_opsi' => '3', 'option_text' => 'Beasiswa Swasta / Perusahaan', 'jump_to' => null],
+            ['kode_pertanyaan' => 'F18a', 'order' => 4, 'kode_opsi' => '4', 'option_text' => 'Beasiswa Luar Negeri', 'jump_to' => null],
+            ['kode_pertanyaan' => 'F18a', 'order' => 5, 'kode_opsi' => '5', 'option_text' => 'Lainnya', 'jump_to' => null],
 
             // F11 (Jenis perusahaan/instansi)
             ['kode_pertanyaan' => 'F11', 'order' => 1, 'kode_opsi' => '1', 'option_text' => 'Instansi pemerintah', 'jump_to' => null],
@@ -125,7 +137,8 @@ class RefSubpertanyaanDetilSeeder extends Seeder
             ['kode_pertanyaan' => 'F16', 'order' => 10, 'kode_opsi' => 'F1610', 'option_text' => 'Pekerjaan saya saat ini lokasinya lebih dekat dari rumah saya', 'jump_to' => null],
             ['kode_pertanyaan' => 'F16', 'order' => 11, 'kode_opsi' => 'F1611', 'option_text' => 'Pekerjaan saya saat ini dapat lebih menjamin kebutuhan keluarga saya', 'jump_to' => null],
             ['kode_pertanyaan' => 'F16', 'order' => 12, 'kode_opsi' => 'F1612', 'option_text' => 'Pada awal meniti karir ini, saya harus menerima pekerjaan yang tidak berhubungan dengan pendidikan saya', 'jump_to' => null],
-            ['kode_pertanyaan' => 'F16', 'order' => 13, 'kode_opsi' => 'F1613', 'option_text' => 'Lainnya isian', 'jump_to' => null],
+            ['kode_pertanyaan' => 'F16', 'order' => 13, 'kode_opsi' => 'F1613', 'option_text' => 'Lainnya', 'jump_to' => null],
+            ['kode_pertanyaan' => 'F16', 'order' => 14, 'kode_opsi' => 'F1614', 'option_text' => 'Lainnya isian', 'jump_to' => null],
         ];
 
         // Opsi untuk F21 s/d F27 (Penekanan metode pembelajaran skala 1-5)
