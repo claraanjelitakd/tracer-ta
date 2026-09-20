@@ -1,6 +1,10 @@
 # UPDATE LOG - SERU (Sistem Ekosistem Rekam Jejak Alumni)
 
-## [2026-09-20] Optimasi Performa Database Views Terpisah, Replikasi Modul Alumni & Sidebar Terpadu (Super Admin, Biro 3, Prodi, & Stakeholder Baru Fakultas)
+- **Standarisasi Ekspor Excel (.xls) Terformat dengan Proteksi Teks NIK/NPWP/NIM ([AlumniTracerExcelExporter.php](file:///c:/study/tracerstudy/app/Services/Export/AlumniTracerExcelExporter.php))**:
+  - Mengembalikan format unduhan ke file spreadsheet **Excel (.xls)** asli dengan styling penuh (Header UKDW Green `#0D542B`, blok Identitas Alumni, batas tabel, dan badge warna status).
+  - Menerapkan format teks eksplisit Microsoft Excel (`mso-number-format:'\@'`) pada kolom respon, NIK, NPWP, NIM, nomor telepon, dan kode pertanyaan untuk mencegah Excel mengonversi angka panjang 16-digit menjadi notasi ilmiah eksponensial (seperti `3,40401E+15`).
+  - Memperbaiki pembacaan NIK dan NPWP melalui fallback `COALESCE(b.nik, da.nik)` dan `COALESCE(b.npwp, da.npwp)` pada kuesioner autofill dan profil tracer.
+  - Menyatukan fungsionalitas ekspor ke dalam satu service `AlumniTracerExcelExporter` yang digunakan seragam oleh Super Admin, Biro 3, Prodi, dan Fakultas.
 - **Pembuatan Database Views Terpisah & Modular (Optimasi Query & Performa Tinggi)**:
   - Mengatasi kendala loading lambat yang sebelumnya disebabkan oleh ratusan kueri evaluasi N+1 di dalam loop PHP (`KelengkapanTracerService::evaluasiKelengkapanTotal`).
   - Merancang 5 Database Views independen, terstruktur, dan memiliki pemisahan fungsi yang jelas:

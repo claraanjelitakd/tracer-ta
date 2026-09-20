@@ -58,7 +58,7 @@ return new class extends Migration
                 b.pendidikan_tingkat AS `BIO_PENDIDIKAN_TINGKAT`,
                 b.perguruan_tinggi AS `F18B`,
                 b.pendidikan_prodi AS `F18C`,
-                b.nik AS `BIO_NIK`,
+                COALESCE(b.nik, da.nik) AS `BIO_NIK`,
                 b.npwp AS `BIO_NPWP`,
                 da.tempat_lahir AS `BIO_TEMPAT_LAHIR`,
                 da.tanggal_lahir AS `BIO_TANGGAL_LAHIR`,

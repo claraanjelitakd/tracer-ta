@@ -2,7 +2,10 @@
 
 Semua perubahan besar pada sistem dicatat dalam dokumen ini.
 
-## [2026-09-20] - Optimasi Performa Database Views Terpisah, Replikasi Modul Alumni & Sidebar Terpadu (Super Admin, Biro 3, Prodi, & Stakeholder Baru Fakultas)
+- **Standarisasi Ekspor Excel (.xls) Terformat dengan Proteksi Teks NIK/NPWP/NIM**:
+  - Mengembalikan format unduhan ke file spreadsheet **Excel (.xls)** asli dengan styling penuh (Header UKDW Green `#0D542B`, blok Identitas Alumni, batas tabel, dan badge warna status).
+  - Menerapkan format teks eksplisit Microsoft Excel (`mso-number-format:'\@'`) pada kolom respon, NIK, NPWP, NIM, nomor telepon, dan kode pertanyaan agar terhindar dari notasi ilmiah eksponensial (seperti `3,40401E+15`).
+  - Memperbaiki pembacaan NIK dan NPWP melalui fallback `COALESCE(b.nik, da.nik)` dan `COALESCE(b.npwp, da.npwp)` pada kuesioner autofill dan profil tracer.
 - **Database Views Terpisah & Modular (Solusi N+1 & Query Cepat)**:
   - Membuat 5 Database Views terpisah per fungsi: `v_alumni_profile_summary`, `v_alumni_tracer_univ_status`, `v_alumni_tracer_prodi_status`, `v_alumni_audit_rekap`, `v_alumni_tracer_export`.
   - Direktori alumni di seluruh stakeholder kini mengeksekusi single query ke view tanpa loop PHP lambat.

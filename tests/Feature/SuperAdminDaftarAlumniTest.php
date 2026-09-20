@@ -223,7 +223,7 @@ class SuperAdminDaftarAlumniTest extends TestCase
             ->get(route('superadmin.alumni.export-excel', $this->alumni->id));
 
         $response->assertStatus(200);
-        $response->assertHeader('content-type', 'text/csv; charset=UTF-8');
+        $response->assertHeader('content-type', 'application/vnd.ms-excel; charset=UTF-8');
 
         $content = $response->streamedContent();
         $this->assertStringContainsString('Kode', $content);

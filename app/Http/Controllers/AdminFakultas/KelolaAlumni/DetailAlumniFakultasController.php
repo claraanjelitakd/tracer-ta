@@ -10,6 +10,7 @@ use App\Models\ProdiQuestionSection;
 use App\Models\ProdiResponse;
 use App\Models\RefFakultas;
 use App\Models\Tracer;
+use App\Services\Export\AlumniTracerExcelExporter;
 use App\Services\Kuesioner\KelengkapanTracerService;
 use App\Services\Kuesioner\KuesionerSyncService;
 use Illuminate\Support\Facades\Auth;
@@ -324,7 +325,7 @@ class DetailAlumniFakultasController extends Controller
     }
 
     /**
-     * Download Excel / CSV Semua Butir Pertanyaan & Jawaban per Alumni untuk Fakultas
+     * Download Excel (.xls) Semua Butir Pertanyaan & Jawaban per Alumni untuk Fakultas
      */
     public function exportExcel(int $id): StreamedResponse
     {
@@ -332,168 +333,9 @@ class DetailAlumniFakultasController extends Controller
         $fakultasId = $user->fakultas_id;
         $prodiIdsFakultas = Prodi::where('fakultas_id', $fakultasId)->pluck('id')->all();
 
-        $alumni = Biodata::with([
-            'dataAkademik.yudisium',
-            'dataAkademik.orangTua',
-            'yudisium',
-            'orangTua',
-            'perusahaan.propinsi',
-            'perusahaan.kabupaten',
-            'atasan',
-            'user',
-            'prodi.fakultas',
-        ])
-            ->whereIn('prodi_id', $prodiIdsFakultas)
-            ->findOrFail($id);
+        // Pastikan alumni berada dalam lingkup fakultas admin yang login
+        Biodata::whereIn('prodi_id', $prodiIdsFakultas)->findOrFail($id);
 
-        KuesionerSyncService::syncProfileResponses($alumni);
-
-        $savedResponses = Tracer::where('biodata_id', $alumni->id)
-            ->get()
-            ->keyBy('question_id');
-
-        $kuesioner = Kuesioner::where('is_active', true)
-            ->with(['sections' => function ($secQuery) {
-                $secQuery->orderBy('order', 'asc')
-                    ->with(['subpertanyaans' => function ($qQuery) {
-                        $qQuery->orderBy('order', 'asc')
-                            ->with('detils');
-                    }]);
-            }])
-            ->first();
-
-        $savedProdiResponses = ProdiResponse::where('biodata_id', $alumni->id)
-            ->get()
-            ->keyBy('prodi_question_id');
-
-        $prodiSections = $alumni->prodi_id
-            ? ProdiQuestionSection::where('prodi_id', $alumni->prodi_id)
-                ->with(['questions' => function ($qQuery) {
-                    $qQuery->orderBy('order', 'asc')->with('options');
-                }])
-                ->orderBy('order', 'asc')
-                ->get()
-            : collect([]);
-
-        $nim = preg_replace('/[^a-zA-Z0-9_-]/', '_', (string) $alumni->nim);
-        $nama = preg_replace('/[^a-zA-Z0-9_-]/', '_', (string) ($alumni->nama ?? 'Alumni'));
-        $filename = "Tracer_Study_Fakultas_{$nim}_{$nama}.csv";
-
-        return response()->streamDownload(function () use ($alumni, $kuesioner, $savedResponses, $prodiSections, $savedProdiResponses) {
-            $handle = fopen('php://output', 'w');
-            fwrite($handle, "\xEF\xBB\xBF");
-
-            fputcsv($handle, ['LAPORAN LENGKAP KUESIONER TRACER STUDY ALUMNI']);
-            fputcsv($handle, ['Fakultas: '.($alumni->prodi?->fakultas?->nama_fakultas ?? 'Fakultas')]);
-            fputcsv($handle, ['Diunduh pada', date('d F Y, H:i').' WIB']);
-            fputcsv($handle, []);
-
-            $prodiNama = $alumni->prodi?->nama_prodi ?? ($alumni->dataAkademik?->program_studi ?? '-');
-            $fakultasNama = $alumni->prodi?->fakultas?->nama_fakultas ?? ($alumni->dataAkademik?->fakultas ?? '-');
-            $tahunLulus = $alumni->tahun_lulus ?? ($alumni->yudisium?->tahun_lulus ?? ($alumni->dataAkademik?->tahun_lulus ?? '-'));
-
-            fputcsv($handle, ['IDENTITAS ALUMNI']);
-            fputcsv($handle, ['NIM', $alumni->nim, 'Program Studi', $prodiNama]);
-            fputcsv($handle, ['Nama Lengkap', $alumni->nama, 'Fakultas', $fakultasNama]);
-            fputcsv($handle, ['Email', $alumni->email_pribadi ?: ($alumni->email ?: '-'), 'Tahun Lulus', $tahunLulus]);
-            fputcsv($handle, ['Nomor Telepon', $alumni->nomor_telepon ?: '-', 'Perusahaan Saat Ini', $alumni->perusahaan?->nama_perusahaan ?: '-']);
-            fputcsv($handle, []);
-
-            // 1. Univ
-            fputcsv($handle, ['1. KUESIONER TRACER STUDY UNIVERSITAS']);
-            fputcsv($handle, ['No', 'Bagian / Seksi', 'Kode Pertanyaan', 'Pertanyaan / Instrumen', 'Tipe Input', 'Sifat', 'Status', 'Respon / Jawaban Alumni']);
-
-            $no = 1;
-            if ($kuesioner) {
-                foreach ($kuesioner->sections as $section) {
-                    $sectionTitle = $section->title ?: ($section->section ?: 'Bagian Kuesioner');
-                    fputcsv($handle, ['--', "Seksi {$section->order}: {$sectionTitle}", '', '', '', '', '', '']);
-
-                    foreach ($section->subpertanyaans as $sub) {
-                        $resp = $savedResponses->get($sub->id);
-                        $isMandatory = KelengkapanTracerService::isMandatoryQuestion($sub->kode_pertanyaan);
-                        $isHeader = in_array($sub->type, ['header', 'section_header']);
-
-                        $answerText = $isHeader ? '(Header Bagian)' : '-';
-                        $statusText = $isHeader ? 'Header' : 'Belum Dijawab';
-
-                        if ($resp && ! $isHeader) {
-                            if (! empty($resp->answer_text) && trim((string) $resp->answer_text) !== '') {
-                                $answerText = (string) $resp->answer_text;
-                                $statusText = 'Terjawab';
-                            } elseif (is_array($resp->answer_json) && count($resp->answer_json) > 0) {
-                                $answerText = implode(', ', $resp->answer_json);
-                                $statusText = 'Terjawab';
-                            }
-                        }
-
-                        fputcsv($handle, [
-                            $no,
-                            $sectionTitle,
-                            $sub->kode_pertanyaan,
-                            $sub->subpertanyaan,
-                            $sub->type ?: 'text',
-                            $isHeader ? '-' : ($isMandatory ? 'Wajib' : 'Opsional'),
-                            $statusText,
-                            $answerText,
-                        ]);
-
-                        $no++;
-                    }
-                }
-            }
-
-            // 2. Prodi
-            if ($prodiSections->isNotEmpty()) {
-                fputcsv($handle, []);
-                fputcsv($handle, ['2. KUESIONER KHUSUS PROGRAM STUDI: '.$prodiNama]);
-                fputcsv($handle, ['No', 'Bagian / Seksi', 'Kode Pertanyaan', 'Pertanyaan / Instrumen', 'Tipe Input', 'Sifat', 'Status', 'Respon / Jawaban Alumni']);
-
-                $noProdi = 1;
-                foreach ($prodiSections as $pSection) {
-                    $pSectionTitle = $pSection->title ?: 'Section Prodi';
-                    fputcsv($handle, ['--', $pSectionTitle, '', '', '', '', '', '']);
-
-                    foreach ($pSection->questions as $pQuestion) {
-                        $pResp = $savedProdiResponses->get($pQuestion->id);
-                        $isHeader = in_array($pQuestion->type, ['header', 'section_header']);
-                        $pMandatory = (bool) $pQuestion->is_required;
-
-                        $answerText = $isHeader ? '(Header Bagian)' : '-';
-                        $statusText = $isHeader ? 'Header' : 'Belum Dijawab';
-
-                        if ($pResp && ! $isHeader) {
-                            if (! empty($pResp->answer_text) && trim((string) $pResp->answer_text) !== '') {
-                                $answerText = (string) $pResp->answer_text;
-                                $statusText = 'Terjawab';
-                            } elseif (is_array($pResp->answer_json) && count($pResp->answer_json) > 0) {
-                                $answerText = implode(', ', $pResp->answer_json);
-                                $statusText = 'Terjawab';
-                            }
-                        }
-
-                        fputcsv($handle, [
-                            $noProdi,
-                            $pSectionTitle,
-                            $pQuestion->code ?: '-',
-                            $pQuestion->question_text,
-                            $pQuestion->type ?: 'text',
-                            $isHeader ? '-' : ($pMandatory ? 'Wajib' : 'Opsional'),
-                            $statusText,
-                            $answerText,
-                        ]);
-
-                        $noProdi++;
-                    }
-                }
-            }
-
-            fclose($handle);
-        }, $filename, [
-            'Content-Type' => 'text/csv; charset=UTF-8',
-            'Content-Disposition' => "attachment; filename=\"{$filename}\"",
-            'Pragma' => 'no-cache',
-            'Expires' => '0',
-        ]);
+        return AlumniTracerExcelExporter::download($id);
     }
 }
