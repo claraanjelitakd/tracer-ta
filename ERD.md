@@ -416,19 +416,22 @@ erDiagram
 
 ---
 
-### E. Database Views (Modular & Performa Tinggi)
-1. **`v_alumni_profile_summary`**:
+### E. Database Views & Model Eloquent Terkait (Modular & Performa Tinggi)
+1. **`v_alumni_audit_rekap`** (Model: [`AlumniAuditRekap`](file:///c:/study/tracerstudy/app/Models/AlumniAuditRekap.php)):
+   - **Master View Utama**: Menyatukan status kelengkapan profil, kuesioner universitas, dan kuesioner prodi ke dalam 1 baris instan per alumni (*single-query fetch*).
+   - Digunakan aktif oleh seluruh direktori mahasiswa & alumni (Super Admin, Biro 3, Fakultas, Prodi) untuk mengeliminasi kueri loop PHP N+1.
+2. **`v_alumni_profile_summary`** (Model: [`AlumniProfileSummary`](file:///c:/study/tracerstudy/app/Models/AlumniProfileSummary.php)):
    - Agregasi data identitas profil (`biodata`), data akademik (`data_akademik`), yudisium (`yudisium`), orang tua (`data_orang_tua`), program studi (`prodi`), fakultas (`ref_fakultas`), perusahaan (`perusahaan`), dan atasan (`atasan`).
-2. **`v_alumni_tracer_univ_status`**:
-   - Agregasi status kelengkapan kuesioner universitas (`tracer`) per alumni: total butir wajib, jumlah terjawab, persentase (%) penyelesaian, dan boolean `is_complete_univ`.
-3. **`v_alumni_tracer_prodi_status`**:
-   - Agregasi status kelengkapan kuesioner program studi (`prodi_response`) per alumni: total butir kuesioner prodi, jumlah terjawab, persentase (%), dan boolean `is_complete_prodi`.
-4. **`v_alumni_audit_rekap`**:
-   - Master View gabungan (*single-query high-performance fetch*) untuk direktori seluruh stakeholder (Super Admin, Biro 3, Fakultas, Prodi) yang mengeliminasi masalah N+1 query.
-5. **`v_alumni_tracer_export`**:
-   - View terformat khusus untuk keperluan audit, analisis, dan ekspor spreadsheet (CSV/Excel).
-6. **`v_question_mappings`**:
-   - Database VIEW pemetaan kolom data profil ke butir kuesioner universitas untuk sinkronisasi otomatis via `KuesionerSyncService`.
+3. **`v_alumni_tracer_univ_status`** (Model: [`AlumniTracerUnivStatus`](file:///c:/study/tracerstudy/app/Models/AlumniTracerUnivStatus.php)):
+   - Agregasi status kelengkapan kuesioner universitas (`tracer`) per alumni: total butir wajib, jumlah terjawab, dan total butir terjawab.
+4. **`v_alumni_tracer_prodi_status`** (Model: [`AlumniTracerProdiStatus`](file:///c:/study/tracerstudy/app/Models/AlumniTracerProdiStatus.php)):
+   - Agregasi status kelengkapan kuesioner program studi (`prodi_response`) per alumni: total butir kuesioner prodi dan jumlah terjawab.
+5. **`v_alumni_kuesioner_autofill`** (Model: [`AlumniKuesionerAutofill`](file:///c:/study/tracerstudy/app/Models/AlumniKuesionerAutofill.php)):
+   - Menyediakan data profil alumni yang dipetakan langsung ke kode instrumen kuesioner (`F1` s/d `F18C`, `BIO_*`) untuk autofill instan.
+6. **`v_question_mappings`** (Model: [`QuestionMapping`](file:///c:/study/tracerstudy/app/Models/QuestionMapping.php)):
+   - Pemetaan kolom data profil ke butir kuesioner universitas untuk sinkronisasi otomatis via `KuesionerSyncService`.
+
+*(Catatan: View tidak terpakai `v_alumni_tracer_export` telah dihapus dari basis data dan migrasi karena fungsionalitas ekspor dilayani langsung secara visual dan berstruktur oleh `AlumniTracerExcelExporter`)*.
 
 ---
 

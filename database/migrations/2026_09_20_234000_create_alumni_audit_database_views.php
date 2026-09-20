@@ -7,16 +7,18 @@ return new class extends Migration
 {
     /**
      * Run the migrations.
+     *
+     * Membuat 4 Database Views Terpisah & Berkinerja Tinggi:
+     * 1. v_alumni_profile_summary   : Rekapitulasi profil & data identitas alumni
+     * 2. v_alumni_tracer_univ_status: Agregasi status kuesioner universitas
+     * 3. v_alumni_tracer_prodi_status: Agregasi status kuesioner program studi
+     * 4. v_alumni_audit_rekap       : Master rekapitulasi audit kelengkapan tracer study (Single-row fetch)
      */
     public function up(): void
     {
-        $driver = DB::getDriverName();
-        $castText = $driver === 'sqlite' ? 'TEXT' : 'CHAR';
-        $orderCol = $driver === 'sqlite' ? '"order"' : '`order`';
-
         // 1. Drop existing views jika ada
-        DB::statement('DROP VIEW IF EXISTS v_alumni_audit_rekap');
         DB::statement('DROP VIEW IF EXISTS v_alumni_tracer_export');
+        DB::statement('DROP VIEW IF EXISTS v_alumni_audit_rekap');
         DB::statement('DROP VIEW IF EXISTS v_alumni_tracer_prodi_status');
         DB::statement('DROP VIEW IF EXISTS v_alumni_tracer_univ_status');
         DB::statement('DROP VIEW IF EXISTS v_alumni_profile_summary');
@@ -216,60 +218,6 @@ return new class extends Migration
             FROM v_alumni_profile_summary ps
             LEFT JOIN v_alumni_tracer_univ_status tus ON ps.biodata_id = tus.biodata_id
             LEFT JOIN v_alumni_tracer_prodi_status tps ON ps.biodata_id = tps.biodata_id
-        ");
-
-        // 6. VIEW 5: v_alumni_tracer_export (Untuk Kebutuhan Ekspor Terstruktur Excel/CSV)
-        DB::statement("
-            CREATE VIEW v_alumni_tracer_export AS
-            SELECT 
-                b.id AS biodata_id,
-                b.nim,
-                COALESCE(da.nama, b.nama, u.name) AS nama,
-                p.nama_prodi,
-                f.nama_fakultas,
-                'Universitas' AS scope,
-                sec.title AS nama_section,
-                sec.{$orderCol} AS urutan_section,
-                q.kode_pertanyaan,
-                q.subpertanyaan AS teks_pertanyaan,
-                q.type AS tipe_pertanyaan,
-                q.wajib AS is_mandatory,
-                COALESCE(t.answer, CAST(t.answer_json AS {$castText})) AS jawaban,
-                t.updated_at AS waktu_jawab
-            FROM biodata b
-            LEFT JOIN users u ON b.user_id = u.id
-            LEFT JOIN data_akademik da ON da.nim = b.nim
-            LEFT JOIN prodi p ON b.prodi_id = p.id
-            LEFT JOIN ref_fakultas f ON p.fakultas_id = f.id
-            CROSS JOIN ref_subpertanyaan2021 q
-            LEFT JOIN kelompok_pertanyaan sec ON q.kelompok_pertanyaan_id = sec.id
-            LEFT JOIN tracer t ON t.biodata_id = b.id AND t.question_id = q.id
-            WHERE q.type != 'header'
-            UNION ALL
-            SELECT 
-                b.id AS biodata_id,
-                b.nim,
-                COALESCE(da.nama, b.nama, u.name) AS nama,
-                p.nama_prodi,
-                f.nama_fakultas,
-                'Program Studi' AS scope,
-                psec.title AS nama_section,
-                psec.{$orderCol} AS urutan_section,
-                pq.code AS kode_pertanyaan,
-                pq.question_text AS teks_pertanyaan,
-                pq.type AS tipe_pertanyaan,
-                pq.is_required AS is_mandatory,
-                COALESCE(pr.answer_text, CAST(pr.answer_json AS {$castText})) AS jawaban,
-                pr.updated_at AS waktu_jawab
-            FROM biodata b
-            LEFT JOIN users u ON b.user_id = u.id
-            LEFT JOIN data_akademik da ON da.nim = b.nim
-            LEFT JOIN prodi p ON b.prodi_id = p.id
-            LEFT JOIN ref_fakultas f ON p.fakultas_id = f.id
-            JOIN prodi_question pq ON pq.prodi_id = b.prodi_id
-            LEFT JOIN prodi_question_section psec ON pq.prodi_question_section_id = psec.id
-            LEFT JOIN prodi_response pr ON pr.biodata_id = b.id AND pr.prodi_question_id = pq.id
-            WHERE pq.type != 'header'
         ");
     }
 

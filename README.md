@@ -112,6 +112,11 @@ tracerstudy/
 │   │   ├── RefSubpertanyaanDetil.php               # Opsi jawaban & nilai jump_to kuesioner univ (tabel `ref_subpertanyaan_detil`)
 │   │   ├── Tracer.php                              # Jawaban kuesioner tracer study alumni (tabel `tracer`)
 │   │   ├── QuestionMapping.php                     # Pemetaan profil biodata via tabel `question_mappings` & VIEW `v_question_mappings`
+│   │   ├── AlumniAuditRekap.php                    # Model Eloquent untuk Database View `v_alumni_audit_rekap`
+│   │   ├── AlumniProfileSummary.php                # Model Eloquent untuk Database View `v_alumni_profile_summary`
+│   │   ├── AlumniTracerUnivStatus.php              # Model Eloquent untuk Database View `v_alumni_tracer_univ_status`
+│   │   ├── AlumniTracerProdiStatus.php             # Model Eloquent untuk Database View `v_alumni_tracer_prodi_status`
+│   │   ├── AlumniKuesionerAutofill.php             # Model Eloquent untuk Database View `v_alumni_kuesioner_autofill`
 │   │   ├── ProdiQuestionSection.php                # Bagian/seksi kuesioner khusus program studi (tabel `prodi_question_section`)
 │   │   ├── ProdiQuestion.php                       # Butir pertanyaan kuesioner khusus program studi (tabel `prodi_question`)
 │   │   ├── ProdiQuestionOption.php                 # Opsi jawaban kuesioner khusus program studi (tabel `prodi_question_option`)
