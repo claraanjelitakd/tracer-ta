@@ -1,19 +1,21 @@
 <!--
-  Halaman Direktori Mahasiswa & Alumni (Biro 3)
-  File: resources/js/Pages/AdminBiroTiga/AlumniIndex.vue
-  
+  Halaman Direktori Mahasiswa & Alumni (Fakultas)
+  File: resources/js/Pages/AdminFakultas/Alumni/Index.vue
+
   Warna Resmi Solid UKDW:
   - Hijau: #0D542B
   - Kuning: #FDC700
   - Putih & Netral: #FFFFFF / #F8FAFC
-  Struktur: Fixed Sidebar + Header Solid + Filter Lengkap + DataTables Pagination
+  Struktur: Fixed Sidebar + DataTables Pagination + Filter Prodi dalam Fakultas + Filter Tahun/Semester/Status
 -->
 <script setup>
 import { Head, Link, router } from '@inertiajs/vue3';
-import { ref, computed } from 'vue';
-import Sidebar from './Components/Sidebar.vue';
+import { computed, ref } from 'vue';
+import Sidebar from '../Components/Sidebar.vue';
 
 const props = defineProps({
+    user: Object,
+    fakultas: Object,
     alumnis: {
         type: Array,
         default: () => [],
@@ -71,7 +73,7 @@ const goToPage = (page) => {
 let searchTimeout = null;
 const applyFilters = () => {
     currentPage.value = 1;
-    router.get('/biro3/alumni', {
+    router.get('/fakultas/alumni', {
         search: search.value || undefined,
         tahun: tahun.value !== 'all' ? tahun.value : undefined,
         semester: semester.value !== 'all' ? semester.value : undefined,
@@ -97,16 +99,16 @@ const resetFilters = () => {
     status.value = 'all';
     prodiId.value = 'all';
     currentPage.value = 1;
-    router.get('/biro3/alumni', {}, { preserveState: true });
+    router.get('/fakultas/alumni', {}, { preserveState: true });
 };
 </script>
 
 <template>
-    <Head title="Daftar Mahasiswa & Alumni - Biro 3" />
+    <Head :title="`Direktori Alumni - ${fakultas?.nama_fakultas || 'Fakultas'}`" />
 
     <div class="min-h-screen bg-[#f8fafc] text-gray-800 font-sans flex">
-        <!-- Sidebar Resmi Biro 3 -->
-        <Sidebar />
+        <!-- Sidebar Resmi Fakultas -->
+        <Sidebar :user="user" :fakultas="fakultas" />
 
         <!-- Area Konten Utama -->
         <div class="flex-1 flex flex-col min-w-0 lg:pl-72">
@@ -116,22 +118,22 @@ const resetFilters = () => {
                 <div class="w-full max-w-[1400px] mx-auto flex flex-col md:flex-row md:items-center justify-between gap-6">
                     <div>
                         <div class="flex items-center gap-2 text-xs text-white/80 font-medium mb-2">
-                            <Link href="/biro3/dashboard" class="hover:underline">Dashboard</Link>
+                            <Link href="/fakultas/dashboard" class="hover:underline">Dashboard</Link>
                             <span>/</span>
-                            <span class="text-white font-bold">Data Alumni</span>
+                            <span class="text-white font-bold">Data Alumni Fakultas</span>
                         </div>
 
                         <h1 class="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
-                            Direktori Mahasiswa & Alumni
+                            Alumni {{ fakultas?.nama_fakultas || 'Fakultas' }}
                         </h1>
                         <p class="text-white/90 text-sm sm:text-base font-normal mt-1 max-w-2xl leading-relaxed">
-                            Database seluruh lulusan UKDW, audit keterisian kuesioner tracer study, dan verifikasi status yudisium.
+                            Database mahasiswa & lulusan seluruh program studi di {{ fakultas?.nama_fakultas }}, pemantauan status kuesioner tracer study.
                         </p>
                     </div>
 
                     <!-- Ringkasan Cepat di Header -->
                     <div class="bg-black/15 border border-white/20 px-6 py-4 rounded-2xl text-left md:text-right text-white">
-                        <span class="text-xs text-white/80 font-bold uppercase tracking-wider block">Tingkat Kelulusan Kuesioner</span>
+                        <span class="text-xs text-white/80 font-bold uppercase tracking-wider block">Kelengkapan Fakultas</span>
                         <span class="text-3xl font-black text-[#FDC700] block">{{ stats.persentase_selesai }}%</span>
                         <span class="text-xs text-white/90 font-medium">{{ stats.total_selesai }} dari {{ stats.total_alumni }} Mahasiswa Selesai</span>
                     </div>
@@ -143,36 +145,36 @@ const resetFilters = () => {
                 
                 <!-- 4 Kartu Statistik Ringkas -->
                 <div class="grid grid-cols-2 lg:grid-cols-4 gap-5">
-                    <div class="bg-white rounded-2xl p-6 shadow-sm">
-                        <p class="text-xs font-bold text-gray-500 uppercase tracking-wider">Total Mahasiswa</p>
+                    <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+                        <p class="text-xs font-bold text-gray-500 uppercase tracking-wider">Total Alumni Fakultas</p>
                         <p class="text-3xl font-extrabold text-gray-900 tracking-tight mt-2">{{ stats.total_alumni }}</p>
-                        <p class="text-xs text-gray-400 mt-1">Terdaftar di database</p>
+                        <p class="text-xs text-gray-400 mt-1">Seluruh prodi di fakultas</p>
                     </div>
 
-                    <div class="bg-white rounded-2xl p-6 shadow-sm">
-                        <p class="text-xs font-bold text-[#0D542B] uppercase tracking-wider">Kuesioner Selesai</p>
+                    <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+                        <p class="text-xs font-bold text-[#0D542B] uppercase tracking-wider">Tracer Selesai</p>
                         <p class="text-3xl font-extrabold text-[#0D542B] tracking-tight mt-2">{{ stats.total_selesai }}</p>
                         <p class="text-xs text-gray-400 mt-1">Profil & kuesioner lengkap</p>
                     </div>
 
-                    <div class="bg-white rounded-2xl p-6 shadow-sm">
+                    <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
                         <p class="text-xs font-bold text-gray-700 uppercase tracking-wider">Belum Selesai</p>
                         <p class="text-3xl font-extrabold text-gray-900 tracking-tight mt-2">{{ stats.total_belum_selesai }}</p>
                         <p class="text-xs text-gray-400 mt-1">Masih dalam pengisian</p>
                     </div>
 
-                    <div class="bg-white rounded-2xl p-6 shadow-sm">
-                        <p class="text-xs font-bold text-gray-500 uppercase tracking-wider">Rasio Penyelesaian</p>
+                    <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+                        <p class="text-xs font-bold text-gray-500 uppercase tracking-wider">Rasio Partisipasi</p>
                         <p class="text-3xl font-extrabold text-[#0D542B] tracking-tight mt-2">{{ stats.persentase_selesai }}%</p>
-                        <p class="text-xs text-gray-400 mt-1">Kepatuhan responden</p>
+                        <p class="text-xs text-gray-400 mt-1">Keterisian kuesioner</p>
                     </div>
                 </div>
 
-                <!-- Panel Filter Komprehensif -->
-                <div class="bg-white rounded-2xl p-6 shadow-sm">
+                <!-- Panel Filter Komprehensif (Termasuk Filter Prodi Fakultas) -->
+                <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
                     <div class="flex items-center justify-between border-b border-gray-100 pb-4 mb-5">
                         <h2 class="text-sm font-extrabold text-gray-900 uppercase tracking-wider">
-                            Filter & Pencarian Alumni
+                            Filter & Pencarian Alumni Fakultas
                         </h2>
                         <button 
                             @click="resetFilters" 
@@ -193,6 +195,21 @@ const resetFilters = () => {
                                 placeholder="Ketik nama atau NIM..." 
                                 class="w-full text-xs rounded-xl border border-gray-200 bg-gray-50 py-2.5 px-3.5 font-medium text-gray-900 focus:bg-white focus:border-[#0D542B] focus:ring-1 focus:ring-[#0D542B] outline-none"
                             />
+                        </div>
+
+                        <!-- Filter Program Studi dalam Fakultas -->
+                        <div>
+                            <label class="block text-xs font-bold text-gray-600 mb-1.5">Program Studi</label>
+                            <select 
+                                v-model="prodiId" 
+                                @change="applyFilters" 
+                                class="w-full text-xs rounded-xl border border-gray-200 bg-gray-50 py-2.5 px-3.5 font-medium text-gray-900 focus:bg-white focus:border-[#0D542B] focus:ring-1 focus:ring-[#0D542B] outline-none"
+                            >
+                                <option value="all">Semua Prodi di {{ fakultas?.nama_fakultas }}</option>
+                                <option v-for="p in prodis" :key="p.id" :value="p.id">
+                                    {{ p.kode_prodi }} - {{ p.nama_prodi }}
+                                </option>
+                            </select>
                         </div>
 
                         <!-- Filter Tahun Kelulusan -->
@@ -237,26 +254,11 @@ const resetFilters = () => {
                                 <option value="belum_selesai">Belum Selesai</option>
                             </select>
                         </div>
-
-                        <!-- Filter Program Studi -->
-                        <div>
-                            <label class="block text-xs font-bold text-gray-600 mb-1.5">Program Studi</label>
-                            <select 
-                                v-model="prodiId" 
-                                @change="applyFilters" 
-                                class="w-full text-xs rounded-xl border border-gray-200 bg-gray-50 py-2.5 px-3.5 font-medium text-gray-900 focus:bg-white focus:border-[#0D542B] focus:ring-1 focus:ring-[#0D542B] outline-none"
-                            >
-                                <option value="all">Semua Program Studi</option>
-                                <option v-for="p in prodis" :key="p.id" :value="p.id">
-                                    {{ p.kode_prodi }} - {{ p.nama_prodi }}
-                                </option>
-                            </select>
-                        </div>
                     </div>
                 </div>
 
                 <!-- Tabel Mahasiswa ala DataTables -->
-                <div class="bg-white rounded-2xl shadow-sm overflow-hidden">
+                <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
                     <!-- DataTables Top Bar -->
                     <div class="p-5 border-b border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-gray-50/50">
                         <div class="flex items-center gap-2 text-xs font-medium text-gray-600">
@@ -273,7 +275,7 @@ const resetFilters = () => {
                         <div class="text-xs text-gray-500 font-medium">
                             Menampilkan <span class="font-bold text-gray-900">{{ (currentPage - 1) * perPage + 1 }}</span> &ndash; 
                             <span class="font-bold text-gray-900">{{ Math.min(currentPage * perPage, alumnis.length) }}</span> dari 
-                            <span class="font-bold text-gray-900">{{ alumnis.length }}</span> total alumni
+                            <span class="font-bold text-gray-900">{{ alumnis.length }}</span> total alumni fakultas
                         </div>
                     </div>
 
@@ -287,7 +289,8 @@ const resetFilters = () => {
                                     <th class="py-4 px-5">Program Studi</th>
                                     <th class="py-4 px-5">Tahun & Semester</th>
                                     <th class="py-4 px-5 text-center">Profil</th>
-                                    <th class="py-4 px-5 text-center">Kuesioner</th>
+                                    <th class="py-4 px-5 text-center">Kuesioner Univ</th>
+                                    <th class="py-4 px-5 text-center">Kuesioner Prodi</th>
                                     <th class="py-4 px-5 text-center">Status</th>
                                     <th class="py-4 px-5 text-center">Aksi</th>
                                 </tr>
@@ -331,10 +334,17 @@ const resetFilters = () => {
                                         </span>
                                     </td>
 
-                                    <!-- Kuesioner Wajib (%) -->
+                                    <!-- Kuesioner Univ (%) -->
                                     <td class="py-4 px-5 text-center">
                                         <span class="font-extrabold text-xs" :class="alumni.kelengkapan.questionnaire.is_complete ? 'text-[#0D542B]' : 'text-gray-700'">
                                             {{ alumni.kelengkapan.questionnaire.percentage }}%
+                                        </span>
+                                    </td>
+
+                                    <!-- Kuesioner Prodi (%) -->
+                                    <td class="py-4 px-5 text-center">
+                                        <span class="font-extrabold text-xs" :class="alumni.kelengkapan.prodi.is_complete ? 'text-[#0D542B]' : 'text-gray-700'">
+                                            {{ alumni.kelengkapan.prodi.percentage }}%
                                         </span>
                                     </td>
 
@@ -357,7 +367,7 @@ const resetFilters = () => {
                                     <!-- Tombol Aksi Detail -->
                                     <td class="py-4 px-5 text-center">
                                         <Link 
-                                            :href="`/biro3/alumni/${alumni.id}`" 
+                                            :href="`/fakultas/alumni/${alumni.id}`" 
                                             class="px-4 py-1.5 bg-[#0D542B] hover:bg-[#08381c] text-white rounded-xl text-xs font-bold transition-all inline-block cursor-pointer"
                                         >
                                             Lihat Detail
@@ -367,7 +377,7 @@ const resetFilters = () => {
 
                                 <!-- Empty State -->
                                 <tr v-if="alumnis.length === 0">
-                                    <td colspan="8" class="py-16 text-center text-gray-500">
+                                    <td colspan="9" class="py-16 text-center text-gray-500">
                                         <p class="font-bold text-gray-800 text-sm">Tidak Ada Mahasiswa Ditemukan</p>
                                         <p class="text-xs text-gray-400 mt-1">Tidak ada catatan data alumni yang cocok dengan filter aktif.</p>
                                         <button 

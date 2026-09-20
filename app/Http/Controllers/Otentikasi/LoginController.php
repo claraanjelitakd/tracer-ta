@@ -78,6 +78,8 @@ class LoginController extends Controller
                 return redirect()->intended('/superadmin/dashboard');
             case 'admin_biro3':
                 return redirect()->intended('/biro3/dashboard');
+            case 'admin_fakultas':
+                return redirect()->intended('/fakultas/dashboard');
             case 'admin_prodi':
                 return redirect()->intended('/prodi/dashboard');
             case 'alumni':

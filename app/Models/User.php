@@ -10,7 +10,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
-#[Fillable(['name', 'email', 'username', 'password', 'role', 'prodi_id', 'must_change_password'])]
+#[Fillable(['name', 'email', 'username', 'password', 'role', 'prodi_id', 'fakultas_id', 'must_change_password'])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
 {
@@ -38,6 +38,14 @@ class User extends Authenticatable
     public function prodi()
     {
         return $this->belongsTo(Prodi::class, 'prodi_id');
+    }
+
+    /**
+     * Fakultas yang dinaungi oleh user (khusus role admin_fakultas).
+     */
+    public function fakultas()
+    {
+        return $this->belongsTo(RefFakultas::class, 'fakultas_id');
     }
 
     /**

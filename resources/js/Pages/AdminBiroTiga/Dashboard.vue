@@ -7,124 +7,55 @@
   Route URL : /biro3/dashboard (GET)
 -->
 <script setup>
-// Mengimpor modul resmi dari Inertia.js:
-// - Head   : Mengatur title halaman pada tab browser
-// - Link   : Berpindah halaman admin tanpa reload layar putih
-// - router : Mengirim aksi HTTP request ke backend (misal: logout)
-import { Head, Link, router } from '@inertiajs/vue3';
+import { Head, Link } from '@inertiajs/vue3';
+import Sidebar from './Components/Sidebar.vue';
 
-/**
- * ====================================================================
- * MENERIMA DATA (PROPS) DARI BACKEND
- * ====================================================================
- * Data di bawah ini dikirim langsung oleh DashboardController.php (Biro 3)
- * melalui pemanggilan: Inertia::render('AdminBiroTiga/Dashboard', [...])
- */
 const props = defineProps({
-    // user: Objek data akun Admin Biro 3 yang sedang login { id, name, email, role }
     user: Object,
-
-    // stats: Kumpulan metrik KPI utama { total_alumni, total_responden, persentase_respon, total_pertanyaan, total_prodi, alumni_linkedin }
-    // Digunakan untuk menampilkan angka-angka besar pada 4 kartu statistik di bagian atas
     stats: Object,
-
-    // prodiSummaries: Array daftar prodi beserta statistik partisipasi kuesionernya
-    // Berisi: [ { id, kode_prodi, nama_prodi, total_alumni, total_responden, response_rate }, ... ]
-    // Digunakan untuk merender tabel dan progress bar "Statistik Partisipasi per Program Studi"
     prodiSummaries: Array,
-
-    // recentAlumni: Array 5 alumni terbaru yang terdaftar di database
-    // Berisi: [ { id, nim, nama, prodi, has_linkedin, has_responded }, ... ]
-    // Digunakan untuk merender tabel "5 Data Alumni Terbaru"
     recentAlumni: Array,
 });
-
-/**
- * ====================================================================
- * FUNGSI-FUNGSI AKSI JAVASCRIPT
- * ====================================================================
- */
-
-/**
- * Fungsi logout:
- * - Dijalankan saat tombol "Logout" diklik (@click="logout")
- * - Mengirim request POST ke endpoint '/logout' di Laravel
- * - Setelah session dihapus oleh backend, user otomatis diarahkan ke halaman login
- */
-const logout = () => {
-    router.post('/logout');
-};
 </script>
 
 <template>
     <Head title="Dashboard Utama - Biro 3 UKDW" />
 
-    <div class="min-h-screen bg-slate-100 text-slate-800 flex flex-col font-sans">
-        
-        <!-- Header / Navbar Institusional Formal -->
-        <header class="bg-[#004D32] border-b-4 border-yellow-400 text-white shadow-md sticky top-0 z-50">
-            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div class="flex justify-between items-center h-20">
-                    
-                    <!-- Identitas Kampus & Biro -->
-                    <div class="flex items-center space-x-4">
-                        <div class="bg-white p-1.5 rounded shadow-sm flex items-center justify-center">
-                            <img src="/uploads/landing/2.png" alt="Logo UKDW" class="h-10 w-10 object-contain" onerror="this.style.display='none'" />
+    <div class="min-h-screen bg-[#f8fafc] text-gray-800 font-sans flex">
+        <!-- Sidebar Resmi Biro 3 -->
+        <Sidebar :user="user" />
+
+        <!-- Area Konten Utama -->
+        <div class="flex-1 flex flex-col min-w-0 lg:pl-72">
+            <!-- Header Solid Hijau Resmi UKDW #0D542B -->
+            <header class="bg-[#0D542B] text-white pt-8 pb-16 px-4 sm:px-6 lg:px-8">
+                <div class="w-full max-w-[1400px] mx-auto flex flex-col md:flex-row md:items-center justify-between gap-6">
+                    <div>
+                        <div class="flex items-center gap-2 text-xs text-white/80 font-medium mb-2">
+                            <span>Biro 3 Kemahasiswaan & Alumni</span>
+                            <span>/</span>
+                            <span class="text-white font-bold">Dashboard Utama</span>
                         </div>
-                        <div class="border-l border-emerald-600/60 pl-3">
-                            <div class="text-[11px] uppercase tracking-widest text-emerald-200 font-semibold leading-tight">
-                                Universitas Kristen Duta Wacana
-                            </div>
-                            <div class="text-base sm:text-lg font-bold tracking-tight text-white leading-tight">
-                                Biro Kemahasiswaan, Alumni & Pengembangan Karir (Biro III)
-                            </div>
-                        </div>
+
+                        <h1 class="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
+                            Dashboard Pusat Kendali Biro 3
+                        </h1>
+                        <p class="text-white/90 text-sm sm:text-base font-normal mt-1 max-w-2xl leading-relaxed">
+                            Pemantauan partisipasi alumni, evaluasi keterisian tracer study, dan sinkronisasi data karir universitas.
+                        </p>
                     </div>
 
-                    <!-- Navigasi Menu & Akses Cepat -->
-                    <div class="hidden md:flex items-center space-x-1">
-                        <Link 
-                            href="/biro3/dashboard" 
-                            class="px-3.5 py-2 text-xs uppercase tracking-wider font-bold rounded bg-[#003824] text-yellow-400 border-b-2 border-yellow-400 transition-all"
-                        >
-                            Dashboard
-                        </Link>
-                        <Link 
-                            href="/biro3/alumni" 
-                            class="px-3.5 py-2 text-xs uppercase tracking-wider font-medium text-emerald-100 hover:text-white hover:bg-[#003824] rounded transition-all"
-                        >
-                            Data Alumni
-                        </Link>
-                    </div>
-
-                    <!-- Profil Administrator & Logout -->
-                    <div class="flex items-center space-x-3">
-                        <div class="hidden sm:block text-right">
-                            <div class="text-xs font-bold text-white">{{ user?.name || 'Administrator Biro 3' }}</div>
-                            <span class="inline-block px-2.5 py-0.5 text-[10px] font-bold bg-yellow-400 text-green-950 rounded uppercase tracking-wider">
-                                Hak Akses Biro III
-                            </span>
-                        </div>
-                        <button 
-                            @click="logout" 
-                            class="px-3.5 py-1.5 bg-white/10 hover:bg-white/20 text-white text-xs font-bold uppercase tracking-wider rounded border border-white/20 shadow-sm transition-colors flex items-center gap-1.5"
-                            title="Keluar dari sesi sistem"
-                        >
-                            <span>Keluar</span>
-                        </button>
+                    <div class="bg-black/15 border border-white/20 px-6 py-4 rounded-2xl text-left md:text-right text-white">
+                        <span class="text-xs text-white/80 font-bold uppercase tracking-wider block">Tingkat Partisipasi</span>
+                        <span class="text-3xl font-black text-[#FDC700] block">{{ stats.persentase_respon }}%</span>
+                        <span class="text-xs text-white/90 font-medium">{{ stats.total_responden }} dari {{ stats.total_alumni }} Alumni</span>
                     </div>
                 </div>
-            </div>
+            </header>
 
-            <!-- Subnav Mobile -->
-            <div class="md:hidden bg-[#003B26] px-4 py-2 border-t border-emerald-700/50 flex space-x-3">
-                <Link href="/biro3/dashboard" class="text-xs font-bold text-yellow-400">Dashboard</Link>
-                <Link href="/biro3/alumni" class="text-xs font-medium text-emerald-200">Data Alumni</Link>
-            </div>
-        </header>
+            <!-- Main Content Area -->
+            <main class="w-full max-w-[1400px] mx-auto -mt-10 px-4 sm:px-6 lg:px-8 space-y-6 pb-16">
 
-        <!-- Main Body Area -->
-        <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
 
             <!-- Banner Utama / Title Card Formal -->
             <div class="bg-white border-l-4 border-[#005B3C] border-y border-r border-slate-200 rounded shadow-sm p-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -415,20 +346,6 @@ const logout = () => {
             </div>
 
         </main>
-
-        <!-- Footer Institusional Resmi -->
-        <footer class="bg-slate-900 text-slate-400 text-xs py-6 border-t-2 border-yellow-400 mt-12">
-            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row justify-between items-center gap-3">
-                <div class="flex items-center space-x-2">
-                    <span class="font-bold text-white">Tracer Study UKDW</span>
-                    <span>&mdash;</span>
-                    <span>Biro Kemahasiswaan, Alumni dan Pengembangan Karir (Biro III)</span>
-                </div>
-                <div class="text-slate-500 text-[11px]">
-                    &copy; {{ new Date().getFullYear() }} Universitas Kristen Duta Wacana. Hak Cipta Dilindungi.
-                </div>
-            </div>
-        </footer>
-
+        </div>
     </div>
 </template>

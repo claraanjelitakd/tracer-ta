@@ -13,13 +13,15 @@ erDiagram
     %% ==========================================
     users ||--o| biodata : "memiliki profil (user_id)"
     prodi ||--o{ users : "menaungi admin prodi (prodi_id)"
+    ref_fakultas ||--o{ users : "menaungi admin fakultas (fakultas_id)"
 
     users {
         bigint id PK
         string name
         string email UK
-        string role "superadmin, admin_biro3, admin_prodi, alumni"
+        string role "superadmin, admin_biro3, admin_fakultas, admin_prodi, alumni"
         bigint prodi_id FK "nullable"
+        bigint fakultas_id FK "nullable"
         string password
         boolean must_change_password
         timestamp created_at
@@ -414,11 +416,19 @@ erDiagram
 
 ---
 
-### E. Database Views & Mappings
-- **`v_question_mappings`**:
-   Database VIEW yang memetakan kolom profil `biodata`, `data_akademik`, `yudisium`, `perusahaan`, dan `atasan` ke butir pertanyaan `ref_subpertanyaan2021` untuk sinkronisasi otomatis via `KuesionerSyncService`.
-- **`question_mappings`**:
-   Tabel konfigurasi pemetaan kolom data profil ke butir kuesioner.
+### E. Database Views (Modular & Performa Tinggi)
+1. **`v_alumni_profile_summary`**:
+   - Agregasi data identitas profil (`biodata`), data akademik (`data_akademik`), yudisium (`yudisium`), orang tua (`data_orang_tua`), program studi (`prodi`), fakultas (`ref_fakultas`), perusahaan (`perusahaan`), dan atasan (`atasan`).
+2. **`v_alumni_tracer_univ_status`**:
+   - Agregasi status kelengkapan kuesioner universitas (`tracer`) per alumni: total butir wajib, jumlah terjawab, persentase (%) penyelesaian, dan boolean `is_complete_univ`.
+3. **`v_alumni_tracer_prodi_status`**:
+   - Agregasi status kelengkapan kuesioner program studi (`prodi_response`) per alumni: total butir kuesioner prodi, jumlah terjawab, persentase (%), dan boolean `is_complete_prodi`.
+4. **`v_alumni_audit_rekap`**:
+   - Master View gabungan (*single-query high-performance fetch*) untuk direktori seluruh stakeholder (Super Admin, Biro 3, Fakultas, Prodi) yang mengeliminasi masalah N+1 query.
+5. **`v_alumni_tracer_export`**:
+   - View terformat khusus untuk keperluan audit, analisis, dan ekspor spreadsheet (CSV/Excel).
+6. **`v_question_mappings`**:
+   - Database VIEW pemetaan kolom data profil ke butir kuesioner universitas untuk sinkronisasi otomatis via `KuesionerSyncService`.
 
 ---
 
@@ -428,6 +438,7 @@ erDiagram
 |---|:---:|---|---|---|
 | `users` | 1 : 1 | `biodata` | `biodata.user_id` | Setiap user alumni memiliki 1 baris biodata profil. |
 | `prodi` | 1 : N | `users` | `users.prodi_id` | Admin prodi terikat ke prodi tertentu. |
+| `ref_fakultas` | 1 : N | `users` | `users.fakultas_id` | Admin fakultas terikat ke fakultas tertentu. |
 | `prodi` | 1 : N | `biodata` | `biodata.prodi_id` | Alumni terikat ke prodi kelulusannya. |
 | `data_akademik` | 1 : 1 | `biodata` | `biodata.nim = data_akademik.nim` | Relasi identitas akademik via NIM. |
 | `biodata` | 1 : 1 | `yudisium` | `yudisium.nim = biodata.nim` | Relasi data kelulusan & status yudisium. |

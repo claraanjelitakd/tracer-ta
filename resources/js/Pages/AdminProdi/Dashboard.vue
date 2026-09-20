@@ -10,7 +10,7 @@
 -->
 <script setup>
 import { Head, Link } from '@inertiajs/vue3';
-import Navbar from './Components/Navbar.vue';
+import Sidebar from './Components/Sidebar.vue';
 
 const props = defineProps({
     user: Object,
@@ -37,24 +37,27 @@ const props = defineProps({
 <template>
     <Head :title="`Dashboard Admin Prodi - ${prodi?.nama_prodi || 'Tracer Study UKDW'}`" />
 
-    <div class="min-h-screen bg-[#f8fafc] text-gray-800 flex flex-col font-sans pb-24">
-        <!-- Navbar Terpadu Admin Program Studi -->
-        <Navbar :user="user" :prodi="prodi" />
+    <div class="min-h-screen bg-[#f8fafc] text-gray-800 font-sans flex">
+        <!-- Sidebar Terpadu Admin Program Studi -->
+        <Sidebar :user="user" :prodi="prodi" />
 
-        <!-- Header Solid Hijau Resmi UKDW #0D542B -->
-        <header class="bg-[#0D542B] text-white pt-10 pb-20">
-            <div class="w-full max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <div>
-                    <div class="inline-flex items-center px-3 py-1 bg-black/20 text-white rounded-full text-xs font-bold uppercase tracking-wider mb-2">
-                        Administrator Program Studi
+        <!-- Area Konten Utama -->
+        <div class="flex-1 flex flex-col min-w-0 lg:pl-72">
+            <!-- Header Solid Hijau Resmi UKDW #0D542B -->
+            <header class="bg-[#0D542B] text-white pt-8 pb-16 px-4 sm:px-6 lg:px-8">
+                <div class="w-full max-w-[1400px] mx-auto flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div>
+                        <div class="inline-flex items-center px-3 py-1 bg-black/20 text-white rounded-full text-xs font-bold uppercase tracking-wider mb-2">
+                            Administrator Program Studi
+                        </div>
+                        <h1 class="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
+                            Dashboard {{ prodi?.nama_prodi || 'Program Studi' }}
+                        </h1>
+                        <p class="text-white/90 text-sm sm:text-base font-normal mt-1 max-w-2xl leading-relaxed">
+                            Pusat kendali instrumen kuesioner prodi, pemantauan kelengkapan tracer study alumni prodi, dan direktori data alumni UKDW.
+                        </p>
                     </div>
-                    <h1 class="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
-                        Dashboard {{ prodi?.nama_prodi || 'Program Studi' }}
-                    </h1>
-                    <p class="text-white/90 text-sm sm:text-base font-normal mt-1 max-w-2xl leading-relaxed">
-                        Pusat kendali instrumen kuesioner prodi, pemantauan kelengkapan tracer study alumni prodi, dan direktori data alumni UKDW.
-                    </p>
-                </div>
+
 
                 <div class="bg-black/15 border border-white/20 px-5 py-3 rounded-2xl text-left md:text-right text-white">
                     <span class="text-xs text-white/80 font-semibold uppercase tracking-wider block">Program Studi</span>
@@ -307,5 +310,6 @@ const props = defineProps({
             </div>
 
         </main>
+        </div>
     </div>
 </template>

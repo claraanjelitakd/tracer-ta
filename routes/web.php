@@ -3,6 +3,9 @@
 use App\Http\Controllers\AdminBiroTiga\KelolaAlumni\DaftarAlumniController;
 use App\Http\Controllers\AdminBiroTiga\KelolaAlumni\DetailAlumniController;
 use App\Http\Controllers\AdminBiroTiga\KelolaAlumni\SinkronisasiLinkedinController;
+use App\Http\Controllers\AdminFakultas\Dashboard\DashboardController as DashboardFakultasController;
+use App\Http\Controllers\AdminFakultas\KelolaAlumni\DaftarAlumniFakultasController;
+use App\Http\Controllers\AdminFakultas\KelolaAlumni\DetailAlumniFakultasController;
 use App\Http\Controllers\AdminProdi\KelolaAlumni\DaftarAlumniProdiController;
 use App\Http\Controllers\AdminProdi\KelolaPertanyaan\DaftarPertanyaanProdiController;
 use App\Http\Controllers\AdminProdi\KelolaPertanyaan\KelolaOpsiProdiController;
@@ -84,6 +87,7 @@ Route::middleware('auth')->group(function () {
             // Kelola Data Alumni, Verifikasi, & Sinkronisasi Profil LinkedIn
             Route::get('/biro3/alumni', [DaftarAlumniController::class, 'tampilkanDaftarAlumni'])->name('biro3.alumni.index');
             Route::get('/biro3/alumni/{id}', [DetailAlumniController::class, 'tampilkanDetailAlumni'])->name('biro3.alumni.show');
+            Route::get('/biro3/alumni/{id}/export-excel', [DetailAlumniController::class, 'exportExcel'])->name('biro3.alumni.export-excel');
             Route::post('/biro3/alumni/{id}/sync-linkedin', [SinkronisasiLinkedinController::class, 'sinkronisasiDataLinkedin'])->name('biro3.alumni.sync');
             Route::post('/biro3/alumni/{id}/save-linkedin', [SinkronisasiLinkedinController::class, 'simpanDataLinkedin'])->name('biro3.alumni.save');
         });
@@ -98,6 +102,7 @@ Route::middleware('auth')->group(function () {
             // Direktori & Detail Alumni Khusus Program Studi
             Route::get('/prodi/alumni', [DaftarAlumniProdiController::class, 'index'])->name('prodi.alumni.index');
             Route::get('/prodi/alumni/{id}', [DaftarAlumniProdiController::class, 'show'])->name('prodi.alumni.show');
+            Route::get('/prodi/alumni/{id}/export-excel', [DaftarAlumniProdiController::class, 'exportExcel'])->name('prodi.alumni.export-excel');
 
             // Kelola Section Kuesioner Prodi
             Route::get('/prodi/sections', [KelolaSectionProdiController::class, 'index'])->name('prodi.sections.index');
@@ -120,6 +125,19 @@ Route::middleware('auth')->group(function () {
             Route::post('/prodi/opsi', [KelolaOpsiProdiController::class, 'store'])->name('prodi.opsi.store');
             Route::put('/prodi/opsi/{id}', [KelolaOpsiProdiController::class, 'update'])->name('prodi.opsi.update');
             Route::delete('/prodi/opsi/{id}', [KelolaOpsiProdiController::class, 'destroy'])->name('prodi.opsi.destroy');
+        });
+
+        // -----------------------------------------------------------------
+        // Rute Admin Fakultas (Dekanat & Gugus Kendali Mutu Fakultas)
+        // -----------------------------------------------------------------
+        Route::middleware('role:admin_fakultas')->group(function () {
+            // Dashboard Utama Fakultas
+            Route::get('/fakultas/dashboard', [DashboardFakultasController::class, 'tampilkanDashboard'])->name('fakultas.dashboard');
+
+            // Direktori & Detail Alumni dalam Lingkup Fakultas (Filter Prodi dalam Fakultas)
+            Route::get('/fakultas/alumni', [DaftarAlumniFakultasController::class, 'index'])->name('fakultas.alumni.index');
+            Route::get('/fakultas/alumni/{id}', [DetailAlumniFakultasController::class, 'show'])->name('fakultas.alumni.show');
+            Route::get('/fakultas/alumni/{id}/export-excel', [DetailAlumniFakultasController::class, 'exportExcel'])->name('fakultas.alumni.export-excel');
         });
 
         // -----------------------------------------------------------------

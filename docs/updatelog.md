@@ -2,7 +2,22 @@
 
 Semua perubahan besar pada sistem dicatat dalam dokumen ini.
 
-## [2026-09-20] - Penyempurnaan Antarmuka Audit Alumni Super Admin (Tata Letak Statis, Konsistensi Form Profil, Dropdown Seksi Langsung Nama, & Standar Data Table Bersih)
+## [2026-09-20] - Optimasi Performa Database Views Terpisah, Replikasi Modul Alumni & Sidebar Terpadu (Super Admin, Biro 3, Prodi, & Stakeholder Baru Fakultas)
+- **Database Views Terpisah & Modular (Solusi N+1 & Query Cepat)**:
+  - Membuat 5 Database Views terpisah per fungsi: `v_alumni_profile_summary`, `v_alumni_tracer_univ_status`, `v_alumni_tracer_prodi_status`, `v_alumni_audit_rekap`, `v_alumni_tracer_export`.
+  - Direktori alumni di seluruh stakeholder kini mengeksekusi single query ke view tanpa loop PHP lambat.
+- **Admin Biro 3**:
+  - Mengganti navbar dengan Sidebar Resmi UKDW (`AdminBiroTiga/Components/Sidebar.vue`).
+  - Direktori DataTables terpadu dan Tampilan Detail 3-Tab dengan sinkronisasi LinkedIn dan ekspor Excel/CSV.
+- **Admin Prodi**:
+  - Mengganti navbar dengan Sidebar Resmi UKDW (`AdminProdi/Components/Sidebar.vue`).
+  - Direktori dan Detail Alumni 3-Tab dengan pembatasan khusus prodi login.
+- **Admin Fakultas (Stakeholder Baru)**:
+  - Menambahkan `fakultas_id` pada tabel `users` dan seeder untuk 7 fakultas UKDW.
+  - Modul lengkap Fakultas: Sidebar, Dashboard, Direktori Alumni (dengan dropdown filter prodi dalam fakultas), dan Detail Alumni 3-Tab.
+- **Pemisahan File per Stakeholder**:
+  - Seluruh controller dan file Vue dipisah per folder aktor untuk kemudahan perawatan (*maintainability*).
+
 **Modul Super Admin (/superadmin/alumni/{id}):**
 - **Tata Letak Statis & Stabil**: Menghilangkan *negative margin* (`-mt-10`) dan tumpang tindih kontainer untuk menghilangkan pergeseran layar (*pull/drag elastic bouncing*).
 - **Konsistensi Form Profil**: Menghapus pembungkus kartu ganda sehingga form data pribadi, akademik, orang tua, dan karier memiliki lebar dan padding 100% konsisten dan simetris.

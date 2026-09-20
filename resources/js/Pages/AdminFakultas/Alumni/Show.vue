@@ -1,12 +1,12 @@
 <!--
-  Halaman Detail & Audit Kuesioner Alumni (Admin Program Studi)
-  File: resources/js/Pages/AdminProdi/Alumni/Show.vue
+  Halaman Detail & Audit Kuesioner Alumni (Admin Fakultas)
+  File: resources/js/Pages/AdminFakultas/Alumni/Show.vue
 
   Warna Resmi Solid UKDW:
   - Hijau: #0D542B
   - Kuning: #FDC700
   - Putih & Netral: #FFFFFF / #F8FAFC
-  Struktur: 3 Tab Utama (1. Detail Profile, 2. Kuesioner Univ, 3. Kuesioner Program Studi: [Nama Prodi])
+  Struktur: 3 Tab Utama (1. Detail Profile, 2. Kuesioner Univ, 3. Kuesioner Program Studi)
 -->
 <script setup>
 import { Head, Link } from '@inertiajs/vue3';
@@ -15,7 +15,7 @@ import Sidebar from '../Components/Sidebar.vue';
 
 const props = defineProps({
     user: Object,
-    prodi: Object,
+    fakultas: Object,
     biodata: Object,
     alumni: Object,
     evaluasi: Object,
@@ -49,11 +49,11 @@ const filteredProdiSections = computed(() => {
 </script>
 
 <template>
-    <Head :title="`Detail Mahasiswa - ${biodata.nama || biodata.nim} - ${prodi?.nama_prodi || 'Prodi'}`" />
+    <Head :title="`Detail Mahasiswa - ${biodata.nama || biodata.nim} - ${fakultas?.nama_fakultas || 'Fakultas'}`" />
 
     <div class="min-h-screen bg-[#f8fafc] text-gray-800 font-sans flex">
-        <!-- Sidebar Resmi Program Studi -->
-        <Sidebar :user="user" :prodi="prodi" />
+        <!-- Sidebar Resmi Fakultas -->
+        <Sidebar :user="user" :fakultas="fakultas" />
 
         <!-- Area Konten Utama -->
         <div class="flex-1 flex flex-col min-w-0 lg:pl-72">
@@ -63,9 +63,9 @@ const filteredProdiSections = computed(() => {
                 <div class="w-full max-w-[1400px] mx-auto flex flex-col md:flex-row md:items-center justify-between gap-6">
                     <div>
                         <div class="flex items-center gap-2 text-xs text-white/80 font-medium mb-2">
-                            <Link href="/prodi/dashboard" class="hover:underline">Dashboard</Link>
+                            <Link href="/fakultas/dashboard" class="hover:underline">Dashboard</Link>
                             <span>/</span>
-                            <Link href="/prodi/alumni" class="hover:underline">Data Alumni</Link>
+                            <Link href="/fakultas/alumni" class="hover:underline">Data Alumni</Link>
                             <span>/</span>
                             <span class="text-white font-bold">Detail Mahasiswa</span>
                         </div>
@@ -84,15 +84,15 @@ const filteredProdiSections = computed(() => {
 
                         <p class="text-white/90 text-xs sm:text-sm font-normal mt-1">
                             NIM: <span class="font-mono font-bold">{{ biodata.nim }}</span> &bull; 
-                            Prodi: <span class="font-bold">{{ prodi?.nama_prodi || biodata.prodi?.nama_prodi || '-' }}</span> &bull; 
-                            Tahun Kelulusan: <span class="font-bold">{{ biodata.tahun_lulus || '-' }}</span>
+                            Prodi: <span class="font-bold">{{ biodata.prodi?.nama_prodi || '-' }}</span> &bull; 
+                            Fakultas: <span class="font-bold">{{ fakultas?.nama_fakultas || biodata.prodi?.fakultas?.nama_fakultas || '-' }}</span>
                         </p>
                     </div>
 
                     <!-- Tombol Aksi Header -->
                     <div class="flex flex-wrap items-center gap-3 shrink-0">
                         <a 
-                            :href="`/prodi/alumni/${biodata.id}/export-excel`"
+                            :href="`/fakultas/alumni/${biodata.id}/export-excel`"
                             target="_blank"
                             class="px-4 py-2.5 bg-[#FDC700] hover:bg-[#e5b500] text-black text-xs font-bold rounded-xl transition-all shadow-sm flex items-center gap-2"
                         >
@@ -103,7 +103,7 @@ const filteredProdiSections = computed(() => {
                         </a>
 
                         <Link 
-                            href="/prodi/alumni" 
+                            href="/fakultas/alumni" 
                             class="px-4 py-2.5 bg-white/10 hover:bg-white/20 text-white text-xs font-bold rounded-xl transition-all border border-white/20"
                         >
                             &larr; Kembali
@@ -153,7 +153,7 @@ const filteredProdiSections = computed(() => {
                         class="flex-1 min-w-[180px] py-3 px-4 rounded-xl text-xs font-extrabold transition-all text-center flex items-center justify-center gap-2 cursor-pointer"
                         :class="activeTab === 'prodi' ? 'bg-[#0D542B] text-white shadow-sm' : 'text-gray-600 hover:bg-gray-100'"
                     >
-                        <span>3. Kuesioner Program Studi: {{ prodi?.nama_prodi || biodata.prodi?.nama_prodi || 'Prodi' }}</span>
+                        <span>3. Kuesioner Program Studi: {{ biodata.prodi?.nama_prodi || 'Prodi' }}</span>
                         <span 
                             class="px-2 py-0.5 rounded-full text-[10px]"
                             :class="activeTab === 'prodi' ? 'bg-white/20 text-white' : 'bg-gray-200 text-gray-700'"
@@ -209,7 +209,11 @@ const filteredProdiSections = computed(() => {
                             <dl class="divide-y divide-gray-100 text-xs">
                                 <div class="py-2.5 grid grid-cols-3">
                                     <dt class="text-gray-500 font-semibold">Program Studi</dt>
-                                    <dd class="col-span-2 font-bold text-gray-900">{{ prodi?.nama_prodi || biodata.prodi?.nama_prodi || '-' }}</dd>
+                                    <dd class="col-span-2 font-bold text-gray-900">{{ biodata.prodi?.nama_prodi || '-' }}</dd>
+                                </div>
+                                <div class="py-2.5 grid grid-cols-3">
+                                    <dt class="text-gray-500 font-semibold">Fakultas</dt>
+                                    <dd class="col-span-2 font-bold text-[#0D542B]">{{ fakultas?.nama_fakultas || biodata.prodi?.fakultas?.nama_fakultas || '-' }}</dd>
                                 </div>
                                 <div class="py-2.5 grid grid-cols-3">
                                     <dt class="text-gray-500 font-semibold">IPK Kelulusan</dt>
@@ -379,14 +383,14 @@ const filteredProdiSections = computed(() => {
                         </div>
 
                         <div class="text-xs font-bold text-gray-500">
-                            Program Studi: <span class="text-[#0D542B] font-extrabold">{{ prodi?.nama_prodi || biodata.prodi?.nama_prodi || '-' }}</span>
+                            Program Studi: <span class="text-[#0D542B] font-extrabold">{{ biodata.prodi?.nama_prodi || '-' }}</span>
                         </div>
                     </div>
 
                     <!-- State Kosong jika prodi belum memiliki kuesioner -->
                     <div v-if="prodiSections.length === 0" class="bg-white rounded-2xl p-12 text-center text-gray-400 border border-gray-100">
                         <p class="font-bold text-gray-800 text-sm">Belum Ada Kuesioner Khusus untuk Program Studi Ini</p>
-                        <p class="text-xs text-gray-500 mt-1">Anda dapat menambahkan bagian dan butir pertanyaan melalui menu Kelola Pertanyaan.</p>
+                        <p class="text-xs text-gray-500 mt-1">Admin Program Studi belum mempublikasikan instrumen kuesioner internal.</p>
                     </div>
 
                     <!-- Tabel Jawaban per Section Prodi ala Excel -->

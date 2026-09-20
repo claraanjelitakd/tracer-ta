@@ -275,16 +275,21 @@ Komponen pengisian kuesioner dipecah secara modular untuk memudahkan pemeliharaa
    - Unduh Rekap Laporan Jawaban Alumni dalam format Microsoft Excel (`.xls`).
 2. **`admin_biro3`**:
    - Dashboard analitik responden kelulusan per periode.
-   - Kelola Direktori Alumni tersaring yudisium 'Lulus' (`/biro3/alumni`).
+   - Kelola Direktori Alumni tersaring yudisium 'Lulus' berbasis Database View cepat (`/biro3/alumni`).
    - Audit Profil Alumni & Sinkronisasi Scraping Profil LinkedIn (`/biro3/alumni/{id}`).
-3. **`admin_prodi`**:
+3. **`admin_fakultas`**:
+   - Terikat pada `users.fakultas_id`.
+   - Dashboard KPI khusus seluruh prodi dalam fakultas (`/fakultas/dashboard`).
+   - Direktori Alumni Fakultas dengan dropdown filter prodi internal (`/fakultas/alumni`).
+   - Audit Detail Jawaban 3-Tab & Profil Alumni Fakultas (`/fakultas/alumni/{id}`).
+4. **`admin_prodi`**:
    - Terikat pada `users.prodi_id`.
    - Dashboard KPI khusus program studi (`/prodi/dashboard`).
    - Kelola Butir Pertanyaan Kuesioner Program Studi (`/prodi/pertanyaan`).
    - Kelola Bagian (Section) Kuesioner Program Studi (`/prodi/sections`).
    - Direktori Mahasiswa & Alumni khusus prodi (`/prodi/alumni`).
    - Audit Detail Jawaban & Profil Alumni Program Studi (`/prodi/alumni/{id}`).
-4. **`alumni`**:
+5. **`alumni`**:
    - Dashboard kelengkapan data & progres kuesioner (`/alumni/dashboard`).
    - Pengisian Kuesioner Tracer Study Universitas (`/alumni/kuesioner`).
    - Pengisian Kuesioner Khusus Program Studi (`/alumni/kuesioner-prodi`).

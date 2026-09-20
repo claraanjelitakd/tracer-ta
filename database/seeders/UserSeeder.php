@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\Prodi;
+use App\Models\RefFakultas;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
@@ -64,6 +65,33 @@ class UserSeeder extends Seeder
                         'password' => $adminPassword,
                         'role' => 'admin_prodi',
                         'prodi_id' => $prodi->id,
+                        'must_change_password' => false,
+                    ]
+                );
+            }
+        }
+
+        // 1d. Seed Admin Fakultas untuk Setiap Fakultas
+        $fakultasUserMapping = [
+            '7' => ['username' => 'admin_fti', 'name' => 'Admin Fakultas Teknologi Informasi'],
+            '1' => ['username' => 'admin_fb', 'name' => 'Admin Fakultas Bisnis'],
+            '2' => ['username' => 'admin_fad', 'name' => 'Admin Fakultas Arsitektur dan Desain'],
+            '4' => ['username' => 'admin_biotek', 'name' => 'Admin Fakultas Bioteknologi'],
+            '6' => ['username' => 'admin_fk', 'name' => 'Admin Fakultas Kedokteran'],
+            '3' => ['username' => 'admin_theologi', 'name' => 'Admin Fakultas Theologi'],
+            '8' => ['username' => 'admin_fkh', 'name' => 'Admin Fakultas Kependidikan dan Humaniora'],
+        ];
+
+        foreach ($fakultasUserMapping as $kode => $userData) {
+            $fakultas = RefFakultas::where('kode_fakultas', $kode)->first();
+            if ($fakultas) {
+                User::updateOrCreate(
+                    ['username' => $userData['username']],
+                    [
+                        'name' => $userData['name'],
+                        'password' => $adminPassword,
+                        'role' => 'admin_fakultas',
+                        'fakultas_id' => $fakultas->id,
                         'must_change_password' => false,
                     ]
                 );

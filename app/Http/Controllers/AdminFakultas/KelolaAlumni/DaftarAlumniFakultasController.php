@@ -1,40 +1,61 @@
 <?php
 
-namespace App\Http\Controllers\AdminBiroTiga\KelolaAlumni;
+namespace App\Http\Controllers\AdminFakultas\KelolaAlumni;
 
 use App\Http\Controllers\Controller;
 use App\Models\Prodi;
+use App\Models\RefFakultas;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Inertia\Response;
 
 /**
- * DaftarAlumniController (Biro 3)
+ * DaftarAlumniFakultasController
  *
  * Fungsi:
- * Menampilkan direktori seluruh mahasiswa & alumni UKDW untuk Biro 3
- * dengan filter Program Studi, Tahun Kelulusan, Semester Lulus, Pencarian Nama/NIM,
- * serta status audit kelengkapan tracer study berbasis Database View (v_alumni_audit_rekap)
- * yang sangat cepat dan bebas N+1 query.
+ * Menampilkan direktori seluruh alumni dalam fakultas yang sedang login,
+ * dilengkapi filter program studi yang ada di fakultas tersebut, filter tahun/semester kelulusan,
+ * dan pencarian cepat menggunakan Database View (v_alumni_audit_rekap) dengan performa tinggi.
  */
-class DaftarAlumniController extends Controller
+class DaftarAlumniFakultasController extends Controller
 {
     /**
-     * Tampilkan Halaman Daftar Alumni
+     * Tampilkan Direktori Mahasiswa & Alumni Fakultas
      */
-    public function tampilkanDaftarAlumni(Request $request): Response
+    public function index(Request $request): Response
     {
+        $user = Auth::user()->load('fakultas');
+        $fakultasId = $user->fakultas_id;
+
+        if (! $fakultasId) {
+            $fakultas = RefFakultas::first();
+            $fakultasId = $fakultas?->id;
+        } else {
+            $fakultas = $user->fakultas ?: RefFakultas::find($fakultasId);
+        }
+
         $pencarian = $request->input('search');
         $tahunTerpilih = $request->input('tahun');
         $semesterTerpilih = $request->input('semester');
         $statusTerpilih = $request->input('status');
         $prodiIdTerpilih = $request->input('prodi_id');
 
-        // 1. Ambil list tahun kelulusan unik dari view untuk dropdown filter
+        // 1. Ambil daftar program studi yang ada di fakultas ini
+        $daftarProdiFakultas = Prodi::where('fakultas_id', $fakultasId)
+            ->orderBy('kode_prodi', 'asc')
+            ->get();
+
+        $prodiIdsFakultas = $daftarProdiFakultas->pluck('id')->all();
+
+        // 2. Ambil list tahun kelulusan unik dari view untuk fakultas ini
         $daftarTahun = DB::table('v_alumni_audit_rekap')
-            ->whereNotNull('tahun_lulus')
-            ->orWhereNotNull('tahun_akademik_lulus')
+            ->whereIn('prodi_id', $prodiIdsFakultas)
+            ->where(function ($q) {
+                $q->whereNotNull('tahun_lulus')
+                    ->orWhereNotNull('tahun_akademik_lulus');
+            })
             ->pluck('tahun_lulus')
             ->filter()
             ->map(function ($item) {
@@ -45,10 +66,11 @@ class DaftarAlumniController extends Controller
                 return trim($item);
             })->unique()->sortDesc()->values()->all();
 
-        // 2. Kueri cepat berbasis Database View (v_alumni_audit_rekap)
-        $query = DB::table('v_alumni_audit_rekap');
+        // 3. Kueri cepat dari Database View v_alumni_audit_rekap
+        $query = DB::table('v_alumni_audit_rekap')
+            ->whereIn('prodi_id', $prodiIdsFakultas);
 
-        // Filter Program Studi
+        // Filter Program Studi (dalam fakultas ini)
         if ($prodiIdTerpilih && $prodiIdTerpilih !== 'all') {
             $query->where('prodi_id', $prodiIdTerpilih);
         }
@@ -70,7 +92,7 @@ class DaftarAlumniController extends Controller
             });
         }
 
-        // Filter Semester Kelulusan (Gasal / Genap)
+        // Filter Semester Kelulusan
         if ($semesterTerpilih && $semesterTerpilih !== 'all') {
             $query->where('tahun_akademik_lulus', 'like', "%{$semesterTerpilih}%");
         }
@@ -84,7 +106,7 @@ class DaftarAlumniController extends Controller
 
         $semuaAlumni = $query->orderBy('nim', 'asc')->get();
 
-        // 3. Mapping data reaktif untuk Frontend
+        // 4. Mapping data untuk Frontend
         $alumniList = [];
         $totalSelesai = 0;
         $totalBelumSelesai = 0;
@@ -97,7 +119,6 @@ class DaftarAlumniController extends Controller
                 $totalBelumSelesai++;
             }
 
-            // Parsing semester kelulusan
             $rawSemesterLulus = $item->tahun_akademik_lulus ?? '-';
             $semesterLabel = 'Gasal';
             if (stripos($rawSemesterLulus, 'genap') !== false) {
@@ -150,13 +171,12 @@ class DaftarAlumniController extends Controller
         $totalFiltered = count($alumniList);
         $rasioSelesai = $totalFiltered > 0 ? (int) round(($totalSelesai / $totalFiltered) * 100) : 0;
 
-        // 4. Master Program Studi
-        $daftarProdi = Prodi::orderBy('kode_prodi', 'asc')->get();
-
-        return Inertia::render('AdminBiroTiga/AlumniIndex', [
+        return Inertia::render('AdminFakultas/Alumni/Index', [
+            'user' => $user,
+            'fakultas' => $fakultas,
             'alumnis' => $alumniList,
             'daftarTahun' => $daftarTahun,
-            'prodis' => $daftarProdi,
+            'prodis' => $daftarProdiFakultas,
             'filters' => [
                 'search' => $pencarian ?? '',
                 'tahun' => $tahunTerpilih,
