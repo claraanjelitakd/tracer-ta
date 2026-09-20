@@ -459,6 +459,7 @@ class DaftarAlumniProdiController extends Controller
             'alumni' => $alumni,
             'evaluasi' => $evaluasi,
             'sections' => $univSectionsWithAnswers,
+            'univSections' => $univSectionsWithAnswers,
             'prodiSections' => $prodiSectionsWithAnswers,
             'prodiEvaluasi' => $prodiEvaluasi,
             'formData' => $formData,

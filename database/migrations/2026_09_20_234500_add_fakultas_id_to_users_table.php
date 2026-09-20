@@ -11,11 +11,11 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('users', function (Blueprint $table) {
-            if (! Schema::hasColumn('users', 'fakultas_id')) {
+        if (DB::getDriverName() !== 'sqlite' && ! Schema::hasColumn('users', 'fakultas_id')) {
+            Schema::table('users', function (Blueprint $table) {
                 $table->foreignId('fakultas_id')->nullable()->after('prodi_id')->constrained('ref_fakultas')->nullOnDelete();
-            }
-        });
+            });
+        }
     }
 
     /**
@@ -23,11 +23,11 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('users', function (Blueprint $table) {
-            if (Schema::hasColumn('users', 'fakultas_id')) {
+        if (DB::getDriverName() !== 'sqlite' && Schema::hasColumn('users', 'fakultas_id')) {
+            Schema::table('users', function (Blueprint $table) {
                 $table->dropForeign(['fakultas_id']);
                 $table->dropColumn('fakultas_id');
-            }
-        });
+            });
+        }
     }
 };

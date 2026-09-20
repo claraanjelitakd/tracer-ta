@@ -10,6 +10,10 @@ return new class extends Migration
      */
     public function up(): void
     {
+        $driver = DB::getDriverName();
+        $castText = $driver === 'sqlite' ? 'TEXT' : 'CHAR';
+        $orderCol = $driver === 'sqlite' ? '"order"' : '`order`';
+
         // 1. Drop existing views jika ada
         DB::statement('DROP VIEW IF EXISTS v_alumni_audit_rekap');
         DB::statement('DROP VIEW IF EXISTS v_alumni_tracer_export');
@@ -113,7 +117,7 @@ return new class extends Migration
                          )
                          AND (
                              (t.answer IS NOT NULL AND TRIM(t.answer) != '')
-                             OR (t.answer_json IS NOT NULL AND JSON_LENGTH(t.answer_json) > 0)
+                             OR (t.answer_json IS NOT NULL AND t.answer_json != '' AND t.answer_json != '[]' AND t.answer_json != '{}')
                          )
                     THEN q.id 
                     ELSE NULL 
@@ -121,7 +125,7 @@ return new class extends Migration
                 COUNT(DISTINCT CASE 
                     WHEN (
                         (t.answer IS NOT NULL AND TRIM(t.answer) != '')
-                        OR (t.answer_json IS NOT NULL AND JSON_LENGTH(t.answer_json) > 0)
+                        OR (t.answer_json IS NOT NULL AND t.answer_json != '' AND t.answer_json != '[]' AND t.answer_json != '{}')
                     )
                     THEN t.question_id 
                     ELSE NULL 
@@ -148,7 +152,7 @@ return new class extends Migration
                 COUNT(DISTINCT CASE 
                     WHEN (
                         (pr.answer_text IS NOT NULL AND TRIM(pr.answer_text) != '')
-                        OR (pr.answer_json IS NOT NULL AND JSON_LENGTH(pr.answer_json) > 0)
+                        OR (pr.answer_json IS NOT NULL AND pr.answer_json != '' AND pr.answer_json != '[]' AND pr.answer_json != '{}')
                     )
                     THEN pr.prodi_question_id 
                     ELSE NULL 
@@ -169,7 +173,10 @@ return new class extends Migration
                 COALESCE(tus.total_answered_univ, 0) AS total_answered_univ,
                 CASE 
                     WHEN COALESCE(tus.total_mandatory_univ, 0) > 0 
-                    THEN LEAST(100, ROUND((COALESCE(tus.answered_mandatory_univ, 0) / tus.total_mandatory_univ) * 100))
+                    THEN CASE 
+                        WHEN ROUND((COALESCE(tus.answered_mandatory_univ, 0) * 100.0) / tus.total_mandatory_univ) > 100 THEN 100 
+                        ELSE ROUND((COALESCE(tus.answered_mandatory_univ, 0) * 100.0) / tus.total_mandatory_univ) 
+                    END
                     ELSE 100 
                 END AS univ_percentage,
                 CASE 
@@ -181,7 +188,10 @@ return new class extends Migration
                 COALESCE(tps.answered_prodi_questions, 0) AS answered_prodi_questions,
                 CASE 
                     WHEN COALESCE(tps.total_prodi_questions, 0) > 0 
-                    THEN LEAST(100, ROUND((COALESCE(tps.answered_prodi_questions, 0) / tps.total_prodi_questions) * 100))
+                    THEN CASE 
+                        WHEN ROUND((COALESCE(tps.answered_prodi_questions, 0) * 100.0) / tps.total_prodi_questions) > 100 THEN 100 
+                        ELSE ROUND((COALESCE(tps.answered_prodi_questions, 0) * 100.0) / tps.total_prodi_questions) 
+                    END
                     ELSE 100 
                 END AS prodi_percentage,
                 CASE 
@@ -219,12 +229,12 @@ return new class extends Migration
                 f.nama_fakultas,
                 'Universitas' AS scope,
                 sec.title AS nama_section,
-                sec.order AS urutan_section,
+                sec.{$orderCol} AS urutan_section,
                 q.kode_pertanyaan,
                 q.subpertanyaan AS teks_pertanyaan,
                 q.type AS tipe_pertanyaan,
                 q.wajib AS is_mandatory,
-                COALESCE(t.answer, CAST(t.answer_json AS CHAR)) AS jawaban,
+                COALESCE(t.answer, CAST(t.answer_json AS {$castText})) AS jawaban,
                 t.updated_at AS waktu_jawab
             FROM biodata b
             LEFT JOIN users u ON b.user_id = u.id
@@ -244,12 +254,12 @@ return new class extends Migration
                 f.nama_fakultas,
                 'Program Studi' AS scope,
                 psec.title AS nama_section,
-                psec.order AS urutan_section,
+                psec.{$orderCol} AS urutan_section,
                 pq.code AS kode_pertanyaan,
                 pq.question_text AS teks_pertanyaan,
                 pq.type AS tipe_pertanyaan,
                 pq.is_required AS is_mandatory,
-                COALESCE(pr.answer_text, CAST(pr.answer_json AS CHAR)) AS jawaban,
+                COALESCE(pr.answer_text, CAST(pr.answer_json AS {$castText})) AS jawaban,
                 pr.updated_at AS waktu_jawab
             FROM biodata b
             LEFT JOIN users u ON b.user_id = u.id

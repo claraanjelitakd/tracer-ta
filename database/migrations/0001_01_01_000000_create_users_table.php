@@ -18,6 +18,7 @@ return new class extends Migration
             $table->string('email')->nullable();
             $table->string('role')->default('alumni');
             $table->foreignId('prodi_id')->nullable()->index();
+            $table->foreignId('fakultas_id')->nullable()->index();
             $table->boolean('must_change_password')->default(false);
             $table->string('password');
             $table->rememberToken();
