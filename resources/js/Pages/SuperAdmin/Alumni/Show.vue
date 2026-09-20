@@ -189,12 +189,12 @@ const statusYudisium = computed(() => {
 <template>
     <Head :title="`Detail Mahasiswa - ${alumni.data_akademik?.nama || alumni.nim} - Super Admin`" />
 
-    <div class="min-h-screen bg-[#f8fafc] text-gray-800 font-sans flex">
+    <div class="min-h-screen bg-[#f8fafc] text-gray-800 font-sans flex overscroll-none">
         <!-- Sidebar Resmi Super Admin -->
         <Sidebar />
 
         <!-- Area Konten Utama -->
-        <div class="flex-1 flex flex-col min-w-0 lg:pl-72">
+        <div class="flex-1 flex flex-col min-w-0 lg:pl-72 overscroll-none">
             
             <!-- Header Solid Hijau Resmi UKDW #0D542B -->
             <header class="bg-[#0D542B] text-white py-6 px-4 sm:px-6 lg:px-8 border-b border-[#0A4322]">
