@@ -88,6 +88,7 @@ Route::middleware('auth')->group(function () {
             Route::get('/biro3/alumni', [DaftarAlumniController::class, 'tampilkanDaftarAlumni'])->name('biro3.alumni.index');
             Route::get('/biro3/alumni/{id}', [DetailAlumniController::class, 'tampilkanDetailAlumni'])->name('biro3.alumni.show');
             Route::get('/biro3/alumni/{id}/export-excel', [DetailAlumniController::class, 'exportExcel'])->name('biro3.alumni.export-excel');
+            Route::post('/biro3/alumni/{id}/profile', [DetailAlumniController::class, 'updateProfile'])->name('biro3.alumni.profile.update');
             Route::post('/biro3/alumni/{id}/sync-linkedin', [SinkronisasiLinkedinController::class, 'sinkronisasiDataLinkedin'])->name('biro3.alumni.sync');
             Route::post('/biro3/alumni/{id}/save-linkedin', [SinkronisasiLinkedinController::class, 'simpanDataLinkedin'])->name('biro3.alumni.save');
         });
@@ -103,6 +104,7 @@ Route::middleware('auth')->group(function () {
             Route::get('/prodi/alumni', [DaftarAlumniProdiController::class, 'index'])->name('prodi.alumni.index');
             Route::get('/prodi/alumni/{id}', [DaftarAlumniProdiController::class, 'show'])->name('prodi.alumni.show');
             Route::get('/prodi/alumni/{id}/export-excel', [DaftarAlumniProdiController::class, 'exportExcel'])->name('prodi.alumni.export-excel');
+            Route::post('/prodi/alumni/{id}/profile', [DaftarAlumniProdiController::class, 'updateProfile'])->name('prodi.alumni.profile.update');
 
             // Kelola Section Kuesioner Prodi
             Route::get('/prodi/sections', [KelolaSectionProdiController::class, 'index'])->name('prodi.sections.index');
@@ -138,6 +140,7 @@ Route::middleware('auth')->group(function () {
             Route::get('/fakultas/alumni', [DaftarAlumniFakultasController::class, 'index'])->name('fakultas.alumni.index');
             Route::get('/fakultas/alumni/{id}', [DetailAlumniFakultasController::class, 'show'])->name('fakultas.alumni.show');
             Route::get('/fakultas/alumni/{id}/export-excel', [DetailAlumniFakultasController::class, 'exportExcel'])->name('fakultas.alumni.export-excel');
+            Route::post('/fakultas/alumni/{id}/profile', [DetailAlumniFakultasController::class, 'updateProfile'])->name('fakultas.alumni.profile.update');
         });
 
         // -----------------------------------------------------------------

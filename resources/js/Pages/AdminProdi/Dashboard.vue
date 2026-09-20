@@ -309,7 +309,14 @@ const props = defineProps({
                 </div>
             </div>
 
-        </main>
+            </main>
+
+            <!-- Footer Elegan & Minimalis -->
+            <footer class="text-gray-400 text-xs text-center mt-16 py-6 border-t border-gray-100">
+                <div class="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">
+                    &copy; {{ new Date().getFullYear() }} Universitas Kristen Duta Wacana. Hak Cipta Dilindungi.
+                </div>
+            </footer>
         </div>
     </div>
 </template>

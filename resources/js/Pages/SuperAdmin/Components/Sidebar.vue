@@ -287,11 +287,11 @@ const handleLogout = () => {
                         <div class="w-10 h-10 rounded-xl bg-[#0D542B] text-[#FDC700] font-black text-sm flex items-center justify-center shadow-xs shrink-0">
                             {{ userInitials }}
                         </div>
-                        <div class="overflow-hidden">
-                            <span class="font-extrabold text-xs text-gray-900 truncate block leading-tight">
+                        <div class="min-w-0 flex-1">
+                            <span class="font-extrabold text-xs text-gray-900 break-words leading-snug block">
                                 {{ currentUser.name }}
                             </span>
-                            <span class="text-[11px] text-gray-500 truncate block mt-0.5">
+                            <span class="text-[11px] text-gray-500 break-words leading-tight block mt-0.5">
                                 {{ currentUser.email || 'admin@ukdw.ac.id' }}
                             </span>
                         </div>

@@ -2,6 +2,13 @@
 
 Semua perubahan besar pada sistem dicatat dalam dokumen ini.
 
+## [2026-09-21]
+- **Full Profile Parity Seluruh Stakeholder**: Mengintegrasikan 4 sub-komponen profil lengkap (`FormPribadi`, `FormAkademik`, `FormOrangTua`, `FormKarier`) ke halaman detail alumni Admin Biro 3, Admin Fakultas, dan Admin Program Studi, lengkap dengan tombol simpan profil terhubung ke backend masing-masing.
+- **Perbaikan Pemotongan Teks Sidebar**: Mengganti batasan `truncate` dengan `break-words leading-tight/leading-snug` pada sidebar Super Admin, Biro 3, Fakultas, dan Prodi sehingga nama pengguna dan instansi tampil utuh.
+- **Kelengkapan Penuh Berkas Excel (.xls)**: Menjamin seluruh atribut identitas (NIM, Nama, NIK, NPWP, No. KK, No. BPJS, Telepon, Email, Alamat, Tahun Lulus, Semester Lulus, IPK, SKS, Judul TA, Perusahaan, dan Atasan) terisi 100% tanpa nilai kosong menggunakan multi-level fallback, dengan proteksi format teks Microsoft Excel (`mso-number-format:'\@'`).
+- **Harmonisasi Dashboard Utama Seluruh Stakeholder**: Menstandarkan tampilan dashboard Admin Biro 3, Admin Fakultas, dan Admin Prodi mengikuti rancangan visual, KPI metrik, modul navigasi, dan palet warna solid UKDW milik Super Admin.
+
+
 - **Standarisasi Ekspor Excel (.xls) Terformat dengan Proteksi Teks NIK/NPWP/NIM**:
   - Mengembalikan format unduhan ke file spreadsheet **Excel (.xls)** asli dengan styling penuh (Header UKDW Green `#0D542B`, blok Identitas Alumni, batas tabel, dan badge warna status).
   - Menerapkan format teks eksplisit Microsoft Excel (`mso-number-format:'\@'`) pada kolom respon, NIK, NPWP, NIM, nomor telepon, dan kode pertanyaan agar terhindar dari notasi ilmiah eksponensial (seperti `3,40401E+15`).

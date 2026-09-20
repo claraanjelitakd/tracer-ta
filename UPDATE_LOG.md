@@ -1,5 +1,33 @@
 # UPDATE LOG - SERU (Sistem Ekosistem Rekam Jejak Alumni)
 
+## [2026-09-21] Full Profile Parity (Biro 3, Fakultas, Prodi), Sidebar Cutoff Fix, Comprehensive Excel Fields & Harmonized Dashboards
+
+- **Kelengkapan Penuh Detail Profil Mahasiswa (Paritas 100% Seluruh Stakeholder)**:
+  - Mengintegrasikan 4 sub-komponen profil lengkap (`FormPribadi.vue`, `FormAkademik.vue`, `FormOrangTua.vue`, `FormKarier.vue`) ke halaman detail alumni **Admin Biro 3** ([AlumniShow.vue](file:///c:/study/tracerstudy/resources/js/Pages/AdminBiroTiga/AlumniShow.vue)), **Admin Fakultas** ([Show.vue](file:///c:/study/tracerstudy/resources/js/Pages/AdminFakultas/Alumni/Show.vue)), dan **Admin Program Studi** ([Show.vue](file:///c:/study/tracerstudy/resources/js/Pages/AdminProdi/Alumni/Show.vue)).
+  - Menyediakan form data reaktif lengkap dengan sub-navigasi 4 tab (*1. Data Pribadi, 2. Data Akademik, 3. Data Orang Tua, 4. Karier & Perusahaan*) serta tombol *Simpan Perubahan Profil* yang terhubung ke endpoint backend masing-masing stakeholder (`/biro3/alumni/{id}/profile`, `/fakultas/alumni/{id}/profile`, `/prodi/alumni/{id}/profile`).
+  - Mengirimkan data master referensi wilayah (`provinces`, `kabupatens`) dan master `companies` dari masing-masing controller ke halaman frontend.
+- **Perbaikan Teks Terpotong pada Sidebar Seluruh Stakeholder**:
+  - Memperbaiki pemotongan nama pengguna dan nama fakultas/prodi yang sebelumnya terpotong oleh kelas `truncate` (misal: `Admin Fakultas Teknol...` dan `FAKULTAS TEKNOLOGI INFORMA...`) pada 4 komponen sidebar:
+    - [AdminFakultas/Components/Sidebar.vue](file:///c:/study/tracerstudy/resources/js/Pages/AdminFakultas/Components/Sidebar.vue)
+    - [AdminProdi/Components/Sidebar.vue](file:///c:/study/tracerstudy/resources/js/Pages/AdminProdi/Components/Sidebar.vue)
+    - [AdminBiroTiga/Components/Sidebar.vue](file:///c:/study/tracerstudy/resources/js/Pages/AdminBiroTiga/Components/Sidebar.vue)
+    - [SuperAdmin/Components/Sidebar.vue](file:///c:/study/tracerstudy/resources/js/Pages/SuperAdmin/Components/Sidebar.vue)
+  - Mengganti pembatasan `truncate` dengan `break-words leading-tight` / `leading-snug` sehingga seluruh nama tampil utuh, rapi, dan estetis.
+- **Ekspor Excel (.xls) 100% Lengkap dengan Proteksi Teks & Multi-Level Fallback ([AlumniTracerExcelExporter.php](file:///c:/study/tracerstudy/app/Services/Export/AlumniTracerExcelExporter.php))**:
+  - Memastikan seluruh field identitas alumni di berkas Excel terisi lengkap tanpa ada data kosong:
+    - Identitas Diri & Kontak: NIM, Nama Lengkap, NIK (KTP), NPWP, No. Kartu Keluarga, No. BPJS, Nomor Telepon/WA, Email Pribadi, Email Kampus, dan Alamat Lengkap Saat Ini.
+    - Rekam Jejak Akademik & Kelulusan: Program Studi, Fakultas, Tahun Lulus (dengan multi-level fallback dari `biodatas`, `yudisiums`, dan `data_akademik`), Semester Kelulusan, Angkatan Masuk, IPK, Total SKS, Status Yudisium, Judul Tugas Akhir, dan Dosen Pembimbing.
+    - Informasi Karir: Nama Perusahaan, Posisi/Jabatan, Skala Perusahaan, Nama Atasan, dan Kontak Atasan.
+  - Semua kode numerik panjang tetap terlindungi dengan format teks Microsoft Excel (`mso-number-format:'\@'`).
+- **Penyelarasan Dashboard Utama Biro 3, Fakultas, dan Prodi Seragam dengan Super Admin**:
+  - Menstandarisasi tata letak visual, palet warna solid UKDW (`#0D542B`, `#FDC700`, `#FFFFFF`), kartu KPI metrik 4-kolom, modul navigasi dua kolom, serta footer bersih di:
+    - [AdminBiroTiga/Dashboard.vue](file:///c:/study/tracerstudy/resources/js/Pages/AdminBiroTiga/Dashboard.vue)
+    - [AdminFakultas/Dashboard.vue](file:///c:/study/tracerstudy/resources/js/Pages/AdminFakultas/Dashboard.vue)
+    - [AdminProdi/Dashboard.vue](file:///c:/study/tracerstudy/resources/js/Pages/AdminProdi/Dashboard.vue)
+- **Quality Assurance**:
+  - Seluruh 54 tests PHPUnit Feature & Unit lulus 100% (298 assertions).
+  - Standarisasi Laravel Pint lolos 100%.
+
 - **Standarisasi Ekspor Excel (.xls) Terformat dengan Proteksi Teks NIK/NPWP/NIM ([AlumniTracerExcelExporter.php](file:///c:/study/tracerstudy/app/Services/Export/AlumniTracerExcelExporter.php))**:
   - Mengembalikan format unduhan ke file spreadsheet **Excel (.xls)** asli dengan styling penuh (Header UKDW Green `#0D542B`, blok Identitas Alumni, batas tabel, dan badge warna status).
   - Menerapkan format teks eksplisit Microsoft Excel (`mso-number-format:'\@'`) pada kolom respon, NIK, NPWP, NIM, nomor telepon, dan kode pertanyaan untuk mencegah Excel mengonversi angka panjang 16-digit menjadi notasi ilmiah eksponensial (seperti `3,40401E+15`).

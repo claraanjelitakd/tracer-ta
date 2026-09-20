@@ -2,7 +2,7 @@
   Halaman: Dashboard Utama Admin Fakultas
   File: resources/js/Pages/AdminFakultas/Dashboard.vue
 
-  Warna Resmi Solid UKDW:
+  Warna Resmi Solid UKDW (Identik dengan Super Admin):
   - Hijau: #0D542B
   - Kuning: #FDC700
   - Putih & Netral: #FFFFFF / #F8FAFC
@@ -56,8 +56,8 @@ const props = defineProps({
 
                     <div class="bg-black/15 border border-white/20 px-5 py-3 rounded-2xl text-left md:text-right text-white">
                         <span class="text-xs text-white/80 font-semibold uppercase tracking-wider block">Partisipasi Fakultas</span>
-                        <span class="text-3xl font-black text-[#FDC700] block">{{ stats.persentase_selesai }}%</span>
-                        <span class="text-xs text-white/90 font-medium">{{ stats.total_selesai }} dari {{ stats.total_alumni }} Responden</span>
+                        <span class="text-base font-extrabold block text-[#FDC700]">{{ stats.persentase_selesai }}% Respon</span>
+                        <span class="text-xs text-white/80">{{ stats.total_selesai }} dari {{ stats.total_alumni }} Responden Selesai</span>
                     </div>
                 </div>
             </header>
@@ -65,30 +65,111 @@ const props = defineProps({
             <!-- Main Content Area -->
             <main class="w-full max-w-[1400px] mx-auto -mt-10 px-4 sm:px-6 lg:px-8 space-y-6 pb-16">
                 
-                <!-- 4 KPI Summary Cards -->
+                <!-- 4 KPI Summary Cards (Identik dengan Super Admin) -->
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-                    <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-                        <p class="text-xs font-bold text-gray-500 uppercase tracking-wider">Total Alumni Fakultas</p>
-                        <p class="text-3xl font-extrabold text-gray-900 tracking-tight mt-2">{{ stats.total_alumni }}</p>
-                        <p class="text-xs text-gray-400 mt-1">Seluruh prodi di fakultas</p>
+                    <div class="bg-white rounded-2xl p-6 shadow-sm">
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs font-bold text-gray-500 uppercase tracking-wider">Total Alumni</span>
+                            <span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-gray-100 text-gray-700">Fakultas</span>
+                        </div>
+                        <div class="text-3xl font-extrabold text-gray-900 tracking-tight mt-3">{{ stats.total_alumni }}</div>
+                        <p class="mt-1 text-xs text-gray-400">Seluruh prodi di fakultas</p>
                     </div>
 
-                    <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-                        <p class="text-xs font-bold text-[#0D542B] uppercase tracking-wider">Tracer Selesai</p>
-                        <p class="text-3xl font-extrabold text-[#0D542B] tracking-tight mt-2">{{ stats.total_selesai }}</p>
-                        <p class="text-xs text-gray-400 mt-1">Profil & kuesioner lengkap</p>
+                    <div class="bg-white rounded-2xl p-6 shadow-sm">
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs font-bold text-[#0D542B] uppercase tracking-wider">Tracer Selesai</span>
+                            <span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-[#0D542B] text-white">Lengkap</span>
+                        </div>
+                        <div class="text-3xl font-extrabold text-[#0D542B] tracking-tight mt-3">{{ stats.total_selesai }}</div>
+                        <p class="mt-1 text-xs text-gray-400">Profil & kuesioner lengkap</p>
                     </div>
 
-                    <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-                        <p class="text-xs font-bold text-gray-700 uppercase tracking-wider">Belum Selesai</p>
-                        <p class="text-3xl font-extrabold text-gray-900 tracking-tight mt-2">{{ stats.total_belum_selesai }}</p>
-                        <p class="text-xs text-gray-400 mt-1">Masih dalam pengisian</p>
+                    <div class="bg-white rounded-2xl p-6 shadow-sm">
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs font-bold text-gray-700 uppercase tracking-wider">Belum Selesai</span>
+                            <span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-gray-100 text-gray-700">Proses</span>
+                        </div>
+                        <div class="text-3xl font-extrabold text-gray-900 tracking-tight mt-3">{{ stats.total_belum_selesai }}</div>
+                        <p class="mt-1 text-xs text-gray-400">Masih dalam pengisian</p>
                     </div>
 
-                    <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-                        <p class="text-xs font-bold text-gray-500 uppercase tracking-wider">Cakupan Prodi</p>
-                        <p class="text-3xl font-extrabold text-[#0D542B] tracking-tight mt-2">{{ stats.total_prodi }}</p>
-                        <p class="text-xs text-gray-400 mt-1">Program studi aktif</p>
+                    <div class="bg-white rounded-2xl p-6 shadow-sm">
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs font-bold text-gray-500 uppercase tracking-wider">Cakupan Prodi</span>
+                            <span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-gray-100 text-gray-700">Struktur</span>
+                        </div>
+                        <div class="text-3xl font-extrabold text-gray-900 tracking-tight mt-3">{{ stats.total_prodi }}</div>
+                        <p class="mt-1 text-xs text-gray-400">Program studi aktif</p>
+                    </div>
+                </div>
+
+                <!-- Grid 2 Modul Navigasi Utama -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Modul 1: Direktori Alumni Fakultas -->
+                    <div class="bg-white rounded-3xl p-8 shadow-sm flex flex-col justify-between">
+                        <div>
+                            <div class="flex items-center justify-between mb-3">
+                                <span class="px-3 py-1 bg-[#0D542B] text-white text-xs font-bold rounded-lg uppercase tracking-wider">
+                                    Direktori Fakultas
+                                </span>
+                                <span class="text-xs font-semibold text-gray-400">
+                                    Filter & Audit Alumni
+                                </span>
+                            </div>
+                            <h2 class="text-xl font-bold text-gray-900 tracking-tight mb-2">
+                                Data Alumni {{ fakultas?.nama_fakultas }}
+                            </h2>
+                            <p class="text-sm text-gray-600 leading-relaxed">
+                                Pantau seluruh data mahasiswa dan alumni berdasarkan program studi, tahun kelulusan, dan status kelengkapan kuesioner tracer study.
+                            </p>
+                        </div>
+
+                        <div class="mt-8 pt-4 border-t border-gray-100 flex items-center justify-between">
+                            <span class="text-xs text-gray-500 font-medium">
+                                Filter Prodi, Tahun & Status
+                            </span>
+                            <Link 
+                                href="/fakultas/alumni" 
+                                class="inline-flex items-center px-6 py-3 bg-[#0D542B] hover:bg-[#08381c] text-white text-xs font-bold rounded-xl shadow-xs transition-all cursor-pointer"
+                            >
+                                <span>Buka Data Alumni</span>
+                                <span class="ml-1.5">&rarr;</span>
+                            </Link>
+                        </div>
+                    </div>
+
+                    <!-- Modul 2: Evaluasi Partisipasi Prodi -->
+                    <div class="bg-white rounded-3xl p-8 shadow-sm flex flex-col justify-between">
+                        <div>
+                            <div class="flex items-center justify-between mb-3">
+                                <span class="px-3 py-1 bg-[#FDC700] text-black text-xs font-bold rounded-lg uppercase tracking-wider">
+                                    Capaian Prodi
+                                </span>
+                                <span class="text-xs font-semibold text-gray-400">
+                                    {{ prodis?.length || stats.total_prodi }} Program Studi
+                                </span>
+                            </div>
+                            <h2 class="text-xl font-bold text-gray-900 tracking-tight mb-2">
+                                Distribusi Respon Program Studi
+                            </h2>
+                            <p class="text-sm text-gray-600 leading-relaxed">
+                                Evaluasi tingkat kelengkapan pengisian tracer study pada setiap program studi di lingkungan {{ fakultas?.nama_fakultas }}.
+                            </p>
+                        </div>
+
+                        <div class="mt-8 pt-4 border-t border-gray-100 flex items-center justify-between">
+                            <span class="text-xs font-medium text-gray-500">
+                                Tingkat Selesai: <strong class="text-[#0D542B]">{{ stats.persentase_selesai }}%</strong>
+                            </span>
+                            <Link 
+                                href="/fakultas/alumni" 
+                                class="inline-flex items-center px-6 py-3 bg-[#0D542B] hover:bg-[#08381c] text-white text-xs font-bold rounded-xl shadow-xs transition-all cursor-pointer"
+                            >
+                                <span>Lihat Seluruh Alumni</span>
+                                <span class="ml-1.5">&rarr;</span>
+                            </Link>
+                        </div>
                     </div>
                 </div>
 
@@ -162,7 +243,7 @@ const props = defineProps({
                 </div>
 
                 <!-- 5 Data Alumni Terbaru -->
-                <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                <div v-if="recentAlumni && recentAlumni.length > 0" class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
                     <div class="p-6 border-b border-gray-100">
                         <h3 class="text-sm font-black uppercase tracking-wider text-gray-900">
                             5 Mahasiswa / Alumni Terkini
@@ -221,6 +302,13 @@ const props = defineProps({
                 </div>
 
             </main>
+
+            <!-- Footer Elegan & Minimalis -->
+            <footer class="text-gray-400 text-xs text-center mt-16 py-6 border-t border-gray-100">
+                <div class="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">
+                    &copy; {{ new Date().getFullYear() }} Universitas Kristen Duta Wacana. Hak Cipta Dilindungi.
+                </div>
+            </footer>
         </div>
     </div>
 </template>

@@ -3,14 +3,20 @@
 namespace App\Http\Controllers\AdminProdi\KelolaAlumni;
 
 use App\Http\Controllers\Controller;
+use App\Models\Atasan;
 use App\Models\Biodata;
+use App\Models\DataOrangTua;
+use App\Models\Kabupaten;
 use App\Models\Kuesioner;
+use App\Models\Perusahaan;
 use App\Models\ProdiQuestionSection;
 use App\Models\ProdiResponse;
+use App\Models\Propinsi;
 use App\Models\Tracer;
 use App\Services\Export\AlumniTracerExcelExporter;
 use App\Services\Kuesioner\KelengkapanTracerService;
 use App\Services\Kuesioner\KuesionerSyncService;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -453,6 +459,10 @@ class DaftarAlumniProdiController extends Controller
             'telepon_atasan' => $atasan?->telepon ?? '',
         ];
 
+        $propinsis = Propinsi::orderBy('nama_provinsi', 'asc')->get();
+        $kabupatens = Kabupaten::orderBy('nama_kabupaten', 'asc')->get();
+        $perusahaans = Perusahaan::select('id', 'nama_perusahaan', 'propinsi_id', 'kabupaten_id', 'alamat', 'kode_pos', 'skala', 'status_verifikasi')->get();
+
         return Inertia::render('AdminProdi/Alumni/Show', [
             'user' => $user,
             'prodi' => $prodi,
@@ -464,7 +474,142 @@ class DaftarAlumniProdiController extends Controller
             'prodiSections' => $prodiSectionsWithAnswers,
             'prodiEvaluasi' => $prodiEvaluasi,
             'formData' => $formData,
+            'propinsis' => $propinsis,
+            'provinces' => $propinsis,
+            'kabupatens' => $kabupatens,
+            'perusahaans' => $perusahaans,
+            'companies' => $perusahaans,
         ]);
+    }
+
+    /**
+     * Update Profil Mahasiswa oleh Admin Prodi
+     */
+    public function updateProfile(Request $request, int $id): RedirectResponse
+    {
+        $user = Auth::user();
+        $prodiId = $user->prodi_id;
+
+        $biodata = Biodata::with(['dataAkademik.yudisium', 'dataAkademik.orangTua', 'yudisium', 'orangTua', 'perusahaan', 'atasan'])
+            ->where('prodi_id', $prodiId)
+            ->findOrFail($id);
+
+        $data = $request->all();
+
+        // 1. Tangani Data Orang Tua
+        $orangTua = $biodata->orangTua ?? $biodata->dataAkademik?->orangTua;
+        if (! empty($data['nama_orang_tua']) || ! empty($data['pekerjaan_orang_tua']) || ! empty($data['alamat_orang_tua'])) {
+            if ($orangTua) {
+                $orangTua->update([
+                    'nama_orang_tua' => $data['nama_orang_tua'] ?? $orangTua->nama_orang_tua,
+                    'pekerjaan' => $data['pekerjaan_orang_tua'] ?? $orangTua->pekerjaan,
+                    'alamat' => $data['alamat_orang_tua'] ?? $orangTua->alamat,
+                    'kota' => $data['kota_orang_tua'] ?? $orangTua->kota,
+                    'kabupaten_id' => $data['kabupaten_id_orang_tua'] ?? $orangTua->kabupaten_id,
+                    'propinsi_id' => $data['propinsi_id_orang_tua'] ?? ($data['provinsi_id_orang_tua'] ?? $orangTua->propinsi_id),
+                    'kode_pos' => $data['kode_pos_orang_tua'] ?? $orangTua->kode_pos,
+                    'nomor_telepon' => $data['nomor_telepon_orang_tua'] ?? $orangTua->nomor_telepon,
+                ]);
+            } else {
+                $newOrangTua = DataOrangTua::create([
+                    'nim' => $biodata->nim,
+                    'nama_orang_tua' => $data['nama_orang_tua'] ?? '',
+                    'pekerjaan' => $data['pekerjaan_orang_tua'] ?? '',
+                    'alamat' => $data['alamat_orang_tua'] ?? '',
+                    'kota' => $data['kota_orang_tua'] ?? '',
+                    'kabupaten_id' => $data['kabupaten_id_orang_tua'] ?? null,
+                    'propinsi_id' => $data['propinsi_id_orang_tua'] ?? ($data['provinsi_id_orang_tua'] ?? null),
+                    'kode_pos' => $data['kode_pos_orang_tua'] ?? '',
+                    'nomor_telepon' => $data['nomor_telepon_orang_tua'] ?? '',
+                ]);
+                $biodata->orang_tua_id = $newOrangTua->id;
+            }
+        }
+
+        // 2. Tangani Data Perusahaan
+        $perusahaanId = $biodata->perusahaan_id;
+        if (! empty($data['nama_perusahaan'])) {
+            $perusahaan = Perusahaan::firstOrCreate(
+                ['nama_perusahaan' => $data['nama_perusahaan']],
+                [
+                    'propinsi_id' => $data['perusahaan_propinsi_id'] ?? ($data['company_province_id'] ?? null),
+                    'kabupaten_id' => $data['perusahaan_kabupaten_id'] ?? ($data['company_kabupaten_id'] ?? null),
+                    'alamat' => $data['perusahaan_alamat'] ?? ($data['company_alamat'] ?? null),
+                    'skala' => $data['perusahaan_skala'] ?? ($data['company_skala'] ?? null),
+                    'status_verifikasi' => 'Terverifikasi',
+                ]
+            );
+
+            $perusahaan->update([
+                'propinsi_id' => ! empty($data['perusahaan_propinsi_id']) ? $data['perusahaan_propinsi_id'] : (! empty($data['company_province_id']) ? $data['company_province_id'] : null),
+                'kabupaten_id' => ! empty($data['perusahaan_kabupaten_id']) ? $data['perusahaan_kabupaten_id'] : (! empty($data['company_kabupaten_id']) ? $data['company_kabupaten_id'] : null),
+                'alamat' => ! empty($data['perusahaan_alamat']) ? $data['perusahaan_alamat'] : (! empty($data['company_alamat']) ? $data['company_alamat'] : null),
+                'skala' => ! empty($data['perusahaan_skala']) ? $data['perusahaan_skala'] : (! empty($data['company_skala']) ? $data['company_skala'] : null),
+            ]);
+
+            $perusahaanId = $perusahaan->id;
+        }
+
+        // 3. Tangani Data Atasan
+        $atasanId = $biodata->atasan_id;
+        if (! empty($data['nama_atasan'])) {
+            $atasan = ! empty($biodata->atasan_id) ? Atasan::find($biodata->atasan_id) : null;
+            if ($atasan) {
+                $atasan->update([
+                    'nama' => $data['nama_atasan'],
+                    'email' => ! empty($data['email_atasan']) ? $data['email_atasan'] : null,
+                    'telepon' => ! empty($data['telepon_atasan']) ? $data['telepon_atasan'] : null,
+                ]);
+            } else {
+                $atasan = Atasan::create([
+                    'nama' => $data['nama_atasan'],
+                    'email' => ! empty($data['email_atasan']) ? $data['email_atasan'] : null,
+                    'telepon' => ! empty($data['telepon_atasan']) ? $data['telepon_atasan'] : null,
+                ]);
+            }
+            $atasanId = $atasan->id;
+        }
+
+        // 4. Perbarui Model Biodata
+        $biodata->update([
+            'nama' => ! empty($data['nama']) ? $data['nama'] : $biodata->nama,
+            'nomor_telepon' => ! empty($data['nomor_telepon']) ? $data['nomor_telepon'] : null,
+            'email' => ! empty($data['email']) ? $data['email'] : null,
+            'email_pribadi' => ! empty($data['email_pribadi']) ? $data['email_pribadi'] : null,
+            'alamat' => ! empty($data['alamat_saat_ini']) ? $data['alamat_saat_ini'] : (! empty($data['alamat']) ? $data['alamat'] : null),
+            'kelurahan' => ! empty($data['kelurahan']) ? $data['kelurahan'] : null,
+            'kecamatan' => ! empty($data['kecamatan']) ? $data['kecamatan'] : null,
+            'kabupaten_id' => ! empty($data['kabupaten_id']) ? $data['kabupaten_id'] : null,
+            'propinsi_id' => ! empty($data['propinsi_id']) ? $data['propinsi_id'] : (! empty($data['provinsi_id']) ? $data['provinsi_id'] : null),
+            'kode_pos' => ! empty($data['kode_pos']) ? $data['kode_pos'] : null,
+            'agama' => ! empty($data['agama']) ? $data['agama'] : null,
+            'nik' => ! empty($data['nik']) ? $data['nik'] : null,
+            'no_kk' => ! empty($data['no_kk']) ? $data['no_kk'] : null,
+            'no_bpjs' => ! empty($data['no_bpjs']) ? $data['no_bpjs'] : null,
+            'npwp' => ! empty($data['npwp']) ? $data['npwp'] : null,
+            'perusahaan_id' => $perusahaanId,
+            'atasan_id' => $atasanId,
+            'kategori_pekerjaan' => ! empty($data['kategori_pekerjaan']) ? $data['kategori_pekerjaan'] : null,
+            'posisi_jabatan' => ! empty($data['posisi_jabatan']) ? $data['posisi_jabatan'] : null,
+            'posisi_wiraswasta' => ! empty($data['posisi_wiraswasta']) ? $data['posisi_wiraswasta'] : null,
+            'pendidikan_tingkat' => ! empty($data['pendidikan_tingkat']) ? $data['pendidikan_tingkat'] : null,
+            'perguruan_tinggi' => ! empty($data['perguruan_tinggi']) ? $data['perguruan_tinggi'] : null,
+            'pendidikan_prodi' => ! empty($data['pendidikan_prodi']) ? $data['pendidikan_prodi'] : null,
+            'jenis_pekerjaan' => ! empty($data['jenis_pekerjaan']) ? $data['jenis_pekerjaan'] : null,
+            'expert' => ! empty($data['expert']) ? $data['expert'] : null,
+            'minat' => ! empty($data['minat']) ? $data['minat'] : null,
+            'zipcode' => ! empty($data['zipcode']) ? $data['zipcode'] : null,
+            'instagram_url' => ! empty($data['instagram_url']) ? $data['instagram_url'] : null,
+            'facebook_url' => ! empty($data['facebook_url']) ? $data['facebook_url'] : null,
+            'linkedin_url' => ! empty($data['linkedin_url']) ? $data['linkedin_url'] : null,
+            'linkedin_username' => ! empty($data['linkedin_username']) ? $data['linkedin_username'] : null,
+        ]);
+
+        $biodata->refresh();
+
+        KuesionerSyncService::syncProfileResponses($biodata);
+
+        return redirect()->back()->with('success', 'Data profil mahasiswa berhasil diperbarui oleh Admin Program Studi.');
     }
 
     /**

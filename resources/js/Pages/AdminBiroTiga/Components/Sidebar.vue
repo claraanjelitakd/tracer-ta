@@ -215,15 +215,15 @@ const handleLogout = () => {
             <!-- BAGIAN BAWAH: INFO PENGGUNA & TOMBOL LOGOUT -->
             <div class="p-4 border-t border-gray-100">
                 <div class="p-3 bg-gray-50 rounded-2xl flex items-center justify-between gap-3">
-                    <div class="flex items-center gap-3 min-w-0">
+                    <div class="flex items-center gap-3 min-w-0 flex-1">
                         <div class="w-9 h-9 rounded-xl bg-[#0D542B] text-white flex items-center justify-center font-bold text-xs shrink-0 shadow-2xs">
                             {{ userInitials }}
                         </div>
                         <div class="min-w-0 flex-1">
-                            <span class="block text-xs font-bold text-gray-900 truncate">
+                            <span class="block text-xs font-bold text-gray-900 break-words leading-snug">
                                 {{ currentUser.name }}
                             </span>
-                            <span class="block text-[10px] text-gray-500 truncate">
+                            <span class="block text-[10px] text-gray-500 break-words leading-tight mt-0.5">
                                 {{ currentUser.email || 'biro3@ukdw.ac.id' }}
                             </span>
                         </div>

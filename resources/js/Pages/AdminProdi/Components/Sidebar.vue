@@ -136,13 +136,13 @@ const handleLogout = () => {
                         <div class="w-11 h-11 rounded-2xl bg-white border border-gray-100 p-1.5 shadow-2xs flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
                             <img src="/uploads/landing/2.png" alt="Logo UKDW" class="w-full h-full object-contain" onerror="this.style.display='none'" />
                         </div>
-                        <div class="min-w-0">
-                            <span class="font-black text-gray-900 text-base tracking-tight block leading-tight group-hover:text-[#0D542B] transition-colors truncate">
+                        <div class="min-w-0 flex-1">
+                            <span class="font-black text-gray-900 text-base tracking-tight block leading-tight group-hover:text-[#0D542B] transition-colors">
                                 Tracer Study UKDW
                             </span>
                             <div class="flex items-center gap-1.5 mt-0.5">
                                 <span class="inline-block w-2 h-2 rounded-full bg-[#0D542B] shrink-0"></span>
-                                <span class="text-[11px] font-extrabold text-[#0D542B] uppercase tracking-wider truncate">
+                                <span class="text-[11px] font-extrabold text-[#0D542B] uppercase tracking-wider block leading-tight break-words">
                                     {{ currentProdi.nama_prodi || 'Program Studi' }}
                                 </span>
                             </div>
@@ -293,15 +293,15 @@ const handleLogout = () => {
             <!-- BAGIAN BAWAH: INFO PENGGUNA & TOMBOL LOGOUT -->
             <div class="p-4 border-t border-gray-100">
                 <div class="p-3 bg-gray-50 rounded-2xl flex items-center justify-between gap-3">
-                    <div class="flex items-center gap-3 min-w-0">
+                    <div class="flex items-center gap-3 min-w-0 flex-1">
                         <div class="w-9 h-9 rounded-xl bg-[#0D542B] text-white flex items-center justify-center font-bold text-xs shrink-0 shadow-2xs">
                             {{ userInitials }}
                         </div>
                         <div class="min-w-0 flex-1">
-                            <span class="block text-xs font-bold text-gray-900 truncate">
+                            <span class="block text-xs font-bold text-gray-900 break-words leading-snug">
                                 {{ currentUser.name }}
                             </span>
-                            <span class="block text-[10px] text-gray-500 truncate">
+                            <span class="block text-[10px] text-gray-500 break-words leading-tight mt-0.5">
                                 {{ currentProdi.nama_prodi || currentUser.email }}
                             </span>
                         </div>
