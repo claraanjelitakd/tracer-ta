@@ -418,10 +418,10 @@ erDiagram
 
 ### E. Database Views & Model Eloquent Terkait (Modular & Performa Tinggi)
 1. **`v_alumni_audit_rekap`** (Model: [`AlumniAuditRekap`](file:///c:/study/tracerstudy/app/Models/AlumniAuditRekap.php)):
-   - **Master View Utama**: Menyatukan status kelengkapan profil, kuesioner universitas, dan kuesioner prodi ke dalam 1 baris instan per alumni (*single-query fetch*).
+   - **Master View Utama (89 Kolom)**: Menyatukan seluruh data profil 4 sub-tab lengkap (`v_alumni_profile_summary`) dengan agregasi status kuesioner universitas (`v_alumni_tracer_univ_status`) dan status kuesioner program studi (`v_alumni_tracer_prodi_status`) ke dalam 1 baris instan per alumni (*single-query fetch*).
    - Digunakan aktif oleh seluruh direktori mahasiswa & alumni (Super Admin, Biro 3, Fakultas, Prodi) untuk mengeliminasi kueri loop PHP N+1.
 2. **`v_alumni_profile_summary`** (Model: [`AlumniProfileSummary`](file:///c:/study/tracerstudy/app/Models/AlumniProfileSummary.php)):
-   - Agregasi data identitas profil (`biodata`), data akademik (`data_akademik`), yudisium (`yudisium`), orang tua (`data_orang_tua`), program studi (`prodi`), fakultas (`ref_fakultas`), perusahaan (`perusahaan`), dan atasan (`atasan`).
+   - **Lengkap 4 Sub-Tab (78 Kolom)**: Menggabungkan seluruh data identitas pribadi (NIK, KK, BPJS, NISN, NPWP, TTL, JK, Agama, Gol. Darah, Domisili lengkap provinsi/kabupaten, medsos, minat, keahlian), data akademik (NIM, Nama, Angkatan, Tahun Lulus, IPK, SKS, Asal Sekolah & Jurusan SMA, Prodi, Fakultas), data orang tua/wali (Nama, Pekerjaan, Alamat, Telepon, Kode Pos), serta data karier (Status, Posisi, Gaji, Info Perusahaan lengkap, dan Kontak Atasan). Sesuai kebutuhan, data yudisium tidak disertakan dalam profile summary.
 3. **`v_alumni_tracer_univ_status`** (Model: [`AlumniTracerUnivStatus`](file:///c:/study/tracerstudy/app/Models/AlumniTracerUnivStatus.php)):
    - Agregasi status kelengkapan kuesioner universitas (`tracer`) per alumni: total butir wajib, jumlah terjawab, dan total butir terjawab.
 4. **`v_alumni_tracer_prodi_status`** (Model: [`AlumniTracerProdiStatus`](file:///c:/study/tracerstudy/app/Models/AlumniTracerProdiStatus.php)):

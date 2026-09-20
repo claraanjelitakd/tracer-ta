@@ -1,5 +1,17 @@
 # UPDATE LOG - SERU (Sistem Ekosistem Rekam Jejak Alumni)
 
+## [2026-09-21] Rekonstruksi & Kelengkapan 4 Sub-Tab Database Views (v_alumni_profile_summary & v_alumni_audit_rekap)
+
+- **Kelengkapan Penuh 4 Sub-Tab Profil di Database View ([2026_09_20_234000_create_alumni_audit_database_views.php](file:///c:/study/tracerstudy/database/migrations/2026_09_20_234000_create_alumni_audit_database_views.php))**:
+  - Merekonstruksi `v_alumni_profile_summary` menjadi 78 kolom lengkap yang mencakup seluruh field dari 4 tab profil `/alumni/profile`:
+    1. **Data Pribadi**: NIK, No KK, No BPJS, NISN, NPWP, Email Pribadi, Email Kampus, Telepon, Tempat/Tanggal Lahir, Jenis Kelamin, Agama, Golongan Darah, Kewarganegaraan, Alamat, Kelurahan, Kecamatan, Kode Pos, ID & Nama Provinsi (`propinsi`), ID & Nama Kabupaten/Kota (`kabupaten`), Akun Instagram, Facebook, LinkedIn (URL & Username), Bidang Keahlian (*expert*), dan Minat.
+    2. **Data Akademik & Lembaga**: Program Studi (ID, Kode, Nama), Fakultas (ID, Kode, Nama, Singkatan), Angkatan Masuk, Tahun Lulus, Tahun Akademik Lulus, IPK Kumulatif, Total SKS, Total Angka Kualitas, Status Mahasiswa, Asal Sekolah, Alamat Sekolah, Kota/Kabupaten Sekolah, Provinsi Sekolah, dan Jurusan SMA/SMK. Sesuai instruksi, entitas yudisium dilepaskan dari summary.
+    3. **Data Orang Tua / Wali**: Nama Lengkap Orang Tua, Pekerjaan, Alamat, Kota, Nomor Telepon, dan Kode Pos.
+    4. **Data Karier & Instansi Bekerja**: Kategori Pekerjaan, Posisi Jabatan, Posisi Wiraswasta, Tingkat Pendidikan Lanjut, Nama Perguruan Tinggi, Program Studi S2/S3, Estimasi Gaji (*Take Home Pay*), Jenis Pekerjaan, Info Perusahaan lengkap (ID, Nama, Alamat, Sektor, Skala, Jenis Perusahaan, Jenis Lokasi Domisili, Negara), dan Kontak Atasan Langsung (Nama, Email, Nomor Telepon).
+  - Memperbarui master view `v_alumni_audit_rekap` (89 kolom) untuk menggabungkan 78 kolom profil di atas dengan rekapitulasi audit kelengkapan kuesioner universitas (`v_alumni_tracer_univ_status`) dan prodi (`v_alumni_tracer_prodi_status`).
+- **Berlaku Seragam untuk Seluruh Stakeholder**:
+  - Memberikan akses data lengkap instan bagi Super Admin, Admin Biro 3, Admin Fakultas, dan Admin Program Studi.
+
 ## [2026-09-21] Full Profile Parity (Biro 3, Fakultas, Prodi), Sidebar Cutoff Fix, Comprehensive Excel Fields & Harmonized Dashboards
 
 - **Kelengkapan Penuh Detail Profil Mahasiswa (Paritas 100% Seluruh Stakeholder)**:

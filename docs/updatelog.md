@@ -3,6 +3,7 @@
 Semua perubahan besar pada sistem dicatat dalam dokumen ini.
 
 ## [2026-09-21]
+- **Kelengkapan 4 Sub-Tab Database Views (`v_alumni_profile_summary` & `v_alumni_audit_rekap`)**: Merekonstruksi `v_alumni_profile_summary` menjadi 78 kolom lengkap mencakup seluruh field dari 4 tab profil (Data Pribadi, Data Akademik lengkap asal sekolah/prodi/fakultas, Data Orang Tua/Wali, dan Data Karier/Perusahaan/Atasan) dengan mengeluarkan entitas yudisium sesuai kebutuhan. Memperbarui `v_alumni_audit_rekap` menjadi 89 kolom untuk master audit seluruh stakeholder.
 - **Full Profile Parity Seluruh Stakeholder**: Mengintegrasikan 4 sub-komponen profil lengkap (`FormPribadi`, `FormAkademik`, `FormOrangTua`, `FormKarier`) ke halaman detail alumni Admin Biro 3, Admin Fakultas, dan Admin Program Studi, lengkap dengan tombol simpan profil terhubung ke backend masing-masing.
 - **Perbaikan Pemotongan Teks Sidebar**: Mengganti batasan `truncate` dengan `break-words leading-tight/leading-snug` pada sidebar Super Admin, Biro 3, Fakultas, dan Prodi sehingga nama pengguna dan instansi tampil utuh.
 - **Kelengkapan Penuh Berkas Excel (.xls)**: Menjamin seluruh atribut identitas (NIM, Nama, NIK, NPWP, No. KK, No. BPJS, Telepon, Email, Alamat, Tahun Lulus, Semester Lulus, IPK, SKS, Judul TA, Perusahaan, dan Atasan) terisi 100% tanpa nilai kosong menggunakan multi-level fallback, dengan proteksi format teks Microsoft Excel (`mso-number-format:'\@'`).

@@ -24,7 +24,7 @@ return new class extends Migration
         DB::statement('DROP VIEW IF EXISTS v_alumni_profile_summary');
 
         // 2. VIEW 1: v_alumni_profile_summary
-        // Menggabungkan seluruh data profil alumni (biodata, akademik, yudisium, prodi, fakultas, perusahaan, orang tua)
+        // Menggabungkan seluruh data profil alumni lengkap 4 sub-tab (biodata pribadi, akademik, orang tua, karier/perusahaan/atasan)
         DB::statement("
             CREATE VIEW v_alumni_profile_summary AS
             SELECT 
@@ -33,17 +33,34 @@ return new class extends Migration
                 b.nim,
                 COALESCE(da.nama, b.nama, u.name, 'Mahasiswa UKDW') AS nama,
                 COALESCE(b.nik, da.nik) AS nik,
+                COALESCE(b.no_kk, da.no_kk) AS no_kk,
+                COALESCE(b.no_bpjs, da.no_bpjs) AS no_bpjs,
+                COALESCE(b.nisn, da.nisn) AS nisn,
                 b.npwp,
-                COALESCE(b.email_pribadi, da.email_pribadi, u.email) AS email,
+                COALESCE(b.email_pribadi, da.email_pribadi, b.email, u.email) AS email,
+                COALESCE(b.email_pribadi, da.email_pribadi) AS email_pribadi,
+                COALESCE(b.email_students, da.email_students) AS email_students,
                 COALESCE(b.nomor_telepon, da.nomor_telepon) AS nomor_telepon,
-                COALESCE(b.alamat, da.alamat_saat_ini) AS alamat,
                 COALESCE(b.tempat_lahir, da.tempat_lahir) AS tempat_lahir,
                 COALESCE(b.tanggal_lahir, da.tanggal_lahir) AS tanggal_lahir,
                 COALESCE(b.jenis_kelamin, da.jenis_kelamin) AS jenis_kelamin,
                 COALESCE(b.agama, da.agama) AS agama,
-                b.kategori_pekerjaan,
-                b.posisi_jabatan,
-                b.gaji,
+                COALESCE(b.golongan_darah, da.golongan_darah) AS golongan_darah,
+                COALESCE(b.warga_negara, da.warga_negara) AS warga_negara,
+                COALESCE(b.alamat, da.alamat_saat_ini) AS alamat,
+                COALESCE(b.kelurahan, da.kelurahan) AS kelurahan,
+                COALESCE(b.kecamatan, da.kecamatan) AS kecamatan,
+                COALESCE(b.kode_pos, da.kode_pos, b.zipcode) AS kode_pos,
+                COALESCE(b.propinsi_id, da.propinsi_id) AS propinsi_id,
+                prov.nama_provinsi,
+                COALESCE(b.kabupaten_id, da.kabupaten_id) AS kabupaten_id,
+                kab.nama_kabupaten,
+                b.instagram_url,
+                b.facebook_url,
+                b.linkedin_url,
+                b.linkedin_username,
+                b.expert,
+                b.minat,
                 b.prodi_id,
                 p.kode_prodi,
                 p.nama_prodi,
@@ -51,22 +68,43 @@ return new class extends Migration
                 f.kode_fakultas,
                 f.nama_fakultas,
                 f.singkatan AS singkatan_fakultas,
-                da.ip_kumulatif AS ipk,
-                da.tahun_akademik_lulus,
-                da.tahun_lulus,
                 da.angkatan_masuk,
+                COALESCE(b.tahun_lulus, da.tahun_lulus) AS tahun_lulus,
+                da.tahun_akademik_lulus,
+                da.ip_kumulatif AS ipk,
                 da.total_sks,
-                COALESCE(y.proses_yudisium, 'Lulus') AS status_yudisium,
-                y.judul_ta,
-                y.keterangan_hasil_yudisium,
+                da.total_angka_kualitas,
+                da.status_mahasiswa,
+                da.asal_sekolah,
+                da.alamat_asal_sekolah,
+                da.kota_kabupaten_asal_sekolah,
+                da.provinsi_asal_sekolah,
+                da.jurusan_asal_sekolah,
+                ot.nama_orang_tua,
+                ot.pekerjaan AS pekerjaan_orang_tua,
+                ot.alamat AS alamat_orang_tua,
+                ot.kota AS kota_orang_tua,
+                ot.nomor_telepon AS nomor_telepon_orang_tua,
+                ot.kode_pos AS kode_pos_orang_tua,
+                b.kategori_pekerjaan,
+                b.posisi_jabatan,
+                b.posisi_wiraswasta,
+                b.pendidikan_tingkat,
+                b.perguruan_tinggi,
+                b.pendidikan_prodi,
+                b.gaji,
+                b.jenis_pekerjaan,
                 b.perusahaan_id,
                 c.nama_perusahaan,
                 c.alamat AS alamat_perusahaan,
+                c.sektor AS sektor_perusahaan,
+                c.skala AS skala_perusahaan,
+                c.jenis_perusahaan,
+                c.jenis_lokasi AS jenis_lokasi_perusahaan,
+                c.negara AS negara_perusahaan,
                 a.nama AS nama_atasan,
                 a.email AS email_atasan,
                 a.telepon AS telepon_atasan,
-                ot.nama_orang_tua,
-                ot.nomor_telepon AS telepon_orang_tua,
                 CASE 
                     WHEN COALESCE(da.nama, b.nama) IS NOT NULL 
                          AND b.nim IS NOT NULL 
@@ -80,9 +118,10 @@ return new class extends Migration
             FROM biodata b
             LEFT JOIN users u ON b.user_id = u.id
             LEFT JOIN data_akademik da ON da.nim = b.nim
-            LEFT JOIN yudisium y ON y.nim = b.nim
             LEFT JOIN prodi p ON b.prodi_id = p.id
             LEFT JOIN ref_fakultas f ON p.fakultas_id = f.id
+            LEFT JOIN propinsi prov ON COALESCE(b.propinsi_id, da.propinsi_id) = prov.id
+            LEFT JOIN kabupaten kab ON COALESCE(b.kabupaten_id, da.kabupaten_id) = kab.id
             LEFT JOIN perusahaan c ON b.perusahaan_id = c.id
             LEFT JOIN atasan a ON b.atasan_id = a.id
             LEFT JOIN data_orang_tua ot ON ot.nim = b.nim
