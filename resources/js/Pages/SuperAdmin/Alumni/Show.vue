@@ -2,14 +2,18 @@
   Halaman Detail Mahasiswa & Audit Kuesioner Tracer Study (Super Admin)
   File: resources/js/Pages/SuperAdmin/Alumni/Show.vue
   
-  Warna Resmi Solid UKDW (Sesuai Logo & Gambar Pengguna):
-  - Hijau: #0D542B (Solid, tanpa gradasi)
-  - Kuning: #FDC700 (Kuning UKDW murni)
-  - Putih: #FFFFFF
-  Desain profesional, bersih, bebas border bertumpuk-tumpuk, bebas border hover.
+  Format Tampilan:
+  1. Detail Profil (Urutan 1)
+  2. Kuesioner Universitas (Urutan 2, Tampilan Data Tables ala Excel)
+  3. Kuesioner Program Studi: [Nama Prodi] (Urutan 3, Tampilan Data Tables ala Excel)
+  
+  Aturan Tampilan Data Table Excel:
+  - Header Section / Question Header: Background Kuning (#FDC700), tanpa kolom jawaban.
+  - Butir Belum Dijawab: Background Merah lembut (#FFF1F2 / rose-50) & status merah tegas.
+  - Butir Terjawab: Background Putih/Hijau (#FFFFFF / emerald-50) & status hijau terisi.
 -->
 <script setup>
-import { Head, Link, useForm, router } from '@inertiajs/vue3';
+import { Head, Link, useForm } from '@inertiajs/vue3';
 import { ref, computed } from 'vue';
 import Swal from 'sweetalert2';
 import Sidebar from '../Components/Sidebar.vue';
@@ -64,8 +68,8 @@ const props = defineProps({
     },
 });
 
-// Tab Utama: 'kuesioner', 'kuesioner_prodi', atau 'profil'
-const activeMainTab = ref('kuesioner');
+// Urutan Tab Utama: 'profil' (1), 'kuesioner' (2), 'kuesioner_prodi' (3)
+const activeMainTab = ref('profil');
 
 // Sub-Tab Profil: 'pribadi', 'akademik', 'orangtua', 'karier'
 const activeProfileTab = ref('pribadi');
@@ -109,24 +113,62 @@ const simpanProfilAlumni = () => {
     });
 };
 
+// State Pencarian Teks di Data Table
+const searchQueryUniv = ref('');
+const searchQueryProdi = ref('');
+
 // Filter section pada tab kuesioner universitas ('all' atau ID section)
 const activeSectionId = ref('all');
 
 const filteredSections = computed(() => {
-    if (activeSectionId.value === 'all') {
-        return props.sections;
+    let list = activeSectionId.value === 'all'
+        ? props.sections
+        : props.sections.filter(s => s.id === activeSectionId.value);
+
+    if (!searchQueryUniv.value.trim()) {
+        return list;
     }
-    return props.sections.filter(s => s.id === activeSectionId.value);
+
+    const q = searchQueryUniv.value.toLowerCase();
+    return list.map(section => {
+        const matchingQuestions = (section.subpertanyaans || []).filter(item => {
+            return (item.kode_pertanyaan && item.kode_pertanyaan.toLowerCase().includes(q)) ||
+                   (item.subpertanyaan && item.subpertanyaan.toLowerCase().includes(q)) ||
+                   (item.answer && String(item.answer).toLowerCase().includes(q)) ||
+                   (item.type && item.type.toLowerCase().includes(q));
+        });
+        return {
+            ...section,
+            subpertanyaans: matchingQuestions,
+        };
+    }).filter(s => s.subpertanyaans.length > 0);
 });
 
 // Filter section pada tab kuesioner prodi
 const activeProdiSectionId = ref('all');
 
 const filteredProdiSections = computed(() => {
-    if (activeProdiSectionId.value === 'all') {
-        return props.prodiSections;
+    let list = activeProdiSectionId.value === 'all'
+        ? props.prodiSections
+        : props.prodiSections.filter(s => s.id === activeProdiSectionId.value);
+
+    if (!searchQueryProdi.value.trim()) {
+        return list;
     }
-    return props.prodiSections.filter(s => s.id === activeProdiSectionId.value);
+
+    const q = searchQueryProdi.value.toLowerCase();
+    return list.map(section => {
+        const matchingQuestions = (section.questions || []).filter(item => {
+            return (item.code && item.code.toLowerCase().includes(q)) ||
+                   (item.question_text && item.question_text.toLowerCase().includes(q)) ||
+                   (item.answer_text && String(item.answer_text).toLowerCase().includes(q)) ||
+                   (item.type && item.type.toLowerCase().includes(q));
+        });
+        return {
+            ...section,
+            questions: matchingQuestions,
+        };
+    }).filter(s => s.questions.length > 0);
 });
 
 // Total pertanyaan wajib yang belum dijawab
@@ -165,522 +207,611 @@ const statusYudisium = computed(() => {
                         <span class="text-white font-bold">Detail Mahasiswa</span>
                     </div>
 
-                <div class="flex flex-col md:flex-row md:items-center justify-between gap-5">
-                    <div>
-                        <!-- Badges Header Solid UKDW -->
-                        <div class="flex flex-wrap items-center gap-2.5 mb-2.5">
-                            <!-- Badge Yudisium: Kuning UKDW #FDC700 murni -->
-                            <span class="px-3.5 py-1 bg-[#FDC700] text-black font-bold text-xs rounded-full">
-                                Yudisium: {{ statusYudisium }}
-                            </span>
-                            <span class="px-3.5 py-1 bg-black/20 text-white font-medium text-xs rounded-full">
-                                Periode: {{ semesterKelulusan }}
-                            </span>
-                            <span 
-                                class="px-3.5 py-1 text-xs font-bold rounded-full"
-                                :class="evaluasi.is_complete ? 'bg-white text-[#0D542B]' : 'bg-[#FDC700] text-black'"
-                            >
-                                Status Tracer: {{ evaluasi.status }}
-                            </span>
-                        </div>
-
-                        <h1 class="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
-                            {{ alumni.data_akademik?.nama || alumni.user?.name || 'Mahasiswa UKDW' }}
-                        </h1>
-                        
-                        <p class="text-white/90 text-xs sm:text-sm mt-1 font-medium">
-                            NIM: <span class="font-mono font-bold text-white">{{ alumni.nim }}</span> &bull; 
-                            Program Studi: <span class="font-semibold text-white">{{ alumni.prodi?.nama_prodi || '-' }}</span>
-                        </p>
-                    </div>
-
-                    <div class="flex items-center gap-3 shrink-0 flex-wrap">
-                        <a 
-                            :href="`/superadmin/alumni/${alumni.id}/export-excel`"
-                            class="inline-flex items-center gap-2 px-5 py-2.5 bg-[#FDC700] hover:bg-[#e5b400] text-black text-xs font-extrabold rounded-xl transition-all shadow-sm"
-                            title="Download seluruh butir pertanyaan & jawaban mahasiswa ini ke file Excel (CSV)"
-                        >
-                            <svg class="w-4 h-4 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
-                            <span>Download Excel Jawaban</span>
-                        </a>
-
-                        <Link 
-                            href="/superadmin/alumni"
-                            class="inline-flex items-center px-5 py-2.5 bg-white/15 hover:bg-white/25 border border-white/20 text-white text-xs font-bold rounded-xl transition-all"
-                        >
-                            &larr; Kembali ke Daftar
-                        </Link>
-                    </div>
-                </div>
-            </div>
-        </header>
-
-        <!-- Main Content -->
-        <main class="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 -mt-10 space-y-6">
-            
-            <!-- Card Ringkasan Status Audit (Card Putih Bersih, Tanpa Border Bertumpuk) -->
-            <div class="bg-white rounded-3xl p-6 md:p-8 shadow-sm">
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 divide-y md:divide-y-0 md:divide-x divide-gray-100">
-                    <!-- Status Profil -->
-                    <div class="pb-4 md:pb-0 md:pr-4">
-                        <div class="flex items-center justify-between mb-2">
-                            <span class="text-xs font-bold text-gray-500 uppercase tracking-wider">Kelengkapan Data Profil</span>
-                            <span 
-                                class="text-xs font-bold px-3 py-0.5 rounded-full"
-                                :class="evaluasi.profile.is_complete ? 'bg-[#0D542B] text-white' : 'bg-[#FDC700] text-black'"
-                            >
-                                {{ evaluasi.profile.percentage }}% Terisi
-                            </span>
-                        </div>
-                        <div class="w-full bg-gray-100 rounded-full h-2 overflow-hidden mb-2">
-                            <div 
-                                class="h-2 rounded-full transition-all bg-[#0D542B]"
-                                :style="{ width: `${evaluasi.profile.percentage}%` }"
-                            ></div>
-                        </div>
-                        <p class="text-xs text-gray-500">
-                            {{ evaluasi.profile.is_complete ? 'Data profil lengkap (Biodata Pribadi, Akademik, Orang Tua, Perusahaan, & Atasan).' : `${evaluasi.profile.missing_fields.length} butir data profil belum terisi lengkap.` }}
-                        </p>
-                    </div>
-
-                    <!-- Status Kuesioner Wajib Univ -->
-                    <div class="pt-4 md:pt-0 md:px-4">
-                        <div class="flex items-center justify-between mb-2">
-                            <span class="text-xs font-bold text-gray-500 uppercase tracking-wider">Kuesioner Wajib Tracer</span>
-                            <span 
-                                class="text-xs font-bold px-3 py-0.5 rounded-full"
-                                :class="evaluasi.questionnaire.is_complete ? 'bg-[#0D542B] text-white' : 'bg-[#FDC700] text-black'"
-                            >
-                                {{ evaluasi.questionnaire.percentage }}% Terjawab
-                            </span>
-                        </div>
-                        <div class="w-full bg-gray-100 rounded-full h-2 overflow-hidden mb-2">
-                            <div 
-                                class="h-2 rounded-full transition-all bg-[#0D542B]"
-                                :style="{ width: `${evaluasi.questionnaire.percentage}%` }"
-                            ></div>
-                        </div>
-                        <p class="text-xs text-gray-500">
-                            {{ evaluasi.questionnaire.is_complete ? 'Seluruh butir pertanyaan wajib telah dijawab oleh alumni.' : `${evaluasi.questionnaire.total_mandatory - evaluasi.questionnaire.answered_count} pertanyaan wajib belum dijawab.` }}
-                        </p>
-                    </div>
-
-                    <!-- Status Kuesioner Prodi -->
-                    <div class="pt-4 md:pt-0 md:pl-4">
-                        <div class="flex items-center justify-between mb-2">
-                            <span class="text-xs font-bold text-gray-500 uppercase tracking-wider">Kuesioner Khusus Prodi</span>
-                            <span 
-                                class="text-xs font-bold px-3 py-0.5 rounded-full"
-                                :class="prodiEvaluasi.is_complete ? 'bg-[#0D542B] text-white' : 'bg-[#FDC700] text-black'"
-                            >
-                                {{ prodiEvaluasi.percentage }}% Terjawab
-                            </span>
-                        </div>
-                        <div class="w-full bg-gray-100 rounded-full h-2 overflow-hidden mb-2">
-                            <div 
-                                class="h-2 rounded-full transition-all bg-[#0D542B]"
-                                :style="{ width: `${prodiEvaluasi.percentage}%` }"
-                            ></div>
-                        </div>
-                        <p class="text-xs text-gray-500">
-                            {{ prodiEvaluasi.is_complete ? 'Seluruh butir kuesioner prodi telah diisi lengkap.' : `${prodiEvaluasi.total_questions - prodiEvaluasi.answered_count} pertanyaan prodi belum dijawab.` }}
-                        </p>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Tab Navigasi Utama: Kuesioner Tracer, Kuesioner Prodi, Profil Mahasiswa -->
-            <div class="flex items-center gap-4 border-b border-gray-200">
-                <button 
-                    @click="activeMainTab = 'kuesioner'"
-                    class="py-3 px-2 text-sm font-bold border-b-2 transition-all cursor-pointer"
-                    :class="activeMainTab === 'kuesioner' ? 'border-[#0D542B] text-[#0D542B]' : 'border-transparent text-gray-400 hover:text-gray-700'"
-                >
-                    Jawaban Kuesioner Tracer
-                </button>
-
-                <button 
-                    v-if="alumni.prodi_id"
-                    @click="activeMainTab = 'kuesioner_prodi'"
-                    class="py-3 px-2 text-sm font-bold border-b-2 transition-all cursor-pointer"
-                    :class="activeMainTab === 'kuesioner_prodi' ? 'border-[#0D542B] text-[#0D542B]' : 'border-transparent text-gray-400 hover:text-gray-700'"
-                >
-                    Kuesioner Khusus Prodi ({{ prodiEvaluasi.answered_count }}/{{ prodiEvaluasi.total_questions }})
-                </button>
-
-                <button 
-                    @click="activeMainTab = 'profil'"
-                    class="py-3 px-2 text-sm font-bold border-b-2 transition-all cursor-pointer"
-                    :class="activeMainTab === 'profil' ? 'border-[#0D542B] text-[#0D542B]' : 'border-transparent text-gray-400 hover:text-gray-700'"
-                >
-                    Detail Profil Mahasiswa (Edit & Simpan)
-                </button>
-            </div>
-
-            <!-- ========================================================= -->
-            <!-- TAB 1: JAWABAN KUESIONER TRACER STUDY                     -->
-            <!-- ========================================================= -->
-            <div v-if="activeMainTab === 'kuesioner'" class="space-y-6">
-                
-                <!-- Navigasi Filter Section (Card Putih Bersih) -->
-                <div class="bg-white p-5 rounded-2xl shadow-sm">
-                    <div class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">
-                        Filter Bagian Kuesioner:
-                    </div>
-                    <div class="flex flex-wrap gap-2">
-                        <!-- Opsi Semua Bagian -->
-                        <button 
-                            @click="activeSectionId = 'all'"
-                            class="px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-2"
-                            :class="activeSectionId === 'all' ? 'bg-[#0D542B] text-white' : 'bg-gray-100 hover:bg-gray-200 text-gray-700'"
-                        >
-                            <span>Semua Bagian (All Sections)</span>
-                            <span 
-                                v-if="totalUnansweredMandatory > 0"
-                                class="px-2 py-0.2 rounded-full text-[10px] font-bold"
-                                :class="activeSectionId === 'all' ? 'bg-white/20 text-white' : 'bg-[#FDC700] text-black'"
-                            >
-                                {{ totalUnansweredMandatory }} belum
-                            </span>
-                        </button>
-
-                        <!-- Tombol Setiap Section -->
-                        <button 
-                            v-for="s in sections" 
-                            :key="s.id"
-                            @click="activeSectionId = s.id"
-                            class="px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-2"
-                            :class="activeSectionId === s.id ? 'bg-[#0D542B] text-white' : 'bg-gray-100 hover:bg-gray-200 text-gray-700'"
-                        >
-                            <span>{{ s.title }}</span>
-                            <span 
-                                v-if="s.unanswered_mandatory_count > 0"
-                                class="px-2 py-0.2 rounded-full text-[10px] font-bold"
-                                :class="activeSectionId === s.id ? 'bg-white/20 text-white' : 'bg-[#FDC700] text-black'"
-                            >
-                                {{ s.unanswered_mandatory_count }} belum
-                            </span>
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Kartu Section Kuesioner (Card Putih Bersih) -->
-                <div 
-                    v-for="section in filteredSections" 
-                    :key="section.id"
-                    class="bg-white rounded-2xl shadow-sm overflow-hidden"
-                >
-                    <!-- Header Section Bersih -->
-                    <div class="bg-gray-50 px-6 py-4 border-b border-gray-100 flex items-center justify-between">
-                        <div class="flex items-center gap-3">
-                            <span class="w-7 h-7 rounded-lg bg-[#0D542B] text-white font-bold text-xs flex items-center justify-center">
-                                {{ section.order }}
-                            </span>
-                            <h3 class="text-sm font-bold text-gray-900 uppercase tracking-wider">
-                                {{ section.title }}
-                            </h3>
-                        </div>
-                        
-                        <div class="flex items-center gap-2">
-                            <span 
-                                v-if="section.unanswered_mandatory_count > 0"
-                                class="px-3 py-1 bg-[#FDC700] text-black font-bold text-xs rounded-full"
-                            >
-                                {{ section.unanswered_mandatory_count }} Wajib Belum Dijawab
-                            </span>
-                            <span v-else class="px-3 py-1 bg-[#0D542B] text-white font-bold text-xs rounded-full">
-                                Lengkap
-                            </span>
-                        </div>
-                    </div>
-
-                    <!-- Daftar Butir Soal & Jawaban (Card Putih Rapi & Bebas Hover Border) -->
-                    <div class="p-6 space-y-4">
-                        <div 
-                            v-for="q in (section.subpertanyaans || section.questions)" 
-                            :key="q.id"
-                            class="bg-white rounded-xl p-5 border border-gray-100 transition-all"
-                        >
-                            <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-2 mb-2">
-                                <div class="flex items-start gap-2.5">
-                                    <span class="px-2.5 py-1 bg-gray-100 text-gray-700 font-mono text-xs font-bold rounded-lg shrink-0">
-                                        {{ q.kode_pertanyaan || q.code }}
-                                    </span>
-                                    <h4 class="text-sm font-bold text-gray-900 leading-snug">
-                                        {{ q.subpertanyaan || q.question_text }}
-                                    </h4>
-                                </div>
-
-                                <!-- Label Wajib vs Opsional -->
-                                <div class="shrink-0">
-                                    <span 
-                                        v-if="q.wajib ?? q.is_mandatory"
-                                        class="px-2.5 py-0.5 bg-[#FDC700] text-black font-bold text-[10px] rounded-full uppercase tracking-wider"
-                                    >
-                                        Wajib
-                                    </span>
-                                    <span 
-                                        v-else
-                                        class="px-2.5 py-0.5 bg-gray-100 text-gray-600 font-medium text-[10px] rounded-full uppercase tracking-wider"
-                                    >
-                                        Opsional
-                                    </span>
-                                </div>
-                            </div>
-
-                            <!-- Kotak Jawaban Alumni (Elegan, Bersih, Border Hijau Solid UKDW #0D542B Kiri Rapi) -->
-                            <div class="mt-3 pl-0 sm:pl-9">
-                                <div 
-                                    v-if="q.is_answered"
-                                    class="p-4 rounded-xl bg-gray-50 border-l-4 border-l-[#0D542B]"
-                                >
-                                    <div class="flex items-center justify-between mb-1">
-                                        <span class="text-[11px] font-bold text-[#0D542B] uppercase tracking-wider block">
-                                            Jawaban Alumni:
-                                        </span>
-                                        <span class="text-[10px] font-bold text-[#0D542B]">
-                                            Terisi
-                                        </span>
-                                    </div>
-                                    <span class="text-sm font-bold text-gray-900 block leading-relaxed">
-                                        {{ q.answer_text }}
-                                    </span>
-                                </div>
-
-                                <div 
-                                    v-else-if="q.is_mandatory"
-                                    class="p-4 rounded-xl bg-gray-50 border-l-4 border-l-[#FDC700]"
-                                >
-                                    <span class="font-bold uppercase tracking-wider text-xs block mb-0.5 text-black">
-                                        Belum Dijawab (Wajib Diisi)
-                                    </span>
-                                    <span class="text-xs text-gray-600 font-medium">Alumni belum memberikan jawaban untuk butir pertanyaan wajib ini.</span>
-                                </div>
-
-                                <div 
-                                    v-else
-                                    class="p-3 bg-gray-50 rounded-xl text-xs text-gray-400 italic"
-                                >
-                                    (Tidak diisi &mdash; Opsional)
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- ========================================================= -->
-            <!-- TAB: JAWABAN KUESIONER KHUSUS PROGRAM STUDI               -->
-            <!-- ========================================================= -->
-            <div v-else-if="activeMainTab === 'kuesioner_prodi'" class="space-y-6">
-                <!-- Filter Section Prodi -->
-                <div class="bg-white p-5 rounded-2xl shadow-sm">
-                    <div class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">
-                        Filter Bagian (Section) Prodi:
-                    </div>
-                    <div class="flex flex-wrap gap-2">
-                        <button 
-                            @click="activeProdiSectionId = 'all'"
-                            class="px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer"
-                            :class="activeProdiSectionId === 'all' ? 'bg-[#0D542B] text-white' : 'bg-gray-100 hover:bg-gray-200 text-gray-700'"
-                        >
-                            Semua Bagian ({{ prodiSections.length }})
-                        </button>
-                        <button 
-                            v-for="s in prodiSections" 
-                            :key="s.id"
-                            @click="activeProdiSectionId = s.id"
-                            class="px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-2"
-                            :class="activeProdiSectionId === s.id ? 'bg-[#0D542B] text-white' : 'bg-gray-100 hover:bg-gray-200 text-gray-700'"
-                        >
-                            <span>{{ s.title }}</span>
-                            <span 
-                                v-if="s.unanswered_mandatory_count > 0"
-                                class="px-2 py-0.2 rounded-full text-[10px] font-bold"
-                                :class="activeProdiSectionId === s.id ? 'bg-white/20 text-white' : 'bg-[#FDC700] text-black'"
-                            >
-                                {{ s.unanswered_mandatory_count }} belum
-                            </span>
-                        </button>
-                    </div>
-                </div>
-
-                <div v-if="filteredProdiSections.length === 0" class="bg-white p-12 text-center rounded-2xl shadow-sm text-gray-400">
-                    Tidak ada butir pertanyaan prodi untuk program studi mahasiswa ini.
-                </div>
-
-                <!-- Kartu Section Kuesioner Prodi -->
-                <div 
-                    v-for="section in filteredProdiSections" 
-                    :key="section.id"
-                    class="bg-white rounded-2xl shadow-sm overflow-hidden"
-                >
-                    <div class="bg-gray-50 px-6 py-4 border-b border-gray-100 flex items-center justify-between">
-                        <div class="flex items-center gap-3">
-                            <span class="w-7 h-7 rounded-lg bg-[#0D542B] text-white font-bold text-xs flex items-center justify-center">
-                                {{ section.order }}
-                            </span>
-                            <div>
-                                <h3 class="text-sm font-bold text-gray-900 uppercase tracking-wider">
-                                    {{ section.title }}
-                                </h3>
-                                <p v-if="section.description" class="text-xs text-gray-500 mt-0.5">
-                                    {{ section.description }}
-                                </p>
-                            </div>
-                        </div>
-
-                        <div class="flex items-center gap-2">
-                            <span 
-                                v-if="section.unanswered_mandatory_count > 0"
-                                class="px-3 py-1 bg-[#FDC700] text-black font-bold text-xs rounded-full"
-                            >
-                                {{ section.unanswered_mandatory_count }} Belum Dijawab
-                            </span>
-                            <span v-else class="px-3 py-1 bg-[#0D542B] text-white font-bold text-xs rounded-full">
-                                Lengkap
-                            </span>
-                        </div>
-                    </div>
-
-                    <div class="p-6 space-y-4">
-                        <div 
-                            v-for="q in section.questions" 
-                            :key="q.id"
-                            class="bg-white rounded-xl p-5 border border-gray-100"
-                        >
-                            <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-2 mb-2">
-                                <div class="flex items-start gap-2.5">
-                                    <span class="px-2.5 py-1 bg-gray-100 text-gray-700 font-mono text-xs font-bold rounded-lg shrink-0">
-                                        {{ q.code }}
-                                    </span>
-                                    <h4 class="text-sm font-bold text-gray-900 leading-snug">
-                                        {{ q.question_text }}
-                                    </h4>
-                                </div>
+                    <div class="flex flex-col md:flex-row md:items-center justify-between gap-5">
+                        <div>
+                            <!-- Badges Header Solid UKDW -->
+                            <div class="flex flex-wrap items-center gap-2.5 mb-2.5">
+                                <!-- Badge Yudisium: Kuning UKDW #FDC700 murni -->
+                                <span class="px-3.5 py-1 bg-[#FDC700] text-black font-bold text-xs rounded-full">
+                                    Yudisium: {{ statusYudisium }}
+                                </span>
+                                <span class="px-3.5 py-1 bg-black/20 text-white font-medium text-xs rounded-full">
+                                    Periode: {{ semesterKelulusan }}
+                                </span>
                                 <span 
-                                    class="text-[11px] font-bold px-2.5 py-0.5 rounded-md self-start"
-                                    :class="q.is_mandatory ? 'bg-[#FDC700]/30 text-amber-900' : 'bg-gray-100 text-gray-500'"
+                                    class="px-3.5 py-1 text-xs font-bold rounded-full"
+                                    :class="evaluasi.is_complete ? 'bg-white text-[#0D542B]' : 'bg-[#FDC700] text-black'"
                                 >
-                                    {{ q.is_mandatory ? 'Wajib' : 'Opsional' }}
+                                    Status Tracer: {{ evaluasi.status }}
                                 </span>
                             </div>
 
-                            <!-- Jawaban Alumni -->
-                            <div class="mt-3 pt-3 border-t border-gray-100">
-                                <span class="text-xs text-gray-400 font-semibold uppercase tracking-wider block mb-1">Jawaban Alumni:</span>
-                                <div 
-                                    v-if="q.is_answered"
-                                    class="p-3 bg-emerald-50/70 border border-emerald-100 rounded-xl text-xs font-bold text-[#0D542B] leading-relaxed"
-                                >
-                                    {{ q.answer_text }}
-                                </div>
-                                <div 
-                                    v-else 
-                                    class="p-3 bg-gray-50 rounded-xl text-xs text-gray-400 italic"
-                                >
-                                    Belum dijawab oleh alumni
-                                </div>
-                            </div>
+                            <h1 class="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
+                                {{ alumni.data_akademik?.nama || alumni.user?.name || 'Mahasiswa UKDW' }}
+                            </h1>
+                            
+                            <p class="text-white/90 text-xs sm:text-sm mt-1 font-medium">
+                                NIM: <span class="font-mono font-bold text-white">{{ alumni.nim }}</span> &bull; 
+                                Program Studi: <span class="font-semibold text-white">{{ alumni.prodi?.nama_prodi || '-' }}</span>
+                            </p>
+                        </div>
+
+                        <div class="flex items-center gap-3 shrink-0 flex-wrap">
+                            <a 
+                                :href="`/superadmin/alumni/${alumni.id}/export-excel`"
+                                class="inline-flex items-center gap-2 px-5 py-2.5 bg-[#FDC700] hover:bg-[#e5b400] text-black text-xs font-extrabold rounded-xl transition-all shadow-sm cursor-pointer"
+                                title="Download seluruh butir pertanyaan & jawaban mahasiswa ini ke file Excel (CSV)"
+                            >
+                                <svg class="w-4 h-4 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                                <span>Download Excel (CSV)</span>
+                            </a>
+
+                            <Link 
+                                href="/superadmin/alumni"
+                                class="inline-flex items-center px-5 py-2.5 bg-white/15 hover:bg-white/25 border border-white/20 text-white text-xs font-bold rounded-xl transition-all"
+                            >
+                                &larr; Kembali ke Daftar
+                            </Link>
                         </div>
                     </div>
                 </div>
-            </div>
+            </header>
 
-            <!-- ========================================================= -->
-            <!-- TAB 3: DETAIL PROFIL MAHASISWA                            -->
-            <!-- ========================================================= -->
-            <div v-else-if="activeMainTab === 'profil'" class="space-y-6">
+            <!-- Main Content -->
+            <main class="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 -mt-10 space-y-6 pb-20">
                 
-                <!-- Sub-navigasi Tab Profil (Persis Profil Alumni) & Tombol Simpan -->
-                <div class="bg-white p-5 rounded-2xl shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                    <div class="flex flex-wrap gap-2">
+                <!-- Card Ringkasan Status Audit -->
+                <div class="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-gray-100">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 divide-y md:divide-y-0 md:divide-x divide-gray-100">
+                        <!-- Status Profil -->
+                        <div class="pb-4 md:pb-0 md:pr-4">
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="text-xs font-bold text-gray-500 uppercase tracking-wider">1. Kelengkapan Profil</span>
+                                <span 
+                                    class="text-xs font-bold px-3 py-0.5 rounded-full"
+                                    :class="evaluasi.profile.is_complete ? 'bg-[#0D542B] text-white' : 'bg-[#FDC700] text-black'"
+                                >
+                                    {{ evaluasi.profile.percentage }}% Terisi
+                                </span>
+                            </div>
+                            <div class="w-full bg-gray-100 rounded-full h-2 overflow-hidden mb-2">
+                                <div 
+                                    class="h-2 rounded-full transition-all bg-[#0D542B]"
+                                    :style="{ width: `${evaluasi.profile.percentage}%` }"
+                                ></div>
+                            </div>
+                            <p class="text-xs text-gray-500">
+                                {{ evaluasi.profile.is_complete ? 'Data profil lengkap (Biodata Pribadi, Akademik, Orang Tua, Perusahaan, & Atasan).' : `${evaluasi.profile.missing_fields.length} butir data profil belum terisi lengkap.` }}
+                            </p>
+                        </div>
+
+                        <!-- Status Kuesioner Wajib Univ -->
+                        <div class="pt-4 md:pt-0 md:px-4">
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="text-xs font-bold text-gray-500 uppercase tracking-wider">2. Kuesioner Universitas</span>
+                                <span 
+                                    class="text-xs font-bold px-3 py-0.5 rounded-full"
+                                    :class="evaluasi.questionnaire.is_complete ? 'bg-[#0D542B] text-white' : 'bg-[#FDC700] text-black'"
+                                >
+                                    {{ evaluasi.questionnaire.percentage }}% Terjawab
+                                </span>
+                            </div>
+                            <div class="w-full bg-gray-100 rounded-full h-2 overflow-hidden mb-2">
+                                <div 
+                                    class="h-2 rounded-full transition-all bg-[#0D542B]"
+                                    :style="{ width: `${evaluasi.questionnaire.percentage}%` }"
+                                ></div>
+                            </div>
+                            <p class="text-xs text-gray-500">
+                                {{ evaluasi.questionnaire.is_complete ? 'Seluruh butir pertanyaan wajib telah dijawab oleh alumni.' : `${evaluasi.questionnaire.total_mandatory - evaluasi.questionnaire.answered_count} pertanyaan wajib belum dijawab.` }}
+                            </p>
+                        </div>
+
+                        <!-- Status Kuesioner Prodi -->
+                        <div class="pt-4 md:pt-0 md:pl-4">
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="text-xs font-bold text-gray-500 uppercase tracking-wider">3. Kuesioner Prodi</span>
+                                <span 
+                                    class="text-xs font-bold px-3 py-0.5 rounded-full"
+                                    :class="prodiEvaluasi.is_complete ? 'bg-[#0D542B] text-white' : 'bg-[#FDC700] text-black'"
+                                >
+                                    {{ prodiEvaluasi.percentage }}% Terjawab
+                                </span>
+                            </div>
+                            <div class="w-full bg-gray-100 rounded-full h-2 overflow-hidden mb-2">
+                                <div 
+                                    class="h-2 rounded-full transition-all bg-[#0D542B]"
+                                    :style="{ width: `${prodiEvaluasi.percentage}%` }"
+                                ></div>
+                            </div>
+                            <p class="text-xs text-gray-500">
+                                {{ prodiEvaluasi.is_complete ? 'Seluruh butir kuesioner prodi telah diisi lengkap.' : `${prodiEvaluasi.total_questions - prodiEvaluasi.answered_count} pertanyaan prodi belum dijawab.` }}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ============================================================= -->
+                <!-- TAB NAVIGASI UTAMA (URUTAN 1, 2, 3 SESUAI PERMINTAAN)        -->
+                <!-- 1. Detail Profil                                              -->
+                <!-- 2. Kuesioner Universitas                                      -->
+                <!-- 3. Kuesioner Program Studi: [Nama Prodi]                      -->
+                <!-- ============================================================= -->
+                <div class="bg-white rounded-2xl shadow-xs border border-gray-200 p-2 flex items-center gap-2 overflow-x-auto no-scrollbar">
+                    <!-- Tab 1: Detail Profil (Urutan 1) -->
+                    <button 
+                        @click="activeMainTab = 'profil'"
+                        class="py-3 px-5 text-xs sm:text-sm font-bold rounded-xl transition-all cursor-pointer flex items-center gap-2 shrink-0"
+                        :class="activeMainTab === 'profil' ? 'bg-[#0D542B] text-white shadow-sm' : 'bg-gray-50 hover:bg-gray-100 text-gray-600'"
+                    >
+                        <span class="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-black" :class="activeMainTab === 'profil' ? 'bg-white text-[#0D542B]' : 'bg-gray-200 text-gray-700'">1</span>
+                        <span>Detail Profile</span>
+                    </button>
+
+                    <!-- Tab 2: Kuesioner Universitas (Urutan 2) -->
+                    <button 
+                        @click="activeMainTab = 'kuesioner'"
+                        class="py-3 px-5 text-xs sm:text-sm font-bold rounded-xl transition-all cursor-pointer flex items-center gap-2 shrink-0"
+                        :class="activeMainTab === 'kuesioner' ? 'bg-[#0D542B] text-white shadow-sm' : 'bg-gray-50 hover:bg-gray-100 text-gray-600'"
+                    >
+                        <span class="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-black" :class="activeMainTab === 'kuesioner' ? 'bg-white text-[#0D542B]' : 'bg-gray-200 text-gray-700'">2</span>
+                        <span>Kuesioner Universitas</span>
+                    </button>
+
+                    <!-- Tab 3: Kuesioner Program Studi: Nama Prodi (Urutan 3) -->
+                    <button 
+                        v-if="alumni.prodi_id"
+                        @click="activeMainTab = 'kuesioner_prodi'"
+                        class="py-3 px-5 text-xs sm:text-sm font-bold rounded-xl transition-all cursor-pointer flex items-center gap-2 shrink-0"
+                        :class="activeMainTab === 'kuesioner_prodi' ? 'bg-[#0D542B] text-white shadow-sm' : 'bg-gray-50 hover:bg-gray-100 text-gray-600'"
+                    >
+                        <span class="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-black" :class="activeMainTab === 'kuesioner_prodi' ? 'bg-white text-[#0D542B]' : 'bg-gray-200 text-gray-700'">3</span>
+                        <span>Kuesioner Program Studi: {{ alumni.prodi?.nama_prodi || 'Program Studi' }}</span>
+                    </button>
+                </div>
+
+                <!-- ============================================================= -->
+                <!-- HALAMAN 1: DETAIL PROFIL MAHASISWA                            -->
+                <!-- ============================================================= -->
+                <div v-if="activeMainTab === 'profil'" class="space-y-6">
+                    
+                    <!-- Sub-navigasi Tab Profil & Tombol Simpan -->
+                    <div class="bg-white p-5 rounded-2xl shadow-xs border border-gray-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                        <div class="flex flex-wrap gap-2">
+                            <button 
+                                @click="activeProfileTab = 'pribadi'"
+                                class="px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer"
+                                :class="activeProfileTab === 'pribadi' ? 'bg-[#0D542B] text-white shadow-xs' : 'bg-gray-100 hover:bg-gray-200 text-gray-700'"
+                            >
+                                1. Data Pribadi
+                            </button>
+                            <button 
+                                @click="activeProfileTab = 'akademik'"
+                                class="px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer"
+                                :class="activeProfileTab === 'akademik' ? 'bg-[#0D542B] text-white shadow-xs' : 'bg-gray-100 hover:bg-gray-200 text-gray-700'"
+                            >
+                                2. Data Akademik
+                            </button>
+                            <button 
+                                @click="activeProfileTab = 'orangtua'"
+                                class="px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer"
+                                :class="activeProfileTab === 'orangtua' ? 'bg-[#0D542B] text-white shadow-xs' : 'bg-gray-100 hover:bg-gray-200 text-gray-700'"
+                            >
+                                3. Data Orang Tua
+                            </button>
+                            <button 
+                                @click="activeProfileTab = 'karier'"
+                                class="px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer"
+                                :class="activeProfileTab === 'karier' ? 'bg-[#0D542B] text-white shadow-xs' : 'bg-gray-100 hover:bg-gray-200 text-gray-700'"
+                            >
+                                4. Karier & Perusahaan
+                            </button>
+                        </div>
+
+                        <!-- Tombol Simpan Profil oleh Super Admin (Hijau Solid UKDW #0D542B) -->
                         <button 
-                            @click="activeProfileTab = 'pribadi'"
-                            class="px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer"
-                            :class="activeProfileTab === 'pribadi' ? 'bg-[#0D542B] text-white' : 'bg-gray-100 hover:bg-gray-200 text-gray-700'"
+                            @click="simpanProfilAlumni"
+                            :disabled="form.processing"
+                            class="px-6 py-2.5 bg-[#0D542B] hover:bg-[#08381c] text-white rounded-xl text-xs font-extrabold transition-all flex items-center justify-center cursor-pointer shadow-xs disabled:opacity-50"
                         >
-                            1. Data Pribadi
-                        </button>
-                        <button 
-                            @click="activeProfileTab = 'akademik'"
-                            class="px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer"
-                            :class="activeProfileTab === 'akademik' ? 'bg-[#0D542B] text-white' : 'bg-gray-100 hover:bg-gray-200 text-gray-700'"
-                        >
-                            2. Data Akademik
-                        </button>
-                        <button 
-                            @click="activeProfileTab = 'orangtua'"
-                            class="px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer"
-                            :class="activeProfileTab === 'orangtua' ? 'bg-[#0D542B] text-white' : 'bg-gray-100 hover:bg-gray-200 text-gray-700'"
-                        >
-                            3. Data Orang Tua
-                        </button>
-                        <button 
-                            @click="activeProfileTab = 'karier'"
-                            class="px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer"
-                            :class="activeProfileTab === 'karier' ? 'bg-[#0D542B] text-white' : 'bg-gray-100 hover:bg-gray-200 text-gray-700'"
-                        >
-                            4. Karier & Perusahaan
+                            <span v-if="form.processing">Menyimpan...</span>
+                            <span v-else>Simpan Perubahan Profil</span>
                         </button>
                     </div>
 
-                    <!-- Tombol Simpan Profil oleh Super Admin (Hijau Solid UKDW #0D542B) -->
-                    <button 
-                        @click="simpanProfilAlumni"
-                        :disabled="form.processing"
-                        class="px-6 py-2.5 bg-[#0D542B] hover:bg-[#08381c] text-white rounded-xl text-xs font-bold transition-all flex items-center justify-center cursor-pointer disabled:opacity-50"
-                    >
-                        <span v-if="form.processing">Menyimpan...</span>
-                        <span v-else>Simpan Perubahan Profil</span>
-                    </button>
+                    <!-- Komponen Form Profil Alumni -->
+                    <div class="bg-white rounded-2xl p-6 md:p-8 shadow-xs border border-gray-200">
+                        <FormPribadi 
+                            v-show="activeProfileTab === 'pribadi'"
+                            :form="form" 
+                            :provinces="provinces" 
+                            :kabupatens="kabupatens" 
+                        />
+
+                        <FormAkademik 
+                            v-show="activeProfileTab === 'akademik'"
+                            :form="form" 
+                        />
+
+                        <FormOrangTua 
+                            v-show="activeProfileTab === 'orangtua'"
+                            :form="form" 
+                            :provinces="provinces" 
+                            :kabupatens="kabupatens" 
+                        />
+
+                        <FormKarier 
+                            v-show="activeProfileTab === 'karier'"
+                            :form="form" 
+                            :provinces="provinces" 
+                            :kabupatens="kabupatens" 
+                            :companies="companies" 
+                            :alumniData="alumni" 
+                        />
+                    </div>
+
+                    <!-- Tombol Simpan Bawah -->
+                    <div class="flex justify-end pt-2">
+                        <button 
+                            @click="simpanProfilAlumni"
+                            :disabled="form.processing"
+                            class="px-7 py-3 bg-[#0D542B] hover:bg-[#08381c] text-white rounded-xl text-xs font-extrabold transition-all cursor-pointer shadow-sm disabled:opacity-50"
+                        >
+                            <span v-if="form.processing">Menyimpan Perubahan...</span>
+                            <span v-else>Simpan Perubahan Profil Alumni</span>
+                        </button>
+                    </div>
                 </div>
 
-                <!-- Komponen Anak Form Profil Alumni -->
-                <div class="bg-white rounded-2xl p-6 md:p-8 shadow-sm">
-                    <FormPribadi 
-                        v-show="activeProfileTab === 'pribadi'"
-                        :form="form" 
-                        :provinces="provinces" 
-                        :kabupatens="kabupatens" 
-                    />
+                <!-- ============================================================= -->
+                <!-- HALAMAN 2: KUESIONER UNIVERSITAS (DATA TABLES ALA EXCEL)      -->
+                <!-- ============================================================= -->
+                <div v-else-if="activeMainTab === 'kuesioner'" class="space-y-6">
+                    
+                    <!-- Heading & Bar Filter / Pencarian -->
+                    <div class="bg-white p-5 rounded-2xl shadow-xs border border-gray-200 space-y-4">
+                        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                            <div>
+                                <h2 class="text-base sm:text-lg font-black text-gray-900 flex items-center gap-2">
+                                    <span class="w-2.5 h-5 bg-[#0D542B] rounded-full inline-block"></span>
+                                    Kuesioner Tracer Study Universitas
+                                </h2>
+                                <p class="text-xs text-gray-500 mt-0.5">Tampilan data tables terstruktur untuk seluruh butir instrumen dan jawaban tracer study.</p>
+                            </div>
 
-                    <FormAkademik 
-                        v-show="activeProfileTab === 'akademik'"
-                        :form="form" 
-                    />
+                            <!-- Input Pencarian Cepat ala DataTables -->
+                            <div class="w-full md:w-80">
+                                <div class="relative">
+                                    <input 
+                                        type="text" 
+                                        v-model="searchQueryUniv"
+                                        placeholder="Cari kode, pertanyaan, jawaban..."
+                                        class="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-xl text-xs font-medium focus:ring-2 focus:ring-[#0D542B]/20 focus:border-[#0D542B] transition-all"
+                                    />
+                                    <svg class="w-4 h-4 text-gray-400 absolute left-3 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                                </div>
+                            </div>
+                        </div>
 
-                    <FormOrangTua 
-                        v-show="activeProfileTab === 'orangtua'"
-                        :form="form" 
-                        :provinces="provinces" 
-                        :kabupatens="kabupatens" 
-                    />
+                        <!-- Filter Bagian / Section -->
+                        <div class="pt-3 border-t border-gray-100 flex flex-wrap items-center gap-2">
+                            <span class="text-xs font-bold text-gray-500 uppercase tracking-wider mr-2">Filter Seksi:</span>
+                            <button 
+                                @click="activeSectionId = 'all'"
+                                class="px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-2"
+                                :class="activeSectionId === 'all' ? 'bg-[#0D542B] text-white shadow-xs' : 'bg-gray-100 hover:bg-gray-200 text-gray-700'"
+                            >
+                                <span>Semua Seksi</span>
+                                <span 
+                                    v-if="totalUnansweredMandatory > 0"
+                                    class="px-2 py-0.2 rounded-full text-[10px] font-bold"
+                                    :class="activeSectionId === 'all' ? 'bg-white/20 text-white' : 'bg-[#FDC700] text-black'"
+                                >
+                                    {{ totalUnansweredMandatory }} belum
+                                </span>
+                            </button>
 
-                    <FormKarier 
-                        v-show="activeProfileTab === 'karier'"
-                        :form="form" 
-                        :provinces="provinces" 
-                        :kabupatens="kabupatens" 
-                        :companies="companies" 
-                        :alumniData="alumni" 
-                    />
+                            <button 
+                                v-for="s in sections" 
+                                :key="s.id"
+                                @click="activeSectionId = s.id"
+                                class="px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-2"
+                                :class="activeSectionId === s.id ? 'bg-[#0D542B] text-white shadow-xs' : 'bg-gray-100 hover:bg-gray-200 text-gray-700'"
+                            >
+                                <span>Seksi {{ s.order }}</span>
+                                <span 
+                                    v-if="s.unanswered_mandatory_count > 0"
+                                    class="px-2 py-0.2 rounded-full text-[10px] font-bold"
+                                    :class="activeSectionId === s.id ? 'bg-white/20 text-white' : 'bg-[#FDC700] text-black'"
+                                >
+                                    {{ s.unanswered_mandatory_count }}
+                                </span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- DATA TABLE ALA EXCEL (KUESIONER UNIVERSITAS) -->
+                    <div class="bg-white rounded-2xl shadow-xs border border-gray-200 overflow-hidden">
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left border-collapse">
+                                <thead>
+                                    <tr class="bg-[#0D542B] text-white border-b border-[#003d28]">
+                                        <th class="w-12 text-center py-3.5 px-3 font-black text-xs uppercase tracking-wider border-r border-white/10">No</th>
+                                        <th class="w-24 text-center py-3.5 px-3 font-black text-xs uppercase tracking-wider border-r border-white/10">Kode</th>
+                                        <th class="py-3.5 px-4 font-black text-xs uppercase tracking-wider border-r border-white/10 min-w-[280px]">Pertanyaan / Deskripsi Instrumen</th>
+                                        <th class="w-28 text-center py-3.5 px-3 font-black text-xs uppercase tracking-wider border-r border-white/10">Tipe Input</th>
+                                        <th class="w-24 text-center py-3.5 px-3 font-black text-xs uppercase tracking-wider border-r border-white/10">Sifat</th>
+                                        <th class="w-32 text-center py-3.5 px-3 font-black text-xs uppercase tracking-wider border-r border-white/10">Status</th>
+                                        <th class="w-80 py-3.5 px-4 font-black text-xs uppercase tracking-wider min-w-[240px]">Jawaban Alumni</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <template v-for="section in filteredSections" :key="section.id">
+                                        <!-- BARIS HEADER SEKSI (WARNA KUNING #FDC700 KHAS UKDW) -->
+                                        <tr class="bg-[#FDC700] text-black border-y-2 border-amber-400 font-extrabold">
+                                            <td colspan="7" class="py-3 px-4 text-xs uppercase tracking-wider">
+                                                Seksi {{ section.order }}: {{ section.title || section.section }}
+                                                <span v-if="section.unanswered_mandatory_count > 0" class="ml-2 px-2.5 py-0.5 rounded-full bg-rose-600 text-white text-[10px] font-black uppercase">
+                                                    {{ section.unanswered_mandatory_count }} Wajib Belum Dijawab
+                                                </span>
+                                                <span v-else class="ml-2 px-2.5 py-0.5 rounded-full bg-[#0D542B] text-white text-[10px] font-black uppercase">
+                                                    Lengkap
+                                                </span>
+                                            </td>
+                                        </tr>
+
+                                        <!-- BARIS BUTIR SOAL PER SECTION -->
+                                        <tr 
+                                            v-for="(q, idx) in section.subpertanyaans" 
+                                            :key="q.id"
+                                            :class="[
+                                                q.is_header 
+                                                    ? 'bg-amber-100/90 text-amber-950 font-bold border-b border-amber-200'
+                                                    : (q.is_answered 
+                                                        ? 'bg-white hover:bg-emerald-50/20 border-l-4 border-l-emerald-600 border-b border-gray-100' 
+                                                        : 'bg-rose-50/80 hover:bg-rose-100/70 border-l-4 border-l-rose-500 border-b border-rose-200 text-rose-950')
+                                            ]"
+                                            class="transition-colors text-xs"
+                                        >
+                                            <!-- Kolom No -->
+                                            <td class="text-center py-3 px-3 font-semibold border-r border-gray-100" :class="q.is_header ? 'text-amber-900 font-bold' : (q.is_answered ? 'text-gray-500' : 'text-rose-800 font-bold')">
+                                                {{ idx + 1 }}
+                                            </td>
+
+                                            <!-- Kolom Kode -->
+                                            <td class="text-center py-3 px-3 font-mono font-black border-r border-gray-100" :class="q.is_header ? 'text-amber-900' : (q.is_answered ? 'text-emerald-900' : 'text-rose-900')">
+                                                {{ q.kode_pertanyaan || '-' }}
+                                            </td>
+
+                                            <!-- Kolom Pertanyaan (Jika header, span ke kanan) -->
+                                            <td v-if="q.is_header" colspan="5" class="py-3 px-4 font-black text-amber-950 text-xs sm:text-sm">
+                                                {{ q.subpertanyaan }}
+                                            </td>
+
+                                            <!-- Kolom Pertanyaan Biasa -->
+                                            <td v-else class="py-3 px-4 font-semibold text-gray-900 border-r border-gray-100 leading-relaxed">
+                                                {{ q.subpertanyaan }}
+                                            </td>
+
+                                            <!-- Kolom Tipe -->
+                                            <td v-if="!q.is_header" class="text-center py-3 px-3 capitalize font-medium text-gray-600 border-r border-gray-100">
+                                                {{ q.type || 'text' }}
+                                            </td>
+
+                                            <!-- Kolom Sifat -->
+                                            <td v-if="!q.is_header" class="text-center py-3 px-3 border-r border-gray-100">
+                                                <span v-if="q.is_mandatory" class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-900 border border-amber-200">
+                                                    Wajib
+                                                </span>
+                                                <span v-else class="px-2 py-0.5 rounded-full text-[10px] font-medium bg-gray-100 text-gray-600">
+                                                    Opsional
+                                                </span>
+                                            </td>
+
+                                            <!-- Kolom Status -->
+                                            <td v-if="!q.is_header" class="text-center py-3 px-3 border-r border-gray-100">
+                                                <span v-if="q.is_answered" class="px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800 shadow-2xs">
+                                                    Terjawab
+                                                </span>
+                                                <span v-else class="px-2.5 py-1 rounded-full text-[11px] font-bold bg-rose-200 text-rose-800 shadow-2xs">
+                                                    Belum Dijawab
+                                                </span>
+                                            </td>
+
+                                            <!-- Kolom Jawaban Alumni -->
+                                            <td v-if="!q.is_header" class="py-3 px-4 font-bold text-gray-900 leading-relaxed">
+                                                <span v-if="q.is_answered" class="text-xs sm:text-sm text-gray-900">
+                                                    {{ q.answer }}
+                                                </span>
+                                                <span v-else class="text-xs text-rose-600 font-semibold italic">
+                                                    -
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    </template>
+
+                                    <!-- State Kosong / Pencarian Nihil -->
+                                    <tr v-if="filteredSections.length === 0">
+                                        <td colspan="7" class="py-12 text-center text-gray-400 font-medium">
+                                            Tidak ada butir pertanyaan yang sesuai dengan filter atau pencarian Anda.
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
                 </div>
 
-                <!-- Tombol Simpan Bawah -->
-                <div class="flex justify-end pt-2">
-                    <button 
-                        @click="simpanProfilAlumni"
-                        :disabled="form.processing"
-                        class="px-7 py-3 bg-[#0D542B] hover:bg-[#08381c] text-white rounded-xl text-xs font-bold transition-all cursor-pointer disabled:opacity-50"
-                    >
-                        <span v-if="form.processing">Menyimpan Perubahan...</span>
-                        <span v-else>Simpan Perubahan Profil Alumni</span>
-                    </button>
-                </div>
-            </div>
+                <!-- ============================================================= -->
+                <!-- HALAMAN 3: KUESIONER PROGRAM STUDI: [NAMA PRODI] (EXCEL VIEW) -->
+                <!-- ============================================================= -->
+                <div v-else-if="activeMainTab === 'kuesioner_prodi'" class="space-y-6">
+                    
+                    <!-- Heading & Bar Filter / Pencarian -->
+                    <div class="bg-white p-5 rounded-2xl shadow-xs border border-gray-200 space-y-4">
+                        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                            <div>
+                                <h2 class="text-base sm:text-lg font-black text-gray-900 flex items-center gap-2">
+                                    <span class="w-2.5 h-5 bg-[#0D542B] rounded-full inline-block"></span>
+                                    Kuesioner Program Studi: {{ alumni.prodi?.nama_prodi || 'Program Studi' }}
+                                </h2>
+                                <p class="text-xs text-gray-500 mt-0.5">Tampilan data tables terstruktur untuk butir evaluasi kurikulum dan kepuasan khusus program studi.</p>
+                            </div>
 
-        </main>
+                            <!-- Input Pencarian Cepat ala DataTables -->
+                            <div class="w-full md:w-80">
+                                <div class="relative">
+                                    <input 
+                                        type="text" 
+                                        v-model="searchQueryProdi"
+                                        placeholder="Cari kode, instrumen, jawaban..."
+                                        class="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-xl text-xs font-medium focus:ring-2 focus:ring-[#0D542B]/20 focus:border-[#0D542B] transition-all"
+                                    />
+                                    <svg class="w-4 h-4 text-gray-400 absolute left-3 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Filter Bagian / Section Prodi -->
+                        <div class="pt-3 border-t border-gray-100 flex flex-wrap items-center gap-2">
+                            <span class="text-xs font-bold text-gray-500 uppercase tracking-wider mr-2">Filter Seksi:</span>
+                            <button 
+                                @click="activeProdiSectionId = 'all'"
+                                class="px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-2"
+                                :class="activeProdiSectionId === 'all' ? 'bg-[#0D542B] text-white shadow-xs' : 'bg-gray-100 hover:bg-gray-200 text-gray-700'"
+                            >
+                                <span>Semua Bagian ({{ prodiSections.length }})</span>
+                            </button>
+
+                            <button 
+                                v-for="s in prodiSections" 
+                                :key="s.id"
+                                @click="activeProdiSectionId = s.id"
+                                class="px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-2"
+                                :class="activeProdiSectionId === s.id ? 'bg-[#0D542B] text-white shadow-xs' : 'bg-gray-100 hover:bg-gray-200 text-gray-700'"
+                            >
+                                <span>{{ s.title }}</span>
+                                <span 
+                                    v-if="s.unanswered_mandatory_count > 0"
+                                    class="px-2 py-0.2 rounded-full text-[10px] font-bold"
+                                    :class="activeProdiSectionId === s.id ? 'bg-white/20 text-white' : 'bg-[#FDC700] text-black'"
+                                >
+                                    {{ s.unanswered_mandatory_count }}
+                                </span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- DATA TABLE ALA EXCEL (KUESIONER PROGRAM STUDI) -->
+                    <div class="bg-white rounded-2xl shadow-xs border border-gray-200 overflow-hidden">
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left border-collapse">
+                                <thead>
+                                    <tr class="bg-[#0D542B] text-white border-b border-[#003d28]">
+                                        <th class="w-12 text-center py-3.5 px-3 font-black text-xs uppercase tracking-wider border-r border-white/10">No</th>
+                                        <th class="w-24 text-center py-3.5 px-3 font-black text-xs uppercase tracking-wider border-r border-white/10">Kode</th>
+                                        <th class="py-3.5 px-4 font-black text-xs uppercase tracking-wider border-r border-white/10 min-w-[280px]">Pertanyaan / Deskripsi Instrumen</th>
+                                        <th class="w-28 text-center py-3.5 px-3 font-black text-xs uppercase tracking-wider border-r border-white/10">Tipe Input</th>
+                                        <th class="w-24 text-center py-3.5 px-3 font-black text-xs uppercase tracking-wider border-r border-white/10">Sifat</th>
+                                        <th class="w-32 text-center py-3.5 px-3 font-black text-xs uppercase tracking-wider border-r border-white/10">Status</th>
+                                        <th class="w-80 py-3.5 px-4 font-black text-xs uppercase tracking-wider min-w-[240px]">Jawaban Alumni</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <template v-for="section in filteredProdiSections" :key="section.id">
+                                        <!-- BARIS HEADER SEKSI PRODI (WARNA KUNING #FDC700 KHAS UKDW) -->
+                                        <tr class="bg-[#FDC700] text-black border-y-2 border-amber-400 font-extrabold">
+                                            <td colspan="7" class="py-3 px-4 text-xs uppercase tracking-wider">
+                                                Seksi: {{ section.title }}
+                                                <span v-if="section.description" class="font-medium normal-case text-gray-800 ml-1">
+                                                    &mdash; {{ section.description }}
+                                                </span>
+                                            </td>
+                                        </tr>
+
+                                        <!-- BARIS BUTIR SOAL PRODI -->
+                                        <tr 
+                                            v-for="(q, idx) in section.questions" 
+                                            :key="q.id"
+                                            :class="[
+                                                q.is_header 
+                                                    ? 'bg-amber-100/90 text-amber-950 font-bold border-b border-amber-200'
+                                                    : (q.is_answered 
+                                                        ? 'bg-white hover:bg-emerald-50/20 border-l-4 border-l-emerald-600 border-b border-gray-100' 
+                                                        : 'bg-rose-50/80 hover:bg-rose-100/70 border-l-4 border-l-rose-500 border-b border-rose-200 text-rose-950')
+                                            ]"
+                                            class="transition-colors text-xs"
+                                        >
+                                            <!-- Kolom No -->
+                                            <td class="text-center py-3 px-3 font-semibold border-r border-gray-100" :class="q.is_header ? 'text-amber-900 font-bold' : (q.is_answered ? 'text-gray-500' : 'text-rose-800 font-bold')">
+                                                {{ idx + 1 }}
+                                            </td>
+
+                                            <!-- Kolom Kode -->
+                                            <td class="text-center py-3 px-3 font-mono font-black border-r border-gray-100" :class="q.is_header ? 'text-amber-900' : (q.is_answered ? 'text-emerald-900' : 'text-rose-900')">
+                                                {{ q.code || '-' }}
+                                            </td>
+
+                                            <!-- Kolom Pertanyaan (Jika header, span ke kanan tanpa kolom jawaban) -->
+                                            <td v-if="q.is_header" colspan="5" class="py-3 px-4 font-black text-amber-950 text-xs sm:text-sm">
+                                                {{ q.question_text }}
+                                            </td>
+
+                                            <!-- Kolom Pertanyaan Biasa -->
+                                            <td v-else class="py-3 px-4 font-semibold text-gray-900 border-r border-gray-100 leading-relaxed">
+                                                {{ q.question_text }}
+                                            </td>
+
+                                            <!-- Kolom Tipe -->
+                                            <td v-if="!q.is_header" class="text-center py-3 px-3 capitalize font-medium text-gray-600 border-r border-gray-100">
+                                                {{ q.type || 'text' }}
+                                            </td>
+
+                                            <!-- Kolom Sifat -->
+                                            <td v-if="!q.is_header" class="text-center py-3 px-3 border-r border-gray-100">
+                                                <span v-if="q.is_mandatory" class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-900 border border-amber-200">
+                                                    Wajib
+                                                </span>
+                                                <span v-else class="px-2 py-0.5 rounded-full text-[10px] font-medium bg-gray-100 text-gray-600">
+                                                    Opsional
+                                                </span>
+                                            </td>
+
+                                            <!-- Kolom Status -->
+                                            <td v-if="!q.is_header" class="text-center py-3 px-3 border-r border-gray-100">
+                                                <span v-if="q.is_answered" class="px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800 shadow-2xs">
+                                                    Terjawab
+                                                </span>
+                                                <span v-else class="px-2.5 py-1 rounded-full text-[11px] font-bold bg-rose-200 text-rose-800 shadow-2xs">
+                                                    Belum Dijawab
+                                                </span>
+                                            </td>
+
+                                            <!-- Kolom Jawaban Alumni -->
+                                            <td v-if="!q.is_header" class="py-3 px-4 font-bold text-gray-900 leading-relaxed">
+                                                <span v-if="q.is_answered" class="text-xs sm:text-sm text-gray-900">
+                                                    {{ q.answer_text }}
+                                                </span>
+                                                <span v-else class="text-xs text-rose-600 font-semibold italic">
+                                                    -
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    </template>
+
+                                    <!-- State Kosong -->
+                                    <tr v-if="filteredProdiSections.length === 0">
+                                        <td colspan="7" class="py-12 text-center text-gray-400 font-medium">
+                                            Tidak ada butir kuesioner prodi untuk program studi mahasiswa ini atau tidak sesuai filter pencarian.
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+            </main>
         </div>
     </div>
 </template>

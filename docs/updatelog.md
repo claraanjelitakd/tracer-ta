@@ -2,7 +2,12 @@
 
 Semua perubahan besar pada sistem dicatat dalam dokumen ini.
 
-## [2026-09-20] - Standardisasi Input Gaji, Validasi Minimal Ribuan, Visual Status Tab Minimalis, & Top Notification Banner
+## [2026-09-20] - Redesain Audit Detail Alumni Super Admin (DataTables Excel-Style View, Urutan Tab Baru, Header Kuning & Highlight Merah)
+**Modul Super Admin (/superadmin/alumni/{id}):**
+- Urutan Tab Baru: 1. Detail Profile (default), 2. Kuesioner Universitas, 3. Kuesioner Program Studi: [Nama Prodi].
+- DataTables View ala Excel: Tabel data dengan Header Section/Question Kuning UKDW `#FDC700`, baris belum dijawab berlatar merah lembut (`bg-rose-50 border-l-4 border-l-rose-500`), dan baris terjawab hijau/bersih.
+- Fitur pencarian cepat (*Quick Search*) per tab kuesioner.
+- Format Download Excel: Menggunakan CSV UTF-8 BOM murni tanpa dialog peringatan mismatch pada Microsoft Excel.
 **Profil Alumni UI/UX & Validasi:**
 - Standardisasi Take Home Pay / Gaji: Pola computed getter/setter (Single Source of Truth), peniadaan pengali `* 1000` tersembunyi di semua layer, dan validasi minimal ribuan (>= Rp 1.000) dengan border merah serta notifikasi modal.
 - Tab Navigasi Minimalis: Menghilangkan teks "X belum" dan karakter ASCII mentah, digantikan badge lingkaran hijau (lengkap) dan dot status rose/amber halus (belum lengkap).

@@ -102,6 +102,8 @@ class DetailAlumniSuperAdminController extends Controller
                         }
                     }
 
+                    $isHeader = in_array($subpertanyaan->type, ['header', 'section_header']);
+
                     $subpertanyaansList[] = [
                         'id' => $subpertanyaan->id,
                         'kode_pertanyaan' => $subpertanyaan->kode_pertanyaan,
@@ -109,6 +111,7 @@ class DetailAlumniSuperAdminController extends Controller
                         'type' => $subpertanyaan->type,
                         'kelompok' => $subpertanyaan->kelompok,
                         'is_mandatory' => $isMandatory,
+                        'is_header' => $isHeader,
                         'is_answered' => $hasAnswer,
                         'answer' => $displayAnswer,
                         'answer_json' => $resp?->answer_json,
@@ -118,12 +121,13 @@ class DetailAlumniSuperAdminController extends Controller
 
                 // Hitung berapa pertanyaan wajib di section ini yang belum dijawab
                 $unansweredCount = count(array_filter($subpertanyaansList, function ($item) {
-                    return $item['is_mandatory'] && ! $item['is_answered'];
+                    return $item['is_mandatory'] && ! $item['is_answered'] && ! $item['is_header'];
                 }));
 
                 $sectionsWithAnswers[] = [
                     'id' => $section->id,
                     'section' => $section->section,
+                    'title' => $section->title ?: $section->section,
                     'order' => $section->order,
                     'subpertanyaans' => $subpertanyaansList,
                     'unanswered_mandatory_count' => $unansweredCount,
@@ -254,13 +258,13 @@ class DetailAlumniSuperAdminController extends Controller
                 $pQuestionsList = [];
 
                 foreach ($pSection->questions as $pQuestion) {
-                    $totalProdiQuestions++;
+                    $isHeader = in_array($pQuestion->type, ['header', 'section_header']);
                     $pResp = $savedProdiResponses->get($pQuestion->id);
 
                     $hasAnswer = false;
                     $displayAnswer = null;
 
-                    if ($pResp) {
+                    if ($pResp && ! $isHeader) {
                         if (! empty($pResp->answer_text) && trim((string) $pResp->answer_text) !== '') {
                             $hasAnswer = true;
                             $displayAnswer = (string) $pResp->answer_text;
@@ -270,8 +274,11 @@ class DetailAlumniSuperAdminController extends Controller
                         }
                     }
 
-                    if ($hasAnswer) {
-                        $totalProdiAnswered++;
+                    if (! $isHeader) {
+                        $totalProdiQuestions++;
+                        if ($hasAnswer) {
+                            $totalProdiAnswered++;
+                        }
                     }
 
                     $pQuestionsList[] = [
@@ -279,6 +286,7 @@ class DetailAlumniSuperAdminController extends Controller
                         'code' => $pQuestion->code,
                         'question_text' => $pQuestion->question_text,
                         'type' => $pQuestion->type,
+                        'is_header' => $isHeader,
                         'is_mandatory' => (bool) $pQuestion->is_required,
                         'is_answered' => $hasAnswer,
                         'answer_text' => $displayAnswer,
@@ -292,7 +300,7 @@ class DetailAlumniSuperAdminController extends Controller
                 }
 
                 $unansweredProdiCount = count(array_filter($pQuestionsList, function ($item) {
-                    return $item['is_mandatory'] && ! $item['is_answered'];
+                    return $item['is_mandatory'] && ! $item['is_answered'] && ! $item['is_header'];
                 }));
 
                 $prodiSectionsWithAnswers[] = [
@@ -511,175 +519,128 @@ class DetailAlumniSuperAdminController extends Controller
 
         $nim = preg_replace('/[^a-zA-Z0-9_-]/', '_', (string) $alumni->nim);
         $nama = preg_replace('/[^a-zA-Z0-9_-]/', '_', (string) ($alumni->nama ?? 'Alumni'));
-        $filename = "Tracer_Study_{$nim}_{$nama}.xls";
+        $filename = "Tracer_Study_{$nim}_{$nama}.csv";
 
         return response()->streamDownload(function () use ($alumni, $kuesioner, $savedResponses, $prodiSections, $savedProdiResponses) {
             $handle = fopen('php://output', 'w');
 
-            // Header Dokumen HTML Spreadsheet Excel yang kompatibel dengan Microsoft Excel
-            echo "<html xmlns:o=\"urn:schemas-microsoft-com:office:office\" xmlns:x=\"urn:schemas-microsoft-com:office:excel\" xmlns=\"http://www.w3.org/TR/REC-html40\">\n";
-            echo "<head>\n";
-            echo "<meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\">\n";
-            echo "<!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet><x:Name>Tracer Study</x:Name><x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions></x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]-->\n";
-            echo "<style>\n";
-            echo "  body { font-family: Calibri, Arial, sans-serif; font-size: 11pt; }\n";
-            echo "  table { border-collapse: collapse; width: 100%; margin-bottom: 20px; }\n";
-            echo "  th { background-color: #005B3C; color: #ffffff; font-weight: bold; border: 1px solid #003d28; padding: 8px 10px; text-align: left; vertical-align: middle; }\n";
-            echo "  td { border: 1px solid #d1d5db; padding: 6px 10px; vertical-align: middle; font-size: 10pt; }\n";
-            echo "  .title-header { font-size: 14pt; font-weight: bold; color: #005B3C; margin-bottom: 5px; }\n";
-            echo "  .sub-header { font-size: 10pt; color: #4b5563; margin-bottom: 15px; }\n";
-            echo "  .section-row { background-color: #f3f4f6; font-weight: bold; color: #111827; }\n";
-            echo "  .status-terjawab { color: #047857; font-weight: bold; }\n";
-            echo "  .status-belum { color: #b91c1c; font-style: italic; }\n";
-            echo "  .text-center { text-align: center; }\n";
-            echo "  .bg-alt { background-color: #f9fafb; }\n";
-            echo "</style>\n";
-            echo "</head>\n";
-            echo "<body>\n";
+            // Tulis UTF-8 BOM agar Microsoft Excel langsung mengenali encoding UTF-8 tanpa dialog warning
+            fwrite($handle, "\xEF\xBB\xBF");
 
-            // Metadata Ringkasan Alumni
+            // Header Dokumen Ringkasan
+            fputcsv($handle, ['LAPORAN LENGKAP KUESIONER TRACER STUDY ALUMNI']);
+            fputcsv($handle, ['Universitas Kristen Duta Wacana (UKDW)']);
+            fputcsv($handle, ['Diunduh pada', date('d F Y, H:i').' WIB']);
+            fputcsv($handle, []);
+
+            // Metadata Identitas Alumni
             $prodiNama = $alumni->prodi?->nama_prodi ?? ($alumni->dataAkademik?->program_studi ?? '-');
             $fakultasNama = $alumni->prodi?->fakultas?->nama_fakultas ?? ($alumni->dataAkademik?->fakultas ?? '-');
             $tahunLulus = $alumni->tahun_lulus ?? ($alumni->yudisium?->tahun_lulus ?? ($alumni->dataAkademik?->tahun_lulus ?? '-'));
 
-            echo "<div class=\"title-header\">LAPORAN LENGKAP KUESIONER TRACER STUDY ALUMNI</div>\n";
-            echo '<div class="sub-header">Universitas Kristen Duta Wacana (UKDW) | Diunduh pada: '.date('d F Y, H:i')." WIB</div>\n";
+            fputcsv($handle, ['IDENTITAS ALUMNI']);
+            fputcsv($handle, ['NIM', $alumni->nim, 'Program Studi', $prodiNama]);
+            fputcsv($handle, ['Nama Lengkap', $alumni->nama, 'Fakultas', $fakultasNama]);
+            fputcsv($handle, ['Email', $alumni->email_pribadi ?: ($alumni->email ?: '-'), 'Tahun Lulus', $tahunLulus]);
+            fputcsv($handle, ['Nomor Telepon', $alumni->nomor_telepon ?: '-', 'Perusahaan Saat Ini', $alumni->perusahaan?->nama_perusahaan ?: '-']);
+            fputcsv($handle, []);
 
-            echo "<table>\n";
-            echo "  <tr style=\"background-color: #f0fdf4;\"><th colspan=\"4\" style=\"background-color: #005B3C; color: #ffffff;\">IDENTITAS ALUMNI</th></tr>\n";
-            echo "  <tr><td style=\"font-weight: bold; width: 180px;\">NIM</td><td>{$alumni->nim}</td><td style=\"font-weight: bold; width: 180px;\">Program Studi</td><td>{$prodiNama}</td></tr>\n";
-            echo "  <tr><td style=\"font-weight: bold;\">Nama Lengkap</td><td>{$alumni->nama}</td><td style=\"font-weight: bold;\">Fakultas</td><td>{$fakultasNama}</td></tr>\n";
-            echo '  <tr><td style="font-weight: bold;">Email</td><td>'.($alumni->email_pribadi ?: ($alumni->email ?: '-'))."</td><td style=\"font-weight: bold;\">Tahun Lulus</td><td>{$tahunLulus}</td></tr>\n";
-            echo '  <tr><td style="font-weight: bold;">Nomor Telepon</td><td>'.($alumni->nomor_telepon ?: '-').'</td><td style="font-weight: bold;">Perusahaan Saat Ini</td><td>'.($alumni->perusahaan?->nama_perusahaan ?: '-')."</td></tr>\n";
-            echo "</table>\n";
-
-            // Tabel Jawaban Kuesioner Universitas
-            echo "<table>\n";
-            echo "  <thead>\n";
-            echo "    <tr>\n";
-            echo "      <th style=\"width: 40px; text-align: center;\">No</th>\n";
-            echo "      <th style=\"width: 220px;\">Bagian / Seksi</th>\n";
-            echo "      <th style=\"width: 100px; text-align: center;\">Kode</th>\n";
-            echo "      <th style=\"width: 350px;\">Pertanyaan Instrumen</th>\n";
-            echo "      <th style=\"width: 100px; text-align: center;\">Tipe Input</th>\n";
-            echo "      <th style=\"width: 90px; text-align: center;\">Sifat</th>\n";
-            echo "      <th style=\"width: 110px; text-align: center;\">Status</th>\n";
-            echo "      <th style=\"width: 300px;\">Respon / Jawaban Alumni</th>\n";
-            echo "    </tr>\n";
-            echo "  </thead>\n";
-            echo "  <tbody>\n";
+            // 1. Tabel Jawaban Kuesioner Universitas
+            fputcsv($handle, ['1. KUESIONER TRACER STUDY UNIVERSITAS']);
+            fputcsv($handle, ['No', 'Bagian / Seksi', 'Kode Pertanyaan', 'Pertanyaan / Instrumen', 'Tipe Input', 'Sifat', 'Status', 'Respon / Jawaban Alumni']);
 
             $no = 1;
-
             if ($kuesioner) {
                 foreach ($kuesioner->sections as $section) {
-                    $sectionName = htmlspecialchars($section->title ?: ($section->section ?: 'Bagian Kuesioner'));
-                    echo "    <tr class=\"section-row\"><td colspan=\"8\" style=\"background-color: #f3f4f6; font-weight: bold;\">Seksi {$section->order}: {$sectionName}</td></tr>\n";
+                    $sectionTitle = $section->title ?: ($section->section ?: 'Bagian Kuesioner');
+                    fputcsv($handle, ['--', "Seksi {$section->order}: {$sectionTitle}", '', '', '', '', '', '']);
 
                     foreach ($section->subpertanyaans as $sub) {
                         $resp = $savedResponses->get($sub->id);
                         $isMandatory = KelengkapanTracerService::isMandatoryQuestion($sub->kode_pertanyaan);
+                        $isHeader = in_array($sub->type, ['header', 'section_header']);
 
-                        $answerText = '-';
-                        $statusClass = 'status-belum';
-                        $statusText = 'Belum Dijawab';
+                        $answerText = $isHeader ? '(Header Bagian)' : '-';
+                        $statusText = $isHeader ? 'Header' : 'Belum Dijawab';
 
-                        if ($resp) {
+                        if ($resp && ! $isHeader) {
                             if (! empty($resp->answer_text) && trim((string) $resp->answer_text) !== '') {
-                                $answerText = htmlspecialchars((string) $resp->answer_text);
-                                $statusClass = 'status-terjawab';
+                                $answerText = (string) $resp->answer_text;
                                 $statusText = 'Terjawab';
                             } elseif (is_array($resp->answer_json) && count($resp->answer_json) > 0) {
                                 $jsonFormatted = [];
                                 foreach ($resp->answer_json as $k => $v) {
-                                    if (is_numeric($k)) {
-                                        $jsonFormatted[] = (string) $v;
-                                    } else {
-                                        $jsonFormatted[] = "{$k}: {$v}";
-                                    }
+                                    $jsonFormatted[] = is_numeric($k) ? (string) $v : "{$k}: {$v}";
                                 }
-                                $answerText = htmlspecialchars(implode(', ', $jsonFormatted));
-                                $statusClass = 'status-terjawab';
+                                $answerText = implode(', ', $jsonFormatted);
                                 $statusText = 'Terjawab';
                             }
                         }
 
-                        $bgClass = ($no % 2 === 0) ? ' class="bg-alt"' : '';
-                        $subPertanyaanText = htmlspecialchars($sub->subpertanyaan);
-                        $tipeText = htmlspecialchars($sub->type ?: 'text');
-                        $kodePertanyaan = htmlspecialchars($sub->kode_pertanyaan);
-
-                        echo "    <tr{$bgClass}>\n";
-                        echo "      <td class=\"text-center\">{$no}</td>\n";
-                        echo "      <td>{$sectionName}</td>\n";
-                        echo "      <td class=\"text-center\" style=\"font-weight: bold; font-family: monospace;\">{$kodePertanyaan}</td>\n";
-                        echo "      <td>{$subPertanyaanText}</td>\n";
-                        echo "      <td class=\"text-center\">{$tipeText}</td>\n";
-                        echo '      <td class="text-center">'.($isMandatory ? '<span style="color: #b91c1c; font-weight: bold;">Wajib</span>' : 'Opsional')."</td>\n";
-                        echo "      <td class=\"text-center {$statusClass}\">{$statusText}</td>\n";
-                        echo "      <td style=\"font-weight: 500;\">{$answerText}</td>\n";
-                        echo "    </tr>\n";
+                        fputcsv($handle, [
+                            $no,
+                            $sectionTitle,
+                            $sub->kode_pertanyaan,
+                            $sub->subpertanyaan,
+                            $sub->type ?: 'text',
+                            $isHeader ? '-' : ($isMandatory ? 'Wajib' : 'Opsional'),
+                            $statusText,
+                            $answerText,
+                        ]);
 
                         $no++;
                     }
                 }
             }
 
-            // Kuesioner Khusus Program Studi
+            // 2. Kuesioner Khusus Program Studi
             if ($prodiSections->isNotEmpty()) {
-                echo "    <tr class=\"section-row\"><td colspan=\"8\" style=\"background-color: #dbeafe; font-weight: bold; color: #1e40af;\">KUESIONER KHUSUS PROGRAM STUDI</td></tr>\n";
+                fputcsv($handle, []);
+                fputcsv($handle, ['2. KUESIONER KHUSUS PROGRAM STUDI: '.$prodiNama]);
+                fputcsv($handle, ['No', 'Bagian / Seksi', 'Kode Pertanyaan', 'Pertanyaan / Instrumen', 'Tipe Input', 'Sifat', 'Status', 'Respon / Jawaban Alumni']);
 
+                $noProdi = 1;
                 foreach ($prodiSections as $pSection) {
-                    $pSectionTitle = htmlspecialchars('Prodi: '.($pSection->title ?: 'Section'));
+                    $pSectionTitle = $pSection->title ?: 'Section Prodi';
+                    fputcsv($handle, ['--', $pSectionTitle, '', '', '', '', '', '']);
+
                     foreach ($pSection->questions as $pQuestion) {
                         $pResp = $savedProdiResponses->get($pQuestion->id);
+                        $isHeader = in_array($pQuestion->type, ['header', 'section_header']);
                         $pMandatory = (bool) $pQuestion->is_required;
 
-                        $answerText = '-';
-                        $statusClass = 'status-belum';
-                        $statusText = 'Belum Dijawab';
+                        $answerText = $isHeader ? '(Header Bagian)' : '-';
+                        $statusText = $isHeader ? 'Header' : 'Belum Dijawab';
 
-                        if ($pResp) {
+                        if ($pResp && ! $isHeader) {
                             if (! empty($pResp->answer_text) && trim((string) $pResp->answer_text) !== '') {
-                                $answerText = htmlspecialchars((string) $pResp->answer_text);
-                                $statusClass = 'status-terjawab';
+                                $answerText = (string) $pResp->answer_text;
                                 $statusText = 'Terjawab';
                             } elseif (is_array($pResp->answer_json) && count($pResp->answer_json) > 0) {
-                                $answerText = htmlspecialchars(implode(', ', $pResp->answer_json));
-                                $statusClass = 'status-terjawab';
+                                $answerText = implode(', ', $pResp->answer_json);
                                 $statusText = 'Terjawab';
                             }
                         }
 
-                        $bgClass = ($no % 2 === 0) ? ' class="bg-alt"' : '';
-                        $pQText = htmlspecialchars($pQuestion->question_text);
-                        $pQType = htmlspecialchars($pQuestion->type ?: 'text');
-                        $pQCode = htmlspecialchars($pQuestion->code ?: '-');
+                        fputcsv($handle, [
+                            $noProdi,
+                            $pSectionTitle,
+                            $pQuestion->code ?: '-',
+                            $pQuestion->question_text,
+                            $pQuestion->type ?: 'text',
+                            $isHeader ? '-' : ($pMandatory ? 'Wajib' : 'Opsional'),
+                            $statusText,
+                            $answerText,
+                        ]);
 
-                        echo "    <tr{$bgClass}>\n";
-                        echo "      <td class=\"text-center\">{$no}</td>\n";
-                        echo "      <td>{$pSectionTitle}</td>\n";
-                        echo "      <td class=\"text-center\" style=\"font-weight: bold; font-family: monospace;\">{$pQCode}</td>\n";
-                        echo "      <td>{$pQText}</td>\n";
-                        echo "      <td class=\"text-center\">{$pQType}</td>\n";
-                        echo '      <td class="text-center">'.($pMandatory ? '<span style="color: #b91c1c; font-weight: bold;">Wajib</span>' : 'Opsional')."</td>\n";
-                        echo "      <td class=\"text-center {$statusClass}\">{$statusText}</td>\n";
-                        echo "      <td style=\"font-weight: 500;\">{$answerText}</td>\n";
-                        echo "    </tr>\n";
-
-                        $no++;
+                        $noProdi++;
                     }
                 }
             }
-
-            echo "  </tbody>\n";
-            echo "</table>\n";
-            echo "</body>\n";
-            echo "</html>\n";
 
             fclose($handle);
         }, $filename, [
-            'Content-Type' => 'application/vnd.ms-excel; charset=UTF-8',
+            'Content-Type' => 'text/csv; charset=UTF-8',
             'Content-Disposition' => "attachment; filename=\"{$filename}\"",
         ]);
     }

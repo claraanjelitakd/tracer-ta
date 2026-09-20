@@ -1,6 +1,19 @@
 # UPDATE LOG - SERU (Sistem Ekosistem Rekam Jejak Alumni)
 
-## [2026-09-20] Standarisasi Input Gaji (Computed Single Source of Truth), Validasi Minimal Ribuan, Visual Status Tab Minimalis, & Top Notification Banner Profil Alumni
+## [2026-09-20] Redesain Detail Audit Alumni Super Admin (DataTables Excel-Style View, Urutan Tab Baru, Header Kuning & Highlight Merah)
+- **Restrukturisasi Urutan Tab Detail Alumni ([Show.vue](file:///c:/study/tracerstudy/resources/js/Pages/SuperAdmin/Alumni/Show.vue))**:
+  - Menyusun urutan tab terpadu:
+    1. **1. Detail Profile** (Urutan 1, default aktif dengan form data pribadi, akademik, orang tua, karier).
+    2. **2. Kuesioner Universitas** (Urutan 2, audit butir instrumen dan jawaban tracer study universitas).
+    3. **3. Kuesioner Program Studi: [Nama Prodi]** (Urutan 3, memuat nama program studi dinamis pada heading dan tab).
+- **Tampilan Tabel Rapi ala Spreadsheet Excel (DataTables View)**:
+  - Menyajikan butir kuesioner dalam struktur tabel data profesional (*No, Kode, Pertanyaan / Instrumen, Tipe Input, Sifat, Status, Jawaban Alumni*).
+  - **Baris Header Seksi & Question Header**: Diberi latar **Kuning UKDW `#FDC700`** mencolok tanpa kolom jawaban (*span full width*).
+  - **Baris Belum Dijawab**: Diberi highlight warna **Merah Lembut (`bg-rose-50 border-l-4 border-l-rose-500`)** dengan status badge merah jelas dan strip jawaban `-`.
+  - **Baris Terjawab**: Diberi aksen hijau emerald (`border-l-4 border-l-emerald-600`) dengan badge hijau `Terjawab` dan teks respon tebal.
+  - Dilengkapi fitur pencarian cepat (*Quick Search Input*) per tab dan filter seksi instan.
+- **Perbaikan Format Export Excel / CSV ([DetailAlumniSuperAdminController.php](file:///c:/study/tracerstudy/app/Http/Controllers/SuperAdmin/KelolaAlumni/DetailAlumniSuperAdminController.php))**:
+  - Mengubah export menjadi berkas **CSV murni dengan UTF-8 BOM (`\xEF\xBB\xBF`)** sehingga saat dibuka dengan Microsoft Excel di Windows, file langsung terbuka rapi tanpa peringatan keamanan *"format and extension don't match"*.
 - **Standardisasi Input Gaji / Take Home Pay ([FormKarier.vue](file:///c:/study/tracerstudy/resources/js/Pages/Alumni/Profil/Components/FormKarier.vue), [SimpanProfilController.php](file:///c:/study/tracerstudy/app/Http/Controllers/Alumni/Profil/SimpanProfilController.php), [KuesionerController.php](file:///c:/study/tracerstudy/app/Http/Controllers/Alumni/Kuesioner/KuesionerController.php))**:
   - Mengimplementasikan pola **`computed getter & setter` (Single Source of Truth)** pada form input gaji: nilai pada objek form, teks format ribuan di textbox (`new Intl.NumberFormat('id-ID')`), dan label `Terbaca: Rp ...` terhubung secara reaktif 100% dari satu variabel tanpa desinkronisasi.
   - Menghapus seluruh manipulasi atau pengali sembunyi-sembunyi (`* 1000`) di frontend dan di seluruh kontroler backend.
