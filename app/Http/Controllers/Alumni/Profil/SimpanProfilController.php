@@ -171,15 +171,16 @@ class SimpanProfilController extends Controller
             ? $biodata->nik
             : (! empty($dataTervalidasi['nik']) ? $dataTervalidasi['nik'] : null);
 
-        // Gaji / Take Home Pay (bersihkan karakter non-digit dan standarisasi ke nominal Rupiah penuh)
+        // Gaji / Take Home Pay (bersihkan karakter non-digit dan simpan nominal murni)
         $gajiNominal = null;
-        if (isset($dataTervalidasi['gaji']) && $dataTervalidasi['gaji'] !== '') {
+        if (isset($dataTervalidasi['gaji']) && $dataTervalidasi['gaji'] !== '' && $dataTervalidasi['gaji'] !== null) {
             $cleanGaji = preg_replace('/[^0-9]/', '', (string) $dataTervalidasi['gaji']);
             if ($cleanGaji !== '') {
                 $gajiInt = (int) $cleanGaji;
-                // Jika alumni menginput dalam satuan ribuan (contoh: 5000 untuk Rp 5.000.000)
-                if ($gajiInt > 0 && $gajiInt < 1000000) {
-                    $gajiInt = $gajiInt * 1000;
+                if ($gajiInt > 0 && $gajiInt < 1000) {
+                    return back()->withErrors([
+                        'gaji' => 'Nominal rata-rata pendapatan minimal ribuan (minimal Rp 1.000) atau kosongkan kolom ini jika tidak berkenan membagikan nominal.',
+                    ]);
                 }
                 $gajiNominal = $gajiInt;
             }

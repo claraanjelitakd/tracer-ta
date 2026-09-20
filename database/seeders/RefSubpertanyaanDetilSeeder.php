@@ -67,11 +67,6 @@ class RefSubpertanyaanDetilSeeder extends Seeder
             ['kode_pertanyaan' => 'F505', 'order' => 2, 'kode_opsi' => 'F5052', 'option_text' => 'Dari Lembur dan Tips', 'jump_to' => null],
             ['kode_pertanyaan' => 'F505', 'order' => 3, 'kode_opsi' => 'F5053', 'option_text' => 'Dari Pekerjaan Lainnya', 'jump_to' => null],
 
-            // F505A (Kesesuaian gaji dengan UMR)
-            ['kode_pertanyaan' => 'F505A', 'order' => 1, 'kode_opsi' => '1', 'option_text' => 'Di Bawah', 'jump_to' => 'F6'],
-            ['kode_pertanyaan' => 'F505A', 'order' => 2, 'kode_opsi' => '2', 'option_text' => 'Sesuai', 'jump_to' => 'F6'],
-            ['kode_pertanyaan' => 'F505A', 'order' => 3, 'kode_opsi' => '3', 'option_text' => 'Di Atas', 'jump_to' => 'F6'],
-
             // F8 (Status pekerjaan saat ini)
             ['kode_pertanyaan' => 'F8', 'order' => 1, 'kode_opsi' => '1', 'option_text' => 'Bekerja (full time/part time)', 'jump_to' => null],
             ['kode_pertanyaan' => 'F8', 'order' => 2, 'kode_opsi' => '2', 'option_text' => 'Belum memungkinkan bekerja', 'jump_to' => 'F18'],

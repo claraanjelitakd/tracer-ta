@@ -1,5 +1,73 @@
 # UPDATE LOG - SERU (Sistem Ekosistem Rekam Jejak Alumni)
 
+## [2026-09-20] Standarisasi Input Gaji (Computed Single Source of Truth), Validasi Minimal Ribuan, Visual Status Tab Minimalis, & Top Notification Banner Profil Alumni
+- **Standardisasi Input Gaji / Take Home Pay ([FormKarier.vue](file:///c:/study/tracerstudy/resources/js/Pages/Alumni/Profil/Components/FormKarier.vue), [SimpanProfilController.php](file:///c:/study/tracerstudy/app/Http/Controllers/Alumni/Profil/SimpanProfilController.php), [KuesionerController.php](file:///c:/study/tracerstudy/app/Http/Controllers/Alumni/Kuesioner/KuesionerController.php))**:
+  - Mengimplementasikan pola **`computed getter & setter` (Single Source of Truth)** pada form input gaji: nilai pada objek form, teks format ribuan di textbox (`new Intl.NumberFormat('id-ID')`), dan label `Terbaca: Rp ...` terhubung secara reaktif 100% dari satu variabel tanpa desinkronisasi.
+  - Menghapus seluruh manipulasi atau pengali sembunyi-sembunyi (`* 1000`) di frontend dan di seluruh kontroler backend.
+  - **Validasi Nominal Minimal Ribuan (Rp 1.000)**:
+    - Input di bawah Rp 1.000 (misal: `709` atau `899`) langsung ditandai dengan border merah dan peringatan *minimal Rp 1.000*.
+    - Proses submit dicegah baik di frontend (SweetAlert peringatan) maupun di backend ([SimpanProfilController.php](file:///c:/study/tracerstudy/app/Http/Controllers/Alumni/Profil/SimpanProfilController.php)) dengan pesan kesalahan validasi yang jelas.
+- **Penyederhanaan Visual Indikator Tab Navigasi Profil ([Index.vue](file:///c:/study/tracerstudy/resources/js/Pages/Alumni/Profil/Index.vue))**:
+  - Menghilangkan teks hitungan (*"1 belum"*, *"X belum"*) serta karakter ASCII mentah (`✓` / `✕`) pada tab navigasi.
+  - Menggantinya dengan indikator visual langsung yang elegan:
+    - **Data Lengkap**: Badge lingkaran hijau dengan ikon SVG centang mikro presisi.
+    - **Data Belum Lengkap**: Titik status (*dot indicator*) rose/amber minimalis tanpa teks mengganggu.
+- **Relokasi Peringatan "Ada Perubahan Belum Disimpan" ke Top Notification Banner ([Index.vue](file:///c:/study/tracerstudy/resources/js/Pages/Alumni/Profil/Index.vue))**:
+  - Memindahkan peringatan modifikasi data dari bagian bawah formulir ke **Banner Notifikasi Mengambang di Bagian Atas Formulir (tepat di bawah tab navigasi)**.
+  - Dilengkapi tombol aksi cepat **"Simpan Sekarang"** langsung di dalam banner notifikasi.
+- **Quality & Automated Tests**:
+  - 54 tests PHPUnit Feature & Unit lulus 100% (299 assertions).
+  - Format kode PHP tervalidasi bersih dengan Laravel Pint.
+  - Bundle frontend terkompilasi optimal tanpa error/warning melalui Vite.
+- **Pembersihan Seluruh Emoticon & Emoji ([FormPribadi.vue](file:///c:/study/tracerstudy/resources/js/Pages/Alumni/Profil/Components/FormPribadi.vue), [FormKarier.vue](file:///c:/study/tracerstudy/resources/js/Pages/Alumni/Profil/Components/FormKarier.vue), [FormOrangTua.vue](file:///c:/study/tracerstudy/resources/js/Pages/Alumni/Profil/Components/FormOrangTua.vue), [Index.vue](file:///c:/study/tracerstudy/resources/js/Pages/Alumni/Profil/Index.vue))**:
+  - Menghapus seluruh ikon emoji/emoticon (🏢, 🚀, 🎓, ⚡, 💡) di seluruh form profil untuk menciptakan antarmuka yang bersih, minimalis, dan profesional.
+- **Color-Coded Status Tanpa Text Badges**:
+  - Menghapus seluruh badge teks checklist/pil status (`✓ Terisi`, `Belum diisi`, `✓ URL Valid`, `✓ 16 Digit`, `✓ Terpilih`, `Belum dipilih`, dsb.).
+  - Mengandalkan indikator warna border dan background input secara menyeluruh pada semua kolom (baik wajib maupun opsional):
+    - **Belum Diisi / Format Tidak Valid**: Border dan latar rose/merah lembut (`border-rose-300 bg-rose-50/20 text-gray-900 focus:border-rose-500`).
+    - **Sudah Terisi / Format Valid**: Border dan latar emerald/hijau (`border-emerald-300 bg-white text-gray-900 focus:border-[#005B3C]`).
+- **Perbaikan Format Input Gaji & Multiple Number (Format Minimal Ribuan Adaptif) ([FormKarier.vue](file:///c:/study/tracerstudy/resources/js/Pages/Alumni/Profil/Components/FormKarier.vue), [KartuPertanyaan.vue](file:///c:/study/tracerstudy/resources/js/Pages/Alumni/Components/Kuesioner/KartuPertanyaan.vue))**:
+  - Saat alumni pertama kali mengetik angka satuan (misal: `5`), kolom textbox langsung melengkapi akhiran ribuan menjadi `5.000` (disimpan `5000` dan terbaca `Rp 5.000 / bulan`).
+  - Nilai di textbox tetap fleksibel dapat diedit dan di-*adjust* ke nominal berapapun (misal `5000000` menjadi `5.000.000` dan terbaca `Rp 5.000.000 / bulan`) dengan sinkronisasi 100% presisi antara input dan output.
+- **Filter Lokasi Wilayah Sebelum Memilih Perusahaan ([FormKarier.vue](file:///c:/study/tracerstudy/resources/js/Pages/Alumni/Profil/Components/FormKarier.vue))**:
+  - Pilihan wilayah (Negara untuk Luar Negeri; Provinsi dan Kabupaten/Kota untuk Dalam Negeri) kini dapat dipilih langsung di bagian atas untuk memfilter daftar perusahaan pada wilayah tersebut.
+  - Jika tidak ada perusahaan yang terdaftar pada kota/negara yang dipilih, sistem menampilkan status *"Data perusahaan tidak ditemukan pada wilayah/filter yang dipilih."* disertai tombol pintas *"+ Tambah Perusahaan Baru"*.
+  - Menambahkan tombol *"Reset Provinsi"* / *"Reset Kota"* / *"Reset Negara"* untuk mempermudah pencarian multi-wilayah.
+- **Penyelarasan Tata Letak Simetris Pertanyaan Lamaran Kerja F6, F7, F7A ([Kuesioner.vue](file:///c:/study/tracerstudy/resources/js/Pages/Alumni/Kuesioner.vue), [KartuPertanyaan.vue](file:///c:/study/tracerstudy/resources/js/Pages/Alumni/Components/Kuesioner/KartuPertanyaan.vue))**:
+  - Mengelompokkan trio butir pertanyaan kuantitas lamaran kerja (F6, F7, dan F7A) ke dalam **Grid 3 Kolom Sejajar** (`grid grid-cols-1 md:grid-cols-3 items-stretch`).
+  - Menyelaraskan tinggi kartu (`h-full flex flex-col justify-between`), proporsi tipografi judul soal, dan posisi tombol *stepper number* di bagian bawah secara horizontal sejajar.
+- **Quality & Verification**:
+  - 53 tests PHPUnit lulus 100% (297 assertions).
+  - Laravel Pint clean.
+  - Vite build sukses (0 error, 0 warning).
+
+## [2026-09-20] Redesain Profesional Profil Alumni, Validasi NPWP Regulasi PMK 112/2022, Single-Choice Role Switcher, & Standardisasi Kuesioner Prodi
+- **Redesain Profesional & Eksekutif Profil Alumni ([Index.vue](file:///c:/study/tracerstudy/resources/js/Pages/Alumni/Profil/Index.vue), [FormPribadi.vue](file:///c:/study/tracerstudy/resources/js/Pages/Alumni/Profil/Components/FormPribadi.vue), [FormKarier.vue](file:///c:/study/tracerstudy/resources/js/Pages/Alumni/Profil/Components/FormKarier.vue), [FormOrangTua.vue](file:///c:/study/tracerstudy/resources/js/Pages/Alumni/Profil/Components/FormOrangTua.vue))**:
+  - Menghapus banner pill merah/pink besar di atas form, menggantikannya dengan **indikator kelengkapan langsung pada kolom isian (*field-level indicators*)**.
+  - Kolom wajib yang belum terisi ditandai dengan border lembut warna rose/merah dan badge status "Belum diisi / Wajib diisi".
+  - Kolom yang telah terisi atau valid ditandai dengan border emerald dan badge status checklist "✓ Terisi / Valid" selaras palet warna resmi UKDW `#005B3C` dan `#FFD700`.
+  - Tab navigasi menampilkan status ringkas dan presisi: badge `✓` emas/hijau untuk bagian lengkap, dan badge `✕` untuk bagian yang belum lengkap tanpa animasi berkedip.
+- **Validasi NPWP Sesuai Regulasi Terbaru (UU HPP & PMK No. 112/PMK.03/2022)**:
+  - Membatasi input NPWP khusus angka dengan panjang **15 atau 16 digit** sesuai aturan terbaru integrasi NIK sebagai NPWP Orang Pribadi.
+  - Menyediakan tombol cepat **"⚡ Gunakan NIK (16 Digit)"** untuk menyalin 16 digit NIK secara otomatis ke kolom NPWP.
+  - Memperketat evaluasi kelengkapan tab: Tab Identitas & Alamat tidak akan bertanda `✓` jika NPWP belum diisi atau formatnya belum valid (15/16 digit).
+- **Pemilihan Peran & Aktivitas Eksklusif (*Single Choice Role Switcher*)**:
+  - Pilihan kategori peran pada form karier (`Pekerja / Karyawan`, `Wirausaha / Founder`, dan `Melanjutkan Pendidikan`) bersifat eksklusif (*single choice*).
+  - Saat alumni beralih peran (misalnya ke *Melanjutkan Pendidikan*), seluruh data perusahaan, atasan, posisi jabatan, dan gaji pada kategori lain secara otomatis di-reset menjadi `null` agar basis data tetap bersih dan tidak menyimpan data usang.
+  - Kartu isian data perusahaan dan data atasan disesuaikan secara dinamis dan tidak diwajibkan untuk kategori studi lanjut.
+- **Standardisasi & Validasi Format Kontak & Media Sosial**:
+  - Validasi email wajib mengandung karakter `@` dan nama domain valid.
+  - Validasi nomor telepon/WhatsApp dibatasi format 10–15 digit angka (dengan dukungan tanda `+`).
+  - Standardisasi placeholder dan pembersihan format URL media sosial: LinkedIn URL (`https://linkedin.com/in/...`), LinkedIn Username (`username_linkedin`), Instagram URL (`https://instagram.com/...`), dan Facebook URL (`https://facebook.com/...`).
+- **Standardisasi Tampilan Kuesioner Prodi ([KuesionerProdi.vue](file:///c:/study/tracerstudy/resources/js/Pages/Alumni/KuesionerProdi.vue), [ProdiQuestionnaireSeeder.php](file:///c:/study/tracerstudy/database/seeders/ProdiQuestionnaireSeeder.php))**:
+  - Menyamakan sistem tombol "Lanjut" & "Kembali" serta navigasi stepper dengan Kuesioner Universitas (`Kuesioner.vue`): menggunakan FAB *floating action button* melayang di desktop dan *bottom navigation bar* di mobile.
+  - Menyamakan lebar kontainer formulir menjadi `max-w-6xl xl:max-w-7xl`.
+  - Mengoreksi 4 butir instrumen Prodi Sistem Informasi yang sebelumnya keliru terdaftar sebagai pertanyaan isian terbuka menjadi header deskripsi section.
+- **Automated Tests & Quality**:
+  - Seluruh 53 tests PHPUnit Feature & Unit lulus 100% (297 assertions).
+  - Pemformatan kode PHP bersih dengan Laravel Pint (`vendor/bin/pint --format agent`).
+  - Vite build selesai sukses tanpa warning/error.
+
 ## [2026-09-20] Navigasi Sidebar Terpadu Super Admin (Menggantikan Navigasi Atas)
 - **Desain & Implementasi Sidebar Terpadu Super Admin ([Sidebar.vue](file:///c:/study/tracerstudy/resources/js/Pages/SuperAdmin/Components/Sidebar.vue))**:
   - Mengubah sistem navigasi modul Super Admin dari navigasi atas (*top navigation bar*) menjadi **Sidebar** navigasi tetap (*fixed desktop sidebar* `w-72`) di sisi kiri layar.
@@ -73,6 +141,13 @@
   - Otomatis disinkronkan ke butir kuesioner `F11` pada tabel `tracer` via [KuesionerSyncService.php](file:///c:/study/tracerstudy/app/Services/Kuesioner/KuesionerSyncService.php).
 - **Pemisahan Peran Kerja & Posisi Jabatan: Pekerja vs Wiraswasta (`F2G` vs `F5C`)**:
   - Menambahkan kolom `kategori_pekerjaan` dan `posisi_wiraswasta` pada tabel `biodata`.
+  - **Pemisahan Status Kerja & Status Studi Lanjut (Independen)**:
+    - Status Pekerjaan Utama dibagi menjadi 2 opsi saling eksklusif (*Single Choice*): **🏢 Pekerja / Karyawan** vs **🚀 Wirausaha / Founder**.
+    - Ditambahkan opsi toggle: **🎓 "Sedang Melanjutkan Studi (S1 / S2 / S3 / Profesi / Spesialis)"**.
+    - Mengaktifkan atau menonaktifkan status studi lanjut **tidak lagi mereset ataupun menyembunyikan data perusahaan, jabatan, dan atasan langsung**.
+  - **Conditional Rendering Detail Perusahaan (*Progressive Disclosure*)**:
+    - Kolom detail perusahaan (*Negara/Provinsi/Kabupaten, Jenis Perusahaan F11, Skala F2H/F5D, Alamat Kantor, dan Kode Pos*) **hanya ditampilkan jika nama perusahaan sudah dipilih atau ditambahkan**.
+    - Jika perusahaan belum dipilih, form menampilkan tampilan yang bersih dengan pesan panduan pencarian perusahaan.
   - Pada form profil [FormKarier.vue](file:///c:/study/tracerstudy/resources/js/Pages/Alumni/Profil/Components/FormKarier.vue):
     - Menyediakan pemilih kategori peran kerja: **🏢 Pekerja / Karyawan / Profesional** vs **🚀 Wirausaha / Founder / Startup / Usaha Mandiri**.
     - Jika memilih **Pekerja**: Menampilkan dropdown posisi jabatan struktural `F2G` (`1 - Direksi`, `2 - Top Manager`, `3 - Middle Manager`, `4 - Low Manager`, `5 - Supervisor`, `6 - Staff`) dan mengosongkan `F5C`.

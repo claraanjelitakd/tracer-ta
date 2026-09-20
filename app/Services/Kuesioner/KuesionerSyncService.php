@@ -39,8 +39,12 @@ class KuesionerSyncService
         // Hilangkan kolom non-pertanyaan
         unset($profileMap['user_id'], $profileMap['biodata_id'], $profileMap['nim']);
 
+        $profileCodesUpper = array_map('strtoupper', KelengkapanTracerService::PROFILE_MANAGED_CODES);
+
         foreach ($profileMap as $code => $val) {
-            $question = RefSubpertanyaan2021::whereRaw('LOWER(kode_pertanyaan) = ?', [strtolower($code)])
+            $codeUpper = strtoupper($code);
+
+            $question = RefSubpertanyaan2021::whereRaw('UPPER(kode_pertanyaan) = ?', [$codeUpper])
                 ->first();
 
             if (! $question) {
@@ -48,16 +52,19 @@ class KuesionerSyncService
             }
 
             if ($val === null || trim((string) $val) === '') {
-                Tracer::where('biodata_id', $biodata->id)
-                    ->where(function ($q) use ($question) {
-                        $q->where('question_id', $question->id)
-                            ->orWhere('kode_pertanyaan', $question->kode_pertanyaan);
-                    })
-                    ->delete();
+                // Hanya hapus baris tracer jika kolom ini memang bagian kelola profil (PROFILE_MANAGED_CODES)
+                if (in_array($codeUpper, $profileCodesUpper)) {
+                    Tracer::where('biodata_id', $biodata->id)
+                        ->where(function ($q) use ($question) {
+                            $q->where('question_id', $question->id)
+                                ->orWhere('kode_pertanyaan', $question->kode_pertanyaan);
+                        })
+                        ->delete();
+                }
             } else {
                 $answerJson = null;
-                if ($code === 'F505') {
-                    $answerJson = ['F5051' => (string) $val];
+                if ($codeUpper === 'F505') {
+                    $answerJson = ['F5051' => (string) $val, 'total' => (int) $val];
                 }
 
                 // Hapus baris dengan kode_pertanyaan sama tetapi id pertanyaan berbeda jika ada
@@ -106,17 +113,17 @@ class KuesionerSyncService
         $tahunLulus = $biodata->tahun_lulus ?? ($biodata->dataAkademik?->tahun_lulus ?? $biodata->dataAkademik?->tahun_akademik_lulus);
 
         $prodiSyncMap = [
-            'PSI-1-01' => $namaLengkap,
-            'PSI-1-02' => $nim,
-            'PSI-1-03' => $tahunLulus ? (string) $tahunLulus : null,
+            'nama' => $namaLengkap,
+            'nim' => $nim,
+            'tahun kelulusan' => $tahunLulus ? (string) $tahunLulus : null,
         ];
 
-        foreach ($prodiSyncMap as $kodeSoal => $val) {
+        foreach ($prodiSyncMap as $textKey => $val) {
             if ($val === null || trim((string) $val) === '') {
                 continue;
             }
 
-            $pQ = $prodiQuestions->firstWhere('code', $kodeSoal);
+            $pQ = $prodiQuestions->first(fn ($q) => strtolower(trim((string) $q->question_text)) === $textKey);
             if ($pQ) {
                 ProdiResponse::updateOrCreate(
                     ['biodata_id' => $biodata->id, 'prodi_question_id' => $pQ->id],

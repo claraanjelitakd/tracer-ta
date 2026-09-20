@@ -52,7 +52,7 @@ class KuesionerController extends Controller
             'BIO_TEMPAT_LAHIR', 'BIO_TANGGAL_LAHIR', 'BIO_JK', 'BIO_TGL_LULUS', 'BIO_JUDUL_TA', 'BIO_NIK', 'BIO_NPWP',
             'F5a1', 'F5a2', 'F510', 'F5B', 'F5C', 'F5D',
             'F2E', 'F2E1', 'F2E2', 'F2E3', 'F2F', 'F2G', 'F2H',
-            'F11',
+            'F11', 'F505',
         ];
 
         // 4. Ambil data kuesioner aktif dengan mengecualikan butir pertanyaan profil
@@ -208,9 +208,6 @@ class KuesionerController extends Controller
                                     continue;
                                 }
                                 $numVal = is_numeric($v) ? (float) $v : 0;
-                                if ($numVal > 0 && $numVal < 10000) {
-                                    $numVal = $numVal * 1000;
-                                }
                                 $formatted[$k] = (int) $numVal;
                             }
 
@@ -219,9 +216,6 @@ class KuesionerController extends Controller
                                 $firstOpt = $pertanyaan->detils->first();
                                 $optCode = $firstOpt ? ($firstOpt->kode_opsi ?: ($firstOpt->code ?: $firstOpt->id)) : 'F5051';
                                 $gajiNum = (float) $autofillData->F505;
-                                if ($gajiNum > 0 && $gajiNum < 10000) {
-                                    $gajiNum = $gajiNum * 1000;
-                                }
                                 $formatted[$optCode] = (int) $gajiNum;
                             }
 
@@ -247,9 +241,6 @@ class KuesionerController extends Controller
                                 $firstOpt = $pertanyaan->detils->first();
                                 $optCode = $firstOpt ? ($firstOpt->kode_opsi ?: ($firstOpt->code ?: $firstOpt->id)) : 'F5051';
                                 $gajiNum = (float) $autofillData->F505;
-                                if ($gajiNum > 0 && $gajiNum < 10000) {
-                                    $gajiNum = $gajiNum * 1000;
-                                }
                                 $formatted[$optCode] = (int) $gajiNum;
                             }
                             $jawabanAwal[$pertanyaan->id] = $formatted;
@@ -282,18 +273,6 @@ class KuesionerController extends Controller
                                     return strcasecmp($opt->option_text, $val) === 0 || str_starts_with(strtolower($opt->option_text), strtolower($val));
                                 });
                                 $val = $matchedOpt ? $matchedOpt->option_text : $val;
-                            }
-
-                            // Normalisasi F505A jika ada rekomendasi kesesuaian UMR
-                            if ($kode === 'F505A') {
-                                if (! empty($val)) {
-                                    $matchedOpt = $pertanyaan->detils->first(function ($opt) use ($val) {
-                                        return strcasecmp($opt->option_text, $val) === 0 || strcasecmp($opt->kode_opsi, $val) === 0;
-                                    });
-                                    $val = $matchedOpt ? $matchedOpt->option_text : $val;
-                                } elseif (! empty($autofillData->F505)) {
-                                    $val = 'Sesuai';
-                                }
                             }
 
                             $jawabanAwal[$pertanyaan->id] = $val;

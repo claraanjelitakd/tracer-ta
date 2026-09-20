@@ -40,73 +40,49 @@ class ProdiQuestionnaireSeeder extends Seeder
         ];
 
         // =========================================================================
-        // SECTION 1: Formulir Data Diri & Kontribusi
+        // SECTION 1: Formulir Peminatan & Kontribusi Alumni
         // =========================================================================
         $sec1 = ProdiQuestionSection::updateOrCreate(
             ['prodi_id' => $prodiSI->id, 'order' => 1],
             [
-                'title' => 'Formulir Data Diri & Kontribusi',
-                'description' => 'Data identitas lulusan, konsentrasi peminatan, dan kesediaan berkontribusi untuk prodi.',
+                'title' => 'Formulir Peminatan & Kontribusi Alumni',
+                'description' => 'Data konsentrasi peminatan, rencana wisuda, dan kesediaan berkontribusi untuk prodi.',
             ]
         );
 
-        // 1.1 Nama *
+        // Hapus butir lama yang duplikat dengan Kuesioner Universitas / Data Akademik (Nama, NIM, Tahun Kelulusan)
+        ProdiQuestion::where('prodi_id', $prodiSI->id)
+            ->where(function ($query) {
+                $query->whereIn('code', ['PSI-1-01', 'PSI-1-02', 'PSI-1-03'])
+                    ->whereIn('question_text', ['Nama', 'NIM', 'Tahun Kelulusan']);
+            })
+            ->orWhere(function ($query) use ($prodiSI) {
+                $query->where('prodi_id', $prodiSI->id)
+                    ->whereIn('code', ['PSI-1-05', 'PSI-1-06', 'PSI-1-07']);
+            })
+            ->delete();
+
+        // 1.1 Rencana Tanggal Wisuda *
         ProdiQuestion::updateOrCreate(
             ['prodi_id' => $prodiSI->id, 'code' => 'PSI-1-01'],
-            [
-                'prodi_question_section_id' => $sec1->id,
-                'question_text' => 'Nama',
-                'type' => 'text',
-                'is_required' => true,
-                'order' => 1,
-            ]
-        );
-
-        // 1.2 NIM *
-        ProdiQuestion::updateOrCreate(
-            ['prodi_id' => $prodiSI->id, 'code' => 'PSI-1-02'],
-            [
-                'prodi_question_section_id' => $sec1->id,
-                'question_text' => 'NIM',
-                'type' => 'text',
-                'is_required' => true,
-                'order' => 2,
-            ]
-        );
-
-        // 1.3 Tahun Kelulusan *
-        ProdiQuestion::updateOrCreate(
-            ['prodi_id' => $prodiSI->id, 'code' => 'PSI-1-03'],
-            [
-                'prodi_question_section_id' => $sec1->id,
-                'question_text' => 'Tahun Kelulusan',
-                'type' => 'text',
-                'is_required' => true,
-                'order' => 3,
-            ]
-        );
-
-        // 1.4 Rencana Tanggal Wisuda *
-        ProdiQuestion::updateOrCreate(
-            ['prodi_id' => $prodiSI->id, 'code' => 'PSI-1-04'],
             [
                 'prodi_question_section_id' => $sec1->id,
                 'question_text' => 'Rencana Tanggal Wisuda',
                 'type' => 'date',
                 'is_required' => true,
-                'order' => 4,
+                'order' => 1,
             ]
         );
 
-        // 1.5 Konsentrasi yang diambil *
+        // 1.2 Konsentrasi yang diambil *
         $qKonsentrasi = ProdiQuestion::updateOrCreate(
-            ['prodi_id' => $prodiSI->id, 'code' => 'PSI-1-05'],
+            ['prodi_id' => $prodiSI->id, 'code' => 'PSI-1-02'],
             [
                 'prodi_question_section_id' => $sec1->id,
                 'question_text' => 'Konsentrasi yang diambil',
                 'type' => 'single_choice',
                 'is_required' => true,
-                'order' => 5,
+                'order' => 2,
             ]
         );
         $konsentrasiOpts = [
@@ -119,40 +95,40 @@ class ProdiQuestionnaireSeeder extends Seeder
         foreach ($konsentrasiOpts as $idx => $optText) {
             $num = $idx + 1;
             ProdiQuestionOption::updateOrCreate(
-                ['prodi_question_id' => $qKonsentrasi->id, 'code' => "PSI-1-05-0{$num}"],
+                ['prodi_question_id' => $qKonsentrasi->id, 'code' => "PSI-1-02-0{$num}"],
                 ['option_text' => $optText, 'order' => $num]
             );
         }
 
-        // 1.6 Apakah Anda mau berkontribusi kepada Program Studi Sistem Informasi UKDW? *
+        // 1.3 Apakah Anda mau berkontribusi kepada Program Studi Sistem Informasi UKDW? *
         $qKontribusi = ProdiQuestion::updateOrCreate(
-            ['prodi_id' => $prodiSI->id, 'code' => 'PSI-1-06'],
+            ['prodi_id' => $prodiSI->id, 'code' => 'PSI-1-03'],
             [
                 'prodi_question_section_id' => $sec1->id,
                 'question_text' => 'Apakah Anda mau berkontribusi kepada Program Studi Sistem Informasi UKDW?',
                 'type' => 'single_choice',
                 'is_required' => true,
-                'order' => 6,
+                'order' => 3,
             ]
         );
         $kontribusiOpts = ['Ya', 'Tidak'];
         foreach ($kontribusiOpts as $idx => $optText) {
             $num = $idx + 1;
             ProdiQuestionOption::updateOrCreate(
-                ['prodi_question_id' => $qKontribusi->id, 'code' => "PSI-1-06-0{$num}"],
+                ['prodi_question_id' => $qKontribusi->id, 'code' => "PSI-1-03-0{$num}"],
                 ['option_text' => $optText, 'order' => $num]
             );
         }
 
-        // 1.7 Jika ya, kontribusi apa yang akan Anda berikan?
+        // 1.4 Jika ya, kontribusi apa yang akan Anda berikan?
         $qBentukKontribusi = ProdiQuestion::updateOrCreate(
-            ['prodi_id' => $prodiSI->id, 'code' => 'PSI-1-07'],
+            ['prodi_id' => $prodiSI->id, 'code' => 'PSI-1-04'],
             [
                 'prodi_question_section_id' => $sec1->id,
                 'question_text' => 'Jika ya, kontribusi apa yang akan Anda berikan?',
                 'type' => 'multiple_choice',
                 'is_required' => false,
-                'order' => 7,
+                'order' => 4,
             ]
         );
         $bentukOpts = [
@@ -164,7 +140,7 @@ class ProdiQuestionnaireSeeder extends Seeder
         foreach ($bentukOpts as $idx => $optText) {
             $num = $idx + 1;
             ProdiQuestionOption::updateOrCreate(
-                ['prodi_question_id' => $qBentukKontribusi->id, 'code' => "PSI-1-07-0{$num}"],
+                ['prodi_question_id' => $qBentukKontribusi->id, 'code' => "PSI-1-04-0{$num}"],
                 ['option_text' => $optText, 'order' => $num]
             );
         }
@@ -251,6 +227,16 @@ class ProdiQuestionnaireSeeder extends Seeder
             }
         }
 
+        // Hapus butir pertanyaan lama yang sebenarnya adalah header teks
+        ProdiQuestion::where('prodi_id', $prodiSI->id)
+            ->whereIn('question_text', [
+                'Bagaimana dengan fasilitas yang telah disediakan Fakultas Teknologi Informasi? Apakah fasilitas yang diberikan sudah membantu Anda dalam studi?',
+                'Bagaimana dengan pelayanan yang diberikan oleh rekan-rekan dosen dan tenaga kependidikan dari FTI UKDW?',
+                'Bagaimana dengan mata kuliah yang ditawarkan oleh Program Studi Sistem Informasi UKDW?',
+                'Bagaimana dengan kepuasan secara keseluruhan dari pengalaman Anda belajar selama kuliah di Program Studi Sistem Informasi UKDW?',
+            ])
+            ->delete();
+
         // =========================================================================
         // SECTION 4: Fasilitas yang Tersedia
         // =========================================================================
@@ -258,19 +244,7 @@ class ProdiQuestionnaireSeeder extends Seeder
             ['prodi_id' => $prodiSI->id, 'order' => 4],
             [
                 'title' => 'Fasilitas yang Tersedia',
-                'description' => 'Evaluasi sarana dan prasarana penunjang kegiatan studi di lingkungan Fakultas Teknologi Informasi.',
-            ]
-        );
-
-        // 4.1 Uraian fasilitas
-        ProdiQuestion::updateOrCreate(
-            ['prodi_id' => $prodiSI->id, 'code' => 'PSI-4-01'],
-            [
-                'prodi_question_section_id' => $sec4->id,
-                'question_text' => 'Bagaimana dengan fasilitas yang telah disediakan Fakultas Teknologi Informasi? Apakah fasilitas yang diberikan sudah membantu Anda dalam studi?',
-                'type' => 'text',
-                'is_required' => false,
-                'order' => 1,
+                'description' => 'Bagaimana dengan fasilitas yang telah disediakan Fakultas Teknologi Informasi? Apakah fasilitas yang diberikan sudah membantu Anda dalam studi?',
             ]
         );
 
@@ -283,7 +257,7 @@ class ProdiQuestionnaireSeeder extends Seeder
         ];
 
         foreach ($sec4RatingQuestions as $idx => $qText) {
-            $qNum = $idx + 2;
+            $qNum = $idx + 1;
             $q = ProdiQuestion::updateOrCreate(
                 ['prodi_id' => $prodiSI->id, 'code' => "PSI-4-0{$qNum}"],
                 [
@@ -309,19 +283,7 @@ class ProdiQuestionnaireSeeder extends Seeder
             ['prodi_id' => $prodiSI->id, 'order' => 5],
             [
                 'title' => 'Dosen dan Tenaga Kependidikan',
-                'description' => 'Evaluasi kompetensi pengajaran rekan dosen serta kualitas layanan administrasi tenaga kependidikan.',
-            ]
-        );
-
-        // 5.1 Uraian pelayanan
-        ProdiQuestion::updateOrCreate(
-            ['prodi_id' => $prodiSI->id, 'code' => 'PSI-5-01'],
-            [
-                'prodi_question_section_id' => $sec5->id,
-                'question_text' => 'Bagaimana dengan pelayanan yang diberikan oleh rekan-rekan dosen dan tenaga kependidikan dari FTI UKDW?',
-                'type' => 'text',
-                'is_required' => false,
-                'order' => 1,
+                'description' => 'Bagaimana dengan pelayanan yang diberikan oleh rekan-rekan dosen dan tenaga kependidikan dari FTI UKDW?',
             ]
         );
 
@@ -336,7 +298,7 @@ class ProdiQuestionnaireSeeder extends Seeder
         ];
 
         foreach ($sec5RatingQuestions as $idx => $qText) {
-            $qNum = $idx + 2;
+            $qNum = $idx + 1;
             $q = ProdiQuestion::updateOrCreate(
                 ['prodi_id' => $prodiSI->id, 'code' => "PSI-5-0{$qNum}"],
                 [
@@ -362,19 +324,7 @@ class ProdiQuestionnaireSeeder extends Seeder
             ['prodi_id' => $prodiSI->id, 'order' => 6],
             [
                 'title' => 'Mata Kuliah yang Ditawarkan',
-                'description' => 'Evaluasi keselarasan kurikulum, fleksibilitas mata kuliah pilihan, dan kesiapan menghadapi dunia kerja.',
-            ]
-        );
-
-        // 6.1 Uraian mata kuliah
-        ProdiQuestion::updateOrCreate(
-            ['prodi_id' => $prodiSI->id, 'code' => 'PSI-6-01'],
-            [
-                'prodi_question_section_id' => $sec6->id,
-                'question_text' => 'Bagaimana dengan mata kuliah yang ditawarkan oleh Program Studi Sistem Informasi UKDW?',
-                'type' => 'text',
-                'is_required' => false,
-                'order' => 1,
+                'description' => 'Bagaimana dengan mata kuliah yang ditawarkan oleh Program Studi Sistem Informasi UKDW?',
             ]
         );
 
@@ -387,7 +337,7 @@ class ProdiQuestionnaireSeeder extends Seeder
         ];
 
         foreach ($sec6RatingQuestions as $idx => $qText) {
-            $qNum = $idx + 2;
+            $qNum = $idx + 1;
             $q = ProdiQuestion::updateOrCreate(
                 ['prodi_id' => $prodiSI->id, 'code' => "PSI-6-0{$qNum}"],
                 [
@@ -413,19 +363,7 @@ class ProdiQuestionnaireSeeder extends Seeder
             ['prodi_id' => $prodiSI->id, 'order' => 7],
             [
                 'title' => 'Kepuasan Total',
-                'description' => 'Tingkat kepuasan alumni secara menyeluruh terhadap pengalaman studi di Program Studi Sistem Informasi.',
-            ]
-        );
-
-        // 7.1 Uraian kepuasan
-        ProdiQuestion::updateOrCreate(
-            ['prodi_id' => $prodiSI->id, 'code' => 'PSI-7-01'],
-            [
-                'prodi_question_section_id' => $sec7->id,
-                'question_text' => 'Bagaimana dengan kepuasan secara keseluruhan dari pengalaman Anda belajar selama kuliah di Program Studi Sistem Informasi UKDW?',
-                'type' => 'text',
-                'is_required' => false,
-                'order' => 1,
+                'description' => 'Bagaimana dengan kepuasan secara keseluruhan dari pengalaman Anda belajar selama kuliah di Program Studi Sistem Informasi UKDW?',
             ]
         );
 
@@ -436,7 +374,7 @@ class ProdiQuestionnaireSeeder extends Seeder
         ];
 
         foreach ($sec7RatingQuestions as $idx => $qText) {
-            $qNum = $idx + 2;
+            $qNum = $idx + 1;
             $q = ProdiQuestion::updateOrCreate(
                 ['prodi_id' => $prodiSI->id, 'code' => "PSI-7-0{$qNum}"],
                 [

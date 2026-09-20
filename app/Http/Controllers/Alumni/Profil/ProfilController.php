@@ -115,9 +115,9 @@ class ProfilController extends Controller
 
             'expert' => $biodata?->expert ?? '',
             'minat' => $biodata?->minat ?? '',
-            'kategori_pekerjaan' => $biodata?->kategori_pekerjaan ?? (in_array(strtolower((string) $biodata?->posisi_jabatan), ['owner', 'founder', 'wiraswasta', 'wirausaha', 'wiraswasta / wirausaha', 'owner / founder']) ? 'Wiraswasta' : 'Pekerja'),
+            'kategori_pekerjaan' => $biodata?->kategori_pekerjaan ?? '',
             'posisi_jabatan' => $biodata?->posisi_jabatan ?? '',
-            'posisi_wiraswasta' => $biodata?->posisi_wiraswasta ?? (in_array(strtolower((string) $biodata?->posisi_jabatan), ['owner', 'founder', 'wiraswasta', 'wirausaha', 'wiraswasta / wirausaha', 'owner / founder']) ? $biodata?->posisi_jabatan : ''),
+            'posisi_wiraswasta' => $biodata?->posisi_wiraswasta ?? '',
             'pendidikan_tingkat' => $biodata?->pendidikan_tingkat ?? '',
             'perguruan_tinggi' => $biodata?->perguruan_tinggi ?? '',
             'pendidikan_prodi' => $biodata?->pendidikan_prodi ?? '',

@@ -249,7 +249,7 @@ const f17CompletedCount = computed(() => {
     }).length;
 });
 
-// Kelompokkan pertanyaan dalam section: buat berpasangan kanan-kiri khusus F6/F7 dan F18b/F18c
+// Kelompokkan pertanyaan dalam section: buat berpasangan atau bertiga (F6, F7, F7A dan F18b/F18c)
 const groupedQuestions = computed(() => {
     const list = currentSection.value?.subpertanyaans || currentSection.value?.questions;
     if (!list) return [];
@@ -260,11 +260,19 @@ const groupedQuestions = computed(() => {
     while (i < questions.length) {
         const q = questions[i];
         const nextQ = questions[i + 1];
+        const nextQ2 = questions[i + 2];
         const qCode = (q.kode_pertanyaan || q.code || '').toUpperCase();
         const nextQCode = nextQ ? (nextQ.kode_pertanyaan || nextQ.code || '').toUpperCase() : '';
+        const nextQ2Code = nextQ2 ? (nextQ2.kode_pertanyaan || nextQ2.code || '').toUpperCase() : '';
 
-        // Khusus F6 dan F7: buat berdampingan kanan-kiri (grid 2 kolom)
-        if (qCode === 'F6' && nextQ && nextQCode === 'F7') {
+        // Khusus F6, F7, dan F7A: kelompokkan jadi 3 kolom berdampingan
+        if (qCode === 'F6' && nextQCode === 'F7' && nextQ2Code === 'F7A') {
+            groups.push({
+                type: 'trio',
+                items: [q, nextQ, nextQ2]
+            });
+            i += 3;
+        } else if (qCode === 'F6' && nextQ && nextQCode === 'F7') {
             groups.push({
                 type: 'pair',
                 items: [q, nextQ]
@@ -308,10 +316,12 @@ const hiddenQuestionIds = computed(() => {
 
     // Index mapping untuk pencarian cepat target jump_to berdasarkan kode pertanyaan
     const codeToIndex = {};
+    const codeToQuestion = {};
     list.forEach((q, idx) => {
         const code = (q.kode_pertanyaan || q.code || '').toUpperCase();
         if (code) {
             codeToIndex[code] = idx;
+            codeToQuestion[code] = q;
         }
     });
 
@@ -319,10 +329,70 @@ const hiddenQuestionIds = computed(() => {
         const q = list[i];
         if (hidden.has(q.id)) continue;
 
+        const qCode = (q.kode_pertanyaan || q.code || '').toUpperCase();
+        const ans = form.answers[q.id];
+
+        // Aturan Berbasis Status Pekerjaan F8 (Standar Tracer Study Kemendikbud Dikti)
+        if (qCode === 'F8' && ans !== undefined && ans !== null) {
+            const ansStr = (typeof ans === 'string' || typeof ans === 'number') ? ans.toString().trim().toLowerCase() : '';
+
+            // Status 4: Melanjutkan Pendidikan -> lewati pertanyaan pekerjaan/mencari kerja
+            if (ansStr.includes('melanjutkan pendidikan') || ansStr === '4') {
+                const workCodes = ['F3', 'F4', 'F504', 'F502', 'F505', 'F506', 'F6', 'F7', 'F7A', 'F14', 'F15', 'F16'];
+                workCodes.forEach(wc => {
+                    if (codeToQuestion[wc]) {
+                        hidden.add(codeToQuestion[wc].id);
+                    }
+                });
+            }
+            // Status 2: Belum Memungkinkan Bekerja -> lewati studi lanjut dan pertanyaan pekerjaan
+            else if (ansStr.includes('belum memungkinkan') || ansStr === '2') {
+                const skipCodes = ['F18', 'F18A', 'F18B', 'F18C', 'F18D', 'F3', 'F4', 'F504', 'F502', 'F505', 'F506', 'F6', 'F7', 'F7A', 'F14', 'F15', 'F16'];
+                skipCodes.forEach(sc => {
+                    if (codeToQuestion[sc]) {
+                        hidden.add(codeToQuestion[sc].id);
+                    }
+                });
+            }
+            // Status 5: Tidak Kerja tetapi sedang mencari kerja -> lewati studi lanjut & pertanyaan sedang bekerja
+            else if (ansStr.includes('sedang mencari kerja') || ansStr === '5') {
+                const skipCodes = ['F18', 'F18A', 'F18B', 'F18C', 'F18D', 'F504', 'F502', 'F505', 'F506', 'F14', 'F15', 'F16'];
+                skipCodes.forEach(sc => {
+                    if (codeToQuestion[sc]) {
+                        hidden.add(codeToQuestion[sc].id);
+                    }
+                });
+            }
+            // Status 1 & 3: Bekerja / Wiraswasta -> lewati studi lanjut (F18)
+            else if (ansStr !== '') {
+                ['F18', 'F18A', 'F18B', 'F18C', 'F18D'].forEach(sc => {
+                    if (codeToQuestion[sc]) {
+                        hidden.add(codeToQuestion[sc].id);
+                    }
+                });
+            }
+        }
+
+        // Aturan Khusus F504:
+        // Jika Ya -> sembunyikan F506 (pencarian > 6 bulan)
+        // Jika Tidak -> sembunyikan F502 & F505 (pencarian <= 6 bulan & gaji)
+        if (qCode === 'F504' && ans !== undefined && ans !== null) {
+            const ansStr = (typeof ans === 'string' || typeof ans === 'number') ? ans.toString().trim().toLowerCase() : '';
+            if (ansStr === 'ya' || ansStr === '1' || ansStr.startsWith('ya')) {
+                if (codeToQuestion['F506']) {
+                    hidden.add(codeToQuestion['F506'].id);
+                }
+            } else if (ansStr === 'tidak' || ansStr === '2' || ansStr.startsWith('tidak')) {
+                ['F502', 'F505'].forEach(wc => {
+                    if (codeToQuestion[wc]) {
+                        hidden.add(codeToQuestion[wc].id);
+                    }
+                });
+            }
+        }
+
         const options = q.detils || q.options;
         if (!options || options.length === 0) continue;
-
-        const ans = form.answers[q.id];
         if (ans === undefined || ans === null || ans === '') continue;
 
         let selectedOpt = null;
@@ -709,7 +779,7 @@ watch(() => form.answers, (newAnswers) => {
         </header>
 
         <!-- Area Konten Formulir Utama -->
-        <main class="flex-1 px-3 py-4 sm:px-4 md:px-6 w-full mx-auto mt-3 sm:mt-6 md:mt-8 max-w-5xl">
+        <main class="flex-1 px-3 py-4 sm:px-4 md:px-6 lg:px-8 w-full mx-auto mt-3 sm:mt-6 md:mt-8 max-w-6xl xl:max-w-7xl">
             <!-- Pesan Error jika kuesioner tidak aktif -->
             <div 
                 v-if="error" 
@@ -747,8 +817,20 @@ watch(() => form.answers, (newAnswers) => {
                     <!-- 6. Daftar Pertanyaan Kuesioner Standar (Non-F2 & Non-F17) -->
                     <div v-else class="space-y-4 sm:space-y-8">
                         <template v-for="(group, gIdx) in groupedQuestions" :key="'grp_' + gIdx">
-                            <!-- Pertanyaan 2 Kolom Berdampingan (Khusus F6 dan F7) -->
-                            <div v-if="group.type === 'pair'" class="grid grid-cols-1 md:grid-cols-2 gap-3.5 sm:gap-6">
+                            <!-- Pertanyaan 3 Kolom Berdampingan (Khusus F6, F7, F7A) -->
+                            <div v-if="group.type === 'trio'" class="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6 items-stretch">
+                                <KartuPertanyaan 
+                                    v-for="q in group.items"
+                                    :key="q.id"
+                                    :subpertanyaan="q"
+                                    :form="form"
+                                    :is-visible="isQuestionVisible(q.id)"
+                                    :is-paired="true"
+                                />
+                            </div>
+
+                            <!-- Pertanyaan 2 Kolom Berdampingan (Khusus F18b & F18c atau F6 & F7) -->
+                            <div v-else-if="group.type === 'pair'" class="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 items-stretch">
                                 <KartuPertanyaan 
                                     v-for="q in group.items"
                                     :key="q.id"

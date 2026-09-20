@@ -21,7 +21,9 @@ class DataAkademikSeeder extends Seeder
      */
     public function run(): void
     {
-        $alumniUsers = User::where('role', 'alumni')->get();
+        $alumniUsers = User::where('role', 'alumni')
+            ->where('username', '!=', '72220001')
+            ->get();
 
         // Ambil wilayah untuk relasi ID yang valid
         $diy = Propinsi::where('kode_provinsi', '34')->orWhere('nama_provinsi', 'LIKE', '%Yogyakarta%')->first();

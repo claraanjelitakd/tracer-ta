@@ -69,15 +69,15 @@ class KuesionerProdiController extends Controller
         $initialAnswers = [];
         foreach ($questions as $q) {
             $resp = $existingResponses->get($q->id);
-            $qText = strtolower(trim($q->question_text));
+            $qText = strtolower(trim((string) $q->question_text));
 
-            // Cek apakah butir pertanyaan merupakan data identitas/akademik otomatis
+            // Cek apakah butir pertanyaan merupakan data identitas/akademik otomatis jika secara khusus ada
             $autoVal = null;
-            if (str_contains($qText, 'nama') || str_ends_with(strtolower((string) $q->code), '-01')) {
+            if ($qText === 'nama' || $qText === 'nama lengkap') {
                 $autoVal = $namaAkademik;
-            } elseif (str_contains($qText, 'nim') || str_ends_with(strtolower((string) $q->code), '-02')) {
+            } elseif ($qText === 'nim' || $qText === 'nomor induk mahasiswa') {
                 $autoVal = $nimAkademik;
-            } elseif (str_contains($qText, 'lulus') || str_contains($qText, 'kelulusan') || str_ends_with(strtolower((string) $q->code), '-03')) {
+            } elseif ($qText === 'tahun kelulusan' || $qText === 'tahun lulus') {
                 $autoVal = $tahunLulusAkademik;
             }
 
@@ -111,6 +111,8 @@ class KuesionerProdiController extends Controller
                             'answer_json' => null,
                         ]
                     );
+                } else {
+                    $initialAnswers[$q->id] = ($q->type === 'multiple_choice' || $q->type === 'checkbox') ? [] : '';
                 }
             }
         }

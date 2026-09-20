@@ -70,5 +70,10 @@ class DatabaseSeeder extends Seeder
             QuestionMappingSeeder::class,
             ProdiQuestionnaireSeeder::class,
         ]);
+
+        // 5. Seed Data Khusus Pengujian Alumni (Joshua Andrean)
+        $this->call([
+            JoshuaAndreanSeeder::class,
+        ]);
     }
 }

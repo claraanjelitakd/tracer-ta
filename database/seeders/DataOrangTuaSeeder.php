@@ -19,7 +19,7 @@ class DataOrangTuaSeeder extends Seeder
      */
     public function run(): void
     {
-        $akademiks = DataAkademik::all();
+        $akademiks = DataAkademik::where('nim', '!=', '72220001')->get();
 
         $pekerjaanList = [
             'Pegawai Negeri Sipil (PNS)',

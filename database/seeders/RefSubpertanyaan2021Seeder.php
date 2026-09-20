@@ -429,22 +429,12 @@ class RefSubpertanyaan2021Seeder extends Seeder
             [
                 'section_kode' => '4',
                 'kelompok' => 'F5',
-                'kode_pertanyaan' => 'F505A',
-                'subpertanyaan' => 'Apakah Gaji anda sesuai UMR ?',
-                'type' => 'radio',
-                'keterangan' => 'Kesesuaian gaji dengan UMR',
-                'wajib' => 1,
-                'order' => 39,
-            ],
-            [
-                'section_kode' => '4',
-                'kelompok' => 'F5',
                 'kode_pertanyaan' => 'F506',
                 'subpertanyaan' => 'Dalam berapa bulan anda mendapatkan pekerjaan?',
                 'type' => 'number',
                 'keterangan' => 'Jumlah bulan',
                 'wajib' => 1,
-                'order' => 40,
+                'order' => 39,
             ],
 
             // =========================================================

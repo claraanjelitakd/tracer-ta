@@ -2,6 +2,22 @@
 
 Semua perubahan besar pada sistem dicatat dalam dokumen ini.
 
+## [2026-09-20] - Standardisasi Input Gaji, Validasi Minimal Ribuan, Visual Status Tab Minimalis, & Top Notification Banner
+**Profil Alumni UI/UX & Validasi:**
+- Standardisasi Take Home Pay / Gaji: Pola computed getter/setter (Single Source of Truth), peniadaan pengali `* 1000` tersembunyi di semua layer, dan validasi minimal ribuan (>= Rp 1.000) dengan border merah serta notifikasi modal.
+- Tab Navigasi Minimalis: Menghilangkan teks "X belum" dan karakter ASCII mentah, digantikan badge lingkaran hijau (lengkap) dan dot status rose/amber halus (belum lengkap).
+- Top Notification Banner: Memindahkan peringatan "Ada Perubahan Belum Disimpan" ke banner atas mengambang dengan tombol aksi cepat "Simpan Sekarang".
+- Color-coded field states (merah untuk belum terisi, hijau untuk valid) dan pembersihan seluruh emoticon/emoji.
+- Filter lokasi perusahaan bertingkat (Negara / Provinsi & Kabupaten) sebelum memilih perusahaan, dengan fallback *"Data perusahaan tidak ditemukan"* dan penambahan perusahaan baru.
+- Redesain profesional & eksekutif: Menghapus banner pill merah/pink di atas formulir profil, digantikan dengan indikator langsung pada kolom (*field-level indicators*) berupa border rose halus untuk kolom wajib yang kosong dan border emerald checklist untuk kolom valid.
+- Validasi NPWP sesuai UU HPP & PMK No. 112/PMK.03/2022: Dibatasi 15 atau 16 digit angka (integrasi NIK sebagai NPWP Orang Pribadi), tombol cepat "⚡ Gunakan NIK (16 Digit)", dan evaluasi kelengkapan tab secara ketat.
+- Pemilihan peran eksklusif (*single choice*): Kategori `Pekerja / Karyawan`, `Wirausaha / Founder`, dan `Melanjutkan Pendidikan` saling mereset atribut peran lain ke `null` saat berpindah.
+- Validasi kontak: Email wajib mengandung `@` dan domain valid, nomor telepon 10–15 digit, dan standarisasi URL LinkedIn, Instagram, Facebook.
+
+**Kuesioner Prodi:**
+- Menyamakan tombol Lanjut/Kembali (FAB melayang desktop & sticky bottom mobile) dan lebar kontainer (`max-w-6xl xl:max-w-7xl`) dengan Kuesioner Universitas.
+- Mengoreksi 4 butir pertanyaan Prodi SI menjadi header deskripsi section.
+
 ## [2026-09-20] - Navigasi Sidebar Terpadu Super Admin
 **UI/UX & Navigasi:**
 - Mengganti navigasi atas (*top navbar*) pada modul Super Admin dengan **Sidebar Terpadu** (`Sidebar.vue`) tetap di sisi kiri layar (`w-72`).

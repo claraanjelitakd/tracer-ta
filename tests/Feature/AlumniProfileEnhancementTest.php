@@ -172,19 +172,32 @@ class AlumniProfileEnhancementTest extends TestCase
     }
 
     /**
-     * Test input gaji dalam satuan ribuan (misal 5000) otomatis dinormalisasi menjadi 5000000.
+     * Test input gaji nominal murni tersimpan persis sesuai input (tanpa pengali otomatis).
      */
-    public function test_gaji_input_in_thousands_standardized_to_full_nominal(): void
+    public function test_gaji_input_saved_as_exact_nominal(): void
     {
         $response = $this->actingAs($this->alumniUser)->post('/alumni/profile', [
             'nama' => 'Clara Anjelita',
-            'gaji' => '5000', // ketik dalam ribuan
+            'gaji' => '5.000.000',
         ]);
 
         $response->assertRedirect();
         $this->biodata->refresh();
 
         $this->assertEquals(5000000, $this->biodata->gaji);
+    }
+
+    /**
+     * Test input gaji di bawah Rp 1.000 memicu error validasi minimal ribuan.
+     */
+    public function test_gaji_below_thousand_fails_validation(): void
+    {
+        $response = $this->actingAs($this->alumniUser)->post('/alumni/profile', [
+            'nama' => 'Clara Anjelita',
+            'gaji' => '709',
+        ]);
+
+        $response->assertSessionHasErrors('gaji');
     }
 
     /**

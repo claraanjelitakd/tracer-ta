@@ -26,7 +26,9 @@ class BiodataSeeder extends Seeder
      */
     public function run(): void
     {
-        $alumniUsers = User::where('role', 'alumni')->get();
+        $alumniUsers = User::where('role', 'alumni')
+            ->where('username', '!=', '72220001')
+            ->get();
         $perusahaans = Perusahaan::all();
 
         // Ambil wilayah untuk relasi ID yang valid

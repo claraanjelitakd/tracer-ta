@@ -97,7 +97,7 @@ onMounted(() => {
         ref="stepperContainerRef"
         class="w-full bg-white/95 backdrop-blur-md border-b border-gray-200 overflow-x-auto py-2 sm:py-3 custom-scrollbar"
     >
-        <div class="flex items-center justify-between px-3 sm:px-4 md:px-8 min-w-max max-w-5xl mx-auto">
+        <div class="flex items-center justify-between px-3 sm:px-4 md:px-8 min-w-max max-w-6xl xl:max-w-7xl mx-auto">
             <template v-for="(section, index) in sections" :key="section.id">
                 
                 <!-- =================================================================================== -->

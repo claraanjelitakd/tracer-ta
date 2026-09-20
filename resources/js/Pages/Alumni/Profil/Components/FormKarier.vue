@@ -3,12 +3,12 @@
   File: resources/js/Pages/Alumni/Profil/Components/FormKarier.vue
   
   Deskripsi:
-  Mengelola data karier alumni, mencakup peran/aktivitas saat ini (Karyawan, Wirausaha, Melanjutkan Pendidikan),
-  data perusahaan/instansi (lokasi dalam/luar negeri, pencarian master negara/provinsi/kabupaten, dan penambahan perusahaan),
-  nominal penghasilan bulanan, serta data kontak atasan langsung.
+  Mengelola data karier alumni, mencakup peran/aktivitas saat ini (Pekerja / Karyawan, Wirausaha / Founder, Melanjutkan Pendidikan),
+  data perusahaan/instansi (lokasi dalam/luar negeri, filter negara/provinsi/kabupaten sebelum memilih perusahaan, dan penambahan perusahaan),
+  nominal penghasilan bulanan (tanpa auto-multiplier), serta data kontak atasan langsung.
 -->
 <script setup>
-import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
+import { ref, computed, watch, nextTick, onMounted, onUnmounted } from 'vue';
 import Swal from 'sweetalert2';
 
 // ============================================================================
@@ -23,10 +23,6 @@ const props = defineProps({
     alumniData: Object,
     refOptions: Object,
 });
-
-// Class styling reusable untuk form controls
-const inputClass = "block w-full border border-gray-200 bg-white rounded-xl shadow-xs focus:border-[#005B3C] focus:ring focus:ring-[#005B3C]/10 px-4 py-3 text-sm text-gray-800 font-medium transition-colors";
-const labelClass = "block text-sm font-semibold text-gray-700 mb-1.5";
 
 // Container refs untuk mendeteksi klik di luar area dropdown (click-outside)
 const provinsiContainerRef = ref(null);
@@ -91,24 +87,103 @@ const skalaOptions = computed(() => {
 });
 
 // ============================================================================
-// 3. LOGIKA PERAN & OTOMATISASI DATA ATASAN
+// 3. LOGIKA PERAN KERJA & STATUS STUDI LANJUT
 // ============================================================================
+// isOwner HANYA berlaku jika alumni memilih kategori 'Wiraswasta'
 const isOwner = computed(() => {
-    if (props.form.kategori_pekerjaan === 'Wiraswasta') return true;
-    const pos = (props.form.posisi_jabatan || '').toLowerCase();
-    const posWira = (props.form.posisi_wiraswasta || '').toLowerCase();
-    return ['owner', 'founder', 'wiraswasta', 'wirausaha', 'wiraswasta / wirausaha', 'owner / founder'].includes(pos) || posWira !== '';
+    return props.form.kategori_pekerjaan === 'Wiraswasta';
 });
+
+// Status sedang melanjutkan studi lanjut (Independen dari status pekerjaan)
+const isMelanjutkanStudi = ref(
+    Boolean(
+        props.form.pendidikan_tingkat || 
+        props.form.perguruan_tinggi || 
+        props.form.pendidikan_prodi || 
+        props.form.kategori_pekerjaan === 'Melanjutkan Pendidikan'
+    )
+);
+
+// Jika sebelumnya kategori_pekerjaan tersimpan sebagai 'Melanjutkan Pendidikan', sesuaikan
+if (props.form.kategori_pekerjaan === 'Melanjutkan Pendidikan') {
+    isMelanjutkanStudi.value = true;
+    props.form.kategori_pekerjaan = '';
+}
+
+const toggleMelanjutkanStudi = () => {
+    isMelanjutkanStudi.value = !isMelanjutkanStudi.value;
+    if (!isMelanjutkanStudi.value) {
+        props.form.pendidikan_tingkat = null;
+        props.form.perguruan_tinggi = null;
+        props.form.pendidikan_prodi = null;
+    }
+};
+
+// Helper validasi email
+const isValidEmail = (val) => {
+    if (!val) return false;
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(val).trim());
+};
+
+// Helper validasi telepon
+const isValidPhone = (val) => {
+    if (!val) return false;
+    const clean = String(val).replace(/[^0-9+]/g, '');
+    return clean.length >= 10 && clean.length <= 15;
+};
+
+// Helper validasi URL
+const isValidUrl = (val) => {
+    if (!val) return false;
+    return /^https?:\/\/.+/i.test(String(val).trim());
+};
 
 // Cek apakah perusahaan tempat bekerja sudah berstatus Terverifikasi resmi
 const isVerifiedCompany = computed(() => {
     return props.form.company_status_verifikasi === 'Terverifikasi' || props.form.perusahaan_status_verifikasi === 'Terverifikasi';
 });
 
-// Alumni hanya boleh mengedit detail perusahaan (alamat, skala, jenis, kode pos) jika belum terverifikasi atau jika bertindak sebagai Owner / Wiraswasta
+// Alumni hanya boleh mengedit detail perusahaan jika belum terverifikasi atau bertindak sebagai Owner
 const canEditCompanyDetails = computed(() => {
     return !isVerifiedCompany.value || isOwner.value;
 });
+
+// Mengisi data atasan otomatis dengan kontak alumni jika pemilik usaha
+const autoFillAtasanOwner = () => {
+    props.form.nama_atasan = props.form.nama || '';
+    props.form.email_atasan = props.form.email_pribadi || props.form.email || '';
+    props.form.telepon_atasan = props.form.nomor_telepon || '';
+};
+
+// Pemilihan peran eksklusif Pekerja vs Wiraswasta (Single Choice)
+const selectRole = (newRole) => {
+    if (props.form.kategori_pekerjaan === newRole) {
+        props.form.kategori_pekerjaan = '';
+        props.form.posisi_jabatan = null;
+        props.form.posisi_wiraswasta = null;
+        props.form.posisi_wiraswasta_lainnya = null;
+        return;
+    }
+
+    props.form.kategori_pekerjaan = newRole;
+
+    if (newRole === 'Pekerja') {
+        props.form.posisi_wiraswasta = null;
+        props.form.posisi_wiraswasta_lainnya = null;
+        
+        if (props.form.nama_atasan === props.form.nama || props.form.email_atasan === (props.form.email_pribadi || props.form.email)) {
+            props.form.nama_atasan = '';
+            props.form.email_atasan = '';
+            props.form.telepon_atasan = '';
+        }
+    } else if (newRole === 'Wiraswasta') {
+        props.form.posisi_jabatan = null;
+        if (!props.form.posisi_wiraswasta) {
+            props.form.posisi_wiraswasta = '';
+        }
+        autoFillAtasanOwner();
+    }
+};
 
 // Watcher sinkronisasi dua arah field perusahaan agar tersimpan sempurna ke backend
 watch(() => props.form.company_skala, (newVal) => {
@@ -130,86 +205,27 @@ watch(() => props.form.company_jenis_perusahaan_lainnya, (newVal) => {
     props.form.perusahaan_jenis_perusahaan_lainnya = newVal;
 });
 
-// Mengisi data atasan otomatis dengan kontak alumni jika pemilik usaha
-const autoFillAtasanOwner = () => {
-    props.form.nama_atasan = props.form.nama || '';
-    props.form.email_atasan = props.form.email_pribadi || props.form.email || '';
-    props.form.telepon_atasan = props.form.nomor_telepon || '';
-};
-
-// Pantau perubahan kategori aktivitas alumni
-watch(() => props.form.kategori_pekerjaan, (newVal) => {
-    if (newVal === 'Wiraswasta') {
-        if (!props.form.posisi_wiraswasta) props.form.posisi_wiraswasta = 'Owner';
-        props.form.posisi_jabatan = 'Direksi';
-        autoFillAtasanOwner();
-    } else if (newVal === 'Pekerja') {
-        props.form.posisi_wiraswasta = '';
-        if (['owner', 'founder', 'wiraswasta', 'wirausaha', 'wiraswasta / wirausaha', 'owner / founder'].includes((props.form.posisi_jabatan || '').toLowerCase())) {
-            props.form.posisi_jabatan = 'Staff';
-        }
-    } else if (newVal === 'Melanjutkan Pendidikan') {
-        props.form.posisi_wiraswasta = '';
-        props.form.posisi_jabatan = '';
-    }
-});
-
-watch(() => props.form.posisi_jabatan, (newVal) => {
-    if (!newVal) return;
-    const pos = newVal.toLowerCase();
-    if (['owner', 'founder', 'wiraswasta', 'wirausaha', 'wiraswasta / wirausaha', 'owner / founder'].includes(pos)) {
-        autoFillAtasanOwner();
-    }
-});
-
-watch(() => props.form.posisi_wiraswasta, (newVal) => {
-    if (newVal && props.form.kategori_pekerjaan === 'Wiraswasta') {
-        autoFillAtasanOwner();
-    }
-});
-
 // ============================================================================
-// 4. FORMATTING NOMINAL PENGHASILAN (GAJI)
+// 4. FORMATTING NOMINAL PENGHASILAN (GAJI) - SINGLE SOURCE OF TRUTH
 // ============================================================================
 const formatRupiah = (val) => {
     if (!val && val !== 0) return 'Rp 0';
     let num = Number(val);
     if (isNaN(num) || num <= 0) return 'Rp 0';
-    const actualNominal = num < 1000000 ? num * 1000 : num;
-    return 'Rp ' + actualNominal.toLocaleString('id-ID');
+    return 'Rp ' + num.toLocaleString('id-ID');
 };
 
-const formatNominalDisplay = (val) => {
-    if (!val && val !== 0) return '';
-    const clean = String(val).replace(/[^0-9]/g, '');
-    if (!clean) return '';
-    const num = Number(clean);
-    return isNaN(num) || num === 0 ? '' : new Intl.NumberFormat('id-ID').format(num);
-};
-
-const formattedGajiString = ref(formatNominalDisplay(props.form.gaji));
-
-watch(() => props.form.gaji, (newVal) => {
-    formattedGajiString.value = formatNominalDisplay(newVal);
+const formattedGaji = computed({
+    get() {
+        if (!props.form.gaji && props.form.gaji !== 0) return '';
+        const num = Number(props.form.gaji);
+        return isNaN(num) || num <= 0 ? '' : new Intl.NumberFormat('id-ID').format(num);
+    },
+    set(val) {
+        const clean = String(val || '').replace(/[^0-9]/g, '');
+        props.form.gaji = clean ? parseInt(clean, 10) : null;
+    }
 });
-
-const handleGajiInput = (e) => {
-    const raw = e.target.value;
-    const cleanDigits = raw.replace(/[^0-9]/g, '');
-    if (!cleanDigits) {
-        props.form.gaji = null;
-        formattedGajiString.value = '';
-        e.target.value = '';
-        return;
-    }
-    let num = Number(cleanDigits);
-    if (num > 0 && num < 1000 && !raw.includes('000')) {
-        num = num * 1000;
-    }
-    props.form.gaji = num;
-    formattedGajiString.value = new Intl.NumberFormat('id-ID').format(num);
-    e.target.value = formattedGajiString.value;
-};
 
 // ============================================================================
 // 5. DATA PERUSAHAAN & LOKASI
@@ -269,7 +285,18 @@ const filteredProvinces = computed(() => {
 
 const selectProvinsi = (prov) => {
     props.form.company_province_id = prov.id;
+    props.form.perusahaan_propinsi_id = prov.id;
     props.form.company_kabupaten_id = '';
+    props.form.perusahaan_kabupaten_id = '';
+    showProvinsiDropdown.value = false;
+    searchProvinsiQuery.value = '';
+};
+
+const clearProvinsi = () => {
+    props.form.company_province_id = null;
+    props.form.perusahaan_propinsi_id = null;
+    props.form.company_kabupaten_id = null;
+    props.form.perusahaan_kabupaten_id = null;
     showProvinsiDropdown.value = false;
     searchProvinsiQuery.value = '';
 };
@@ -296,6 +323,14 @@ const filteredKabupatens = computed(() => {
 
 const selectKabupaten = (kab) => {
     props.form.company_kabupaten_id = kab.id;
+    props.form.perusahaan_kabupaten_id = kab.id;
+    showKabupatenDropdown.value = false;
+    searchKabupatenQuery.value = '';
+};
+
+const clearKabupaten = () => {
+    props.form.company_kabupaten_id = null;
+    props.form.perusahaan_kabupaten_id = null;
     showKabupatenDropdown.value = false;
     searchKabupatenQuery.value = '';
 };
@@ -328,6 +363,13 @@ const selectNegara = (neg) => {
     searchNegaraQuery.value = '';
 };
 
+const clearNegara = () => {
+    props.form.company_negara = '';
+    props.form.perusahaan_negara = '';
+    showNegaraDropdown.value = false;
+    searchNegaraQuery.value = '';
+};
+
 // Dropdown Perusahaan
 const showCompanyDropdown = ref(false);
 const searchCompanyQuery = ref('');
@@ -339,18 +381,27 @@ const filteredCompanies = computed(() => {
         list = list.filter(c => (c.jenis_lokasi || 'Dalam Negeri') === props.form.company_jenis_lokasi);
     }
 
-    if (props.form.company_jenis_lokasi === 'Dalam Negeri' && props.form.company_province_id) {
-        const inProv = list.filter(c => c.province_id == props.form.company_province_id);
-        if (inProv.length > 0) list = inProv;
-    }
-    if (props.form.company_jenis_lokasi === 'Dalam Negeri' && props.form.company_kabupaten_id) {
-        const inKab = list.filter(c => c.kabupaten_id == props.form.company_kabupaten_id);
-        if (inKab.length > 0) list = inKab;
+    if (props.form.company_jenis_lokasi === 'Luar Negeri') {
+        if (props.form.company_negara && props.form.company_negara !== 'Indonesia') {
+            const qNegara = props.form.company_negara.toLowerCase();
+            list = list.filter(c => c.negara && c.negara.toLowerCase() === qNegara);
+        }
+    } else {
+        if (props.form.company_province_id) {
+            list = list.filter(c => c.province_id == props.form.company_province_id);
+        }
+        if (props.form.company_kabupaten_id) {
+            list = list.filter(c => c.kabupaten_id == props.form.company_kabupaten_id);
+        }
     }
 
     if (!searchCompanyQuery.value.trim()) return list;
     const q = searchCompanyQuery.value.toLowerCase();
-    return list.filter(c => c.nama_perusahaan.toLowerCase().includes(q) || (c.negara && c.negara.toLowerCase().includes(q)));
+    return list.filter(c => 
+        c.nama_perusahaan.toLowerCase().includes(q) || 
+        (c.negara && c.negara.toLowerCase().includes(q)) ||
+        (c.alamat && c.alamat.toLowerCase().includes(q))
+    );
 });
 
 const selectCompany = (company) => {
@@ -364,10 +415,22 @@ const selectCompany = (company) => {
         props.form.company_negara = company.negara;
         props.form.perusahaan_negara = company.negara;
     }
-    if (company.province_id) props.form.company_province_id = company.province_id;
-    if (company.kabupaten_id) props.form.company_kabupaten_id = company.kabupaten_id;
-    if (company.alamat) props.form.company_alamat = company.alamat;
-    if (company.skala) props.form.company_skala = company.skala;
+    if (company.province_id) {
+        props.form.company_province_id = company.province_id;
+        props.form.perusahaan_propinsi_id = company.province_id;
+    }
+    if (company.kabupaten_id) {
+        props.form.company_kabupaten_id = company.kabupaten_id;
+        props.form.perusahaan_kabupaten_id = company.kabupaten_id;
+    }
+    if (company.alamat) {
+        props.form.company_alamat = company.alamat;
+        props.form.perusahaan_alamat = company.alamat;
+    }
+    if (company.skala) {
+        props.form.company_skala = company.skala;
+        props.form.perusahaan_skala = company.skala;
+    }
     if (company.kode_pos) props.form.zipcode = company.kode_pos;
     if (company.jenis_perusahaan) {
         props.form.company_jenis_perusahaan = company.jenis_perusahaan;
@@ -377,7 +440,29 @@ const selectCompany = (company) => {
         props.form.company_jenis_perusahaan_lainnya = company.jenis_perusahaan_lainnya;
         props.form.perusahaan_jenis_perusahaan_lainnya = company.jenis_perusahaan_lainnya;
     }
+    if (company.status_verifikasi) {
+        props.form.company_status_verifikasi = company.status_verifikasi;
+        props.form.perusahaan_status_verifikasi = company.status_verifikasi;
+    }
     
+    showCompanyDropdown.value = false;
+    searchCompanyQuery.value = '';
+};
+
+// Fungsi Mengosongkan Pilihan Perusahaan
+const clearCompany = () => {
+    props.form.nama_perusahaan = '';
+    props.form.company_alamat = '';
+    props.form.perusahaan_alamat = '';
+    props.form.company_skala = '';
+    props.form.perusahaan_skala = '';
+    props.form.zipcode = '';
+    props.form.company_jenis_perusahaan = '';
+    props.form.perusahaan_jenis_perusahaan = '';
+    props.form.company_jenis_perusahaan_lainnya = '';
+    props.form.perusahaan_jenis_perusahaan_lainnya = '';
+    props.form.company_status_verifikasi = '';
+    props.form.perusahaan_status_verifikasi = '';
     showCompanyDropdown.value = false;
     searchCompanyQuery.value = '';
 };
@@ -660,7 +745,9 @@ const openAddCompanyModal = () => {
             props.form.company_negara = newCompany.negara || (props.form.company_jenis_lokasi === 'Luar Negeri' ? '' : 'Indonesia');
             props.form.perusahaan_negara = props.form.company_negara;
             props.form.company_province_id = newCompany.province_id;
+            props.form.perusahaan_propinsi_id = newCompany.province_id;
             props.form.company_kabupaten_id = newCompany.kabupaten_id;
+            props.form.perusahaan_kabupaten_id = newCompany.kabupaten_id;
             props.form.company_alamat = newCompany.alamat || '';
             props.form.company_skala = newCompany.skala || 'Regional/Lokal';
             props.form.zipcode = newCompany.kode_pos || '';
@@ -713,84 +800,137 @@ onUnmounted(() => {
         <!-- ================================================================= -->
         <!-- CARD 1: MEDIA SOSIAL, KEAHLIAN & STATUS AKTIVITAS SAAT INI       -->
         <!-- ================================================================= -->
-        <div class="bg-white rounded-2xl p-6 sm:p-8 shadow-sm border border-gray-100">
-            <h2 class="text-xl font-bold text-gray-900 mb-6">
-                Media Sosial & Profesional
-            </h2>
+        <div class="bg-white rounded-2xl p-6 sm:p-8 shadow-xs border border-gray-100">
+            <div class="flex items-center justify-between mb-6 pb-3 border-b border-gray-100">
+                <h2 class="text-lg sm:text-xl font-black text-gray-900 flex items-center gap-2">
+                    <span class="w-2.5 h-6 bg-[#005B3C] rounded-full inline-block"></span>
+                    Media Sosial & Profil Profesional
+                </h2>
+                <span class="text-xs text-gray-400 font-medium">Jejaring alumni & karier</span>
+            </div>
+
             <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
                 <!-- Input: LinkedIn URL -->
                 <div>
-                    <label :class="labelClass">LinkedIn Profil URL</label>
-                    <input type="url" v-model="form.linkedin_url" :class="inputClass" placeholder="https://linkedin.com/in/..." />
+                    <label class="block text-xs sm:text-sm font-bold text-gray-700 mb-1.5">LinkedIn Profil URL</label>
+                    <input 
+                        type="url" 
+                        v-model="form.linkedin_url" 
+                        class="block w-full border rounded-xl shadow-2xs px-4 py-3 text-sm font-medium transition-all focus:ring-2 focus:ring-[#005B3C]/20"
+                        :class="form.linkedin_url?.trim() ? (isValidUrl(form.linkedin_url) ? 'border-emerald-300 bg-white text-gray-900 focus:border-[#005B3C]' : 'border-rose-300 bg-rose-50/20 text-gray-900 focus:border-rose-500') : 'border-rose-300 bg-rose-50/20 text-gray-900 focus:border-rose-500'"
+                        placeholder="https://linkedin.com/in/username" 
+                    />
                 </div>
+
                 <!-- Input: LinkedIn Username -->
                 <div>
-                    <label :class="labelClass">LinkedIn Username</label>
-                    <input type="text" v-model="form.linkedin_username" :class="inputClass" placeholder="username_linkedin" />
+                    <label class="block text-xs sm:text-sm font-bold text-gray-700 mb-1.5">LinkedIn Username</label>
+                    <input 
+                        type="text" 
+                        v-model="form.linkedin_username" 
+                        class="block w-full border rounded-xl shadow-2xs px-4 py-3 text-sm font-medium transition-all focus:ring-2 focus:ring-[#005B3C]/20"
+                        :class="form.linkedin_username?.trim() ? 'border-emerald-300 bg-white text-gray-900 focus:border-[#005B3C]' : 'border-rose-300 bg-rose-50/20 text-gray-900 focus:border-rose-500'"
+                        placeholder="username_linkedin" 
+                    />
                 </div>
 
                 <!-- Input: Instagram URL -->
                 <div>
-                    <label :class="labelClass">Instagram Profil URL</label>
-                    <input type="url" v-model="form.instagram_url" :class="inputClass" placeholder="https://instagram.com/..." />
+                    <label class="block text-xs sm:text-sm font-bold text-gray-700 mb-1.5">Instagram Profil URL</label>
+                    <input 
+                        type="url" 
+                        v-model="form.instagram_url" 
+                        class="block w-full border rounded-xl shadow-2xs px-4 py-3 text-sm font-medium transition-all focus:ring-2 focus:ring-[#005B3C]/20"
+                        :class="form.instagram_url?.trim() ? (isValidUrl(form.instagram_url) ? 'border-emerald-300 bg-white text-gray-900 focus:border-[#005B3C]' : 'border-rose-300 bg-rose-50/20 text-gray-900 focus:border-rose-500') : 'border-rose-300 bg-rose-50/20 text-gray-900 focus:border-rose-500'"
+                        placeholder="https://instagram.com/username" 
+                    />
                 </div>
+
                 <!-- Input: Facebook URL -->
                 <div>
-                    <label :class="labelClass">Facebook Profil URL</label>
-                    <input type="url" v-model="form.facebook_url" :class="inputClass" placeholder="https://facebook.com/..." />
+                    <label class="block text-xs sm:text-sm font-bold text-gray-700 mb-1.5">Facebook Profil URL</label>
+                    <input 
+                        type="url" 
+                        v-model="form.facebook_url" 
+                        class="block w-full border rounded-xl shadow-2xs px-4 py-3 text-sm font-medium transition-all focus:ring-2 focus:ring-[#005B3C]/20"
+                        :class="form.facebook_url?.trim() ? (isValidUrl(form.facebook_url) ? 'border-emerald-300 bg-white text-gray-900 focus:border-[#005B3C]' : 'border-rose-300 bg-rose-50/20 text-gray-900 focus:border-rose-500') : 'border-rose-300 bg-rose-50/20 text-gray-900 focus:border-rose-500'"
+                        placeholder="https://facebook.com/username" 
+                    />
                 </div>
                 
                 <!-- Input: Bidang Keahlian -->
                 <div class="md:col-span-2">
-                    <label :class="labelClass">Bidang Keahlian (Expertise)</label>
-                    <input type="text" v-model="form.expert" :class="inputClass" placeholder="Contoh: Software Engineering, Data Science..." />
-                </div>
-                <!-- Input: Minat / Ketertarikan -->
-                <div class="md:col-span-2">
-                    <label :class="labelClass">Minat & Ketertarikan</label>
-                    <input type="text" v-model="form.minat" :class="inputClass" placeholder="Contoh: Artificial Intelligence, Cloud Computing..." />
+                    <label class="block text-xs sm:text-sm font-bold text-gray-700 mb-1.5">Bidang Keahlian (Expertise)</label>
+                    <input 
+                        type="text" 
+                        v-model="form.expert" 
+                        class="block w-full border rounded-xl shadow-2xs px-4 py-3 text-sm font-medium transition-all focus:ring-2 focus:ring-[#005B3C]/20" 
+                        :class="form.expert?.trim() ? 'border-emerald-300 bg-white text-gray-900 focus:border-[#005B3C]' : 'border-rose-300 bg-rose-50/20 text-gray-900 focus:border-rose-500'"
+                        placeholder="Contoh: Software Engineering, Data Science, Digital Marketing..." 
+                    />
                 </div>
 
-                <!-- Pilihan Kategori Peran / Aktivitas Saat Ini -->
+                <!-- Input: Minat / Ketertarikan -->
                 <div class="md:col-span-2">
-                    <label :class="labelClass">Kategori Peran / Aktivitas Saat Ini</label>
-                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-2">
+                    <label class="block text-xs sm:text-sm font-bold text-gray-700 mb-1.5">Minat & Ketertarikan</label>
+                    <input 
+                        type="text" 
+                        v-model="form.minat" 
+                        class="block w-full border rounded-xl shadow-2xs px-4 py-3 text-sm font-medium transition-all focus:ring-2 focus:ring-[#005B3C]/20" 
+                        :class="form.minat?.trim() ? 'border-emerald-300 bg-white text-gray-900 focus:border-[#005B3C]' : 'border-rose-300 bg-rose-50/20 text-gray-900 focus:border-rose-500'"
+                        placeholder="Contoh: Artificial Intelligence, Cloud Computing, Start-up..." 
+                    />
+                </div>
+
+                <!-- Pilihan Kategori Peran / Aktivitas Pekerjaan Saat Ini -->
+                <div class="md:col-span-2 pt-2">
+                    <div class="flex items-center justify-between mb-2">
+                        <label class="block text-xs sm:text-sm font-bold text-gray-700">
+                            Status Pekerjaan / Aktivitas Utama <span class="text-rose-500 font-bold">*</span>
+                        </label>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-2">
                         <!-- Opsi 1: Pekerja / Karyawan -->
                         <div 
-                            @click="form.kategori_pekerjaan = 'Pekerja'"
-                            class="p-4 rounded-xl border-2 cursor-pointer transition-all flex flex-col justify-between"
-                            :class="form.kategori_pekerjaan === 'Pekerja' || (!form.kategori_pekerjaan || (form.kategori_pekerjaan !== 'Wiraswasta' && form.kategori_pekerjaan !== 'Melanjutkan Pendidikan')) ? 'border-[#005B3C] bg-emerald-50/50 text-gray-900 shadow-xs ring-1 ring-[#005B3C]/20' : 'border-gray-200 bg-white hover:border-gray-300 text-gray-600'"
+                            @click="selectRole('Pekerja')"
+                            class="p-4 rounded-2xl border-2 cursor-pointer transition-all flex flex-col justify-between relative group"
+                            :class="form.kategori_pekerjaan === 'Pekerja' ? 'border-[#005B3C] bg-emerald-50/80 text-gray-900 shadow-sm ring-2 ring-[#005B3C]/30' : (form.kategori_pekerjaan === 'Wiraswasta' ? 'border-gray-200 bg-white text-gray-600' : 'border-rose-300 bg-rose-50/20 text-gray-700')"
                         >
-                            <div class="font-bold text-sm" :class="form.kategori_pekerjaan === 'Pekerja' || (!form.kategori_pekerjaan || (form.kategori_pekerjaan !== 'Wiraswasta' && form.kategori_pekerjaan !== 'Melanjutkan Pendidikan')) ? 'text-[#005B3C]' : 'text-gray-800'">Pekerja / Karyawan</div>
-                            <div class="text-xs text-gray-500 mt-1">Bekerja di instansi pemerintah, swasta, BUMN, LSM, dsb.</div>
+                            <div class="flex items-center justify-between">
+                                <div class="font-extrabold text-sm" :class="form.kategori_pekerjaan === 'Pekerja' ? 'text-[#005B3C]' : 'text-gray-800'">
+                                    Pekerja / Karyawan
+                                </div>
+                            </div>
+                            <div class="text-xs text-gray-500 mt-1.5 leading-relaxed">Bekerja di instansi pemerintah, swasta, BUMN, LSM, dsb.</div>
                         </div>
 
                         <!-- Opsi 2: Wirausaha / Founder -->
                         <div 
-                            @click="form.kategori_pekerjaan = 'Wiraswasta'"
-                            class="p-4 rounded-xl border-2 cursor-pointer transition-all flex flex-col justify-between"
-                            :class="form.kategori_pekerjaan === 'Wiraswasta' ? 'border-[#005B3C] bg-emerald-50/50 text-gray-900 shadow-xs ring-1 ring-[#005B3C]/20' : 'border-gray-200 bg-white hover:border-gray-300 text-gray-600'"
+                            @click="selectRole('Wiraswasta')"
+                            class="p-4 rounded-2xl border-2 cursor-pointer transition-all flex flex-col justify-between relative group"
+                            :class="form.kategori_pekerjaan === 'Wiraswasta' ? 'border-[#005B3C] bg-emerald-50/80 text-gray-900 shadow-sm ring-2 ring-[#005B3C]/30' : (form.kategori_pekerjaan === 'Pekerja' ? 'border-gray-200 bg-white text-gray-600' : 'border-rose-300 bg-rose-50/20 text-gray-700')"
                         >
-                            <div class="font-bold text-sm" :class="form.kategori_pekerjaan === 'Wiraswasta' ? 'text-[#005B3C]' : 'text-gray-800'">Wirausaha / Founder</div>
-                            <div class="text-xs text-gray-500 mt-1">Mendirikan bisnis sendiri, startup, atau freelance</div>
-                        </div>
-
-                        <!-- Opsi 3: Melanjutkan Pendidikan -->
-                        <div 
-                            @click="form.kategori_pekerjaan = 'Melanjutkan Pendidikan'"
-                            class="p-4 rounded-xl border-2 cursor-pointer transition-all flex flex-col justify-between"
-                            :class="form.kategori_pekerjaan === 'Melanjutkan Pendidikan' ? 'border-[#005B3C] bg-emerald-50/50 text-gray-900 shadow-xs ring-1 ring-[#005B3C]/20' : 'border-gray-200 bg-white hover:border-gray-300 text-gray-600'"
-                        >
-                            <div class="font-bold text-sm" :class="form.kategori_pekerjaan === 'Melanjutkan Pendidikan' ? 'text-[#005B3C]' : 'text-gray-800'">Melanjutkan Pendidikan</div>
-                            <div class="text-xs text-gray-500 mt-1">Studi lanjut jenjang S1, S2, S3, profesi, atau spesialis</div>
+                            <div class="flex items-center justify-between">
+                                <div class="font-extrabold text-sm" :class="form.kategori_pekerjaan === 'Wiraswasta' ? 'text-[#005B3C]' : 'text-gray-800'">
+                                    Wirausaha / Founder
+                                </div>
+                            </div>
+                            <div class="text-xs text-gray-500 mt-1.5 leading-relaxed">Mendirikan bisnis sendiri, startup, atau freelance</div>
                         </div>
                     </div>
                 </div>
 
                 <!-- Jika Karyawan/Pekerja: Posisi Jabatan Struktural (F2G) Dinamis dari Database -->
-                <div v-if="form.kategori_pekerjaan === 'Pekerja' || (!form.kategori_pekerjaan || (form.kategori_pekerjaan !== 'Wiraswasta' && form.kategori_pekerjaan !== 'Melanjutkan Pendidikan'))" class="md:col-span-2">
-                    <label :class="labelClass">Posisi Jabatan Struktural (F2G)</label>
-                    <select v-model="form.posisi_jabatan" :class="inputClass">
+                <div v-if="form.kategori_pekerjaan === 'Pekerja'" class="md:col-span-2">
+                    <label class="block text-xs sm:text-sm font-bold text-gray-700 mb-1.5">
+                        Posisi Jabatan Struktural (F2G) <span class="text-rose-500 font-bold">*</span>
+                    </label>
+                    <select 
+                        v-model="form.posisi_jabatan" 
+                        class="block w-full border rounded-xl shadow-2xs px-4 py-3 text-sm font-medium transition-all focus:ring-2 focus:ring-[#005B3C]/20"
+                        :class="form.posisi_jabatan ? 'border-emerald-300 bg-white text-gray-900 focus:border-[#005B3C]' : 'border-rose-300 bg-rose-50/20 text-gray-900 focus:border-rose-500'"
+                    >
                         <option value="">-- Pilih Posisi Jabatan --</option>
                         <option v-for="opt in posisiJabatanOptions" :key="opt.value" :value="opt.value">
                             {{ opt.label }}
@@ -799,10 +939,16 @@ onUnmounted(() => {
                 </div>
 
                 <!-- Jika Wiraswasta: Posisi / Jabatan Wiraswasta (F5C) -->
-                <div v-else-if="form.kategori_pekerjaan === 'Wiraswasta'" class="md:col-span-2 space-y-3">
+                <div v-else-if="form.kategori_pekerjaan === 'Wiraswasta'" class="md:col-span-2 space-y-4">
                     <div>
-                        <label :class="labelClass">Posisi / Jabatan Wiraswasta & Startup (F5C)</label>
-                        <select v-model="form.posisi_wiraswasta" :class="inputClass">
+                        <label class="block text-xs sm:text-sm font-bold text-gray-700 mb-1.5">
+                            Posisi / Jabatan Wiraswasta & Startup (F5C) <span class="text-rose-500 font-bold">*</span>
+                        </label>
+                        <select 
+                            v-model="form.posisi_wiraswasta" 
+                            class="block w-full border rounded-xl shadow-2xs px-4 py-3 text-sm font-medium transition-all focus:ring-2 focus:ring-[#005B3C]/20"
+                            :class="form.posisi_wiraswasta ? 'border-emerald-300 bg-white text-gray-900 focus:border-[#005B3C]' : 'border-rose-300 bg-rose-50/20 text-gray-900 focus:border-rose-500'"
+                        >
                             <option value="">-- Pilih Posisi / Jabatan Wiraswasta --</option>
                             <option value="Owner">Owner</option>
                             <option value="Founder">Founder</option>
@@ -816,27 +962,75 @@ onUnmounted(() => {
 
                     <!-- Input Tambahan jika memilih Lainnya -->
                     <div v-if="form.posisi_wiraswasta === 'Lainnya'">
-                        <label :class="labelClass">Sebutkan Jabatan Wiraswasta Lainnya</label>
+                        <label class="block text-xs sm:text-sm font-bold text-gray-700 mb-1.5">Sebutkan Jabatan Wiraswasta Lainnya</label>
                         <input 
                             type="text" 
                             v-model="form.posisi_wiraswasta_lainnya" 
-                            :class="inputClass" 
+                            class="block w-full border rounded-xl shadow-2xs px-4 py-3 text-sm font-medium transition-all focus:ring-2 focus:ring-[#005B3C]/20" 
+                            :class="form.posisi_wiraswasta_lainnya?.trim() ? 'border-emerald-300 bg-white text-gray-900 focus:border-[#005B3C]' : 'border-rose-300 bg-rose-50/20 text-gray-900 focus:border-rose-500'"
                             placeholder="Contoh: Managing Partner, Content Creator..." 
                         />
                     </div>
                 </div>
 
-                <!-- Jika Melanjutkan Pendidikan: Detail Studi Lanjut (F18 Standar Dikti) -->
-                <div v-else-if="form.kategori_pekerjaan === 'Melanjutkan Pendidikan'" class="md:col-span-2 space-y-4 bg-emerald-50/40 p-5 rounded-2xl border border-emerald-100">
-                    <div class="pb-2 border-b border-emerald-100/70">
-                        <h3 class="font-bold text-gray-900 text-sm">Informasi Studi Lanjut</h3>
-                        <p class="text-xs text-gray-500">Lengkapi data jenjang, perguruan tinggi, dan program studi yang sedang Anda tempuh</p>
+                <!-- Opsi Tambahan / Toggle: Sedang Melanjutkan Studi -->
+                <div class="md:col-span-2 pt-1">
+                    <div 
+                        @click="toggleMelanjutkanStudi"
+                        class="p-4 rounded-2xl border-2 cursor-pointer transition-all flex items-center justify-between group"
+                        :class="isMelanjutkanStudi ? 'border-[#005B3C] bg-emerald-50/60 shadow-xs' : 'border-gray-200 bg-gray-50/60 hover:border-gray-300'"
+                    >
+                        <div class="flex items-center gap-3">
+                            <div 
+                                class="w-10 h-10 rounded-xl flex items-center justify-center transition-colors"
+                                :class="isMelanjutkanStudi ? 'bg-[#005B3C] text-white shadow-2xs' : 'bg-gray-200 text-gray-500'"
+                            >
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l9-5-9-5-9 5 9 5zm0 0l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14zm-4 6v-7.5l4-2.222"></path></svg>
+                            </div>
+                            <div>
+                                <div class="font-bold text-sm" :class="isMelanjutkanStudi ? 'text-[#005B3C]' : 'text-gray-800'">
+                                    Sedang Melanjutkan Studi (S1 / S2 / S3 / Profesi / Spesialis)
+                                </div>
+                                <div class="text-xs text-gray-500 mt-0.5">
+                                    Aktifkan jika Anda saat ini sedang menempuh pendidikan lanjut (bisa sambil bekerja atau berwirausaha)
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Toggle Switch Visual -->
+                        <div class="relative inline-flex items-center shrink-0 ml-4">
+                            <div 
+                                class="w-11 h-6 rounded-full transition-colors duration-200 ease-in-out relative"
+                                :class="isMelanjutkanStudi ? 'bg-[#005B3C]' : 'bg-gray-300'"
+                            >
+                                <div 
+                                    class="w-5 h-5 bg-white rounded-full shadow-md transform transition-transform duration-200 ease-in-out absolute top-0.5 left-0.5"
+                                    :class="isMelanjutkanStudi ? 'translate-x-5' : 'translate-x-0'"
+                                ></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Detail Studi Lanjut (F18 Standar Dikti) Jika Toggle Aktif -->
+                <div v-if="isMelanjutkanStudi" class="md:col-span-2 space-y-4 bg-gray-50/60 p-5 rounded-2xl border border-gray-200">
+                    <div class="pb-2 border-b border-gray-200 flex items-center justify-between">
+                        <div>
+                            <h3 class="font-bold text-gray-900 text-sm">Informasi Studi Lanjut</h3>
+                            <p class="text-xs text-gray-500">Lengkapi data jenjang, perguruan tinggi, dan program studi yang sedang Anda tempuh</p>
+                        </div>
                     </div>
 
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div>
-                            <label :class="labelClass">Pendidikan Tingkat Apa</label>
-                            <select v-model="form.pendidikan_tingkat" :class="inputClass">
+                            <label class="block text-xs sm:text-sm font-bold text-gray-700 mb-1.5">
+                                Jenjang Pendidikan <span class="text-rose-500 font-bold">*</span>
+                            </label>
+                            <select 
+                                v-model="form.pendidikan_tingkat" 
+                                class="block w-full border rounded-xl shadow-2xs px-4 py-3 text-sm font-medium transition-all focus:ring-2 focus:ring-[#005B3C]/20"
+                                :class="form.pendidikan_tingkat ? 'border-emerald-300 bg-white text-gray-900 focus:border-[#005B3C]' : 'border-rose-300 bg-rose-50/20 text-gray-900 focus:border-rose-500'"
+                            >
                                 <option value="">-- Pilih Tingkat / Jenjang --</option>
                                 <option value="D3">D3 (Diploma 3)</option>
                                 <option value="D4">D4 (Diploma 4 / Sarjana Terapan)</option>
@@ -850,56 +1044,74 @@ onUnmounted(() => {
                         </div>
 
                         <div>
-                            <label :class="labelClass">Perguruan Tinggi / Universitas</label>
+                            <label class="block text-xs sm:text-sm font-bold text-gray-700 mb-1.5">
+                                Perguruan Tinggi <span class="text-rose-500 font-bold">*</span>
+                            </label>
                             <input 
                                 type="text" 
                                 v-model="form.perguruan_tinggi" 
-                                :class="inputClass" 
+                                class="block w-full border rounded-xl shadow-2xs px-4 py-3 text-sm font-medium transition-all focus:ring-2 focus:ring-[#005B3C]/20"
+                                :class="form.perguruan_tinggi?.trim() ? 'border-emerald-300 bg-white text-gray-900 focus:border-[#005B3C]' : 'border-rose-300 bg-rose-50/20 text-gray-900 focus:border-rose-500'"
                                 placeholder="Contoh: Universitas Gadjah Mada" 
                             />
                         </div>
 
                         <div>
-                            <label :class="labelClass">Program Studi</label>
+                            <label class="block text-xs sm:text-sm font-bold text-gray-700 mb-1.5">
+                                Program Studi <span class="text-rose-500 font-bold">*</span>
+                            </label>
                             <input 
                                 type="text" 
                                 v-model="form.pendidikan_prodi" 
-                                :class="inputClass" 
+                                class="block w-full border rounded-xl shadow-2xs px-4 py-3 text-sm font-medium transition-all focus:ring-2 focus:ring-[#005B3C]/20"
+                                :class="form.pendidikan_prodi?.trim() ? 'border-emerald-300 bg-white text-gray-900 focus:border-[#005B3C]' : 'border-rose-300 bg-rose-50/20 text-gray-900 focus:border-rose-500'"
                                 placeholder="Contoh: Magister Informatika" 
                             />
                         </div>
                     </div>
                 </div>
 
-                <!-- Input Penghasilan / Take Home Pay -->
+                <!-- Input Penghasilan / Take Home Pay (Format Nominal Bersih Tanpa Pengali Otomatis) -->
                 <div class="md:col-span-2">
-                    <div class="flex items-center justify-between mb-1">
-                        <label :class="labelClass" class="!mb-0">
+                    <div class="flex items-center justify-between mb-1.5 flex-wrap gap-1">
+                        <label class="block text-xs sm:text-sm font-bold text-gray-700 !mb-0">
                             Rata-rata Pendapatan per Bulan (Take Home Pay)
                         </label>
-                        <span v-if="form.gaji" class="text-xs text-[#005B3C] font-black inline-flex items-center gap-1">
+                        <span v-if="form.gaji && form.gaji >= 1000" class="text-xs text-[#005B3C] font-black inline-flex items-center gap-1">
                             Terbaca: <strong>{{ formatRupiah(form.gaji) }}</strong> / bulan
                         </span>
+                        <span v-else-if="form.gaji && form.gaji > 0 && form.gaji < 1000" class="text-xs text-rose-600 font-bold inline-flex items-center gap-1">
+                            Minimal Rp 1.000 (tidak bisa disimpan jika di bawah 1.000)
+                        </span>
                     </div>
-                    <div class="relative flex items-center rounded-xl bg-white border border-gray-200 shadow-xs focus-within:ring-2 focus-within:ring-[#005B3C] focus-within:border-transparent transition-all overflow-hidden">
+                    <div 
+                        class="relative flex items-center rounded-xl border shadow-2xs focus-within:ring-2 focus-within:ring-[#005B3C]/20 transition-all overflow-hidden"
+                        :class="[
+                            form.gaji && form.gaji > 0 && form.gaji < 1000 
+                                ? 'border-rose-400 bg-rose-50/30 text-gray-900 focus-within:border-rose-500' 
+                                : (form.gaji ? 'border-emerald-300 bg-white text-gray-900 focus-within:border-[#005B3C]' : 'border-rose-300 bg-rose-50/20 text-gray-900 focus-within:border-rose-500')
+                        ]"
+                    >
                         <span class="pl-4 pr-1 font-bold text-gray-400 select-none text-base">Rp</span>
                         <input 
                             type="text" 
-                            :value="formattedGajiString"
-                            @input="handleGajiInput"
+                            v-model="formattedGaji"
                             placeholder="Contoh: 5.000.000" 
-                            class="w-full py-3.5 px-3 bg-transparent font-black font-mono border-0 focus:ring-0 text-base sm:text-lg text-gray-900 placeholder-gray-300 tracking-wide" 
+                            class="w-full py-3.5 px-3 bg-transparent font-black font-mono border-0 focus:ring-0 text-base sm:text-lg text-gray-900 placeholder-gray-300 tracking-wide outline-none" 
                         />
                         <span class="pr-4 text-xs font-semibold text-gray-400 select-none">/ bulan</span>
                     </div>
-                    <p class="text-[11px] text-gray-400 mt-1">
-                        * Ketik angka depan (misal ketik 5 untuk 5.000) atau nominal lengkap (5.000.000). Format titik ribuan tertata otomatis dan angka 000 dapat diedit langsung.
+                    <p v-if="form.gaji && form.gaji > 0 && form.gaji < 1000" class="text-[11px] text-rose-500 mt-1 font-semibold">
+                        Nominal gaji/pendapatan tidak dapat disimpan di bawah Rp 1.000 (minimal ribuan). Silakan lengkapi atau kosongkan jika tidak ingin mengisi.
+                    </p>
+                    <p v-else class="text-[11px] text-gray-400 mt-1">
+                        Format titik ribuan otomatis. Isian opsional (dapat dikosongkan jika tidak berkenan membagikan nominal).
                     </p>
                 </div>
 
                 <!-- Khusus Alumni Teologi / Filsafat Keilahian -->
                 <div v-if="alumniData?.prodi?.kode_prodi === '31' || alumniData?.nim?.startsWith('31')" class="md:col-span-2 bg-gray-50 p-4 rounded-xl border border-gray-200">
-                    <label :class="labelClass">Jenis Pekerjaan (Khusus Alumni Filsafat Keilahian)</label>
+                    <label class="block text-xs sm:text-sm font-bold text-gray-700 mb-1.5">Jenis Pekerjaan (Khusus Alumni Filsafat Keilahian)</label>
                     <div class="flex gap-6 mt-2">
                         <label class="flex items-center space-x-2 cursor-pointer text-sm font-medium text-gray-700">
                             <input type="radio" v-model="form.jenis_pekerjaan" value="Gerejawi" class="text-[#005B3C] focus:ring-[#005B3C]">
@@ -917,13 +1129,14 @@ onUnmounted(() => {
         <!-- ================================================================= -->
         <!-- CARD 2: DATA PERUSAHAAN / INSTANSI TEMPAT BEKERJA                 -->
         <!-- ================================================================= -->
-        <div class="bg-white rounded-2xl p-6 sm:p-8 shadow-sm border border-gray-100">
+        <div class="bg-white rounded-2xl p-6 sm:p-8 shadow-xs border border-gray-100">
             <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-4 mb-6 border-b border-gray-100 gap-3">
                 <div>
-                    <h2 class="text-xl font-bold text-gray-900">
-                        Data Perusahaan / Tempat Bekerja
+                    <h2 class="text-lg sm:text-xl font-black text-gray-900 flex items-center gap-2">
+                        <span class="w-2.5 h-6 bg-[#005B3C] rounded-full inline-block"></span>
+                        Data {{ form.kategori_pekerjaan === 'Wiraswasta' ? 'Usaha / Bisnis' : 'Perusahaan / Tempat Bekerja' }}
                     </h2>
-                    <p class="text-xs text-gray-400 mt-0.5">Informasi tempat kerja saat ini (Dalam Negeri atau Luar Negeri)</p>
+                    <p class="text-xs text-gray-400 mt-0.5">Filter lokasi wilayah atau pilih perusahaan yang terdaftar</p>
                 </div>
 
                 <!-- Pilihan Lokasi Perusahaan: Dalam Negeri / Luar Negeri -->
@@ -931,7 +1144,7 @@ onUnmounted(() => {
                     <button 
                         type="button" 
                         @click="form.company_jenis_lokasi = 'Dalam Negeri'" 
-                        class="px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all"
+                        class="px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer"
                         :class="form.company_jenis_lokasi === 'Dalam Negeri' ? 'bg-[#005B3C] text-white shadow-xs' : 'text-gray-600 hover:text-gray-900 hover:bg-white/60'"
                     >
                         Dalam Negeri
@@ -939,7 +1152,7 @@ onUnmounted(() => {
                     <button 
                         type="button" 
                         @click="form.company_jenis_lokasi = 'Luar Negeri'" 
-                        class="px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all"
+                        class="px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer"
                         :class="form.company_jenis_lokasi === 'Luar Negeri' ? 'bg-[#005B3C] text-white shadow-xs' : 'text-gray-600 hover:text-gray-900 hover:bg-white/60'"
                     >
                         Luar Negeri
@@ -947,17 +1160,31 @@ onUnmounted(() => {
                 </div>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <div class="space-y-5">
+                <!-- ============================================================= -->
+                <!-- 1. FILTER LOKASI WILAYAH (BISA DIPILIH SEBELUM MEMILIH PT)    -->
+                <!-- ============================================================= -->
                 
-                <!-- Jika Luar Negeri: Searchable Dropdown Master Negara Dunia -->
-                <div v-if="form.company_jenis_lokasi === 'Luar Negeri'" class="md:col-span-2 relative" ref="negaraContainerRef">
-                    <label :class="labelClass">
-                        Negara Tempat Bekerja <span class="text-red-500">*</span>
-                    </label>
+                <!-- Jika Luar Negeri: Dropdown Pencarian Master Negara Dunia -->
+                <div v-if="form.company_jenis_lokasi === 'Luar Negeri'" class="relative" ref="negaraContainerRef">
+                    <div class="flex items-center justify-between mb-1.5">
+                        <label class="block text-xs sm:text-sm font-bold text-gray-700">
+                            Negara Tempat Bekerja <span class="text-rose-500 font-bold">*</span>
+                        </label>
+                        <button 
+                            v-if="selectedNegaraName" 
+                            type="button" 
+                            @click="clearNegara" 
+                            class="text-[11px] font-bold text-gray-500 hover:text-rose-600 cursor-pointer"
+                        >
+                            Reset Negara
+                        </button>
+                    </div>
                     
                     <div 
                         @click="showNegaraDropdown = !showNegaraDropdown; if (showNegaraDropdown) searchNegaraQuery = '';"
-                        class="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm font-medium cursor-pointer flex justify-between items-center shadow-xs hover:border-gray-300 transition-colors"
+                        class="w-full rounded-xl border px-4 py-3 text-sm font-medium cursor-pointer flex justify-between items-center shadow-2xs hover:border-gray-300 transition-colors"
+                        :class="selectedNegaraName ? 'border-emerald-300 bg-white text-gray-900' : 'border-rose-300 bg-rose-50/20 text-gray-900'"
                     >
                         <span v-if="selectedNegaraName" class="text-gray-900 font-semibold">
                             {{ selectedNegaraName }}
@@ -1003,24 +1230,33 @@ onUnmounted(() => {
                             </li>
                         </ul>
                     </div>
-
-                    <p class="text-[11px] text-gray-400 mt-1">
-                        * Pilihan negara dibatasi pada daftar master negara resmi dunia.
-                    </p>
                 </div>
 
-                <!-- Jika Dalam Negeri: Dropdown Provinsi & Kabupaten/Kota -->
-                <template v-else>
+                <!-- Jika Dalam Negeri: Filter Provinsi & Kabupaten / Kota -->
+                <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <!-- Dropdown Provinsi -->
                     <div class="relative" ref="provinsiContainerRef">
-                        <label :class="labelClass">Provinsi Perusahaan</label>
+                        <div class="flex items-center justify-between mb-1.5">
+                            <label class="block text-xs sm:text-sm font-bold text-gray-700">
+                                Provinsi Perusahaan <span class="text-rose-500 font-bold">*</span>
+                            </label>
+                            <button 
+                                v-if="form.company_province_id" 
+                                type="button" 
+                                @click="clearProvinsi" 
+                                class="text-[11px] font-bold text-gray-500 hover:text-rose-600 cursor-pointer"
+                            >
+                                Reset Provinsi
+                            </button>
+                        </div>
                         
                         <div 
                             @click="showProvinsiDropdown = !showProvinsiDropdown; if (showProvinsiDropdown) searchProvinsiQuery = '';"
-                            class="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm font-medium cursor-pointer flex justify-between items-center shadow-xs hover:border-gray-300 transition-colors"
+                            class="w-full rounded-xl border px-4 py-3 text-sm font-medium cursor-pointer flex justify-between items-center shadow-2xs hover:border-gray-300 transition-colors"
+                            :class="selectedProvinceName ? 'border-emerald-300 bg-white text-gray-900' : 'border-rose-300 bg-rose-50/20 text-gray-900'"
                         >
                             <span v-if="selectedProvinceName" class="text-gray-900 font-medium">{{ selectedProvinceName }}</span>
-                            <span v-else class="text-gray-400">Pilih Provinsi...</span>
+                            <span v-else class="text-gray-400">Pilih Provinsi Perusahaan...</span>
                             <svg class="w-4 h-4 text-gray-400 shrink-0 ml-2 transition-transform duration-200" :class="{'rotate-180': showProvinsiDropdown}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                         </div>
 
@@ -1034,7 +1270,7 @@ onUnmounted(() => {
                                         type="text" 
                                         v-model="searchProvinsiQuery" 
                                         class="w-full pl-9 pr-3 py-1.5 border border-gray-200 rounded-lg text-sm bg-white focus:ring-1 focus:ring-[#005B3C] focus:border-[#005B3C] outline-none"
-                                        placeholder="Ketik untuk mencari..."
+                                        placeholder="Ketik untuk mencari provinsi..."
                                         autofocus
                                     >
                                 </div>
@@ -1058,12 +1294,27 @@ onUnmounted(() => {
 
                     <!-- Dropdown Kabupaten -->
                     <div class="relative" ref="kabupatenContainerRef">
-                        <label :class="labelClass">Kabupaten / Kota Perusahaan</label>
+                        <div class="flex items-center justify-between mb-1.5">
+                            <label class="block text-xs sm:text-sm font-bold text-gray-700">
+                                Kabupaten / Kota Perusahaan <span class="text-rose-500 font-bold">*</span>
+                            </label>
+                            <button 
+                                v-if="form.company_kabupaten_id" 
+                                type="button" 
+                                @click="clearKabupaten" 
+                                class="text-[11px] font-bold text-gray-500 hover:text-rose-600 cursor-pointer"
+                            >
+                                Reset Kota
+                            </button>
+                        </div>
                         
                         <div 
                             @click="if (form.company_province_id) { showKabupatenDropdown = !showKabupatenDropdown; if (showKabupatenDropdown) searchKabupatenQuery = ''; }"
-                            class="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm font-medium cursor-pointer flex justify-between items-center shadow-xs hover:border-gray-300 transition-colors"
-                            :class="{'opacity-60 cursor-not-allowed bg-gray-50': !form.company_province_id}"
+                            class="w-full rounded-xl border px-4 py-3 text-sm font-medium cursor-pointer flex justify-between items-center shadow-2xs hover:border-gray-300 transition-colors"
+                            :class="[
+                                !form.company_province_id ? 'opacity-60 cursor-not-allowed bg-gray-50 border-gray-200 text-gray-400' :
+                                (selectedKabupatenName ? 'border-emerald-300 bg-white text-gray-900' : 'border-rose-300 bg-rose-50/20 text-gray-900')
+                            ]"
                         >
                             <span v-if="selectedKabupatenName" class="text-gray-900 font-medium">{{ selectedKabupatenName }}</span>
                             <span v-else class="text-gray-400">
@@ -1082,7 +1333,7 @@ onUnmounted(() => {
                                         type="text" 
                                         v-model="searchKabupatenQuery" 
                                         class="w-full pl-9 pr-3 py-1.5 border border-gray-200 rounded-lg text-sm bg-white focus:ring-1 focus:ring-[#005B3C] focus:border-[#005B3C] outline-none"
-                                        placeholder="Ketik untuk mencari..."
+                                        placeholder="Ketik untuk mencari kabupaten/kota..."
                                         autofocus
                                     >
                                 </div>
@@ -1098,34 +1349,55 @@ onUnmounted(() => {
                                     {{ kab.nama_kabupaten }}
                                 </li>
                                 <li v-if="filteredKabupatens.length === 0" class="px-4 py-4 text-center text-sm text-gray-400">
-                                    Tidak ada hasil yang cocok.
+                                    Tidak ada kabupaten/kota yang cocok.
                                 </li>
                             </ul>
                         </div>
                     </div>
-                </template>
+                </div>
 
-                <!-- Dropdown Nama Perusahaan / Instansi Terdaftar -->
-                <div class="md:col-span-2 relative" ref="companyContainerRef">
-                    <label :class="labelClass">Nama Perusahaan / Instansi</label>
+                <!-- ============================================================= -->
+                <!-- 2. PEMILIHAN / PENCARIAN NAMA PERUSAHAAN (BERDASARKAN FILTER)  -->
+                <!-- ============================================================= -->
+                <div class="relative pt-1" ref="companyContainerRef">
+                    <div class="flex items-center justify-between mb-1.5">
+                        <label class="block text-xs sm:text-sm font-bold text-gray-700">
+                            Nama {{ form.kategori_pekerjaan === 'Wiraswasta' ? 'Usaha / Perusahaan' : 'Perusahaan / Instansi' }} <span class="text-rose-500 font-bold">*</span>
+                        </label>
+                    </div>
+
                     <div class="flex items-center gap-2">
                         <div 
                             @click="showCompanyDropdown = !showCompanyDropdown; if (showCompanyDropdown) searchCompanyQuery = '';"
-                            class="flex-1 rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm font-medium cursor-pointer flex justify-between items-center shadow-xs hover:border-gray-300 transition-colors"
+                            class="flex-1 rounded-xl border px-4 py-3 text-sm font-medium cursor-pointer flex justify-between items-center shadow-2xs hover:border-gray-300 transition-colors"
+                            :class="form.nama_perusahaan?.trim() ? 'border-emerald-300 bg-white text-gray-900' : 'border-rose-300 bg-rose-50/20 text-gray-900'"
                         >
                             <span v-if="form.nama_perusahaan" class="text-gray-900 font-semibold truncate">{{ form.nama_perusahaan }}</span>
-                            <span v-else class="text-gray-400">Pilih nama perusahaan / instansi...</span>
+                            <span v-else class="text-gray-400">
+                                {{ (form.company_province_id || form.company_negara) ? 'Pilih atau cari perusahaan di wilayah ini...' : 'Pilih atau cari nama perusahaan...' }}
+                            </span>
                             <svg class="w-4 h-4 text-gray-400 shrink-0 ml-2 transition-transform duration-200" :class="{'rotate-180': showCompanyDropdown}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                         </div>
+
+                        <!-- Tombol Kosongkan Pilihan (Jika Sudah Terpilih) -->
+                        <button 
+                            v-if="form.nama_perusahaan"
+                            type="button" 
+                            @click="clearCompany" 
+                            class="px-3.5 py-3 bg-gray-100 hover:bg-rose-50 text-gray-600 hover:text-rose-600 rounded-xl transition-colors shrink-0 text-xs font-bold border border-gray-200 cursor-pointer flex items-center gap-1 shadow-2xs" 
+                            title="Kosongkan Pilihan Perusahaan"
+                        >
+                            <span>✕ Kosongkan</span>
+                        </button>
 
                         <!-- Tombol Tambah Perusahaan Baru -->
                         <button 
                             type="button" 
                             @click="openAddCompanyModal" 
-                            class="px-4 py-3 bg-gray-900 text-white rounded-xl hover:bg-black transition-colors shrink-0 text-xs font-semibold flex items-center gap-1 shadow-xs" 
+                            class="px-4 py-3 bg-[#005B3C] hover:bg-[#00472e] text-white rounded-xl transition-colors shrink-0 text-xs font-bold flex items-center gap-1 shadow-2xs cursor-pointer" 
                             title="Tambah Perusahaan Baru"
                         >
-                            <span>+ Tambah</span>
+                            <span>+ Tambah Baru</span>
                         </button>
                     </div>
 
@@ -1140,13 +1412,22 @@ onUnmounted(() => {
                                     type="text" 
                                     v-model="searchCompanyQuery" 
                                     class="w-full pl-9 pr-3 py-1.5 border border-gray-200 rounded-lg text-sm bg-white focus:ring-1 focus:ring-[#005B3C] focus:border-[#005B3C] outline-none"
-                                    placeholder="Ketik untuk mencari..."
+                                    placeholder="Ketik untuk mencari nama perusahaan..."
                                     autofocus
                                 >
                             </div>
                         </div>
 
                         <ul class="max-h-56 overflow-y-auto">
+                            <!-- Opsi Kosongkan di Dalam List Dropdown -->
+                            <li 
+                                v-if="form.nama_perusahaan"
+                                @click="clearCompany" 
+                                class="px-4 py-2.5 hover:bg-rose-50 text-rose-600 cursor-pointer text-xs font-bold border-b border-gray-100 flex items-center gap-1.5 transition-colors"
+                            >
+                                <span>✕ Kosongkan Pilihan Perusahaan</span>
+                            </li>
+
                             <li 
                                 v-for="company in filteredCompanies" 
                                 :key="company.id" 
@@ -1173,9 +1454,11 @@ onUnmounted(() => {
                                     Menunggu Verifikasi
                                 </span>
                             </li>
-                            <li v-if="filteredCompanies.length === 0" class="px-4 py-5 text-center text-sm text-gray-500">
-                                <div>Tidak ada perusahaan yang cocok.</div>
-                                <button type="button" @click="openAddCompanyModal" class="mt-2 text-xs font-semibold text-[#005B3C] underline hover:text-green-800">
+
+                            <!-- State Jika Tidak Ada Perusahaan Ditemukan -->
+                            <li v-if="filteredCompanies.length === 0" class="px-4 py-6 text-center text-sm text-gray-500">
+                                <div class="font-medium text-gray-600">Data perusahaan tidak ditemukan pada wilayah/filter yang dipilih.</div>
+                                <button type="button" @click="openAddCompanyModal" class="mt-2 text-xs font-bold text-[#005B3C] hover:underline cursor-pointer">
                                     + Tambah Perusahaan Baru
                                 </button>
                             </li>
@@ -1183,133 +1466,185 @@ onUnmounted(() => {
                     </div>
                 </div>
 
-                <!-- Banner Notifikasi Status Verifikasi Perusahaan -->
-                <div v-if="!canEditCompanyDetails" class="md:col-span-2 bg-gray-50 border border-gray-200 rounded-xl p-3.5 flex items-center gap-3 text-xs text-gray-600 font-medium shadow-2xs">
-                    <div class="w-2 h-2 rounded-full bg-emerald-500 shrink-0 animate-pulse"></div>
-                    <div>
-                        Perusahaan ini telah <strong>Terverifikasi Resmi</strong> oleh universitas. Detail data perusahaan terkunci untuk menjaga konsistensi master data institusi.
+                <!-- ============================================================= -->
+                <!-- 3. DETAIL PERUSAHAAN (Hanya Muncul Jika Perusahaan Sudah Dipilih) -->
+                <!-- ============================================================= -->
+                <div v-if="form.nama_perusahaan?.trim()" class="grid grid-cols-1 md:grid-cols-2 gap-5 pt-4 border-t border-gray-100">
+                    
+                    <!-- Banner Notifikasi Status Verifikasi Perusahaan -->
+                    <div v-if="!canEditCompanyDetails" class="md:col-span-2 bg-gray-50 border border-gray-200 rounded-xl p-3.5 flex items-center gap-3 text-xs text-gray-600 font-medium shadow-2xs">
+                        <div class="w-2 h-2 rounded-full bg-emerald-500 shrink-0"></div>
+                        <div>
+                            Perusahaan ini telah <strong>Terverifikasi Resmi</strong> oleh universitas. Detail data perusahaan terkunci untuk menjaga konsistensi master data institusi.
+                        </div>
+                    </div>
+
+                    <!-- Jenis Perusahaan / Instansi (F11 Standar Dikti Dinamis) -->
+                    <div class="md:col-span-2">
+                        <label class="block text-xs sm:text-sm font-bold text-gray-700 mb-1.5">
+                            Jenis Perusahaan / Instansi (F11) <span v-if="form.kategori_pekerjaan === 'Pekerja'" class="text-rose-500 font-bold">*</span>
+                        </label>
+                        <select 
+                            v-model="form.company_jenis_perusahaan" 
+                            @change="form.perusahaan_jenis_perusahaan = form.company_jenis_perusahaan" 
+                            :disabled="!canEditCompanyDetails"
+                            class="block w-full border rounded-xl shadow-2xs px-4 py-3 text-sm font-medium transition-all focus:ring-2 focus:ring-[#005B3C]/20"
+                            :class="[
+                                !canEditCompanyDetails ? 'bg-gray-100/90 text-gray-500 cursor-not-allowed border-gray-200' : 
+                                (form.company_jenis_perusahaan || form.perusahaan_jenis_perusahaan ? 'border-emerald-300 bg-white text-gray-900 focus:border-[#005B3C]' : 'border-rose-300 bg-rose-50/20 text-gray-900 focus:border-rose-500')
+                            ]"
+                        >
+                            <option value="">-- Pilih Jenis Instansi / Perusahaan --</option>
+                            <option v-for="opt in jenisPerusahaanOptions" :key="opt.value" :value="opt.value">
+                                {{ opt.label }}
+                            </option>
+                        </select>
+                    </div>
+
+                    <!-- Input Isian Bebas jika memilih Jenis Lainnya -->
+                    <div v-if="form.company_jenis_perusahaan === 'Lainnya'" class="md:col-span-2">
+                        <label class="block text-xs sm:text-sm font-bold text-gray-700 mb-1.5">Sebutkan Jenis Instansi Lainnya</label>
+                        <input 
+                            type="text" 
+                            v-model="form.company_jenis_perusahaan_lainnya" 
+                            @input="form.perusahaan_jenis_perusahaan_lainnya = form.company_jenis_perusahaan_lainnya"
+                            :disabled="!canEditCompanyDetails"
+                            class="block w-full border rounded-xl shadow-2xs px-4 py-3 text-sm font-medium transition-all focus:ring-2 focus:ring-[#005B3C]/20"
+                            :class="[
+                                !canEditCompanyDetails ? 'bg-gray-100/90 text-gray-500 cursor-not-allowed border-gray-200' : 
+                                (form.company_jenis_perusahaan_lainnya?.trim() ? 'border-emerald-300 bg-white text-gray-900 focus:border-[#005B3C]' : 'border-rose-300 bg-rose-50/20 text-gray-900 focus:border-rose-500')
+                            ]" 
+                            placeholder="Contoh: Lembaga Riset Independen, Startup Komunitas..." 
+                        />
+                    </div>
+
+                    <!-- Skala Perusahaan / Instansi (F2H / F5D Dinamis) -->
+                    <div class="md:col-span-2">
+                        <label class="block text-xs sm:text-sm font-bold text-gray-700 mb-1.5">
+                            Skala Perusahaan / Instansi (F2H / F5D) <span v-if="form.kategori_pekerjaan === 'Pekerja'" class="text-rose-500 font-bold">*</span>
+                        </label>
+                        <select 
+                            v-model="form.company_skala" 
+                            @change="form.perusahaan_skala = form.company_skala" 
+                            :disabled="!canEditCompanyDetails"
+                            class="block w-full border rounded-xl shadow-2xs px-4 py-3 text-sm font-medium transition-all focus:ring-2 focus:ring-[#005B3C]/20"
+                            :class="[
+                                !canEditCompanyDetails ? 'bg-gray-100/90 text-gray-500 cursor-not-allowed border-gray-200' : 
+                                (form.company_skala || form.perusahaan_skala ? 'border-emerald-300 bg-white text-gray-900 focus:border-[#005B3C]' : 'border-rose-300 bg-rose-50/20 text-gray-900 focus:border-rose-500')
+                            ]"
+                        >
+                            <option value="">-- Pilih Skala Perusahaan --</option>
+                            <option v-for="opt in skalaOptions" :key="opt.value" :value="opt.value">
+                                {{ opt.label }}
+                            </option>
+                        </select>
+                    </div>
+
+                    <!-- Alamat Kantor / Perusahaan -->
+                    <div class="md:col-span-2">
+                        <label class="block text-xs sm:text-sm font-bold text-gray-700 mb-1.5">
+                            Alamat Perusahaan <span v-if="form.kategori_pekerjaan === 'Pekerja'" class="text-rose-500 font-bold">*</span>
+                        </label>
+                        <input 
+                            type="text" 
+                            v-model="form.company_alamat" 
+                            @input="form.perusahaan_alamat = form.company_alamat"
+                            :disabled="!canEditCompanyDetails"
+                            class="block w-full border rounded-xl shadow-2xs px-4 py-3 text-sm font-medium transition-all focus:ring-2 focus:ring-[#005B3C]/20"
+                            :class="[
+                                !canEditCompanyDetails ? 'bg-gray-100/90 text-gray-500 cursor-not-allowed border-gray-200' : 
+                                ((form.company_alamat || form.perusahaan_alamat)?.trim() ? 'border-emerald-300 bg-white text-gray-900 focus:border-[#005B3C]' : 'border-rose-300 bg-rose-50/20 text-gray-900 focus:border-rose-500')
+                            ]"
+                            placeholder="Contoh: Pacific Building, Jl. Laksda Adisucipto No. 157, Sleman" 
+                        />
+                    </div>
+
+                    <!-- Kode Pos Perusahaan -->
+                    <div class="md:col-span-2">
+                        <label class="block text-xs sm:text-sm font-bold text-gray-700 mb-1.5">Kode Pos Perusahaan (Zipcode)</label>
+                        <input 
+                            type="text" 
+                            v-model="form.zipcode" 
+                            :disabled="!canEditCompanyDetails"
+                            class="block w-full border rounded-xl shadow-2xs px-4 py-3 text-sm font-medium transition-all focus:ring-2 focus:ring-[#005B3C]/20"
+                            :class="[
+                                !canEditCompanyDetails ? 'bg-gray-100/90 text-gray-500 cursor-not-allowed border-gray-200' : 
+                                (form.zipcode?.trim() ? 'border-emerald-300 bg-white text-gray-900 focus:border-[#005B3C]' : 'border-rose-300 bg-rose-50/20 text-gray-900 focus:border-rose-500')
+                            ]" 
+                            placeholder="Kode Pos (Cth: 55281)" 
+                        />
                     </div>
                 </div>
 
-                <!-- Jenis Perusahaan / Instansi (F11 Standar Dikti Dinamis) -->
-                <div class="md:col-span-2">
-                    <div class="flex items-center justify-between mb-1.5">
-                        <label :class="labelClass" class="mb-0">Jenis Perusahaan / Instansi (F11)</label>
-                        <span v-if="!canEditCompanyDetails" class="text-[11px] font-semibold text-gray-400 bg-gray-200/80 px-2 py-0.5 rounded">Terkunci (Terverifikasi)</span>
+                <!-- Petunjuk jika belum memilih nama perusahaan (Netral Abu-Abu) -->
+                <div v-else class="p-5 bg-gray-50 rounded-2xl border border-dashed border-gray-200 text-center">
+                    <div class="text-xs text-gray-500 font-medium">
+                        Silakan pilih atau tambahkan nama {{ form.kategori_pekerjaan === 'Wiraswasta' ? 'usaha' : 'perusahaan' }} pada lokasi di atas untuk melengkapi jenis, skala, dan alamat kantor.
                     </div>
-                    <select 
-                        v-model="form.company_jenis_perusahaan" 
-                        @change="form.perusahaan_jenis_perusahaan = form.company_jenis_perusahaan" 
-                        :disabled="!canEditCompanyDetails"
-                        :class="[!canEditCompanyDetails ? 'bg-gray-100/90 text-gray-500 cursor-not-allowed' : '', inputClass]"
-                    >
-                        <option value="">-- Pilih Jenis Instansi / Perusahaan --</option>
-                        <option v-for="opt in jenisPerusahaanOptions" :key="opt.value" :value="opt.value">
-                            {{ opt.label }}
-                        </option>
-                    </select>
-                </div>
-
-                <!-- Input Isian Bebas jika memilih Jenis Lainnya -->
-                <div v-if="form.company_jenis_perusahaan === 'Lainnya'" class="md:col-span-2">
-                    <label :class="labelClass">Sebutkan Jenis Instansi Lainnya</label>
-                    <input 
-                        type="text" 
-                        v-model="form.company_jenis_perusahaan_lainnya" 
-                        @input="form.perusahaan_jenis_perusahaan_lainnya = form.company_jenis_perusahaan_lainnya"
-                        :disabled="!canEditCompanyDetails"
-                        :class="[!canEditCompanyDetails ? 'bg-gray-100/90 text-gray-500 cursor-not-allowed' : '', inputClass]" 
-                        placeholder="Contoh: Lembaga Riset Independen, Startup Komunitas..." 
-                    />
-                </div>
-
-                <!-- Skala Perusahaan / Instansi (F2H / F5D Dinamis) -->
-                <div class="md:col-span-2">
-                    <div class="flex items-center justify-between mb-1.5">
-                        <label :class="labelClass" class="mb-0">Skala Perusahaan / Instansi (F2H / F5D)</label>
-                        <span v-if="!canEditCompanyDetails" class="text-[11px] font-semibold text-gray-400 bg-gray-200/80 px-2 py-0.5 rounded">Terkunci (Terverifikasi)</span>
-                    </div>
-                    <select 
-                        v-model="form.company_skala" 
-                        @change="form.perusahaan_skala = form.company_skala"
-                        :disabled="!canEditCompanyDetails"
-                        :class="[!canEditCompanyDetails ? 'bg-gray-100/90 text-gray-500 cursor-not-allowed' : '', inputClass]"
-                    >
-                        <option value="">-- Pilih Skala Perusahaan --</option>
-                        <option v-for="opt in skalaOptions" :key="opt.value" :value="opt.value">
-                            {{ opt.label }}
-                        </option>
-                    </select>
-                </div>
-
-                <!-- Alamat Kantor / Perusahaan -->
-                <div class="md:col-span-2">
-                    <div class="flex items-center justify-between mb-1.5">
-                        <label :class="labelClass" class="mb-0">Alamat Perusahaan</label>
-                        <span v-if="!canEditCompanyDetails" class="text-[11px] font-semibold text-gray-400 bg-gray-200/80 px-2 py-0.5 rounded">Terkunci (Terverifikasi)</span>
-                    </div>
-                    <input 
-                        type="text" 
-                        v-model="form.company_alamat" 
-                        @input="form.perusahaan_alamat = form.company_alamat"
-                        :disabled="!canEditCompanyDetails"
-                        :class="[!canEditCompanyDetails ? 'bg-gray-100/90 text-gray-500 cursor-not-allowed' : '', inputClass]" 
-                        placeholder="Contoh: Pacific Building, Jl. Laksda Adisucipto No. 157, Sleman" 
-                    />
-                </div>
-
-                <!-- Kode Pos Perusahaan -->
-                <div class="md:col-span-2">
-                    <div class="flex items-center justify-between mb-1.5">
-                        <label :class="labelClass" class="mb-0">Kode Pos Perusahaan (Zipcode)</label>
-                        <span v-if="!canEditCompanyDetails" class="text-[11px] font-semibold text-gray-400 bg-gray-200/80 px-2 py-0.5 rounded">Terkunci (Terverifikasi)</span>
-                    </div>
-                    <input 
-                        type="text" 
-                        v-model="form.zipcode" 
-                        :disabled="!canEditCompanyDetails"
-                        :class="[!canEditCompanyDetails ? 'bg-gray-100/90 text-gray-500 cursor-not-allowed' : '', inputClass]" 
-                        placeholder="Kode Pos (Cth: 55281)" 
-                    />
                 </div>
             </div>
         </div>
 
         <!-- ================================================================= -->
         <!-- CARD 3: DATA ATASAN LANGSUNG / PIMPINAN                           -->
+        <!-- (Hanya untuk Pekerja & Wiraswasta)                                -->
         <!-- ================================================================= -->
-        <div class="bg-white rounded-2xl p-6 sm:p-8 shadow-sm border border-gray-100">
-            <h2 class="text-xl font-bold text-gray-900 mb-2">
-                Data Atasan Langsung
-            </h2>
-            <p class="text-xs text-gray-500 mb-6">
+        <div v-if="form.kategori_pekerjaan !== 'Melanjutkan Pendidikan'" class="bg-white rounded-2xl p-6 sm:p-8 shadow-xs border border-gray-100">
+            <div class="flex items-center justify-between mb-2 pb-3 border-b border-gray-100">
+                <h2 class="text-lg sm:text-xl font-black text-gray-900 flex items-center gap-2">
+                    <span class="w-2.5 h-6 bg-[#005B3C] rounded-full inline-block"></span>
+                    Data Atasan Langsung
+                </h2>
+                <span class="text-xs text-gray-400 font-medium">Survei Pengguna Lulusan</span>
+            </div>
+            
+            <p class="text-xs text-gray-400 mb-6">
                 Data pimpinan/atasan digunakan untuk keperluan survei evaluasi kepuasan pengguna lulusan oleh universitas.
             </p>
 
-            <!-- Banner Otomatis: Owner / Founder / Wiraswasta -->
-            <div v-if="isOwner" class="bg-emerald-50 border border-emerald-200 text-[#005B3C] rounded-xl p-3.5 text-xs flex items-center gap-2.5 mb-5 font-medium shadow-2xs">
+            <!-- Banner Otomatis: Owner / Founder / Wiraswasta (Netral Gray) -->
+            <div v-if="isOwner" class="bg-gray-50 border border-gray-200 text-gray-600 rounded-xl p-3.5 text-xs flex items-center gap-2.5 mb-5 font-medium shadow-2xs">
                 <span>Karena Anda memilih posisi <strong>Owner / Wiraswasta</strong>, kolom Data Atasan Langsung di bawah ini otomatis diisi dengan data diri Anda.</span>
-            </div>
-
-            <!-- Banner Otomatis: Melanjutkan Pendidikan -->
-            <div v-else-if="form.kategori_pekerjaan === 'Melanjutkan Pendidikan'" class="bg-blue-50 border border-blue-200 text-blue-800 rounded-xl p-3.5 text-xs flex items-center gap-2.5 mb-5 font-medium shadow-2xs">
-                <span>Bagi yang sedang <strong>Melanjutkan Pendidikan</strong>, Anda dapat mengisi data Dosen Pembimbing, Ketua Program Studi, atau Pimpinan Akademik terkait pada kolom atasan di bawah ini.</span>
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
                 <div class="md:col-span-2">
-                    <label :class="labelClass">Nama Lengkap Atasan</label>
-                    <input type="text" v-model="form.nama_atasan" :class="inputClass" placeholder="Contoh: Ir. Bambang Trihatmojo" />
+                    <label class="block text-xs sm:text-sm font-bold text-gray-700 mb-1.5">
+                        Nama Lengkap Atasan <span v-if="!isOwner" class="text-rose-500 font-bold">*</span>
+                    </label>
+                    <input 
+                        type="text" 
+                        v-model="form.nama_atasan" 
+                        class="block w-full border rounded-xl shadow-2xs px-4 py-3 text-sm font-medium transition-all focus:ring-2 focus:ring-[#005B3C]/20"
+                        :class="form.nama_atasan?.trim() ? 'border-emerald-300 bg-white text-gray-900 focus:border-[#005B3C]' : 'border-rose-300 bg-rose-50/20 text-gray-900 focus:border-rose-500'"
+                        placeholder="Contoh: Ir. Bambang Trihatmojo" 
+                    />
                 </div>
                 
                 <div>
-                    <label :class="labelClass">Email Atasan</label>
-                    <input type="email" v-model="form.email_atasan" :class="inputClass" placeholder="atasan@perusahaan.co.id" />
+                    <label class="block text-xs sm:text-sm font-bold text-gray-700 mb-1.5">
+                        Email Atasan <span v-if="!isOwner" class="text-rose-500 font-bold">*</span>
+                    </label>
+                    <input 
+                        type="email" 
+                        v-model="form.email_atasan" 
+                        class="block w-full border rounded-xl shadow-2xs px-4 py-3 text-sm font-medium transition-all focus:ring-2 focus:ring-[#005B3C]/20"
+                        :class="isValidEmail(form.email_atasan) ? 'border-emerald-300 bg-white text-gray-900 focus:border-[#005B3C]' : 'border-rose-300 bg-rose-50/20 text-gray-900 focus:border-rose-500'"
+                        placeholder="atasan@perusahaan.co.id" 
+                    />
                 </div>
 
                 <div>
-                    <label :class="labelClass">Nomor Telepon Atasan</label>
-                    <input type="text" v-model="form.telepon_atasan" :class="inputClass" placeholder="081234567890" />
+                    <label class="block text-xs sm:text-sm font-bold text-gray-700 mb-1.5">
+                        Nomor Telepon Atasan <span v-if="!isOwner && !form.email_atasan" class="text-rose-500 font-bold">*</span>
+                    </label>
+                    <input 
+                        type="tel" 
+                        v-model="form.telepon_atasan" 
+                        class="block w-full border rounded-xl shadow-2xs px-4 py-3 text-sm font-mono font-medium transition-all focus:ring-2 focus:ring-[#005B3C]/20"
+                        :class="isValidPhone(form.telepon_atasan) ? 'border-emerald-300 bg-white text-gray-900 focus:border-[#005B3C]' : 'border-rose-300 bg-rose-50/20 text-gray-900 focus:border-rose-500'"
+                        placeholder="081234567890" 
+                    />
                 </div>
             </div>
         </div>

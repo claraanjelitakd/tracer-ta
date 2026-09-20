@@ -21,6 +21,10 @@ defineProps({
         type: String,
         default: 'Pilih jawaban yang paling sesuai. Kolom bertanda * wajib diisi.',
     },
+    badgeText: {
+        type: String,
+        default: 'Kuesioner Universitas',
+    },
 });
 </script>
 
@@ -33,7 +37,7 @@ defineProps({
                         BAGIAN {{ currentIndex + 1 }} DARI {{ totalSections }}
                     </span>
                     <span class="text-[11px] sm:text-xs text-gray-500 font-bold">
-                        Kuesioner Universitas
+                        {{ badgeText }}
                     </span>
                 </div>
                 <!-- Judul Nama Bagian -->

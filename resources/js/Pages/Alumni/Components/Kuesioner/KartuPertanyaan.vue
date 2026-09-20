@@ -64,7 +64,7 @@ const getMultipleNumberTotal = (q) => {
         if (val !== null && val !== '' && !isNaN(val)) {
             const num = parseInt(val, 10);
             if (num > 0) {
-                total += (num < 1000000 ? num * 1000 : num);
+                total += num;
             }
         }
     });
@@ -76,8 +76,7 @@ const getMultipleNumberItemPreview = (val) => {
     if (val === null || val === '' || isNaN(val)) return 'Rp 0';
     const num = parseInt(val, 10);
     if (num <= 0) return 'Rp 0';
-    const actual = num < 1000000 ? num * 1000 : num;
-    return formatRupiah(actual);
+    return formatRupiah(num);
 };
 
 // Panduan teks skala penilaian 1 s/d 5 (Likert Scale)
@@ -168,8 +167,8 @@ const handleMultipleNumberInput = (qId, optCode, event) => {
     }
     let num = Number(cleanDigits);
 
-    // Jika user mengetik angka satuan kecil (contoh: 5), langsung muncul format ribuan 5.000 di dalam text box dan bisa diedit
-    if (num > 0 && num < 1000 && !rawVal.includes('000')) {
+    // Otomatis tambahkan 000 pada input pertama jika mengetik angka satuan (misal: 5 -> 5.000), dan tetap bisa di-adjust/diedit
+    if (num > 0 && num < 1000 && !rawVal.includes('000') && !rawVal.includes('00') && !rawVal.includes('0')) {
         num = num * 1000;
     }
 
@@ -264,12 +263,12 @@ const stepNumberInput = (qId, delta) => {
         v-show="isVisible" 
         class="bg-white p-5 sm:p-7 md:p-8 rounded-2xl sm:rounded-3xl shadow-xs border border-gray-100 relative z-0 transition-all hover:border-emerald-200"
         :class="[
-            isPaired ? 'flex flex-col justify-start' : ''
+            isPaired ? 'flex flex-col justify-between h-full' : ''
         ]"
         :style="{ zIndex: subpertanyaan.type === 'searchable_select' ? 10 : 1 }"
     >
         <!-- Header Soal: Kode & Teks Pertanyaan (Format Formal) -->
-        <div class="mb-4 sm:mb-6">
+        <div :class="isPaired ? 'mb-4' : 'mb-4 sm:mb-6'">
             <div class="flex items-center gap-2 mb-2">
                 <span class="inline-block bg-[#005B3C] text-white text-[10px] sm:text-[11px] font-black uppercase px-2.5 py-0.5 rounded-md tracking-wider shadow-2xs">
                     {{ subpertanyaan.kode_pertanyaan }}
@@ -282,7 +281,7 @@ const stepNumberInput = (qId, delta) => {
                 </span>
             </div>
 
-            <h2 class="text-base sm:text-xl md:text-2xl font-black text-gray-900 leading-snug tracking-tight">
+            <h2 :class="isPaired ? 'text-sm sm:text-base md:text-lg font-black leading-snug tracking-tight text-gray-900' : 'text-base sm:text-xl md:text-2xl font-black text-gray-900 leading-snug tracking-tight'">
                 {{ getCleanQuestionText(subpertanyaan.subpertanyaan) }}
                 <span v-if="subpertanyaan.wajib" class="text-red-500 font-black">*</span>
             </h2>
@@ -315,30 +314,30 @@ const stepNumberInput = (qId, delta) => {
         </div>
 
         <!-- TIPE INPUT: Angka / Number (Desain Modern dengan Stepper & Satuan Unit) -->
-        <div v-else-if="subpertanyaan.type === 'number'" :class="{'mt-2 sm:mt-3': isPaired}">
-            <div class="max-w-md">
+        <div v-else-if="subpertanyaan.type === 'number'" :class="{'mt-auto pt-2': isPaired}">
+            <div class="w-full max-w-md">
                 <div class="flex items-center gap-2 sm:gap-3">
                     <!-- Tombol Kurang (-) -->
                     <button 
                         type="button"
                         @click="stepNumberInput(subpertanyaan.id, -1)"
-                        class="w-11 h-11 sm:w-12 sm:h-12 rounded-xl bg-gray-100 hover:bg-[#005B3C] text-gray-700 hover:text-white font-black text-lg sm:text-xl flex items-center justify-center transition-all shadow-2xs active:scale-95 shrink-0 focus:outline-none"
+                        class="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-gray-100 hover:bg-[#005B3C] text-gray-700 hover:text-white font-black text-lg flex items-center justify-center transition-all shadow-2xs active:scale-95 shrink-0 focus:outline-none cursor-pointer"
                     >
                         -
                     </button>
 
                     <!-- Input Nilai dengan Unit Satuan Terintegrasi -->
-                    <div class="relative flex-1 flex items-center rounded-xl sm:rounded-2xl bg-gray-50/90 border border-gray-200/90 focus-within:bg-white focus-within:ring-2 focus-within:ring-[#005B3C] focus-within:border-transparent transition-all overflow-hidden p-1 shadow-2xs">
+                    <div class="relative flex-1 flex items-center rounded-xl sm:rounded-2xl bg-gray-50/90 border border-gray-200/90 focus-within:bg-white focus-within:ring-2 focus-within:ring-[#005B3C] focus-within:border-transparent transition-all overflow-hidden p-1 shadow-2xs min-w-0">
                         <input 
                             type="number" 
                             v-model="form.answers[subpertanyaan.id]" 
                             :required="subpertanyaan.wajib && isVisible"
                             @keydown="filterNumberInput"
                             min="0"
-                            class="w-full bg-transparent py-2.5 sm:py-3 px-3 sm:px-4 text-gray-900 font-black font-mono text-center text-lg sm:text-2xl border-0 focus:ring-0 placeholder-gray-300"
+                            class="w-full min-w-0 bg-transparent py-2 sm:py-2.5 px-2 sm:px-3 text-gray-900 font-black font-mono text-center text-base sm:text-xl border-0 focus:ring-0 placeholder-gray-300 outline-none"
                             placeholder="0"
                         >
-                        <span class="pr-3 pl-1 font-bold text-xs sm:text-sm text-emerald-800 bg-emerald-50 px-2 py-1 rounded-lg shrink-0 select-none">
+                        <span class="pr-2.5 pl-1 font-bold text-[10px] sm:text-xs text-emerald-800 bg-emerald-50 px-2 py-1 rounded-lg shrink-0 select-none whitespace-nowrap">
                             {{ getNumberUnit(subpertanyaan) }}
                         </span>
                     </div>
@@ -347,7 +346,7 @@ const stepNumberInput = (qId, delta) => {
                     <button 
                         type="button"
                         @click="stepNumberInput(subpertanyaan.id, 1)"
-                        class="w-11 h-11 sm:w-12 sm:h-12 rounded-xl bg-gray-100 hover:bg-[#005B3C] text-gray-700 hover:text-white font-black text-lg sm:text-xl flex items-center justify-center transition-all shadow-2xs active:scale-95 shrink-0 focus:outline-none"
+                        class="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-gray-100 hover:bg-[#005B3C] text-gray-700 hover:text-white font-black text-lg flex items-center justify-center transition-all shadow-2xs active:scale-95 shrink-0 focus:outline-none cursor-pointer"
                     >
                         +
                     </button>

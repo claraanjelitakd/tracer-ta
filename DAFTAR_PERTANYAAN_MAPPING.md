@@ -65,13 +65,14 @@ Selain pertanyaan kuesioner Dikti, alumni mengisi data identitas terpadu di hala
 
 | Tab Profil | Field Data | Tipe Input | Komponen Vue | Tabel Database |
 | :--- | :--- | :--- | :--- | :--- |
-| **Identitas & Alamat** | Nama, NIM, NIK, NPWP, No HP, Email | `text`, `email`, `tel` | `FormPribadi.vue` | `biodata`, `users` |
+| **Identitas & Alamat** | Nama, NIM, NIK, NPWP (15/16 Digit UU HPP & PMK 112/2022), No HP, Email | `text`, `email`, `tel` | `FormPribadi.vue` | `biodata`, `users` |
 | **Identitas & Alamat** | Alamat Domisili KTP, Provinsi, Kabupaten/Kota, Negara, Kode Pos | `select` Searchable, `text` | `FormPribadi.vue` | `biodata.provinsi_id`, `biodata.kabupaten_id`, `biodata.negara_id` |
-| **Karier & Jejaring** | Status Pekerjaan, Jenis Pekerjaan, Jabatan, Nama Perusahaan | `select`, `text` | `FormKarier.vue` | `biodata`, `perusahaan`, `atasan` |
-| **Karier & Jejaring** | Lokasi Perusahaan (DN/LN), Provinsi/Kabupaten atau Negara Luar | `select` Searchable Modal | `FormKarier.vue` | `perusahaan.lokasi_kantor`, `perusahaan.negara_id` |
-| **Karier & Jejaring** | Take Home Pay (Gaji), Posisi Wiraswasta (`F5C`), Data Atasan Langsung (`F24A`, `F24B`) | `select`, `number`, `text` | `FormKarier.vue` | `biodata`, `atasan` |
-| **Akademik & Yudisium**| Program Studi, IPK, Tahun Masuk, Tahun Lulus, Tanggal Yudisium, Judul Skripsi | `text`, `readonly` | `FormAkademik.vue` | `data_akademik`, `prodi` |
-| **Data Orang Tua** | Nama Ayah/Ibu, Pekerjaan, Alamat, No Telepon | `text` | `FormOrangTua.vue` | `biodata.nama_ayah`, `biodata.alamat_orangtua` |
+| **Karier & Jejaring** | Kategori Peran (Pekerja, Wiraswasta, Melanjutkan Pendidikan) - *Single Choice & Auto-Reset* | `role_cards` | `FormKarier.vue` | `biodata.kategori_pekerjaan` |
+| **Karier & Jejaring** | Posisi Jabatan Struktural (`F2G`) / Wiraswasta (`F5C`) | `select`, `text` | `FormKarier.vue` | `biodata.posisi_jabatan`, `biodata.posisi_wiraswasta` |
+| **Karier & Jejaring** | Lokasi Perusahaan (DN/LN), Provinsi/Kabupaten atau Master Negara Dunia | `select` Searchable Modal | `FormKarier.vue` | `perusahaan.jenis_lokasi`, `perusahaan.propinsi_id`, `perusahaan.kabupaten_id`, `perusahaan.negara` |
+| **Karier & Jejaring** | Take Home Pay (Gaji), Data Atasan Langsung (`F24A`, `F24B`) | `number`, `text`, `email`, `tel` | `FormKarier.vue` | `biodata.gaji`, `atasan` |
+| **Akademik & Yudisium**| Program Studi, IPK, Tahun Masuk, Tahun Lulus, Tanggal Yudisium, Judul Skripsi | `text`, `readonly` | `FormAkademik.vue` | `data_akademik`, `prodi`, `yudisium` |
+| **Data Orang Tua** | Nama Orang Tua, Pekerjaan, Alamat, No Telepon, Provinsi, Kabupaten | `text`, `tel`, `select` | `FormOrangTua.vue` | `data_orang_tua` |
 
 ---
 
