@@ -58,24 +58,24 @@ return new class extends Migration
                 $table->string('npwp', 30)->nullable()->comment('Nomor Pokok Wajib Pajak');
 
                 // Media Sosial & Jejaring Profesional
-                $table->string('instagram_url')->nullable();
-                $table->string('facebook_url')->nullable();
-                $table->string('linkedin_url')->nullable();
-                $table->string('linkedin_username')->nullable();
+                $table->text('instagram_url')->nullable();
+                $table->text('facebook_url')->nullable();
+                $table->text('linkedin_url')->nullable();
+                $table->text('linkedin_username')->nullable();
 
                 // Profesional, Karier & Keahlian
-                $table->string('expert')->nullable()->comment('Keahlian Spesifik');
-                $table->string('minat')->nullable()->comment('Minat/Interest');
+                $table->text('expert')->nullable()->comment('Keahlian Spesifik');
+                $table->text('minat')->nullable()->comment('Minat/Interest');
                 $table->foreignId('perusahaan_id')->nullable()->constrained('perusahaan')->nullOnDelete()->comment('Perusahaan tempat bekerja');
                 $table->foreignId('atasan_id')->nullable()->constrained('atasan')->nullOnDelete()->comment('Atasan langsung alumni');
                 $table->string('kategori_pekerjaan')->nullable()->comment('Pekerja, Wiraswasta, Melanjutkan Pendidikan');
-                $table->string('posisi_jabatan')->nullable();
-                $table->string('posisi_wiraswasta')->nullable();
-                $table->string('pendidikan_tingkat')->nullable();
-                $table->string('perguruan_tinggi')->nullable();
-                $table->string('pendidikan_prodi')->nullable();
+                $table->string('posisi_jabatan', 500)->nullable();
+                $table->string('posisi_wiraswasta', 500)->nullable();
+                $table->string('pendidikan_tingkat', 500)->nullable();
+                $table->string('perguruan_tinggi', 500)->nullable();
+                $table->string('pendidikan_prodi', 500)->nullable();
                 $table->decimal('gaji', 15, 2)->nullable();
-                $table->string('jenis_pekerjaan')->nullable();
+                $table->string('jenis_pekerjaan', 500)->nullable();
                 $table->string('zipcode')->nullable()->comment('Kode Pos Wilayah Kerja');
 
                 $table->timestamps();

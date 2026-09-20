@@ -151,18 +151,18 @@ class AlumniTracerExcelExporter
 
             // 4. Data Karier, Perusahaan & Atasan
             $kategoriPekerjaan = $alumni->kategori_pekerjaan ?: '-';
-            $posisiJabatan = $alumni->posisi_jabatan ?: '-';
+            $posisiJabatan = $alumni->posisi_jabatan ?: ($alumni->posisi_wiraswasta ?: '-');
             $posisiWiraswasta = $alumni->posisi_wiraswasta ?: '-';
             $gaji = $alumni->gaji ? 'Rp '.number_format((float) $alumni->gaji, 0, ',', '.') : '-';
-            $jenisPekerjaan = $alumni->jenis_pekerjaan ?: '-';
+            $jenisPekerjaan = $alumni->jenis_pekerjaan ?: ($perusahaan?->jenis_perusahaan ?: ($alumni->kategori_pekerjaan ?: '-'));
             $namaPerusahaan = $perusahaan?->nama_perusahaan ?: '-';
             $sektorPerusahaan = $perusahaan?->sektor ?: '-';
             $skalaPerusahaan = $perusahaan?->skala ?: '-';
-            $jenisPerusahaan = $perusahaan?->jenis_perusahaan ?: '-';
+            $jenisPerusahaan = $perusahaan?->jenis_perusahaan ?: ($alumni->jenis_pekerjaan ?: '-');
             $lokasiPerusahaan = $perusahaan?->jenis_lokasi ?: '-';
             $negaraPerusahaan = $perusahaan?->negara ?: 'Indonesia';
             $alamatPerusahaan = $perusahaan?->alamat ?: '-';
-            $kodePosPerusahaan = $perusahaan?->kode_pos ?: '-';
+            $kodePosPerusahaan = $perusahaan?->kode_pos ?: ($alumni->zipcode ?: '-');
             $namaAtasan = $atasan?->nama ?: '-';
             $teleponAtasan = $atasan?->telepon ?: '-';
             $emailAtasan = $atasan?->email ?: '-';
