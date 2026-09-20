@@ -63,8 +63,11 @@ class KuesionerSyncService
                 }
             } else {
                 $answerJson = null;
+                $answerString = (string) $val;
                 if ($codeUpper === 'F505') {
-                    $answerJson = ['F5051' => (string) $val, 'total' => (int) $val];
+                    $intGaji = (int) round((float) $val);
+                    $answerString = (string) $intGaji;
+                    $answerJson = ['F5051' => (string) $intGaji, 'total' => $intGaji];
                 }
 
                 // Hapus baris dengan kode_pertanyaan sama tetapi id pertanyaan berbeda jika ada
@@ -80,7 +83,7 @@ class KuesionerSyncService
                         'kelompok' => $question->kelompok,
                         'kode_pertanyaan' => $question->kode_pertanyaan,
                         'subpertanyaan' => $question->subpertanyaan,
-                        'answer' => (string) $val,
+                        'answer' => $answerString,
                         'answer_json' => $answerJson,
                         'keterangan' => $question->keterangan,
                         'tahun_lulus' => $tahunLulus,

@@ -121,7 +121,7 @@ class ProfilController extends Controller
             'pendidikan_tingkat' => $biodata?->pendidikan_tingkat ?? '',
             'perguruan_tinggi' => $biodata?->perguruan_tinggi ?? '',
             'pendidikan_prodi' => $biodata?->pendidikan_prodi ?? '',
-            'gaji' => $biodata?->gaji ?? '',
+            'gaji' => $biodata?->gaji !== null ? (int) $biodata->gaji : '',
             'jenis_pekerjaan' => $biodata?->jenis_pekerjaan ?? '',
             'zipcode' => $biodata?->zipcode ?? '',
 

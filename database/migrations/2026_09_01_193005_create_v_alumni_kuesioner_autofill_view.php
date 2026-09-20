@@ -44,14 +44,23 @@ return new class extends Migration
                 b.posisi_jabatan AS `F2G`,
                 p.skala AS `F2H`,
                 p.nama_perusahaan AS `F5B`,
-                COALESCE(b.posisi_wiraswasta, b.posisi_jabatan) AS `F5C`,
+                CASE 
+                    WHEN b.kategori_pekerjaan = 'Wiraswasta' THEN b.posisi_wiraswasta 
+                    ELSE NULL 
+                END AS `F5C`,
                 p.skala AS `F5D`,
                 CASE 
                     WHEN p.jenis_lokasi = 'Luar Negeri' THEN {$concatLuarNegeri}
                     ELSE {$concatDomestik}
                 END AS `F510`,
-                CAST(p.propinsi_id AS CHAR) AS `F5a1`,
-                CAST(p.kabupaten_id AS CHAR) AS `F5a2`,
+                CASE 
+                    WHEN p.jenis_lokasi = 'Luar Negeri' THEN p.negara 
+                    ELSE prov.nama_provinsi 
+                END AS `F5a1`,
+                CASE 
+                    WHEN p.jenis_lokasi = 'Luar Negeri' THEN p.negara 
+                    ELSE kab.nama_kabupaten 
+                END AS `F5a2`,
                 p.jenis_perusahaan AS `F11`,
                 CAST(b.gaji AS CHAR) AS `F505`,
                 b.kategori_pekerjaan AS `F8`,

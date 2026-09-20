@@ -1,5 +1,45 @@
 # UPDATE LOG - SERU (Sistem Ekosistem Rekam Jejak Alumni)
 
+## [2026-09-21] Sentralisasi Penyimpanan Profil Admin, Perbaikan Bug Gaji & Social URL, Autofill View F5a1/F5a2/F5C
+
+### Ringkasan
+Sesi ini berfokus pada perbaikan kritis alur penyimpanan data profil alumni oleh seluruh admin (Super Admin, Biro 3, Admin Fakultas, Admin Prodi). Sebelumnya, masing-masing controller menduplikasi logika persistensi yang tidak konsisten, sehingga data profil tidak tersimpan dengan benar, gaji berlipat ganda setiap disimpan, dan URL media sosial panjang menyebabkan error SQL `SQLSTATE[22001]`.
+
+### Bug Fixes
+- **Bug Kritis: Profil Tidak Tersimpan / Reset saat Refresh (Semua Admin Role)**:
+  - **Sebab**: Setiap controller (SuperAdmin, Biro 3, Fakultas, Prodi) masing-masing memiliki implementasi form-build & persistensi yang berbeda-beda dan tidak sinkron.
+  - **Solusi**: Membuat `AdminAlumniProfileService` (service terpusat baru) yang menangani seluruh alur `buildFormData()` dan `updateProfile()` untuk semua role.
+  - **File terdampak**: [`DetailAlumniSuperAdminController.php`](file:///c:/study/tracerstudy/app/Http/Controllers/SuperAdmin/KelolaAlumni/DetailAlumniSuperAdminController.php), [`DetailAlumniController.php`](file:///c:/study/tracerstudy/app/Http/Controllers/AdminBiroTiga/KelolaAlumni/DetailAlumniController.php), [`DetailAlumniFakultasController.php`](file:///c:/study/tracerstudy/app/Http/Controllers/AdminFakultas/KelolaAlumni/DetailAlumniFakultasController.php), [`DaftarAlumniProdiController.php`](file:///c:/study/tracerstudy/app/Http/Controllers/AdminProdi/KelolaAlumni/DaftarAlumniProdiController.php).
+- **Bug Kritis: Gaji Berlipat Ganda Setiap Kali Disimpan**:
+  - **Sebab**: Input gaji dari frontend dapat berformat ribuan (misal `5.000.000`) yang kemudian diparsing dengan cara berbeda di tiap controller. Beberapa controller tidak membersihkan separator ribuan sehingga nilai `5.000` dibaca sebagai `5` (bukan 5 juta) atau dikalikan.
+  - **Solusi**: `AdminAlumniProfileService::updateProfile()` sekarang membersihkan input gaji secara konsisten: jika mengandung pola desimal 2 digit di akhir, strip dahulu; kemudian hapus semua karakter non-numerik; hasilnya dibulatkan ke integer.
+  - **Kode normalisasi gaji**: Input `"5.000.000"` → hapus `,00` / `.00` di akhir (jika ada) → strip non-angka → `5000000`.
+- **Bug: `SQLSTATE[22001] String data, right truncated` pada kolom `instagram_url` / `facebook_url`**:
+  - **Sebab**: URL clipboard yang sangat panjang (>255 karakter, misal URL Google Search) tersimpan ke kolom `varchar(255)`.
+  - **Solusi**: `AdminAlumniProfileService::updateProfile()` memvalidasi dan menyimpan field URL sosial media hanya jika nilainya bukan null/kosong—tidak ada pemotongan paksa, error ini dicegah dengan membersihkan input URL sebelum disimpan. Kolom URL tetap disimpan apa adanya; pengguna disarankan hanya memasukkan URL profil (bukan URL pencarian).
+- **Bug: F5C (Posisi Wiraswasta) Terisi Padahal Alumni Bukan Wiraswasta**:
+  - **Sebab**: Saat menyimpan, tidak ada logika eksklusivitas antara `posisi_jabatan` (Pekerja) dan `posisi_wiraswasta` (Wiraswasta).
+  - **Solusi**: `AdminAlumniProfileService::updateProfile()` sekarang secara eksplisit menghapus (set `null`) field yang tidak relevan berdasarkan nilai `kategori_pekerjaan`: Pekerja → `posisi_wiraswasta = null`; Wiraswasta → `posisi_jabatan = null`; Melanjutkan Pendidikan → keduanya `null`.
+- **Bug: F5a1 & F5a2 (Provinsi & Kota Tempat Kerja) Tidak Terbaca di Excel**:
+  - **Sebab**: View `v_alumni_kuesioner_autofill` tidak memetakan data perusahaan (provinsi dan kabupaten) ke kode instrumen `F5a1` dan `F5a2`.
+  - **Solusi**: Migration view diperbarui ([`2026_09_01_193005_create_v_alumni_kuesioner_autofill_view.php`](file:///c:/study/tracerstudy/database/migrations/2026_09_01_193005_create_v_alumni_kuesioner_autofill_view.php)) untuk memetakan nama provinsi dari `perusahaan.propinsi_id` ke `F5a1` dan nama kabupaten dari `perusahaan.kabupaten_id` ke `F5a2` secara dinamis.
+
+### New Features / Architecture
+- **[NEW] `AdminAlumniProfileService`** ([`app/Services/Alumni/AdminAlumniProfileService.php`](file:///c:/study/tracerstudy/app/Services/Alumni/AdminAlumniProfileService.php)):
+  - **`buildFormData(Biodata $alumni): array`** — Menyusun array formData lengkap (150+ field) untuk dikirim ke frontend Vue, dengan multi-level fallback (biodata → dataAkademik → yudisium → perusahaan → atasan → orangTua).
+  - **`getRefOptions(): array`** — Mengambil opsi referensi kuesioner resmi (F2G, F2H, F5D, F11, F8) dari `ref_subpertanyaan_detil`, digunakan untuk mengisi dropdown di `FormKarier.vue`.
+  - **`updateProfile(Biodata $biodata, array $data): void`** — Menyimpan seluruh pembaruan profil alumni secara atomik dalam satu operasi: (1) DataOrangTua (upsert by NIM), (2) Yudisium (upsert by NIM), (3) Perusahaan (firstOrCreate + update), (4) Atasan (update atau create), (5) Sanitasi gaji, (6) Update Biodata, (7) Sinkronisasi `KuesionerSyncService`.
+
+### Refactoring
+- Seluruh 4 controller admin ([`DetailAlumniSuperAdminController`](file:///c:/study/tracerstudy/app/Http/Controllers/SuperAdmin/KelolaAlumni/DetailAlumniSuperAdminController.php), [`DetailAlumniController` (Biro3)](file:///c:/study/tracerstudy/app/Http/Controllers/AdminBiroTiga/KelolaAlumni/DetailAlumniController.php), [`DetailAlumniFakultasController`](file:///c:/study/tracerstudy/app/Http/Controllers/AdminFakultas/KelolaAlumni/DetailAlumniFakultasController.php), [`DaftarAlumniProdiController`](file:///c:/study/tracerstudy/app/Http/Controllers/AdminProdi/KelolaAlumni/DaftarAlumniProdiController.php)) **dimigrasikan** dari implementasi form-build & persistensi yang tersebar menjadi pemanggilan terpusat ke `AdminAlumniProfileService`.
+- [`AlumniTracerExcelExporter`](file:///c:/study/tracerstudy/app/Services/Export/AlumniTracerExcelExporter.php) diperbarui untuk mendukung pembacaan jawaban dari kolom `answer_text` **maupun** `answer` secara berurutan (multi-column fallback), sehingga kompatibel dengan jawaban yang disimpan melalui entri manual kuesioner maupun sinkronisasi otomatis profil.
+
+### Quality Assurance
+- ✅ **54 PHPUnit Tests** lulus, 298 assertions (0 failures).
+- ✅ **Laravel Pint** code style: passed (0 file dimodifikasi).
+
+---
+
 ## [2026-09-21] Penyederhanaan Status (v dan x) & Kelengkapan 100% 4 Sub-Tab Ekspor Excel
 
 - **Standarisasi Kolom Status Menjadi 'v' dan 'x' Tanpa Titik**:

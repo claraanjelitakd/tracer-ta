@@ -118,12 +118,24 @@ class SimpanProfilController extends Controller
         // =========================================================================================
         // 3. TANGANI DATA ATASAN (SUPERVISOR / AUTO-FILL OWNER)
         // =========================================================================================
+        // 3. TANGANI DATA ATASAN & KATEGORI PEKERJAAN
+        // =========================================================================================
         $idAtasan = null;
         $kategoriPekerjaan = ! empty($dataTervalidasi['kategori_pekerjaan']) ? $dataTervalidasi['kategori_pekerjaan'] : null;
         $posisiJabatan = ! empty($dataTervalidasi['posisi_jabatan']) ? $dataTervalidasi['posisi_jabatan'] : null;
         $posisiWiraswasta = ! empty($dataTervalidasi['posisi_wiraswasta']) ? $dataTervalidasi['posisi_wiraswasta'] : null;
         if ($posisiWiraswasta === 'Lainnya' && ! empty($dataTervalidasi['posisi_wiraswasta_lainnya'])) {
             $posisiWiraswasta = $dataTervalidasi['posisi_wiraswasta_lainnya'];
+        }
+
+        // Pastikan posisi saling eksklusif sesuai pilihan peran
+        if ($kategoriPekerjaan === 'Pekerja') {
+            $posisiWiraswasta = null;
+        } elseif ($kategoriPekerjaan === 'Wiraswasta') {
+            $posisiJabatan = null;
+        } elseif ($kategoriPekerjaan === 'Melanjutkan Pendidikan') {
+            $posisiJabatan = null;
+            $posisiWiraswasta = null;
         }
 
         $isOwnerOrFounder = ($kategoriPekerjaan === 'Wiraswasta') || ($posisiJabatan && in_array(strtolower((string) $posisiJabatan), [
@@ -174,16 +186,21 @@ class SimpanProfilController extends Controller
         // Gaji / Take Home Pay (bersihkan karakter non-digit dan simpan nominal murni)
         $gajiNominal = null;
         if (isset($dataTervalidasi['gaji']) && $dataTervalidasi['gaji'] !== '' && $dataTervalidasi['gaji'] !== null) {
-            $cleanGaji = preg_replace('/[^0-9]/', '', (string) $dataTervalidasi['gaji']);
-            if ($cleanGaji !== '') {
+            $rawGaji = (string) $dataTervalidasi['gaji'];
+            if (preg_match('/^\d+(\.\d{1,2})?$/', $rawGaji)) {
+                $gajiInt = (int) round((float) $rawGaji);
+            } else {
+                $rawGaji = preg_replace('/[.,]\d{2}$/', '', $rawGaji);
+                $cleanGaji = preg_replace('/[^0-9]/', '', $rawGaji);
                 $gajiInt = (int) $cleanGaji;
-                if ($gajiInt > 0 && $gajiInt < 1000) {
-                    return back()->withErrors([
-                        'gaji' => 'Nominal rata-rata pendapatan minimal ribuan (minimal Rp 1.000) atau kosongkan kolom ini jika tidak berkenan membagikan nominal.',
-                    ]);
-                }
-                $gajiNominal = $gajiInt;
             }
+
+            if ($gajiInt > 0 && $gajiInt < 1000) {
+                return back()->withErrors([
+                    'gaji' => 'Nominal rata-rata pendapatan minimal ribuan (minimal Rp 1.000) atau kosongkan kolom ini jika tidak berkenan membagikan nominal.',
+                ]);
+            }
+            $gajiNominal = $gajiInt > 0 ? $gajiInt : null;
         }
 
         // =========================================================================================

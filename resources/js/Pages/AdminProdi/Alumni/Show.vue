@@ -64,6 +64,14 @@ const props = defineProps({
         type: Array,
         default: () => [],
     },
+    negaras: {
+        type: Array,
+        default: () => [],
+    },
+    refOptions: {
+        type: Object,
+        default: () => ({}),
+    },
 });
 
 // Urutan Tab Utama: 'profil' (1), 'kuesioner' (2), 'kuesioner_prodi' (3)
@@ -434,8 +442,10 @@ const statusYudisium = computed(() => {
                             :form="form" 
                             :provinces="provinces" 
                             :kabupatens="kabupatens" 
+                            :negaras="negaras"
                             :companies="companies" 
                             :alumniData="alumni" 
+                            :refOptions="refOptions"
                         />
                     </div>
                 </div>

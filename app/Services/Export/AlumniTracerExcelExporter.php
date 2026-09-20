@@ -427,8 +427,12 @@ class AlumniTracerExcelExporter
                             $statusClass = 'status-header';
                             $statusText = '-';
                         } elseif ($resp) {
-                            if (! empty($resp->answer_text) && trim((string) $resp->answer_text) !== '') {
-                                $answerText = htmlspecialchars((string) $resp->answer_text);
+                            $plainAnswer = ! empty($resp->answer_text) && trim((string) $resp->answer_text) !== ''
+                                ? (string) $resp->answer_text
+                                : (! empty($resp->answer) && trim((string) $resp->answer) !== '' ? (string) $resp->answer : null);
+
+                            if ($plainAnswer !== null) {
+                                $answerText = htmlspecialchars($plainAnswer);
                                 $statusClass = 'status-v';
                                 $statusText = 'v';
                             } elseif (is_array($resp->answer_json) && count($resp->answer_json) > 0) {
