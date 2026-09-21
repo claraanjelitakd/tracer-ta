@@ -148,9 +148,13 @@ const handleLogout = () => {
 
                     <button 
                         @click="handleLogout"
-                        class="px-3 py-1.5 sm:px-3.5 sm:py-2 text-xs font-bold text-red-600 hover:text-white bg-red-50 hover:bg-red-600 rounded-xl transition-colors cursor-pointer border border-red-200 hover:border-red-600"
+                        class="px-3 py-1.5 sm:px-3.5 sm:py-2 text-xs font-bold text-red-600 hover:text-white bg-red-50 hover:bg-red-600 rounded-xl transition-colors cursor-pointer border border-red-200 hover:border-red-600 flex items-center gap-1.5"
                     >
-                        Keluar
+                        <!-- Ikon Power Off untuk Tombol Keluar -->
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 5.636a9 9 0 11-12.728 0M12 3v9" />
+                        </svg>
+                        <span>Keluar</span>
                     </button>
                 </div>
             </div>

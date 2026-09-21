@@ -146,32 +146,26 @@ class KuesionerProdiController extends Controller
         $jawabanMasuk = $request->input('answers', []);
         $questions = ProdiQuestion::where('prodi_id', $biodata->prodi_id)->get()->keyBy('id');
 
-        foreach ($jawabanMasuk as $qId => $jawaban) {
-            if (! is_numeric($qId) || ! isset($questions[$qId])) {
-                continue;
-            }
-
-            $q = $questions[$qId];
+        foreach ($questions as $qId => $q) {
+            $jawaban = $jawabanMasuk[$qId] ?? null;
             $answerValue = null;
             $answerJson = null;
 
             if (is_array($jawaban)) {
                 if ($q->type === 'multiple_choice' || $q->type === 'checkbox') {
                     $cleaned = array_values(array_filter($jawaban));
-                    if (empty($cleaned)) {
-                        continue;
+                    if (! empty($cleaned)) {
+                        $answerJson = $cleaned;
+                        $answerValue = implode(', ', $cleaned);
                     }
-                    $answerJson = $cleaned;
-                    $answerValue = implode(', ', $cleaned);
                 } elseif ($q->type === 'radio_input' || $q->type === 'radio_text') {
                     $selected = trim((string) ($jawaban['selected'] ?? ''));
                     $inputVal = trim((string) ($jawaban['input'] ?? ''));
-                    if ($selected === '') {
-                        continue;
+                    if ($selected !== '') {
+                        $answerJson = ['selected' => $selected, 'input' => $inputVal];
+                        $answerValue = ! empty($inputVal) ? "{$selected}: {$inputVal}" : $selected;
                     }
-                    $answerJson = ['selected' => $selected, 'input' => $inputVal];
-                    $answerValue = ! empty($inputVal) ? "{$selected}: {$inputVal}" : $selected;
-                } else {
+                } elseif (! empty($jawaban)) {
                     $answerJson = $jawaban;
                     $answerValue = json_encode($jawaban);
                 }
@@ -179,14 +173,16 @@ class KuesionerProdiController extends Controller
                 $answerValue = trim((string) $jawaban);
             }
 
-            // Fallback otomatis mengambil langsung dari Database View jika input kosong
-            if ($answerValue === null || $answerValue === '') {
-                $qText = strtolower(trim($q->question_text));
-                if (str_contains($qText, 'nama') || str_ends_with(strtolower((string) $q->code), '-01')) {
+            // Cek autofill HANYA jika pertanyaan tersebut memang butir identitas khusus
+            $qText = strtolower(trim((string) $q->question_text));
+            $isIdentityQuestion = in_array($qText, ['nama', 'nama lengkap', 'nim', 'nomor induk mahasiswa', 'tahun kelulusan', 'tahun lulus']);
+
+            if (($answerValue === null || $answerValue === '') && $isIdentityQuestion) {
+                if ($qText === 'nama' || $qText === 'nama lengkap') {
                     $answerValue = $autofill->F2A ?? $biodata->nama ?? $biodata->user?->name;
-                } elseif (str_contains($qText, 'nim') || str_ends_with(strtolower((string) $q->code), '-02')) {
+                } elseif ($qText === 'nim' || $qText === 'nomor induk mahasiswa') {
                     $answerValue = $autofill->F1 ?? $biodata->nim;
-                } elseif (str_contains($qText, 'lulus') || str_contains($qText, 'kelulusan') || str_ends_with(strtolower((string) $q->code), '-03')) {
+                } elseif ($qText === 'tahun kelulusan' || $qText === 'tahun lulus') {
                     $answerValue = $autofill->BIO_TGL_LULUS ?? $biodata->tahun_lulus;
                 }
             }
@@ -202,7 +198,16 @@ class KuesionerProdiController extends Controller
                         'answer_json' => $answerJson,
                     ]
                 );
+            } else {
+                // Jika jawaban kosong atau tidak diisi, hapus record dari database agar persentase di dashboard berkurang secara akurat
+                ProdiResponse::where('biodata_id', $biodata->id)
+                    ->where('prodi_question_id', $q->id)
+                    ->delete();
             }
+        }
+
+        if ($request->boolean('stay_on_page')) {
+            return redirect()->back()->with('success', 'Progres jawaban kuesioner program studi berhasil disimpan.');
         }
 
         return redirect('/alumni/dashboard')->with('success', 'Jawaban Kuesioner Program Studi berhasil disimpan. Terima kasih!');

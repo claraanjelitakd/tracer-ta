@@ -812,22 +812,28 @@ onUnmounted(() => {
             <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
                 <!-- Input: LinkedIn URL -->
                 <div>
-                    <label class="block text-xs sm:text-sm font-bold text-gray-700 mb-1.5">LinkedIn Profil URL</label>
+                    <label class="block text-xs sm:text-sm font-bold text-gray-700 mb-1.5">
+                        LinkedIn Profil URL <span class="text-rose-500 font-bold">*</span>
+                    </label>
                     <input 
                         type="url" 
                         v-model="form.linkedin_url" 
+                        autocomplete="off"
                         class="block w-full border rounded-xl shadow-2xs px-4 py-3 text-sm font-medium transition-all focus:ring-2 focus:ring-[#005B3C]/20"
-                        :class="form.linkedin_url?.trim() ? (isValidUrl(form.linkedin_url) ? 'border-emerald-300 bg-white text-gray-900 focus:border-[#005B3C]' : 'border-rose-300 bg-rose-50/20 text-gray-900 focus:border-rose-500') : 'border-rose-300 bg-rose-50/20 text-gray-900 focus:border-rose-500'"
+                        :class="isValidUrl(form.linkedin_url) ? 'border-emerald-300 bg-white text-gray-900 focus:border-[#005B3C]' : 'border-rose-300 bg-rose-50/20 text-gray-900 focus:border-rose-500'"
                         placeholder="https://linkedin.com/in/username" 
                     />
                 </div>
 
                 <!-- Input: LinkedIn Username -->
                 <div>
-                    <label class="block text-xs sm:text-sm font-bold text-gray-700 mb-1.5">LinkedIn Username</label>
+                    <label class="block text-xs sm:text-sm font-bold text-gray-700 mb-1.5">
+                        LinkedIn Username <span class="text-rose-500 font-bold">*</span>
+                    </label>
                     <input 
                         type="text" 
                         v-model="form.linkedin_username" 
+                        autocomplete="off"
                         class="block w-full border rounded-xl shadow-2xs px-4 py-3 text-sm font-medium transition-all focus:ring-2 focus:ring-[#005B3C]/20"
                         :class="form.linkedin_username?.trim() ? 'border-emerald-300 bg-white text-gray-900 focus:border-[#005B3C]' : 'border-rose-300 bg-rose-50/20 text-gray-900 focus:border-rose-500'"
                         placeholder="username_linkedin" 
@@ -836,34 +842,43 @@ onUnmounted(() => {
 
                 <!-- Input: Instagram URL -->
                 <div>
-                    <label class="block text-xs sm:text-sm font-bold text-gray-700 mb-1.5">Instagram Profil URL</label>
+                    <label class="block text-xs sm:text-sm font-bold text-gray-700 mb-1.5">
+                        Instagram Profil URL <span class="text-rose-500 font-bold">*</span>
+                    </label>
                     <input 
                         type="url" 
                         v-model="form.instagram_url" 
+                        autocomplete="off"
                         class="block w-full border rounded-xl shadow-2xs px-4 py-3 text-sm font-medium transition-all focus:ring-2 focus:ring-[#005B3C]/20"
-                        :class="form.instagram_url?.trim() ? (isValidUrl(form.instagram_url) ? 'border-emerald-300 bg-white text-gray-900 focus:border-[#005B3C]' : 'border-rose-300 bg-rose-50/20 text-gray-900 focus:border-rose-500') : 'border-rose-300 bg-rose-50/20 text-gray-900 focus:border-rose-500'"
+                        :class="isValidUrl(form.instagram_url) ? 'border-emerald-300 bg-white text-gray-900 focus:border-[#005B3C]' : 'border-rose-300 bg-rose-50/20 text-gray-900 focus:border-rose-500'"
                         placeholder="https://instagram.com/username" 
                     />
                 </div>
 
                 <!-- Input: Facebook URL -->
                 <div>
-                    <label class="block text-xs sm:text-sm font-bold text-gray-700 mb-1.5">Facebook Profil URL</label>
+                    <label class="block text-xs sm:text-sm font-bold text-gray-700 mb-1.5">
+                        Facebook Profil URL <span class="text-rose-500 font-bold">*</span>
+                    </label>
                     <input 
                         type="url" 
                         v-model="form.facebook_url" 
+                        autocomplete="off"
                         class="block w-full border rounded-xl shadow-2xs px-4 py-3 text-sm font-medium transition-all focus:ring-2 focus:ring-[#005B3C]/20"
-                        :class="form.facebook_url?.trim() ? (isValidUrl(form.facebook_url) ? 'border-emerald-300 bg-white text-gray-900 focus:border-[#005B3C]' : 'border-rose-300 bg-rose-50/20 text-gray-900 focus:border-rose-500') : 'border-rose-300 bg-rose-50/20 text-gray-900 focus:border-rose-500'"
+                        :class="isValidUrl(form.facebook_url) ? 'border-emerald-300 bg-white text-gray-900 focus:border-[#005B3C]' : 'border-rose-300 bg-rose-50/20 text-gray-900 focus:border-rose-500'"
                         placeholder="https://facebook.com/username" 
                     />
                 </div>
                 
                 <!-- Input: Bidang Keahlian -->
                 <div class="md:col-span-2">
-                    <label class="block text-xs sm:text-sm font-bold text-gray-700 mb-1.5">Bidang Keahlian (Expertise)</label>
+                    <label class="block text-xs sm:text-sm font-bold text-gray-700 mb-1.5">
+                        Bidang Keahlian (Expertise) <span class="text-rose-500 font-bold">*</span>
+                    </label>
                     <input 
                         type="text" 
                         v-model="form.expert" 
+                        autocomplete="off"
                         class="block w-full border rounded-xl shadow-2xs px-4 py-3 text-sm font-medium transition-all focus:ring-2 focus:ring-[#005B3C]/20" 
                         :class="form.expert?.trim() ? 'border-emerald-300 bg-white text-gray-900 focus:border-[#005B3C]' : 'border-rose-300 bg-rose-50/20 text-gray-900 focus:border-rose-500'"
                         placeholder="Contoh: Software Engineering, Data Science, Digital Marketing..." 
@@ -872,10 +887,13 @@ onUnmounted(() => {
 
                 <!-- Input: Minat / Ketertarikan -->
                 <div class="md:col-span-2">
-                    <label class="block text-xs sm:text-sm font-bold text-gray-700 mb-1.5">Minat & Ketertarikan</label>
+                    <label class="block text-xs sm:text-sm font-bold text-gray-700 mb-1.5">
+                        Minat & Ketertarikan <span class="text-rose-500 font-bold">*</span>
+                    </label>
                     <input 
                         type="text" 
                         v-model="form.minat" 
+                        autocomplete="off"
                         class="block w-full border rounded-xl shadow-2xs px-4 py-3 text-sm font-medium transition-all focus:ring-2 focus:ring-[#005B3C]/20" 
                         :class="form.minat?.trim() ? 'border-emerald-300 bg-white text-gray-900 focus:border-[#005B3C]' : 'border-rose-300 bg-rose-50/20 text-gray-900 focus:border-rose-500'"
                         placeholder="Contoh: Artificial Intelligence, Cloud Computing, Start-up..." 
@@ -1075,7 +1093,7 @@ onUnmounted(() => {
                 <div class="md:col-span-2">
                     <div class="flex items-center justify-between mb-1.5 flex-wrap gap-1">
                         <label class="block text-xs sm:text-sm font-bold text-gray-700 !mb-0">
-                            Rata-rata Pendapatan per Bulan (Take Home Pay)
+                            Rata-rata Pendapatan per Bulan (Take Home Pay) <span class="text-rose-500 font-bold">*</span>
                         </label>
                         <span v-if="form.gaji && form.gaji >= 1000" class="text-xs text-[#005B3C] font-black inline-flex items-center gap-1">
                             Terbaca: <strong>{{ formatRupiah(form.gaji) }}</strong> / bulan
@@ -1087,9 +1105,9 @@ onUnmounted(() => {
                     <div 
                         class="relative flex items-center rounded-xl border shadow-2xs focus-within:ring-2 focus-within:ring-[#005B3C]/20 transition-all overflow-hidden"
                         :class="[
-                            form.gaji && form.gaji > 0 && form.gaji < 1000 
-                                ? 'border-rose-400 bg-rose-50/30 text-gray-900 focus-within:border-rose-500' 
-                                : (form.gaji ? 'border-emerald-300 bg-white text-gray-900 focus-within:border-[#005B3C]' : 'border-rose-300 bg-rose-50/20 text-gray-900 focus-within:border-rose-500')
+                            form.gaji && form.gaji >= 1000 
+                                ? 'border-emerald-300 bg-white text-gray-900 focus-within:border-[#005B3C]' 
+                                : 'border-rose-300 bg-rose-50/20 text-gray-900 focus-within:border-rose-500'
                         ]"
                     >
                         <span class="pl-4 pr-1 font-bold text-gray-400 select-none text-base">Rp</span>
@@ -1102,10 +1120,10 @@ onUnmounted(() => {
                         <span class="pr-4 text-xs font-semibold text-gray-400 select-none">/ bulan</span>
                     </div>
                     <p v-if="form.gaji && form.gaji > 0 && form.gaji < 1000" class="text-[11px] text-rose-500 mt-1 font-semibold">
-                        Nominal gaji/pendapatan tidak dapat disimpan di bawah Rp 1.000 (minimal ribuan). Silakan lengkapi atau kosongkan jika tidak ingin mengisi.
+                        Nominal gaji/pendapatan tidak dapat disimpan di bawah Rp 1.000 (minimal ribuan). Silakan lengkapi nominal.
                     </p>
                     <p v-else class="text-[11px] text-gray-400 mt-1">
-                        Format titik ribuan otomatis. Isian opsional (dapat dikosongkan jika tidak berkenan membagikan nominal).
+                        Format titik ribuan otomatis. Wajib diisi (minimal Rp 1.000).
                     </p>
                 </div>
 
@@ -1512,7 +1530,7 @@ onUnmounted(() => {
                             class="block w-full border rounded-xl shadow-2xs px-4 py-3 text-sm font-medium transition-all focus:ring-2 focus:ring-[#005B3C]/20"
                             :class="[
                                 !canEditCompanyDetails ? 'bg-gray-100/90 text-gray-500 cursor-not-allowed border-gray-200' : 
-                                (form.company_jenis_perusahaan_lainnya?.trim() ? 'border-emerald-300 bg-white text-gray-900 focus:border-[#005B3C]' : 'border-rose-300 bg-rose-50/20 text-gray-900 focus:border-rose-500')
+                                (form.company_jenis_perusahaan_lainnya?.trim() ? 'border-emerald-300 bg-white text-gray-900 focus:border-[#005B3C]' : 'border-gray-200 bg-white text-gray-900 focus:border-[#005B3C]')
                             ]" 
                             placeholder="Contoh: Lembaga Riset Independen, Startup Komunitas..." 
                         />
@@ -1561,10 +1579,13 @@ onUnmounted(() => {
 
                     <!-- Kode Pos Perusahaan -->
                     <div class="md:col-span-2">
-                        <label class="block text-xs sm:text-sm font-bold text-gray-700 mb-1.5">Kode Pos Perusahaan (Zipcode)</label>
+                        <label class="block text-xs sm:text-sm font-bold text-gray-700 mb-1.5">
+                            Kode Pos Perusahaan (Zipcode) <span class="text-rose-500 font-bold">*</span>
+                        </label>
                         <input 
                             type="text" 
                             v-model="form.zipcode" 
+                            autocomplete="off"
                             :disabled="!canEditCompanyDetails"
                             class="block w-full border rounded-xl shadow-2xs px-4 py-3 text-sm font-medium transition-all focus:ring-2 focus:ring-[#005B3C]/20"
                             :class="[
@@ -1610,11 +1631,12 @@ onUnmounted(() => {
             <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
                 <div class="md:col-span-2">
                     <label class="block text-xs sm:text-sm font-bold text-gray-700 mb-1.5">
-                        Nama Lengkap Atasan <span v-if="!isOwner" class="text-rose-500 font-bold">*</span>
+                        Nama Lengkap Atasan <span class="text-rose-500 font-bold">*</span>
                     </label>
                     <input 
                         type="text" 
                         v-model="form.nama_atasan" 
+                        autocomplete="off"
                         class="block w-full border rounded-xl shadow-2xs px-4 py-3 text-sm font-medium transition-all focus:ring-2 focus:ring-[#005B3C]/20"
                         :class="form.nama_atasan?.trim() ? 'border-emerald-300 bg-white text-gray-900 focus:border-[#005B3C]' : 'border-rose-300 bg-rose-50/20 text-gray-900 focus:border-rose-500'"
                         placeholder="Contoh: Ir. Bambang Trihatmojo" 
@@ -1623,11 +1645,12 @@ onUnmounted(() => {
                 
                 <div>
                     <label class="block text-xs sm:text-sm font-bold text-gray-700 mb-1.5">
-                        Email Atasan <span v-if="!isOwner" class="text-rose-500 font-bold">*</span>
+                        Email Atasan <span class="text-rose-500 font-bold">*</span>
                     </label>
                     <input 
                         type="email" 
                         v-model="form.email_atasan" 
+                        autocomplete="off"
                         class="block w-full border rounded-xl shadow-2xs px-4 py-3 text-sm font-medium transition-all focus:ring-2 focus:ring-[#005B3C]/20"
                         :class="isValidEmail(form.email_atasan) ? 'border-emerald-300 bg-white text-gray-900 focus:border-[#005B3C]' : 'border-rose-300 bg-rose-50/20 text-gray-900 focus:border-rose-500'"
                         placeholder="atasan@perusahaan.co.id" 
@@ -1636,11 +1659,12 @@ onUnmounted(() => {
 
                 <div>
                     <label class="block text-xs sm:text-sm font-bold text-gray-700 mb-1.5">
-                        Nomor Telepon Atasan <span v-if="!isOwner && !form.email_atasan" class="text-rose-500 font-bold">*</span>
+                        Nomor Telepon Atasan <span class="text-rose-500 font-bold">*</span>
                     </label>
                     <input 
                         type="tel" 
                         v-model="form.telepon_atasan" 
+                        autocomplete="off"
                         class="block w-full border rounded-xl shadow-2xs px-4 py-3 text-sm font-mono font-medium transition-all focus:ring-2 focus:ring-[#005B3C]/20"
                         :class="isValidPhone(form.telepon_atasan) ? 'border-emerald-300 bg-white text-gray-900 focus:border-[#005B3C]' : 'border-rose-300 bg-rose-50/20 text-gray-900 focus:border-rose-500'"
                         placeholder="081234567890" 

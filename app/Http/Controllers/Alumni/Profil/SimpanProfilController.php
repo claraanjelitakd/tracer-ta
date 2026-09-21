@@ -158,22 +158,24 @@ class SimpanProfilController extends Controller
             $teleponAtasan = $teleponAtasan ?: ($dataTervalidasi['nomor_telepon'] ?? $biodata->nomor_telepon);
         }
 
-        if (! empty($namaAtasan) || ! empty($emailAtasan)) {
+        if (! empty($namaAtasan) || ! empty($emailAtasan) || ! empty($teleponAtasan)) {
             if ($biodata->atasan_id && $biodata->atasan) {
                 $biodata->atasan->update([
-                    'nama' => $namaAtasan ?: $biodata->atasan->nama,
+                    'nama' => $namaAtasan,
                     'email' => $emailAtasan,
                     'telepon' => $teleponAtasan,
                 ]);
                 $idAtasan = $biodata->atasan->id;
             } else {
                 $atasan = Atasan::create([
-                    'nama' => $namaAtasan ?: 'Atasan',
+                    'nama' => $namaAtasan ?: ($dataTervalidasi['nama'] ?? 'Atasan'),
                     'email' => $emailAtasan,
                     'telepon' => $teleponAtasan,
                 ]);
                 $idAtasan = $atasan->id;
             }
+        } else {
+            $idAtasan = null;
         }
 
         // =========================================================================================

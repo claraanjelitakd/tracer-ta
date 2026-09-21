@@ -299,4 +299,66 @@ class AdminProdiKuesionerTest extends TestCase
             'answer_text' => $this->alumni->nim,
         ]);
     }
+
+    public function test_emptying_prodi_question_deletes_response_and_updates_dashboard_percentage(): void
+    {
+        $q1 = ProdiQuestion::create([
+            'prodi_id' => $this->prodiSI->id,
+            'prodi_question_section_id' => $this->sectionSI->id,
+            'code' => 'PSI-6-01',
+            'question_text' => 'Materi perkuliahan sesuai dengan minat',
+            'type' => 'text',
+            'is_required' => true,
+            'order' => 1,
+        ]);
+
+        $q2 = ProdiQuestion::create([
+            'prodi_id' => $this->prodiSI->id,
+            'prodi_question_section_id' => $this->sectionSI->id,
+            'code' => 'PSI-6-02',
+            'question_text' => 'Mata kuliah pilihan fleksibel',
+            'type' => 'text',
+            'is_required' => true,
+            'order' => 2,
+        ]);
+
+        // Simpan 2 jawaban
+        $this->actingAs($this->alumniUser)->post('/alumni/kuesioner-prodi', [
+            'answers' => [
+                $q1->id => 'Sangat setuju',
+                $q2->id => 'Setuju',
+            ],
+            'stay_on_page' => true,
+        ]);
+
+        $this->assertDatabaseHas('prodi_response', [
+            'biodata_id' => $this->alumni->id,
+            'prodi_question_id' => $q1->id,
+            'answer_text' => 'Sangat setuju',
+        ]);
+
+        // Sekarang kosongkan q2
+        $this->actingAs($this->alumniUser)->post('/alumni/kuesioner-prodi', [
+            'answers' => [
+                $q1->id => 'Sangat setuju',
+                $q2->id => '',
+            ],
+            'stay_on_page' => true,
+        ]);
+
+        $this->assertDatabaseMissing('prodi_response', [
+            'biodata_id' => $this->alumni->id,
+            'prodi_question_id' => $q2->id,
+        ]);
+
+        // Periksa data di Dashboard Alumni
+        $dashResponse = $this->actingAs($this->alumniUser)->get('/alumni/dashboard');
+        $dashResponse->assertStatus(200);
+        $dashResponse->assertInertia(fn ($page) => $page
+            ->component('Alumni/Dashboard')
+            ->where('prodiAnsweredCount', 1)
+            ->where('prodiQuestionsCount', 2)
+            ->where('prodiCompleted', false)
+        );
+    }
 }

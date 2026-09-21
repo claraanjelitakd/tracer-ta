@@ -118,6 +118,12 @@ const isValidPhone = (val) => {
     return clean.length >= 10 && clean.length <= 15;
 };
 
+// Helper validasi URL
+const isValidUrl = (val) => {
+    if (!val) return false;
+    return /^https?:\/\/.+/i.test(String(val).trim());
+};
+
 // Evaluasi kelengkapan data tiap tab secara realtime
 const tabCompleteness = computed(() => {
     // 1. Tab Pribadi
@@ -128,14 +134,30 @@ const tabCompleteness = computed(() => {
     if (!form.tanggal_lahir) missingPribadi.push('Tanggal Lahir');
     if (!form.jenis_kelamin) missingPribadi.push('Jenis Kelamin');
     if (!form.agama) missingPribadi.push('Agama');
+    if (!form.golongan_darah) missingPribadi.push('Golongan Darah');
+    if (!form.warga_negara || !String(form.warga_negara).trim()) missingPribadi.push('Kewarganegaraan');
+    if (!form.no_kk || !String(form.no_kk).trim()) missingPribadi.push('Nomor Kartu Keluarga (KK)');
+    if (!form.nisn || !String(form.nisn).trim()) missingPribadi.push('NISN');
+    if (!form.no_bpjs || !String(form.no_bpjs).trim()) missingPribadi.push('Nomor BPJS');
     if (!form.nomor_telepon || !isValidPhone(form.nomor_telepon)) missingPribadi.push('Nomor Telepon / WhatsApp');
     if ((!form.email_pribadi && !form.email) || !isValidEmail(form.email_pribadi || form.email)) missingPribadi.push('Email Pribadi');
+    if (!form.email_students || !isValidEmail(form.email_students)) missingPribadi.push('Email Mahasiswa (Students UKDW)');
     if ((!form.alamat_saat_ini || !String(form.alamat_saat_ini).trim()) && (!form.alamat || !String(form.alamat).trim())) missingPribadi.push('Alamat Domisili');
     if (!form.provinsi_id && !form.propinsi_id) missingPribadi.push('Provinsi Domisili');
     if (!form.kabupaten_id) missingPribadi.push('Kabupaten/Kota Domisili');
+    if (!form.kecamatan || !String(form.kecamatan).trim()) missingPribadi.push('Kecamatan Domisili');
+    if (!form.kelurahan || !String(form.kelurahan).trim()) missingPribadi.push('Kelurahan/Desa Domisili');
+    if (!form.kode_pos || !String(form.kode_pos).trim()) missingPribadi.push('Kode Pos Domisili');
 
     // 2. Tab Karier
     const missingKarier = [];
+    if (!form.linkedin_url || !isValidUrl(form.linkedin_url)) missingKarier.push('LinkedIn URL');
+    if (!form.linkedin_username || !String(form.linkedin_username).trim()) missingKarier.push('LinkedIn Username');
+    if (!form.instagram_url || !isValidUrl(form.instagram_url)) missingKarier.push('Instagram URL');
+    if (!form.facebook_url || !isValidUrl(form.facebook_url)) missingKarier.push('Facebook URL');
+    if (!form.expert || !String(form.expert).trim()) missingKarier.push('Bidang Keahlian (Expertise)');
+    if (!form.minat || !String(form.minat).trim()) missingKarier.push('Minat & Ketertarikan');
+
     const kategori = (form.kategori_pekerjaan || '').trim();
     if (!kategori) {
         missingKarier.push('Status Pekerjaan / Aktivitas Utama');
@@ -144,15 +166,26 @@ const tabCompleteness = computed(() => {
         if ((!form.perusahaan_alamat || !String(form.perusahaan_alamat).trim()) && (!form.company_alamat || !String(form.company_alamat).trim())) missingKarier.push('Alamat Perusahaan');
         if (!form.perusahaan_skala && !form.company_skala) missingKarier.push('Skala Perusahaan');
         if (!form.perusahaan_jenis_perusahaan && !form.company_jenis_perusahaan) missingKarier.push('Jenis Perusahaan');
+        if (!form.zipcode || !String(form.zipcode).trim()) missingKarier.push('Kode Pos Perusahaan');
+        if (!form.gaji || Number(form.gaji) < 1000) missingKarier.push('Rata-rata Pendapatan / Gaji (Min Rp 1.000)');
         if (!form.posisi_jabatan || !String(form.posisi_jabatan).trim()) missingKarier.push('Posisi Jabatan');
         if (!form.nama_atasan || !String(form.nama_atasan).trim()) missingKarier.push('Nama Atasan Langsung');
-        if ((!form.email_atasan || !isValidEmail(form.email_atasan)) && (!form.telepon_atasan || !isValidPhone(form.telepon_atasan))) missingKarier.push('Kontak Atasan (Email / No HP)');
+        if (!form.email_atasan || !isValidEmail(form.email_atasan)) missingKarier.push('Email Atasan');
+        if (!form.telepon_atasan || !isValidPhone(form.telepon_atasan)) missingKarier.push('Nomor Telepon Atasan');
     } else if (kategori === 'Wiraswasta') {
         if (!form.nama_perusahaan || !String(form.nama_perusahaan).trim()) missingKarier.push('Nama Usaha / Bisnis');
         if (!form.posisi_wiraswasta) missingKarier.push('Posisi / Jabatan dalam Usaha');
+        if ((!form.perusahaan_alamat || !String(form.perusahaan_alamat).trim()) && (!form.company_alamat || !String(form.company_alamat).trim())) missingKarier.push('Alamat Usaha');
+        if (!form.perusahaan_skala && !form.company_skala) missingKarier.push('Skala Usaha');
+        if (!form.perusahaan_jenis_perusahaan && !form.company_jenis_perusahaan) missingKarier.push('Jenis Usaha');
+        if (!form.zipcode || !String(form.zipcode).trim()) missingKarier.push('Kode Pos Lokasi Usaha');
+        if (!form.gaji || Number(form.gaji) < 1000) missingKarier.push('Rata-rata Pendapatan / Gaji (Min Rp 1.000)');
+        if (!form.nama_atasan || !String(form.nama_atasan).trim()) missingKarier.push('Nama Atasan / Pemilik Usaha');
+        if (!form.email_atasan || !isValidEmail(form.email_atasan)) missingKarier.push('Email Atasan / Pemilik Usaha');
+        if (!form.telepon_atasan || !isValidPhone(form.telepon_atasan)) missingKarier.push('Nomor Telepon Atasan / Pemilik Usaha');
     }
 
-    // Validasi opsional studi lanjut jika alumni mengaktifkan studi lanjut
+    // Validasi studi lanjut jika alumni mengaktifkan studi lanjut
     if (form.pendidikan_tingkat || form.perguruan_tinggi || form.pendidikan_prodi) {
         if (!form.pendidikan_tingkat || !String(form.pendidikan_tingkat).trim()) missingKarier.push('Jenjang Pendidikan');
         if (!form.perguruan_tinggi || !String(form.perguruan_tinggi).trim()) missingKarier.push('Perguruan Tinggi Studi Lanjut');
@@ -171,6 +204,8 @@ const tabCompleteness = computed(() => {
     if (!form.alamat_orang_tua || !String(form.alamat_orang_tua).trim()) missingOrangTua.push('Alamat Orang Tua');
     if (!form.provinsi_id_orang_tua) missingOrangTua.push('Provinsi Orang Tua');
     if (!form.kabupaten_id_orang_tua) missingOrangTua.push('Kabupaten Orang Tua');
+    if (!form.kota_orang_tua || !String(form.kota_orang_tua).trim()) missingOrangTua.push('Kota Orang Tua');
+    if (!form.kode_pos_orang_tua || !String(form.kode_pos_orang_tua).trim()) missingOrangTua.push('Kode Pos Orang Tua');
 
     return {
         pribadi: {
@@ -308,7 +343,7 @@ const submit = () => {
         </header>
 
         <main id="profile-form-container" class="w-full max-w-[1400px] mx-auto -mt-16 px-4 sm:px-6 lg:px-8 relative z-20">
-            <form @submit.prevent="submit" class="bg-white/95 backdrop-blur-xl rounded-[2rem] shadow-xl border border-gray-100 relative transition-all duration-300">
+            <form @submit.prevent="submit" autocomplete="off" class="bg-white/95 backdrop-blur-xl rounded-[2rem] shadow-xl border border-gray-100 relative transition-all duration-300">
                 
                 <!-- Sticky Tabs Navigation (Bersih & Profesional) -->
                 <div class="sticky top-[72px] lg:top-20 z-40 bg-white/95 backdrop-blur-md border-b border-gray-200/80 shadow-xs rounded-t-[2rem] px-4 sm:px-6 py-2.5">

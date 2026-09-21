@@ -151,10 +151,13 @@ const handlePhoneInput = (e) => {
 
                 <!-- Kota / Keterangan Wilayah -->
                 <div>
-                    <label class="block text-xs sm:text-sm font-bold text-gray-700 mb-1.5">Kota / Keterangan Wilayah</label>
+                    <label class="block text-xs sm:text-sm font-bold text-gray-700 mb-1.5">
+                        Kota / Keterangan Wilayah <span class="text-rose-500 font-bold">*</span>
+                    </label>
                     <input 
                         type="text" 
                         v-model="form.kota_orang_tua" 
+                        autocomplete="off"
                         class="block w-full border rounded-xl shadow-2xs px-4 py-3 text-sm font-medium transition-all focus:ring-2 focus:ring-[#005B3C]/20" 
                         :class="form.kota_orang_tua?.trim() ? 'border-emerald-300 bg-white text-gray-900 focus:border-[#005B3C]' : 'border-rose-300 bg-rose-50/20 text-gray-900 focus:border-rose-500'"
                         placeholder="Contoh: Sleman, Yogyakarta" 
@@ -163,10 +166,13 @@ const handlePhoneInput = (e) => {
 
                 <!-- Kode Pos -->
                 <div>
-                    <label class="block text-xs sm:text-sm font-bold text-gray-700 mb-1.5">Kode Pos</label>
+                    <label class="block text-xs sm:text-sm font-bold text-gray-700 mb-1.5">
+                        Kode Pos <span class="text-rose-500 font-bold">*</span>
+                    </label>
                     <input 
                         type="text" 
                         v-model="form.kode_pos_orang_tua" 
+                        autocomplete="off"
                         class="block w-full border rounded-xl shadow-2xs px-4 py-3 text-sm font-medium transition-all focus:ring-2 focus:ring-[#005B3C]/20" 
                         :class="form.kode_pos_orang_tua?.trim() ? 'border-emerald-300 bg-white text-gray-900 focus:border-[#005B3C]' : 'border-rose-300 bg-rose-50/20 text-gray-900 focus:border-rose-500'"
                         placeholder="Kode Pos (5 digit)" 

@@ -35,6 +35,27 @@ const defaultAspects = [
     { key: 'pengembangan_diri', aspectNumber: 7, name: 'Pengembangan diri' },
 ];
 
+const scoreLabels = {
+    1: 'Sangat Rendah',
+    2: 'Rendah',
+    3: 'Cukup',
+    4: 'Tinggi',
+    5: 'Sangat Tinggi',
+};
+
+const ratingScores = {
+    'Sangat Rendah': 1,
+    'Rendah': 2,
+    'Cukup': 3,
+    'Tinggi': 4,
+    'Sangat Tinggi': 5,
+    '1': 1,
+    '2': 2,
+    '3': 3,
+    '4': 4,
+    '5': 5,
+};
+
 const isDualMatrixMode = computed(() => {
     return !props.pairs || props.pairs.length === 0;
 });
@@ -51,10 +72,11 @@ const getScoreA = (item) => {
     if (isDualMatrixMode.value) {
         return props.form.answers[props.question?.id]?.[item.key]?.A ?? null;
     }
-    return props.form.answers[item.qA.id] ?? null;
+    return props.form.answers[item.qA?.id] ?? null;
 };
 
 const setScoreA = (item, score) => {
+    const val = scoreLabels[score] || score;
     if (isDualMatrixMode.value) {
         if (!props.form.answers[props.question.id] || typeof props.form.answers[props.question.id] !== 'object') {
             props.form.answers[props.question.id] = {};
@@ -62,9 +84,9 @@ const setScoreA = (item, score) => {
         if (!props.form.answers[props.question.id][item.key]) {
             props.form.answers[props.question.id][item.key] = {};
         }
-        props.form.answers[props.question.id][item.key].A = score;
-    } else {
-        props.form.answers[item.qA.id] = score;
+        props.form.answers[props.question.id][item.key].A = val;
+    } else if (item.qA) {
+        props.form.answers[item.qA.id] = val;
     }
 };
 
@@ -72,10 +94,11 @@ const getScoreB = (item) => {
     if (isDualMatrixMode.value) {
         return props.form.answers[props.question?.id]?.[item.key]?.B ?? null;
     }
-    return props.form.answers[item.qB.id] ?? null;
+    return props.form.answers[item.qB?.id] ?? null;
 };
 
 const setScoreB = (item, score) => {
+    const val = scoreLabels[score] || score;
     if (isDualMatrixMode.value) {
         if (!props.form.answers[props.question.id] || typeof props.form.answers[props.question.id] !== 'object') {
             props.form.answers[props.question.id] = {};
@@ -83,22 +106,15 @@ const setScoreB = (item, score) => {
         if (!props.form.answers[props.question.id][item.key]) {
             props.form.answers[props.question.id][item.key] = {};
         }
-        props.form.answers[props.question.id][item.key].B = score;
-    } else {
-        props.form.answers[item.qB.id] = score;
+        props.form.answers[props.question.id][item.key].B = val;
+    } else if (item.qB) {
+        props.form.answers[item.qB.id] = val;
     }
-};
-
-const ratingScores = {
-    'Sangat Rendah': 1,
-    'Rendah': 2,
-    'Cukup': 3,
-    'Tinggi': 4,
-    'Sangat Tinggi': 5,
 };
 
 const getRatingScore = (val) => {
     if (val === undefined || val === null || val === '') return null;
+    if (typeof val === 'number') return val;
     if (ratingScores[val]) return ratingScores[val];
     const n = Number(val);
     if (!isNaN(n) && n >= 1 && n <= 5) return n;
@@ -233,16 +249,16 @@ const getF17ComparisonBadge = (valA, valB) => {
                                     >
                                         <input 
                                             type="radio" 
-                                            :name="'f17_a_' + (item.key || item.qA.id)" 
+                                            :name="'f17_a_' + (item.key || item.qA?.id || item.aspectNumber)" 
                                             :value="score" 
-                                            :checked="Number(getScoreA(item)) === score"
+                                            :checked="getRatingScore(getScoreA(item)) === score"
                                             @change="setScoreA(item, score)"
                                             class="sr-only"
                                         >
                                         <div 
                                             class="w-7 h-7 sm:w-8 sm:h-8 md:w-9 md:h-9 rounded-full flex items-center justify-center font-bold text-xs sm:text-sm transition-all shadow-2xs"
                                             :class="[
-                                                Number(getScoreA(item)) === score
+                                                getRatingScore(getScoreA(item)) === score
                                                     ? 'bg-[#005B3C] text-white ring-2 ring-offset-1 ring-emerald-500 shadow-sm scale-105 font-black'
                                                     : 'bg-white text-gray-700 border border-emerald-300 hover:bg-emerald-100/70 hover:border-emerald-400'
                                             ]"
@@ -281,16 +297,16 @@ const getF17ComparisonBadge = (valA, valB) => {
                                     >
                                         <input 
                                             type="radio" 
-                                            :name="'f17_b_' + (item.key || item.qB.id)" 
+                                            :name="'f17_b_' + (item.key || item.qB?.id || item.aspectNumber)" 
                                             :value="score" 
-                                            :checked="Number(getScoreB(item)) === score"
+                                            :checked="getRatingScore(getScoreB(item)) === score"
                                             @change="setScoreB(item, score)"
                                             class="sr-only"
                                         >
                                         <div 
                                             class="w-7 h-7 sm:w-8 sm:h-8 md:w-9 md:h-9 rounded-full flex items-center justify-center font-bold text-xs sm:text-sm transition-all shadow-2xs"
                                             :class="[
-                                                Number(getScoreB(item)) === score
+                                                getRatingScore(getScoreB(item)) === score
                                                     ? 'bg-amber-600 text-white ring-2 ring-offset-1 ring-amber-400 shadow-sm scale-105 font-black'
                                                     : 'bg-white text-gray-700 border border-amber-300 hover:bg-amber-100/70 hover:border-amber-400'
                                             ]"

@@ -131,7 +131,7 @@ class KuesionerController extends Controller
                                 $jawabanAwal[$pertanyaan->id.'_custom'] = $customText;
                             }
                         } elseif (in_array($pertanyaan->type, ['single_choice', 'radio', 'dropdown', 'searchable_select'])) {
-                            $textVal = $saved->answer_text ?? '';
+                            $textVal = $saved->answer_text ?? ($saved->answer ?? '');
                             if (str_starts_with($textVal, 'Lainnya: ')) {
                                 $customText = trim(substr($textVal, 9));
                                 $otherOption = $pertanyaan->detils->first(function ($opt) {
@@ -144,7 +144,20 @@ class KuesionerController extends Controller
                                     $jawabanAwal[$pertanyaan->id.'_custom'] = $customText;
                                 }
                             } else {
-                                $jawabanAwal[$pertanyaan->id] = $saved->answer_text;
+                                $matchedOpt = $pertanyaan->detils->first(function ($opt) use ($textVal) {
+                                    $t = strtolower(trim((string) $textVal));
+                                    $optText = strtolower(trim((string) $opt->option_text));
+                                    $optCode = strtolower(trim((string) ($opt->kode_opsi ?? '')));
+
+                                    return $t === $optText
+                                        || $t === $optCode
+                                        || ($t === 'pekerja' && str_contains($optText, 'bekerja'))
+                                        || ($t === 'bekerja' && str_contains($optText, 'bekerja'))
+                                        || ($t === 'mencari kerja' && str_contains($optText, 'mencari kerja'))
+                                        || ($t === 'belum memungkinkan bekerja' && str_contains($optText, 'belum memungkinkan'));
+                                });
+
+                                $jawabanAwal[$pertanyaan->id] = $matchedOpt ? $matchedOpt->option_text : $textVal;
                             }
                         } elseif (in_array($pertanyaan->type, ['radio_input', 'radio_text'])) {
                             $jsonVal = is_array($saved->answer_json) ? $saved->answer_json : [];
@@ -158,12 +171,17 @@ class KuesionerController extends Controller
                             if (! empty($jsonVal)) {
                                 $pilihan = $jsonVal['pilihan'] ?? ($jsonVal['selected'] ?? '');
                                 $input = $jsonVal['input'] ?? ($jsonVal['text'] ?? '');
-                                $inputs = is_array($jsonVal['inputs'] ?? null) ? $jsonVal['inputs'] : $inputsObj;
+                                $rawInputs = is_array($jsonVal['inputs'] ?? null) ? $jsonVal['inputs'] : [];
+
+                                $matchedOpt = $pertanyaan->detils->first(fn ($o) => strcasecmp($o->option_text, $pilihan) === 0);
+                                if ($matchedOpt) {
+                                    $inputsObj[$matchedOpt->id] = (string) ($rawInputs[$matchedOpt->id] ?? $input);
+                                }
 
                                 $jawabanAwal[$pertanyaan->id] = [
-                                    'selected' => $pilihan,
-                                    'input' => $input,
-                                    'inputs' => array_merge($inputsObj, $inputs),
+                                    'selected' => $matchedOpt ? $matchedOpt->option_text : $pilihan,
+                                    'input' => $matchedOpt ? $inputsObj[$matchedOpt->id] : $input,
+                                    'inputs' => $inputsObj,
                                 ];
                             } elseif (! empty($textVal)) {
                                 $matchedOption = null;

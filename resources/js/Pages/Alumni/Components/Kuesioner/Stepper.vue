@@ -31,6 +31,10 @@ const props = defineProps({
         type: Number,
         default: 0,
     },
+    activeOriginalIndex: {
+        type: Number,
+        default: null,
+    },
     completedIndices: {
         type: Object, // Set
         default: () => new Set(),
@@ -80,8 +84,8 @@ const scrollActiveStepIntoView = (index) => {
 };
 
 // Pantau perubahan activeIndex agar stepper otomatis bergeser
-watch(() => props.activeIndex, (newIdx) => {
-    scrollActiveStepIntoView(newIdx);
+watch([() => props.activeIndex, () => props.activeOriginalIndex], () => {
+    scrollActiveStepIntoView(props.activeIndex);
 });
 
 // Jalankan scroll saat komponen pertama kali dimuat
@@ -106,23 +110,23 @@ onMounted(() => {
                 <div 
                     :ref="el => setStepRef(el, index)"
                     class="flex flex-col relative items-center justify-center cursor-pointer group px-1 sm:px-2 md:px-3 py-0.5 sm:py-1 transition-all duration-200"
-                    @click="emit('select-section', index)"
+                    @click="emit('select-section', section.originalIndex !== undefined ? section.originalIndex : index)"
                     :title="'Bagian ' + (index + 1) + ': ' + section.title"
                 >
                     <!-- Lingkaran Angka / Centang Selesai -->
                     <div 
                         class="flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 rounded-full font-black text-xs sm:text-sm md:text-lg transition-all duration-200 z-10 shadow-xs relative"
                         :class="[
-                            activeIndex === index 
+                            ((activeOriginalIndex !== null && activeOriginalIndex !== undefined && section.originalIndex !== undefined) ? activeOriginalIndex === section.originalIndex : activeIndex === index)
                                 ? 'bg-[#FFD700] text-[#005B3C] shadow-md scale-105 sm:scale-110 ring-2 sm:ring-4 ring-[#005B3C]/20' : 
-                            (isSectionCompleted(index) 
+                            (isSectionCompleted(section.originalIndex !== undefined ? section.originalIndex : index) 
                                 ? 'bg-[#005B3C] text-white shadow-xs group-hover:bg-[#00482f] group-hover:scale-105' : 
                                 'bg-gray-100 text-gray-400 group-hover:bg-gray-200 group-hover:text-gray-600')
                         ]"
                     >
                         <!-- 1.1 Tanda centang putih jika seksi sudah lengkap terisi dan tidak sedang dibuka -->
                         <svg 
-                            v-if="isSectionCompleted(index) && activeIndex !== index" 
+                            v-if="isSectionCompleted(section.originalIndex !== undefined ? section.originalIndex : index) && !((activeOriginalIndex !== null && activeOriginalIndex !== undefined && section.originalIndex !== undefined) ? activeOriginalIndex === section.originalIndex : activeIndex === index)" 
                             class="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 text-white" 
                             fill="none" 
                             stroke="currentColor" 
@@ -136,7 +140,7 @@ onMounted(() => {
 
                         <!-- 1.3 Badge mini centang di sudut kanan atas jika tahapan aktif ini sudah lengkap -->
                         <span 
-                            v-if="activeIndex === index && isSectionCompleted(index)" 
+                            v-if="((activeOriginalIndex !== null && activeOriginalIndex !== undefined && section.originalIndex !== undefined) ? activeOriginalIndex === section.originalIndex : activeIndex === index) && isSectionCompleted(section.originalIndex !== undefined ? section.originalIndex : index)" 
                             class="absolute -top-1 -right-1 w-3.5 h-3.5 sm:w-4 sm:h-4 bg-[#005B3C] text-white rounded-full flex items-center justify-center text-[8px] sm:text-[10px] font-black shadow-xs ring-1.5 sm:ring-2 ring-white"
                             title="Bagian ini sudah lengkap"
                         >
@@ -148,9 +152,9 @@ onMounted(() => {
                     <span 
                         class="text-[9px] sm:text-[11px] md:text-xs mt-1 sm:mt-2 text-center w-20 sm:w-24 md:w-28 leading-tight transition-colors line-clamp-2"
                         :class="[
-                            activeIndex === index 
+                            ((activeOriginalIndex !== null && activeOriginalIndex !== undefined && section.originalIndex !== undefined) ? activeOriginalIndex === section.originalIndex : activeIndex === index)
                                 ? 'text-[#005B3C] font-black' : 
-                            (isSectionCompleted(index) 
+                            (isSectionCompleted(section.originalIndex !== undefined ? section.originalIndex : index) 
                                 ? 'text-[#005B3C] font-bold group-hover:text-[#00482f]' : 
                                 'text-gray-400 group-hover:text-gray-600 font-medium')
                         ]"

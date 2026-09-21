@@ -8,6 +8,7 @@ use App\Models\ProdiQuestion;
 use App\Models\ProdiResponse;
 use App\Services\Kuesioner\KelengkapanTracerService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 
 /**
@@ -64,12 +65,26 @@ class DashboardController extends Controller
 
             // Evaluasi Kuesioner Program Studi
             if ($biodata->prodi_id) {
-                $prodiQIds = ProdiQuestion::where('prodi_id', $biodata->prodi_id)->pluck('id');
+                $prodiQIds = ProdiQuestion::where('prodi_id', $biodata->prodi_id)
+                    ->where('type', '!=', 'header')
+                    ->pluck('id');
                 $prodiQuestionsCount = $prodiQIds->count();
                 if ($prodiQuestionsCount > 0) {
                     $prodiAnsweredCount = ProdiResponse::where('biodata_id', $biodata->id)
                         ->whereIn('prodi_question_id', $prodiQIds)
-                        ->count();
+                        ->where(function ($q) {
+                            $q->where(function ($sub) {
+                                $sub->whereNotNull('answer_text')
+                                    ->where(DB::raw('TRIM(answer_text)'), '!=', '');
+                            })->orWhere(function ($sub) {
+                                $sub->whereNotNull('answer_json')
+                                    ->where('answer_json', '!=', '')
+                                    ->where('answer_json', '!=', '[]')
+                                    ->where('answer_json', '!=', '{}');
+                            });
+                        })
+                        ->distinct('prodi_question_id')
+                        ->count('prodi_question_id');
                     $prodiCompleted = ($prodiAnsweredCount >= $prodiQuestionsCount);
                 }
             }

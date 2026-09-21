@@ -45,6 +45,7 @@ class KuesionerSyncService
             $codeUpper = strtoupper($code);
 
             $question = RefSubpertanyaan2021::whereRaw('UPPER(kode_pertanyaan) = ?', [$codeUpper])
+                ->with('detils')
                 ->first();
 
             if (! $question) {
@@ -68,6 +69,24 @@ class KuesionerSyncService
                     $intGaji = (int) round((float) $val);
                     $answerString = (string) $intGaji;
                     $answerJson = ['F5051' => (string) $intGaji, 'total' => $intGaji];
+                } elseif ($codeUpper === 'F8') {
+                    // Normalisasikan ke teks opsi resmi F8 di ref_subpertanyaan_detil agar selalu cocok dengan pilihan radio button di frontend
+                    $vStr = strtolower(trim((string) $val));
+                    $matchedOpt = $question->detils->first(function ($opt) use ($vStr) {
+                        $optText = strtolower(trim((string) $opt->option_text));
+
+                        return $vStr === $optText
+                            || ($vStr === 'pekerja' && str_contains($optText, 'bekerja'))
+                            || ($vStr === 'bekerja' && str_contains($optText, 'bekerja'))
+                            || ($vStr === 'mencari kerja' && str_contains($optText, 'mencari kerja'))
+                            || ($vStr === 'belum memungkinkan bekerja' && str_contains($optText, 'belum memungkinkan'))
+                            || ($vStr === 'melanjutkan pendidikan' && str_contains($optText, 'melanjutkan pendidikan'))
+                            || ($vStr === 'wiraswasta' && str_contains($optText, 'wiraswasta'));
+                    });
+
+                    if ($matchedOpt) {
+                        $answerString = $matchedOpt->option_text;
+                    }
                 }
 
                 // Hapus baris dengan kode_pertanyaan sama tetapi id pertanyaan berbeda jika ada

@@ -1,5 +1,136 @@
 # UPDATE LOG - SERU (Sistem Ekosistem Rekam Jejak Alumni)
 
+## [2026-09-21] Refactoring Dashboard Alumni & Standarisasi Ikon Power-Off Keluar Sesi
+
+### Ringkasan
+1. **Penyempurnaan Tampilan Dashboard Alumni ([`Dashboard.vue`](file:///c:/study/tracerstudy/resources/js/Pages/Alumni/Dashboard.vue))**:
+   - Menghapus kotak ikon avatar/clipboard/topi di pojok kiri atas kartu agar tampilan lebih bersih, minimalis, dan elegan.
+   - Menyamakan tinggi seluruh kartu (*equal height*) dan meratakan posisi vertikal kontainer persentase progress bar (`mt-auto`) sehingga seluruh kartu memiliki elevasi dan tinggi baseline yang simetris dan rapi.
+   - Menghilangkan ikon panah (`→`) dari seluruh tombol navigasi kartu dashboard ("Kelola Data Profil", "Isi Kuesioner Umum", "Buka Kuesioner Prodi").
+   - Menerapkan sudut tumpul modern (*rounded-3xl* pada kartu, *rounded-2xl* pada progress box dan tombol, *rounded-full* pada badge status) untuk tampilan yang lebih profesional.
+2. **Standarisasi Ikon Tombol Keluar / Logout**:
+   - Mengganti seluruh ikon keluar (pintu/emotikon) di seluruh modul sistem (Alumni Navbar, Super Admin Sidebar, Admin Prodi Navbar & Sidebar, Admin Biro 3 Sidebar & Navbar, Admin Fakultas Sidebar) dengan ikon SVG Power-Off yang konsisten dan profesional.
+3. **Pembersihan Komponen**:
+   - Menghapus blok komentar HTML yang tidak digunakan pada [`Banner.vue`](file:///c:/study/tracerstudy/resources/js/Pages/Alumni/Components/Kuesioner/Banner.vue).
+
+---
+
+## [2026-09-21] Optimalisasi Navigasi Seksi Kuesioner (Instan 1x Klik Tanpa Menunggu Simpan)
+
+### Ringkasan
+Memperbaiki navigasi tombol Lanjut (`>`) dan Stepper pada Kuesioner Program Studi ([`KuesionerProdi.vue`](file:///c:/study/tracerstudy/resources/js/Pages/Alumni/KuesionerProdi.vue)) dan Kuesioner Universitas ([`Kuesioner.vue`](file:///c:/study/tracerstudy/resources/js/Pages/Alumni/Kuesioner.vue)) sehingga perpindahan seksi berlangsung **instan dengan 1x klik (0 ms)** tanpa jeda, sementara proses penyimpanan jawaban ke database dijalankan secara aman di latar belakang (*asynchronous background sync*).
+
+### Detail Perbaikan
+- **Optimistic Immediate Navigation**:
+  - Sebelumnya, perpindahan seksi ditaruh di dalam callback `onSuccess` request HTTP server, sehingga tampilan tertahan di seksi yang sama selama 0.5–1 detik sebelum respon server diterima (menyebabkan kesan harus diklik 2 kali).
+  - Sekarang, indeks seksi aktif (`activeSectionIndex`) dan *smooth scroll* langsung berpindah seketika saat tombol diklik (cukup 1x klik), dan permintaan penyimpanan data dikirimkan di latar belakang tanpa memblokir pergerakan pengguna.
+
+---
+
+### Ringkasan
+1. Memperbaiki bug pada backend [`SimpanProfilController.php`](file:///c:/study/tracerstudy/app/Http/Controllers/Alumni/Profil/SimpanProfilController.php) di mana data nama/email atasan yang dihapus oleh alumni sebelumnya dapat terisi kembali dengan data lama dari database akibat adanya nilai *fallback* yang tidak sengaja mempertahankan data `atasan->nama` lama.
+2. Mengubah seluruh kolom pengisian pada Halaman Profil Alumni ([`FormPribadi.vue`](file:///c:/study/tracerstudy/resources/js/Pages/Alumni/Profil/Components/FormPribadi.vue), [`FormOrangTua.vue`](file:///c:/study/tracerstudy/resources/js/Pages/Alumni/Profil/Components/FormOrangTua.vue), [`FormKarier.vue`](file:///c:/study/tracerstudy/resources/js/Pages/Alumni/Profil/Components/FormKarier.vue), dan [`Index.vue`](file:///c:/study/tracerstudy/resources/js/Pages/Alumni/Profil/Index.vue)) menjadi **Wajib Diisi (Mandatory)**, ditandai dengan tanda bintang merah (`*`), indikator border merah saat belum terisi / hijau saat valid, serta validasi kelengkapan tab (*tab completeness*) yang hanya mencentang hijau (`V`) jika seluruh kolom telah terisi lengkap.
+
+### Detail Perbaikan
+- **Backend ([`SimpanProfilController.php`](file:///c:/study/tracerstudy/app/Http/Controllers/Alumni/Profil/SimpanProfilController.php))**:
+  - Memperbaiki logika `updateOrCreate` pada relasi `atasan` agar menyimpan nilai `null` secara langsung ketika kolom dihapus/dikosongkan oleh pengguna, tanpa menimpa atau mengembalikan nama atasan lama secara otomatis.
+- **Frontend ([`FormPribadi.vue`](file:///c:/study/tracerstudy/resources/js/Pages/Alumni/Profil/Components/FormPribadi.vue), [`FormOrangTua.vue`](file:///c:/study/tracerstudy/resources/js/Pages/Alumni/Profil/Components/FormOrangTua.vue), [`FormKarier.vue`](file:///c:/study/tracerstudy/resources/js/Pages/Alumni/Profil/Components/FormKarier.vue))**:
+  - Semua field formulir kini dilengkapi tanda bintang wajib (`*`), atribut `autocomplete="off"` untuk mencegah intervensi *browser autofill*, serta penanda warna border reaktif (merah jika kosong/invalid, hijau jika telah terisi dengan benar).
+- **Evaluasi Kelengkapan Tab ([`Index.vue`](file:///c:/study/tracerstudy/resources/js/Pages/Alumni/Profil/Index.vue))**:
+  - Menyelaraskan fungsi `tabCompleteness` agar memeriksa seluruh field wajib di setiap tab (Identitas Pribadi, Data Kontak & Domisili, Data Orang Tua, Pekerjaan, Perusahaan, Atasan Langsung, dan Jejaring Sosial).
+
+---
+
+### Ringkasan
+Memperbaiki styling visual kolom-kolom isian opsional pada halaman Profil Alumni ([`FormPribadi.vue`](file:///c:/study/tracerstudy/resources/js/Pages/Alumni/Profil/Components/FormPribadi.vue), [`FormOrangTua.vue`](file:///c:/study/tracerstudy/resources/js/Pages/Alumni/Profil/Components/FormOrangTua.vue), dan [`FormKarier.vue`](file:///c:/study/tracerstudy/resources/js/Pages/Alumni/Profil/Components/FormKarier.vue)) yang sebelumnya menampilkan border/background merah (`border-rose-300 bg-rose-50/20`) saat kosong meskipun tab formulir sudah lengkap dan bertanda centang hijau (`V`).
+
+### Detail Perbaikan
+- **Pembersihan Border Merah pada Kolom Opsional**:
+  - Kolom opsional kini menggunakan warna border netral standar (`border-gray-200 bg-white`) ketika belum diisi, dan akan berubah menjadi hijau (`border-emerald-300`) saat terisi dengan format yang benar.
+  - Border merah (`border-rose-300`) hanya dimunculkan jika:
+    1. Kolom tersebut bertanda wajib (`*`) dan masih kosong, atau
+    2. Format inputan salah (seperti URL medsos atau nomor HP yang tidak valid).
+- **Cakupan Kolom yang Diperbarui**:
+  - **Data Pribadi**: Golongan Darah, Kewarganegaraan, No KK, NISN, No BPJS, Email Students, Kecamatan, Kelurahan, Kode Pos.
+  - **Data Orang Tua**: Kota/Kabupaten Tambahan, Kode Pos Orang Tua.
+  - **Karier & Pekerjaan**: LinkedIn URL & Username, Instagram URL, Facebook URL, Bidang Keahlian (*Expertise*), Minat & Ketertarikan, Gaji/Take Home Pay (opsional), Jenis Instansi Lainnya, Kode Pos Kantor, serta Telepon Atasan jika Email Atasan sudah terisi (atau sebaliknya).
+
+---
+
+## [2026-09-21] Penyederhanaan Stepper Input Angka & Penghapusan Teks Duplikasi Instruksi
+
+### Ringkasan
+Menghapus duplikasi teks instruksi (*"Jawaban bisa lebih dari satu"* / *"Pilih salah satu jawaban"*) yang sebelumnya muncul ganda di bawah judul pertanyaan dan di atas pilihan jawaban, serta menyederhanakan desain input angka (*stepper*) menjadi bersih, standar, dan tanpa ikon/emoji.
+
+### Detail Perbaikan
+- **Eliminasi Teks Duplikasi pada [`KartuPertanyaan.vue`](file:///c:/study/tracerstudy/resources/js/Pages/Alumni/Components/Kuesioner/KartuPertanyaan.vue)**:
+  - Menambahkan fungsi `getCleanKeterangan()` untuk menyaring teks keterangan dari database jika isinya hanya instruksi duplikat (seperti *"Jawaban bisa lebih dari satu"*), sehingga hanya pill badge resmi yang tampil rapi tanpa pengulangan teks di bawah judul pertanyaan.
+- **Desain Stepper Angka Minimalis & Bersih**:
+  - Mengubah stepper angka menjadi inline stepper ringkas dengan label satuan yang diletakkan langsung di samping stepper, menggunakan format ringkas `/ perusahaan` (pada butir `F6`, `F7`, `F7A`) dan `Bulan` (pada `F502`, `F506`) tanpa ikon/emotikon berlebih.
+
+---
+
+### Ringkasan
+Memperbaiki kolom input angka pada butir pertanyaan F6, F7, dan F7A (*jumlah perusahaan yang dilamar, merespons, dan mengundang wawancara*) yang sebelumnya terhimpit/tidak kelihatan dan sulit diklik pada tata letak kartu berdampingan (*3-column grid layout*).
+
+### Detail Perbaikan
+- **Restrukturisasi Komponen Input Angka ([`KartuPertanyaan.vue`](file:///c:/study/tracerstudy/resources/js/Pages/Alumni/Components/Kuesioner/KartuPertanyaan.vue))**:
+  - Badge satuan unit panjang (seperti *"Satuan: Perusahaan / Instansi"* dan *"Satuan: Undangan Wawancara"*) dipindahkan ke baris bawah stepper `[-] [ 0 ] [+]` alih-alih berjejer secara inline di dalam kotak input.
+  - Memberikan lebar penuh yang leluasa (`flex-1 min-w-[70px]`) untuk kotak input angka di antara tombol `[-]` dan `[+]`, sehingga angka jelas terlihat dan pengguna dapat mengetik langsung maupun mengeklik tombol tambah/kurang dengan mudah di berbagai ukuran layar.
+
+---
+
+### Ringkasan
+Memperbaiki permasalahan visual di mana butir pertanyaan Evaluasi Kompetensi F17 (dan pertanyaan skala rating) tampak kosong/tidak terpilih meskipun data jawaban sudah terisi di database dan stepper sudah bertanda centang ("v").
+
+### Detail Perbaikan
+- **Resolusi Mismatch Tipe Data (String vs Integer) pada [`TabelF17.vue`](file:///c:/study/tracerstudy/resources/js/Pages/Alumni/Components/Kuesioner/TabelF17.vue)**:
+  - Jawaban kuesioner di database `tracer.answer` tersimpan dalam bentuk label teks (seperti `"Sangat Rendah"`, `"Rendah"`, `"Cukup"`, `"Tinggi"`, `"Sangat Tinggi"`).
+  - Sebelumnya, pengecekan radio di template menggunakan `Number(getScoreA(item)) === score`. Karena `Number("Sangat Tinggi")` menghasilkan `NaN`, perbandingan `NaN === 5` selalu bernilai `false`, sehingga seluruh bulatan radio F17 tidak terpilih/kosong secara visual.
+  - Memperbarui pengecekan `:checked` dan kelas penanda aktif agar menggunakan helper `getRatingScore()` yang memetakan label string ke nilai angka 1–5 secara seamless.
+  - Memperbarui `setScoreA` dan `setScoreB` agar memetakan angka yang diklik ke format teks resmi kuesioner.
+- **Normalisasi Pertanyaan Skala Rating pada [`KartuPertanyaan.vue`](file:///c:/study/tracerstudy/resources/js/Pages/Alumni/Components/Kuesioner/KartuPertanyaan.vue)**:
+  - Menambahkan kamus pemetaan skala rating (`ratingScoresMap`) dan fungsi helper `isRatingScoreSelected()` & `setRatingScore()` untuk semua butir bertipe `rating_5` agar mendukung input berupa string opsi maupun angka skor.
+
+---
+
+### Ringkasan
+Memperbaiki permasalahan nilai jawaban pertanyaan F8 (*"Jelaskan status Anda saat ini"*) yang kerap hilang/ter-reset serta menyelaraskan aturan percabangan (*branching/jump logic*) untuk pertanyaan F10 (*"Apakah anda aktif mencari pekerjaan dalam 4 minggu terakhir?"*).
+
+### Detail Perbaikan
+- **Normalisasi Opsi F8 Backend & Frontend**:
+  - `KuesionerSyncService` dan `KuesionerController` kini menormalisasikan string profil `kategori_pekerjaan` (seperti `"Pekerja"`, `"Mencari Kerja"`, `"Belum Memungkinkan Bekerja"`, `"Wiraswasta"`) secara presisi ke teks opsi resmi di `ref_subpertanyaan_detil` (misal: `"Bekerja (full time/part time)"`).
+  - Mengeliminasi ketidakcocokan nilai radio button Vue yang sebelumnya menyebabkan pilihan F8 tidak terpilih saat halaman di-*render* ulang.
+- **Merge State Jawaban Lokal vs Server yang Aman**:
+  - Pada [`Kuesioner.vue`](file:///c:/study/tracerstudy/resources/js/Pages/Alumni/Kuesioner.vue), fungsi `getInitialAnswers` diperbarui agar tidak menimpa jawaban valid di `localStorage` dengan nilai kosong dari server.
+- **Logika Percabangan F10**:
+  - Pilihan **"Bekerja (full time/part time)"** dan **"Wiraswasta"** (serta **"Melanjutkan Pendidikan"**) sekarang secara otomatis menyembunyikan/melewati pertanyaan `F10` baik di frontend ([`Kuesioner.vue`](file:///c:/study/tracerstudy/resources/js/Pages/Alumni/Kuesioner.vue)) maupun di penghitungan kelengkapan backend ([`KelengkapanTracerService.php`](file:///c:/study/tracerstudy/app/Services/Kuesioner/KelengkapanTracerService.php)).
+  - Pertanyaan `F10` **hanya ditampilkan** untuk responden dengan status **"Belum memungkinkan bekerja"** atau **"Tidak kerja tetapi sedang mencari kerja"**.
+- **Eksklusivitas Input Radio Pilihan Tunggal F3 (Sebelum Lulus vs Sesudah Lulus)**:
+  - Pada butir pertanyaan `F3` (*"Kapan anda mulai mencari pekerjaan?"*) dan seluruh pertanyaan bertipe `radio_input` / `radio_text` di [`KartuPertanyaan.vue`](file:///c:/study/tracerstudy/resources/js/Pages/Alumni/Components/Kuesioner/KartuPertanyaan.vue), kini diberlakukan **eksklusivitas pilihan tunggal mutlak**.
+  - Jika alumni memilih atau mengisi salah satu opsi (misal: *"Sebelum lulus ... bulan"*), maka isian pada opsi lainnya (misal: *"Sesudah lulus ... bulan"* atau *"Saya tidak mencari kerja"*) **langsung dikosongkan/dihapus secara otomatis**.
+  - Backend [`SimpanJawabanController.php`](file:///c:/study/tracerstudy/app/Http/Controllers/Alumni/Kuesioner/SimpanJawabanController.php) dan [`KuesionerController.php`](file:///c:/study/tracerstudy/app/Http/Controllers/Alumni/Kuesioner/KuesionerController.php) juga menjamin hanya opsi yang aktif yang tersimpan dan dimuat kembali.
+- **Stepper & Navigasi Dinamis Berdasarkan Bagian yang Relevan (Visible Sections)**:
+  - [`Stepper.vue`](file:///c:/study/tracerstudy/resources/js/Pages/Alumni/Components/Kuesioner/Stepper.vue), [`Banner.vue`](file:///c:/study/tracerstudy/resources/js/Pages/Alumni/Components/Kuesioner/Banner.vue), dan [`Navigasi.vue`](file:///c:/study/tracerstudy/resources/js/Pages/Alumni/Components/Kuesioner/Navigasi.vue) kini hanya menampilkan dan menavigasikan bagian/seksi kuesioner yang **aktif dan relevan** (*visible sections*) sesuai status pekerjaan alumni di F8.
+  - Menghilangkan masalah halaman kosong (*blank*) saat alumni mengeklik bulatan tahapan pada seksi yang seluruh butir pertanyaannya tidak relevan/disembunyikan oleh sistem.
+
+---
+
+## [2026-09-21] Sinkronisasi Otomatis Progres Kuesioner Prodi, Penghapusan Jawaban Kosong & Konsistensi Dashboard
+
+### Ringkasan
+Memperbaiki inkonsistensi persentase progres antara halaman Kuesioner Prodi (`/alumni/kuesioner-prodi`) dan Dashboard Alumni (`/alumni/dashboard`). Memastikan jawaban yang dikosongkan langsung terhapus dari database dan progres selalu tersinkronisasi secara otomatis (*real-time auto-save*).
+
+### Bug Fixes
+- **Karakter `>` Muncul di Header Alumni**: Memperbaiki kesalahan ketik tag `<<template>` menjadi `<template>` pada [`KuesionerProdi.vue`](file:///c:/study/tracerstudy/resources/js/Pages/Alumni/KuesionerProdi.vue).
+- **Inkonsistensi Persentase Progres**:
+  - `Banner.vue` diperbarui agar menampilkan progres butir soal terjawab riil (`41 / 42 Soal (98%)`) bukan sekadar indeks tahapan seksi.
+  - `KuesionerProdiController.php` sekarang menghapus baris dari tabel `prodi_response` ketika butir pertanyaan dikosongkan.
+  - Memperketat aturan autofill prodi agar tidak salah mendeteksi pertanyaan kuesioner reguler sebagai pertanyaan identitas.
+  - Menambahkan sinkronisasi otomatis latar belakang (*debounced background auto-save*) dan sinkronisasi instan saat *mount* di [`KuesionerProdi.vue`](file:///c:/study/tracerstudy/resources/js/Pages/Alumni/KuesionerProdi.vue) sehingga database server dan Dashboard selalu 100% mutakhir.
+
+---
+
 ## [2026-09-21] Sentralisasi Penyimpanan Profil Admin, Perbaikan Bug Gaji & Social URL, Autofill View F5a1/F5a2/F5C
 
 ### Ringkasan

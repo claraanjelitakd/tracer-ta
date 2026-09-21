@@ -306,9 +306,13 @@ const getTypeLabel = (type) => {
                         <span class="text-xs font-semibold text-gray-600 hidden sm:inline-block">Admin Biro 3</span>
                         <button 
                             @click="logout" 
-                            class="px-4 py-2 text-xs font-bold text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+                            class="px-4 py-2 text-xs font-bold text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors flex items-center gap-1.5 cursor-pointer"
                         >
-                            Keluar
+                            <!-- Ikon Power Off untuk Tombol Keluar -->
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 5.636a9 9 0 11-12.728 0M12 3v9" />
+                            </svg>
+                            <span>Keluar</span>
                         </button>
                     </div>
                 </div>

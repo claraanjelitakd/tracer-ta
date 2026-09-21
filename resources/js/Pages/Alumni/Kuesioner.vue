@@ -33,6 +33,19 @@ const SECTION_STORAGE_KEY = 'tracerstudy_alumni_kuesioner_section';
 const ANSWERS_STORAGE_KEY = 'tracerstudy_alumni_kuesioner_answers';
 const COMPLETED_SECTIONS_STORAGE_KEY = 'tracerstudy_alumni_kuesioner_completed_sections';
 
+// Helper pemeriksa nilai kosong
+const isAnswerValEmpty = (val) => {
+    if (val === undefined || val === null || val === '') return true;
+    if (Array.isArray(val) && val.length === 0) return true;
+    if (typeof val === 'object' && !Array.isArray(val)) {
+        if (val.selected !== undefined && val.selected === '' && (!val.input || val.input === '')) return true;
+        const keys = Object.keys(val);
+        if (keys.length === 0) return true;
+        if (keys.every(k => val[k] === '' || val[k] === null || val[k] === undefined)) return true;
+    }
+    return false;
+};
+
 // Inisialisasi daftar index section yang sudah selesai dikerjakan dari cache
 const getInitialCompletedSections = () => {
     const set = new Set();
@@ -52,21 +65,34 @@ const getInitialCompletedSections = () => {
     return set;
 };
 
-// Inisialisasi jawaban formulir: gabungkan data backend dengan draft lokal
+// Inisialisasi jawaban formulir: gabungkan data backend dengan draft lokal secara aman
 const getInitialAnswers = () => {
     const serverAnswers = JSON.parse(JSON.stringify(props.initialAnswers || {}));
-    let base = { ...serverAnswers };
+    let cachedAnswers = {};
     if (typeof window !== 'undefined') {
         try {
             const cached = localStorage.getItem(ANSWERS_STORAGE_KEY);
             if (cached) {
-                const parsed = JSON.parse(cached);
-                base = { ...parsed, ...serverAnswers };
+                cachedAnswers = JSON.parse(cached) || {};
             }
         } catch (e) {
             console.error('Gagal membaca cache jawaban:', e);
         }
     }
+
+    const base = {};
+    const allKeys = new Set([...Object.keys(cachedAnswers), ...Object.keys(serverAnswers)]);
+    allKeys.forEach(key => {
+        const sVal = serverAnswers[key];
+        const cVal = cachedAnswers[key];
+        if (!isAnswerValEmpty(sVal)) {
+            base[key] = sVal;
+        } else if (!isAnswerValEmpty(cVal)) {
+            base[key] = cVal;
+        } else {
+            base[key] = sVal !== undefined ? sVal : cVal;
+        }
+    });
 
     // Normalisasi struktur radio_input, multiple_number, dan checkbox/multiple_choice
     if (props.questionnaire?.sections) {
@@ -87,15 +113,15 @@ const getInitialAnswers = () => {
                         if (!base[q.id].inputs || typeof base[q.id].inputs !== 'object') {
                             base[q.id].inputs = {};
                         }
-                        if (base[q.id].selected && base[q.id].input !== undefined && options) {
-                            const matchedOpt = options.find(o => o.option_text === base[q.id].selected);
-                            if (matchedOpt && !base[q.id].inputs[matchedOpt.id]) {
-                                base[q.id].inputs[matchedOpt.id] = base[q.id].input;
-                            }
+                        const matchedOpt = options && base[q.id].selected ? options.find(o => o.option_text === base[q.id].selected) : null;
+                        if (matchedOpt && base[q.id].input !== undefined && !base[q.id].inputs[matchedOpt.id]) {
+                            base[q.id].inputs[matchedOpt.id] = base[q.id].input;
                         }
                         if (options) {
                             options.forEach(o => {
-                                if (base[q.id].inputs[o.id] === undefined) {
+                                if (!matchedOpt || o.id !== matchedOpt.id) {
+                                    base[q.id].inputs[o.id] = '';
+                                } else if (base[q.id].inputs[o.id] === undefined) {
                                     base[q.id].inputs[o.id] = '';
                                 }
                             });
@@ -333,62 +359,68 @@ const hiddenQuestionIds = computed(() => {
         const ans = form.answers[q.id];
 
         // Aturan Berbasis Status Pekerjaan F8 (Standar Tracer Study Kemendikbud Dikti)
-        if (qCode === 'F8' && ans !== undefined && ans !== null) {
-            const ansStr = (typeof ans === 'string' || typeof ans === 'number') ? ans.toString().trim().toLowerCase() : '';
+        if (qCode === 'F8') {
+            if (ans !== undefined && ans !== null) {
+                const ansStr = (typeof ans === 'string' || typeof ans === 'number') ? ans.toString().trim().toLowerCase() : '';
 
-            // Status 4: Melanjutkan Pendidikan -> lewati pertanyaan pekerjaan/mencari kerja
-            if (ansStr.includes('melanjutkan pendidikan') || ansStr === '4') {
-                const workCodes = ['F3', 'F4', 'F504', 'F502', 'F505', 'F506', 'F6', 'F7', 'F7A', 'F14', 'F15', 'F16'];
-                workCodes.forEach(wc => {
-                    if (codeToQuestion[wc]) {
-                        hidden.add(codeToQuestion[wc].id);
-                    }
-                });
+                // Status 4: Melanjutkan Pendidikan -> lewati pertanyaan pekerjaan/mencari kerja dan F10
+                if (ansStr.includes('melanjutkan pendidikan') || ansStr === '4') {
+                    const workCodes = ['F10', 'F3', 'F4', 'F504', 'F502', 'F505', 'F506', 'F6', 'F7', 'F7A', 'F14', 'F15', 'F16'];
+                    workCodes.forEach(wc => {
+                        if (codeToQuestion[wc]) {
+                            hidden.add(codeToQuestion[wc].id);
+                        }
+                    });
+                }
+                // Status 2: Belum Memungkinkan Bekerja -> lewati studi lanjut dan pertanyaan pekerjaan (F10 tetap muncul)
+                else if (ansStr.includes('belum memungkinkan') || ansStr === '2') {
+                    const skipCodes = ['F18', 'F18A', 'F18B', 'F18C', 'F18D', 'F3', 'F4', 'F504', 'F502', 'F505', 'F506', 'F6', 'F7', 'F7A', 'F14', 'F15', 'F16'];
+                    skipCodes.forEach(sc => {
+                        if (codeToQuestion[sc]) {
+                            hidden.add(codeToQuestion[sc].id);
+                        }
+                    });
+                }
+                // Status 5: Tidak Kerja tetapi sedang mencari kerja -> lewati studi lanjut & pertanyaan sedang bekerja (F10 tetap muncul)
+                else if (ansStr.includes('sedang mencari kerja') || ansStr === '5' || ansStr.includes('mencari kerja')) {
+                    const skipCodes = ['F18', 'F18A', 'F18B', 'F18C', 'F18D', 'F504', 'F502', 'F505', 'F506', 'F14', 'F15', 'F16'];
+                    skipCodes.forEach(sc => {
+                        if (codeToQuestion[sc]) {
+                            hidden.add(codeToQuestion[sc].id);
+                        }
+                    });
+                }
+                // Status 1 & 3: Bekerja / Wiraswasta -> lewati F10 dan studi lanjut (F18)
+                else if (ansStr !== '') {
+                    ['F10', 'F18', 'F18A', 'F18B', 'F18C', 'F18D'].forEach(sc => {
+                        if (codeToQuestion[sc]) {
+                            hidden.add(codeToQuestion[sc].id);
+                        }
+                    });
+                }
             }
-            // Status 2: Belum Memungkinkan Bekerja -> lewati studi lanjut dan pertanyaan pekerjaan
-            else if (ansStr.includes('belum memungkinkan') || ansStr === '2') {
-                const skipCodes = ['F18', 'F18A', 'F18B', 'F18C', 'F18D', 'F3', 'F4', 'F504', 'F502', 'F505', 'F506', 'F6', 'F7', 'F7A', 'F14', 'F15', 'F16'];
-                skipCodes.forEach(sc => {
-                    if (codeToQuestion[sc]) {
-                        hidden.add(codeToQuestion[sc].id);
-                    }
-                });
-            }
-            // Status 5: Tidak Kerja tetapi sedang mencari kerja -> lewati studi lanjut & pertanyaan sedang bekerja
-            else if (ansStr.includes('sedang mencari kerja') || ansStr === '5') {
-                const skipCodes = ['F18', 'F18A', 'F18B', 'F18C', 'F18D', 'F504', 'F502', 'F505', 'F506', 'F14', 'F15', 'F16'];
-                skipCodes.forEach(sc => {
-                    if (codeToQuestion[sc]) {
-                        hidden.add(codeToQuestion[sc].id);
-                    }
-                });
-            }
-            // Status 1 & 3: Bekerja / Wiraswasta -> lewati studi lanjut (F18)
-            else if (ansStr !== '') {
-                ['F18', 'F18A', 'F18B', 'F18C', 'F18D'].forEach(sc => {
-                    if (codeToQuestion[sc]) {
-                        hidden.add(codeToQuestion[sc].id);
-                    }
-                });
-            }
+            continue;
         }
 
         // Aturan Khusus F504:
         // Jika Ya -> sembunyikan F506 (pencarian > 6 bulan)
         // Jika Tidak -> sembunyikan F502 & F505 (pencarian <= 6 bulan & gaji)
-        if (qCode === 'F504' && ans !== undefined && ans !== null) {
-            const ansStr = (typeof ans === 'string' || typeof ans === 'number') ? ans.toString().trim().toLowerCase() : '';
-            if (ansStr === 'ya' || ansStr === '1' || ansStr.startsWith('ya')) {
-                if (codeToQuestion['F506']) {
-                    hidden.add(codeToQuestion['F506'].id);
-                }
-            } else if (ansStr === 'tidak' || ansStr === '2' || ansStr.startsWith('tidak')) {
-                ['F502', 'F505'].forEach(wc => {
-                    if (codeToQuestion[wc]) {
-                        hidden.add(codeToQuestion[wc].id);
+        if (qCode === 'F504') {
+            if (ans !== undefined && ans !== null) {
+                const ansStr = (typeof ans === 'string' || typeof ans === 'number') ? ans.toString().trim().toLowerCase() : '';
+                if (ansStr === 'ya' || ansStr === '1' || ansStr.startsWith('ya')) {
+                    if (codeToQuestion['F506']) {
+                        hidden.add(codeToQuestion['F506'].id);
                     }
-                });
+                } else if (ansStr === 'tidak' || ansStr === '2' || ansStr.startsWith('tidak')) {
+                    ['F502', 'F505'].forEach(wc => {
+                        if (codeToQuestion[wc]) {
+                            hidden.add(codeToQuestion[wc].id);
+                        }
+                    });
+                }
             }
+            continue;
         }
 
         const options = q.detils || q.options;
@@ -429,28 +461,51 @@ const hiddenQuestionIds = computed(() => {
     return hidden;
 });
 
-// Menentukan apakah suatu butir pertanyaan terlihat (tidak dilewati oleh alur percabangan jump_to)
-const isQuestionVisible = (qId) => {
-    return !hiddenQuestionIds.value.has(qId);
+// Pemeriksa visibilitas pertanyaan berdasarkan hasil jump logic
+const isQuestionVisible = (questionId) => {
+    return !hiddenQuestionIds.value.has(questionId);
 };
 
-// Menentukan apakah suatu section terlihat (memiliki setidaknya satu pertanyaan yang terlihat)
+// Pemeriksa visibilitas section
 const isSectionVisible = (section) => {
-    const list = section?.subpertanyaans || section?.questions;
-    if (!section || !list || list.length === 0) return true;
-    return list.some(q => isQuestionVisible(q.id));
+    if (!section) return false;
+    const questions = section.subpertanyaans || section.questions;
+    if (!questions || questions.length === 0) return true;
+
+    // Deteksi apakah seksi ini merupakan seksi F2 atau F17
+    const hasF2 = questions.some(q => (q.kode_pertanyaan || q.code) === 'F2' || ((q.kode_pertanyaan || q.code) && (q.kode_pertanyaan || q.code).startsWith('F21')));
+    const hasF17 = questions.some(q => (q.kode_pertanyaan || q.code) === 'F17' || q.type === 'matrix_dual');
+    if (hasF2 || hasF17) return true;
+
+    // Untuk seksi standar: harus memiliki setidaknya satu pertanyaan non-header yang terlihat
+    const nonHeaderQuestions = questions.filter(q => q.type !== 'header');
+    if (nonHeaderQuestions.length === 0) return true;
+    return nonHeaderQuestions.some(q => isQuestionVisible(q.id));
 };
 
-// Menentukan apakah section saat ini adalah section terlihat terakhir
+// Daftar seksi yang aktif & terlihat (tidak disembunyikan oleh branching logic)
+const visibleSections = computed(() => {
+    if (!props.questionnaire?.sections) return [];
+    return props.questionnaire.sections
+        .map((sec, originalIndex) => ({
+            ...sec,
+            originalIndex,
+        }))
+        .filter(sec => isSectionVisible(sec));
+});
+
+// Indeks seksi aktif relatif terhadap daftar seksi terlihat (0-indexed)
+const activeVisibleSectionIndex = computed(() => {
+    const list = visibleSections.value;
+    const idx = list.findIndex(s => s.originalIndex === activeSectionIndex.value);
+    return idx >= 0 ? idx : 0;
+});
+
+// Evaluasi apakah section aktif adalah section terlihat terakhir
 const isLastVisibleSection = computed(() => {
-    if (!props.questionnaire?.sections) return true;
-    const total = props.questionnaire.sections.length;
-    for (let i = activeSectionIndex.value + 1; i < total; i++) {
-        if (isSectionVisible(props.questionnaire.sections[i])) {
-            return false;
-        }
-    }
-    return true;
+    const list = visibleSections.value;
+    if (list.length === 0) return true;
+    return activeVisibleSectionIndex.value >= list.length - 1;
 });
 
 // Menghitung total salary untuk multiple_number (F13)
@@ -623,17 +678,22 @@ const isSectionCompleted = (index) => {
 /**
  * Menentukan warna hijau konektor garis antar section pada Stepper.
  * 
- * @param {Number} index Indeks posisi seksi
+ * @param {Number} visibleIndex Indeks posisi seksi dalam daftar visibleSections
  * @returns {Boolean} true jika garis penghubung aktif / selesai
  */
-const isLineCompleted = (index) => {
-    const currentCompleted = isSectionCompleted(index);
-    const nextCompleted = isSectionCompleted(index + 1);
-    const currentActive = (activeSectionIndex.value === index);
-    const nextActive = (activeSectionIndex.value === index + 1);
+const isLineCompleted = (visibleIndex) => {
+    const list = visibleSections.value;
+    if (!list || visibleIndex >= list.length - 1) return false;
+    const currentSec = list[visibleIndex];
+    const nextSec = list[visibleIndex + 1];
+
+    const currentCompleted = isSectionCompleted(currentSec.originalIndex);
+    const nextCompleted = isSectionCompleted(nextSec.originalIndex);
+    const currentActive = (activeSectionIndex.value === currentSec.originalIndex);
+    const nextActive = (activeSectionIndex.value === nextSec.originalIndex);
 
     return (currentCompleted && (nextCompleted || nextActive)) || 
-           (index < activeSectionIndex.value && currentCompleted);
+           (visibleIndex < activeVisibleSectionIndex.value && currentCompleted);
 };
 
 /**
@@ -663,17 +723,17 @@ const setSection = (index) => {
 
 // Navigasi Section: Kembali ke section sebelumnya
 const prevSection = () => {
-    if (activeSectionIndex.value > 0) {
+    const vIdx = activeVisibleSectionIndex.value;
+    if (vIdx > 0) {
         if (currentSection.value && isSectionAnswered(currentSection.value)) {
             completedSectionIndices.value.add(activeSectionIndex.value);
             saveCompletedSections();
         }
-        let prevIdx = activeSectionIndex.value - 1;
-        while (prevIdx > 0 && !isSectionVisible(props.questionnaire.sections[prevIdx])) {
-            prevIdx--;
+        const prevSec = visibleSections.value[vIdx - 1];
+        if (prevSec) {
+            activeSectionIndex.value = prevSec.originalIndex;
+            window.scrollTo({ top: 0, behavior: 'smooth' });
         }
-        activeSectionIndex.value = prevIdx;
-        window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 };
 
@@ -695,28 +755,25 @@ const handleNextOrSubmit = () => {
             }
         });
     } else {
-        // Tandai section saat ini selesai
+        // Tandai section saat ini selesai & langsung navigasi ke section berikutnya (Instan 1x klik)
         completedSectionIndices.value.add(activeSectionIndex.value);
         saveCompletedSections();
 
-        // Simpan progress parsial ke backend dan lompat ke section berikutnya yang terlihat
+        const vIdx = activeVisibleSectionIndex.value;
+        if (vIdx < visibleSections.value.length - 1) {
+            const nextSec = visibleSections.value[vIdx + 1];
+            if (nextSec) {
+                activeSectionIndex.value = nextSec.originalIndex;
+            }
+        }
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+
+        // Simpan progress parsial ke backend di latar belakang tanpa memblokir navigasi
         form.post('/alumni/kuesioner', {
             preserveScroll: true,
             preserveState: true,
             onSuccess: () => {
-                completedSectionIndices.value.add(activeSectionIndex.value);
                 saveCompletedSections();
-
-                let nextIdx = activeSectionIndex.value + 1;
-                while (nextIdx < props.questionnaire.sections.length && !isSectionVisible(props.questionnaire.sections[nextIdx])) {
-                    nextIdx++;
-                }
-
-                if (nextIdx < props.questionnaire.sections.length) {
-                    activeSectionIndex.value = nextIdx;
-                }
-                
-                window.scrollTo({ top: 0, behavior: 'smooth' });
             }
         });
     }
@@ -731,6 +788,20 @@ onMounted(() => {
         syncSectionCompletion();
     }
 });
+
+// Pastikan section aktif selalu berada di dalam daftar section terlihat
+watch(visibleSections, (newVisibleList) => {
+    if (!newVisibleList || newVisibleList.length === 0) return;
+    const isCurrentVisible = newVisibleList.some(s => s.originalIndex === activeSectionIndex.value);
+    if (!isCurrentVisible) {
+        const nextVisible = newVisibleList.find(s => s.originalIndex >= activeSectionIndex.value);
+        if (nextVisible) {
+            activeSectionIndex.value = nextVisible.originalIndex;
+        } else {
+            activeSectionIndex.value = newVisibleList[newVisibleList.length - 1].originalIndex;
+        }
+    }
+}, { immediate: true });
 
 watch(activeSectionIndex, (newIdx) => {
     if (typeof window !== 'undefined') {
@@ -768,9 +839,10 @@ watch(() => form.answers, (newAnswers) => {
 
             <!-- 2. Stepper Tahapan (Bulatan Angka 1 s/d N & Judul Bagian) -->
             <Stepper 
-                v-if="questionnaire?.sections"
-                :sections="questionnaire.sections"
-                :active-index="activeSectionIndex"
+                v-if="visibleSections && visibleSections.length > 0"
+                :sections="visibleSections"
+                :active-index="activeVisibleSectionIndex"
+                :active-original-index="activeSectionIndex"
                 :completed-indices="completedSectionIndices"
                 :is-section-completed="isSectionCompleted"
                 :is-line-completed="isLineCompleted"
@@ -792,8 +864,8 @@ watch(() => form.answers, (newAnswers) => {
             <div v-else-if="questionnaire && currentSection">
                 <!-- 3. Banner Hijau Judul Bagian -->
                 <Banner 
-                    :current-index="activeSectionIndex"
-                    :total-sections="questionnaire.sections.length"
+                    :current-index="activeVisibleSectionIndex"
+                    :total-sections="visibleSections.length"
                     :title="currentSection.title"
                 />
 
@@ -857,8 +929,8 @@ watch(() => form.answers, (newAnswers) => {
 
                     <!-- 6. Tombol Navigasi Desktop & Mobile (< Kembali & > Lanjut/Selesai) -->
                     <Navigasi 
-                        :active-section-index="activeSectionIndex"
-                        :total-sections="questionnaire.sections.length"
+                        :active-section-index="activeVisibleSectionIndex"
+                        :total-sections="visibleSections.length"
                         :is-last-visible-section="isLastVisibleSection"
                         :is-processing="form.processing"
                         @prev="prevSection"

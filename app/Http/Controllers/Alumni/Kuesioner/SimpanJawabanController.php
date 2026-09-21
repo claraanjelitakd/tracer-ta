@@ -204,9 +204,28 @@ class SimpanJawabanController extends Controller
                         $input = $jawaban['input'] ?? ($jawaban['text'] ?? null);
                         if (is_scalar($pilihan) && trim((string) $pilihan) !== '') {
                             $pilihanStr = trim((string) $pilihan);
-                            $inputStr = (is_scalar($input) && trim((string) $input) !== '') ? trim((string) $input) : '';
+
+                            $cleanInputs = [];
+                            foreach ($subpertanyaan->detils as $o) {
+                                $cleanInputs[$o->id] = '';
+                            }
+
+                            $matchedOpt = $subpertanyaan->detils->first(fn ($o) => strcasecmp($o->option_text, $pilihanStr) === 0);
+                            $inputStr = '';
+                            if ($matchedOpt) {
+                                $rawVal = $jawaban['inputs'][$matchedOpt->id] ?? $input;
+                                $inputStr = (is_scalar($rawVal) && trim((string) $rawVal) !== '') ? trim((string) $rawVal) : '';
+                                $cleanInputs[$matchedOpt->id] = $inputStr;
+                            } else {
+                                $inputStr = (is_scalar($input) && trim((string) $input) !== '') ? trim((string) $input) : '';
+                            }
+
                             $answerText = $inputStr !== '' ? $pilihanStr.': '.$inputStr : $pilihanStr;
-                            $answerJson = $jawaban;
+                            $answerJson = [
+                                'selected' => $pilihanStr,
+                                'input' => $inputStr,
+                                'inputs' => $cleanInputs,
+                            ];
                         }
                     } elseif (is_scalar($jawaban) && ! is_bool($jawaban) && trim((string) $jawaban) !== '') {
                         $answerText = trim((string) $jawaban);
@@ -300,6 +319,22 @@ class SimpanJawabanController extends Controller
                     'tahun_lulus' => $biodata->tahun_lulus ?? $biodata->dataAkademik?->tahun_lulus,
                 ]
             );
+
+            // Jika pertanyaan adalah F8, sinkronisasikan nilai kategori_pekerjaan di tabel biodata
+            if ($subpertanyaan->kode_pertanyaan === 'F8' && ! empty($answerText)) {
+                $ansLower = strtolower($answerText);
+                if (str_contains($ansLower, 'bekerja')) {
+                    $dataUpdateBiodata['kategori_pekerjaan'] = 'Pekerja';
+                } elseif (str_contains($ansLower, 'wiraswasta')) {
+                    $dataUpdateBiodata['kategori_pekerjaan'] = 'Wiraswasta';
+                } elseif (str_contains($ansLower, 'melanjutkan pendidikan')) {
+                    $dataUpdateBiodata['kategori_pekerjaan'] = 'Melanjutkan Pendidikan';
+                } elseif (str_contains($ansLower, 'belum memungkinkan')) {
+                    $dataUpdateBiodata['kategori_pekerjaan'] = 'Belum Memungkinkan Bekerja';
+                } elseif (str_contains($ansLower, 'mencari kerja')) {
+                    $dataUpdateBiodata['kategori_pekerjaan'] = 'Mencari Kerja';
+                }
+            }
 
             // Jika ada relasi mapping yang resmi tercatat di database, sinkronisasi datanya ke tabel terkait
             if (isset($pemetaan[$idPertanyaan]) && $answerText !== null) {

@@ -10,7 +10,7 @@
           - Navigasi Kembali dan Lanjut / Selesai
 -->
 <script setup>
-import { Head, Link, useForm } from '@inertiajs/vue3';
+import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import { ref, computed, watch, onMounted } from 'vue';
 import Swal from 'sweetalert2';
 import Navbar from './Components/Navbar.vue';
@@ -226,11 +226,12 @@ const syncSectionCompletion = () => {
 
 // Hitung total progress
 const progressStats = computed(() => {
-    const total = props.questions.length;
+    const validQuestions = (props.questions || []).filter(q => q.type !== 'header');
+    const total = validQuestions.length;
     if (total === 0) return { answered: 0, total: 0, percentage: 0 };
 
     let answered = 0;
-    for (const q of props.questions) {
+    for (const q of validQuestions) {
         if (isQuestionAnswered(q)) {
             answered++;
         }
@@ -267,12 +268,30 @@ const setSection = (index) => {
     }
     activeSectionIndex.value = index;
     window.scrollTo({ top: 0, behavior: 'smooth' });
+
+    router.post('/alumni/kuesioner-prodi', {
+        answers: form.answers,
+        stay_on_page: true,
+    }, {
+        preserveScroll: true,
+        preserveState: true,
+        only: ['initialAnswers'],
+    });
 };
 
 const prevSection = () => {
     if (activeSectionIndex.value > 0) {
         activeSectionIndex.value--;
         window.scrollTo({ top: 0, behavior: 'smooth' });
+
+        router.post('/alumni/kuesioner-prodi', {
+            answers: form.answers,
+            stay_on_page: true,
+        }, {
+            preserveScroll: true,
+            preserveState: true,
+            only: ['initialAnswers'],
+        });
     }
 };
 
@@ -326,15 +345,20 @@ const handleNextOrSubmit = () => {
             }
         });
     } else {
-        // Lanjut ke section berikutnya
+        // Lanjut ke section berikutnya secara INSTAN (1x klik) & simpan progres ke database di latar belakang
         completedSectionIndices.value.add(activeSectionIndex.value);
-        form.post('/alumni/kuesioner-prodi', {
+        activeSectionIndex.value++;
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+
+        router.post('/alumni/kuesioner-prodi', {
+            answers: form.answers,
+            stay_on_page: true,
+        }, {
             preserveScroll: true,
             preserveState: true,
+            only: ['initialAnswers'],
             onSuccess: () => {
-                completedSectionIndices.value.add(activeSectionIndex.value);
-                activeSectionIndex.value++;
-                window.scrollTo({ top: 0, behavior: 'smooth' });
+                completedSectionIndices.value.add(activeSectionIndex.value - 1);
             }
         });
     }
@@ -346,6 +370,18 @@ onMounted(() => {
         activeSectionIndex.value = 0;
     }
     syncSectionCompletion();
+
+    // Jika ada cache lokal, langsung sinkronisasi ke server database agar Dashboard selalu identik
+    if (typeof window !== 'undefined' && localStorage.getItem(STORAGE_ANSWERS_KEY)) {
+        router.post('/alumni/kuesioner-prodi', {
+            answers: form.answers,
+            stay_on_page: true,
+        }, {
+            preserveScroll: true,
+            preserveState: true,
+            only: ['initialAnswers'],
+        });
+    }
 });
 
 watch(activeSectionIndex, (newIdx) => {
@@ -355,6 +391,7 @@ watch(activeSectionIndex, (newIdx) => {
 });
 
 let draftTimer = null;
+let serverSyncTimer = null;
 watch(() => form.answers, (newAnswers) => {
     if (typeof window !== 'undefined') {
         clearTimeout(draftTimer);
@@ -364,13 +401,25 @@ watch(() => form.answers, (newAnswers) => {
             } catch (e) {
                 console.error('Gagal menyimpan cache jawaban prodi:', e);
             }
-        }, 800);
+        }, 500);
+
+        clearTimeout(serverSyncTimer);
+        serverSyncTimer = setTimeout(() => {
+            router.post('/alumni/kuesioner-prodi', {
+                answers: newAnswers,
+                stay_on_page: true,
+            }, {
+                preserveScroll: true,
+                preserveState: true,
+                only: ['initialAnswers'],
+            });
+        }, 1000);
     }
     syncSectionCompletion();
 }, { deep: true });
 </script>
 
-<<template>
+<template>
     <Head :title="'Kuesioner Program Studi ' + (prodi?.nama_prodi || '')" />
 
     <div class="min-h-screen bg-[#E8F5E9] font-sans text-gray-900 antialiased flex flex-col relative pb-20 md:pb-6">
@@ -420,6 +469,8 @@ watch(() => form.answers, (newAnswers) => {
                     :title="currentSection.title"
                     :description="currentSection.description"
                     :badge-text="'Kuesioner Program Studi ' + (prodi?.nama_prodi || '')"
+                    :percentage="progressStats.percentage"
+                    :progress-label="progressStats.answered + ' / ' + progressStats.total + ' Soal'"
                 />
 
                 <!-- Konten Formulir Seksi Aktif -->

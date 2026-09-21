@@ -41,6 +41,15 @@ const getCleanQuestionText = (text) => {
         .trim();
 };
 
+// Helper pembersih teks keterangan agar tidak menduplikasi instruksi pilihan
+const getCleanKeterangan = (text) => {
+    if (!text) return '';
+    const clean = text
+        .replace(/(\s*[\(\[\{]?\s*(jawaban\s+bisa\s+lebih\s+dari\s+satu|pilih(lah)?\s+satu\s+atau\s+lebih|pilih(lah)?\s+satu\s+jawaban|pilih(lah)?\s+salah\s+satu)\s*[\)\]\}]?\.?)/gi, '')
+        .trim();
+    return clean;
+};
+
 // Mencegah karakter aneh pada input angka
 const filterNumberInput = (event) => {
     if (['e', 'E', '+', '-', '.'].includes(event.key)) {
@@ -95,6 +104,37 @@ const getScaleGuide = (code) => {
     return { min: 'Tidak Sama Sekali / Sangat Buruk', max: 'Sangat Baik / Sangat Besar' };
 };
 
+const ratingScoresMap = {
+    'Sangat Rendah': 1,
+    'Rendah': 2,
+    'Cukup': 3,
+    'Tinggi': 4,
+    'Sangat Tinggi': 5,
+    'Sangat Buruk': 1,
+    'Buruk': 2,
+    'Cukup Baik': 3,
+    'Baik': 4,
+    'Sangat Baik': 5,
+    'Tidak Sama Sekali': 1,
+    'Kurang': 2,
+    'Cukup Besar': 3,
+    'Besar': 4,
+    'Sangat Besar': 5,
+};
+
+const isRatingScoreSelected = (qId, score) => {
+    const val = props.form.answers[qId];
+    if (val === undefined || val === null || val === '') return false;
+    if (val == score) return true;
+    if (typeof val === 'string' && ratingScoresMap[val] === score) return true;
+    const n = Number(val);
+    return !isNaN(n) && n === score;
+};
+
+const setRatingScore = (qId, score) => {
+    props.form.answers[qId] = score;
+};
+
 // Helper pemisah teks opsi yang memiliki titik-titik (...)
 const getSplitDotsText = (text) => {
     if (!text) return { hasDots: false, before: '', after: '' };
@@ -127,6 +167,15 @@ const setRadioInputVal = (qId, optId, val, optText = null) => {
     if (!props.form.answers[qId].inputs) {
         props.form.answers[qId].inputs = {};
     }
+
+    // Bersihkan nilai input pada opsi-opsi radio lainnya agar eksklusif hanya satu opsi yang aktif
+    const options = props.subpertanyaan.detils || props.subpertanyaan.options || [];
+    options.forEach(o => {
+        if (o.id !== optId) {
+            props.form.answers[qId].inputs[o.id] = '';
+        }
+    });
+
     props.form.answers[qId].inputs[optId] = val;
     props.form.answers[qId].input = val;
 };
@@ -141,6 +190,15 @@ const handleRadioOptionSelect = (qId, optId, optText = null) => {
     if (!props.form.answers[qId].inputs) {
         props.form.answers[qId].inputs = {};
     }
+
+    // Bersihkan nilai input pada opsi-opsi radio lainnya agar eksklusif hanya satu opsi yang aktif
+    const options = props.subpertanyaan.detils || props.subpertanyaan.options || [];
+    options.forEach(o => {
+        if (o.id !== optId) {
+            props.form.answers[qId].inputs[o.id] = '';
+        }
+    });
+
     props.form.answers[qId].input = props.form.answers[qId].inputs[optId] ?? '';
 };
 
@@ -209,11 +267,8 @@ const getNumberUnit = (q) => {
     if (code === 'F502' || code === 'F506' || text.includes('bulan')) {
         return 'Bulan';
     }
-    if (code === 'F6' || code === 'F7' || text.includes('lamar') || text.includes('perusahaan') || text.includes('instansi')) {
-        return 'Perusahaan / Instansi';
-    }
-    if (code === 'F7A' || text.includes('wawancara')) {
-        return 'Undangan Wawancara';
+    if (code === 'F6' || code === 'F7' || code === 'F7A' || text.includes('lamar') || text.includes('perusahaan') || text.includes('instansi') || text.includes('wawancara')) {
+        return '/ perusahaan';
     }
     if (text.includes('orang')) {
         return 'Orang';
@@ -224,7 +279,7 @@ const getNumberUnit = (q) => {
     if (text.includes('tahun')) {
         return 'Tahun';
     }
-    return 'Jumlah';
+    return '';
 };
 
 // Helper stepper increment/decrement angka
@@ -286,8 +341,8 @@ const stepNumberInput = (qId, delta) => {
                 <span v-if="subpertanyaan.wajib" class="text-red-500 font-black">*</span>
             </h2>
 
-            <p v-if="subpertanyaan.keterangan || subpertanyaan.sub_detail" class="text-xs sm:text-sm text-gray-600 font-medium mt-1">
-                {{ subpertanyaan.keterangan || subpertanyaan.sub_detail }}
+            <p v-if="getCleanKeterangan(subpertanyaan.keterangan || subpertanyaan.sub_detail)" class="text-xs sm:text-sm text-gray-600 font-medium mt-1">
+                {{ getCleanKeterangan(subpertanyaan.keterangan || subpertanyaan.sub_detail) }}
             </p>
         </div>
 
@@ -313,44 +368,45 @@ const stepNumberInput = (qId, delta) => {
             ></textarea>
         </div>
 
-        <!-- TIPE INPUT: Angka / Number (Desain Modern dengan Stepper & Satuan Unit) -->
+        <!-- TIPE INPUT: Angka / Number (Desain Rapi & Bersih) -->
         <div v-else-if="subpertanyaan.type === 'number'" :class="{'mt-auto pt-2': isPaired}">
-            <div class="w-full max-w-md">
-                <div class="flex items-center gap-2 sm:gap-3">
+            <div class="flex items-center gap-2.5 sm:gap-3">
+                <div class="inline-flex items-center bg-gray-50 border border-gray-200/90 rounded-xl p-1 shadow-2xs">
                     <!-- Tombol Kurang (-) -->
                     <button 
                         type="button"
                         @click="stepNumberInput(subpertanyaan.id, -1)"
-                        class="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-gray-100 hover:bg-[#005B3C] text-gray-700 hover:text-white font-black text-lg flex items-center justify-center transition-all shadow-2xs active:scale-95 shrink-0 focus:outline-none cursor-pointer"
+                        class="w-8 h-8 sm:w-9 sm:h-9 rounded-lg bg-white hover:bg-gray-100 text-gray-700 font-black text-base flex items-center justify-center transition-all shadow-2xs active:scale-95 border border-gray-200/80 cursor-pointer"
+                        title="Kurang 1"
                     >
-                        -
+                        &minus;
                     </button>
 
-                    <!-- Input Nilai dengan Unit Satuan Terintegrasi -->
-                    <div class="relative flex-1 flex items-center rounded-xl sm:rounded-2xl bg-gray-50/90 border border-gray-200/90 focus-within:bg-white focus-within:ring-2 focus-within:ring-[#005B3C] focus-within:border-transparent transition-all overflow-hidden p-1 shadow-2xs min-w-0">
-                        <input 
-                            type="number" 
-                            v-model="form.answers[subpertanyaan.id]" 
-                            :required="subpertanyaan.wajib && isVisible"
-                            @keydown="filterNumberInput"
-                            min="0"
-                            class="w-full min-w-0 bg-transparent py-2 sm:py-2.5 px-2 sm:px-3 text-gray-900 font-black font-mono text-center text-base sm:text-xl border-0 focus:ring-0 placeholder-gray-300 outline-none"
-                            placeholder="0"
-                        >
-                        <span class="pr-2.5 pl-1 font-bold text-[10px] sm:text-xs text-emerald-800 bg-emerald-50 px-2 py-1 rounded-lg shrink-0 select-none whitespace-nowrap">
-                            {{ getNumberUnit(subpertanyaan) }}
-                        </span>
-                    </div>
+                    <!-- Input Nilai -->
+                    <input 
+                        type="number" 
+                        v-model="form.answers[subpertanyaan.id]" 
+                        :required="subpertanyaan.wajib && isVisible"
+                        @keydown="filterNumberInput"
+                        min="0"
+                        class="w-16 sm:w-20 bg-transparent py-1 px-2 text-gray-900 font-black font-mono text-center text-base sm:text-lg border-0 focus:ring-0 placeholder-gray-400 outline-none"
+                        placeholder="0"
+                    >
 
                     <!-- Tombol Tambah (+) -->
                     <button 
                         type="button"
                         @click="stepNumberInput(subpertanyaan.id, 1)"
-                        class="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-gray-100 hover:bg-[#005B3C] text-gray-700 hover:text-white font-black text-lg flex items-center justify-center transition-all shadow-2xs active:scale-95 shrink-0 focus:outline-none cursor-pointer"
+                        class="w-8 h-8 sm:w-9 sm:h-9 rounded-lg bg-white hover:bg-gray-100 text-gray-700 font-black text-base flex items-center justify-center transition-all shadow-2xs active:scale-95 border border-gray-200/80 cursor-pointer"
+                        title="Tambah 1"
                     >
                         +
                     </button>
                 </div>
+
+                <span v-if="getNumberUnit(subpertanyaan)" class="text-xs sm:text-sm font-bold text-gray-700 select-none whitespace-nowrap">
+                    {{ getNumberUnit(subpertanyaan) }}
+                </span>
             </div>
         </div>
 
@@ -438,14 +494,15 @@ const stepNumberInput = (qId, delta) => {
                                 type="radio" 
                                 :name="'question_' + subpertanyaan.id" 
                                 :value="score" 
-                                v-model="form.answers[subpertanyaan.id]" 
+                                :checked="isRatingScoreSelected(subpertanyaan.id, score)"
+                                @change="setRatingScore(subpertanyaan.id, score)"
                                 :required="subpertanyaan.wajib && isVisible" 
                                 class="sr-only"
                             >
                             <div 
                                 class="w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center font-black text-sm sm:text-base shadow-2xs transition-all active:scale-95"
                                 :class="[
-                                    Number(form.answers[subpertanyaan.id]) === score
+                                    isRatingScoreSelected(subpertanyaan.id, score)
                                         ? 'bg-[#005B3C] text-white ring-2 ring-offset-2 ring-emerald-500 shadow-sm scale-105'
                                         : 'bg-white text-gray-700 border border-gray-200 hover:border-[#005B3C] hover:bg-emerald-50/50'
                                 ]"

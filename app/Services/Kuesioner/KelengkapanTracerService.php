@@ -194,9 +194,9 @@ class KelengkapanTracerService
             if ($code === 'F8') {
                 $ansStr = strtolower(trim((string) $rawAnswer));
 
-                // Status 4: Melanjutkan Pendidikan -> lewati pertanyaan pekerjaan/mencari kerja
+                // Status 4: Melanjutkan Pendidikan -> lewati pertanyaan pekerjaan/mencari kerja dan F10
                 if (str_contains($ansStr, 'melanjutkan pendidikan') || $ansStr === '4') {
-                    $workCodes = ['F3', 'F4', 'F504', 'F502', 'F505', 'F506', 'F6', 'F7', 'F7A', 'F14', 'F15', 'F16'];
+                    $workCodes = ['F10', 'F3', 'F4', 'F504', 'F502', 'F505', 'F506', 'F6', 'F7', 'F7A', 'F14', 'F15', 'F16'];
                     foreach ($workCodes as $wc) {
                         if (isset($codeToQuestion[$wc])) {
                             $skipped[$wc] = true;
@@ -204,7 +204,7 @@ class KelengkapanTracerService
                         }
                     }
                 }
-                // Status 2: Belum Memungkinkan Bekerja -> lewati studi lanjut dan pertanyaan pekerjaan
+                // Status 2: Belum Memungkinkan Bekerja -> lewati studi lanjut dan pertanyaan pekerjaan (F10 tetap dijawab)
                 elseif (str_contains($ansStr, 'belum memungkinkan') || $ansStr === '2') {
                     $skipCodes = ['F18', 'F18A', 'F18B', 'F18C', 'F18D', 'F3', 'F4', 'F504', 'F502', 'F505', 'F506', 'F6', 'F7', 'F7A', 'F14', 'F15', 'F16'];
                     foreach ($skipCodes as $sc) {
@@ -214,8 +214,8 @@ class KelengkapanTracerService
                         }
                     }
                 }
-                // Status 5: Tidak Kerja tetapi sedang mencari kerja -> lewati studi lanjut & pertanyaan sedang bekerja
-                elseif (str_contains($ansStr, 'sedang mencari kerja') || $ansStr === '5') {
+                // Status 5: Tidak Kerja tetapi sedang mencari kerja -> lewati studi lanjut & pertanyaan sedang bekerja (F10 tetap dijawab)
+                elseif (str_contains($ansStr, 'sedang mencari kerja') || $ansStr === '5' || str_contains($ansStr, 'mencari kerja')) {
                     $skipCodes = ['F18', 'F18A', 'F18B', 'F18C', 'F18D', 'F504', 'F502', 'F505', 'F506', 'F14', 'F15', 'F16'];
                     foreach ($skipCodes as $sc) {
                         if (isset($codeToQuestion[$sc])) {
@@ -224,15 +224,17 @@ class KelengkapanTracerService
                         }
                     }
                 }
-                // Status 1 & 3: Bekerja / Wiraswasta -> lewati studi lanjut (F18)
+                // Status 1 & 3: Bekerja / Wiraswasta -> lewati F10 dan studi lanjut (F18)
                 else {
-                    foreach (['F18', 'F18A', 'F18B', 'F18C', 'F18D'] as $sc) {
+                    foreach (['F10', 'F18', 'F18A', 'F18B', 'F18C', 'F18D'] as $sc) {
                         if (isset($codeToQuestion[$sc])) {
                             $skipped[$sc] = true;
                             $skipped[$codeToQuestion[$sc]->id] = true;
                         }
                     }
                 }
+
+                continue;
             }
 
             // Aturan Khusus F504:
@@ -253,6 +255,8 @@ class KelengkapanTracerService
                         }
                     }
                 }
+
+                continue;
             }
 
             $options = $q->detils ?? collect();

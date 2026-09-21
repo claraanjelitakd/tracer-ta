@@ -96,6 +96,7 @@ const lockedInputClass = "block w-full border border-gray-200 bg-gray-100 text-g
                     <input 
                         type="text" 
                         v-model="form.nama" 
+                        autocomplete="off"
                         class="block w-full border rounded-xl shadow-2xs px-4 py-3 text-sm font-medium transition-all focus:ring-2 focus:ring-[#005B3C]/20"
                         :class="form.nama?.trim() ? 'border-emerald-300 bg-white text-gray-900 focus:border-[#005B3C]' : 'border-rose-300 bg-rose-50/20 text-gray-900 focus:border-rose-500'"
                         placeholder="Nama Lengkap" 
@@ -206,7 +207,9 @@ const lockedInputClass = "block w-full border border-gray-200 bg-gray-100 text-g
 
                 <!-- Golongan Darah -->
                 <div>
-                    <label class="block text-xs sm:text-sm font-bold text-gray-700 mb-1.5">Golongan Darah</label>
+                    <label class="block text-xs sm:text-sm font-bold text-gray-700 mb-1.5">
+                        Golongan Darah <span class="text-rose-500 font-bold">*</span>
+                    </label>
                     <select 
                         v-model="form.golongan_darah" 
                         class="block w-full border rounded-xl shadow-2xs px-4 py-3 text-sm font-medium transition-all focus:ring-2 focus:ring-[#005B3C]/20"
@@ -222,13 +225,16 @@ const lockedInputClass = "block w-full border border-gray-200 bg-gray-100 text-g
 
                 <!-- Kewarganegaraan -->
                 <div>
-                    <label class="block text-xs sm:text-sm font-bold text-gray-700 mb-1.5">Kewarganegaraan</label>
+                    <label class="block text-xs sm:text-sm font-bold text-gray-700 mb-1.5">
+                        Kewarganegaraan <span class="text-rose-500 font-bold">*</span>
+                    </label>
                     <input 
                         type="text" 
                         v-model="form.warga_negara" 
                         list="daftar-kewarganegaraan" 
+                        autocomplete="off"
                         class="block w-full border rounded-xl shadow-2xs px-4 py-3 text-sm font-medium transition-all focus:ring-2 focus:ring-[#005B3C]/20"
-                        :class="form.warga_negara ? 'border-emerald-300 bg-white text-gray-900 focus:border-[#005B3C]' : 'border-rose-300 bg-rose-50/20 text-gray-900 focus:border-rose-500'"
+                        :class="form.warga_negara?.trim() ? 'border-emerald-300 bg-white text-gray-900 focus:border-[#005B3C]' : 'border-rose-300 bg-rose-50/20 text-gray-900 focus:border-rose-500'"
                         placeholder="WNI / WNA (Pilih/Ketik Negara)" 
                     />
                     <datalist id="daftar-kewarganegaraan">
@@ -251,36 +257,45 @@ const lockedInputClass = "block w-full border border-gray-200 bg-gray-100 text-g
                     <span class="w-2.5 h-6 bg-[#005B3C] rounded-full inline-block"></span>
                     Dokumen Pendukung
                 </h2>
-                <span class="text-xs text-gray-400 font-medium">Opsional pelengkap</span>
+                <span class="text-xs text-gray-400 font-medium">Kolom bertanda <span class="text-rose-500 font-bold">*</span> wajib diisi</span>
             </div>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
                 <div>
-                    <label class="block text-xs sm:text-sm font-bold text-gray-700 mb-1.5">Nomor Kartu Keluarga (KK)</label>
+                    <label class="block text-xs sm:text-sm font-bold text-gray-700 mb-1.5">
+                        Nomor Kartu Keluarga (KK) <span class="text-rose-500 font-bold">*</span>
+                    </label>
                     <input 
                         type="text" 
                         v-model="form.no_kk" 
+                        autocomplete="off"
                         class="block w-full border rounded-xl shadow-2xs px-4 py-3 text-sm font-medium transition-all focus:ring-2 focus:ring-[#005B3C]/20"
-                        :class="form.no_kk ? 'border-emerald-300 bg-white text-gray-900 focus:border-[#005B3C]' : 'border-rose-300 bg-rose-50/20 text-gray-900 focus:border-rose-500'"
+                        :class="form.no_kk?.trim() ? 'border-emerald-300 bg-white text-gray-900 focus:border-[#005B3C]' : 'border-rose-300 bg-rose-50/20 text-gray-900 focus:border-rose-500'"
                         placeholder="Nomor KK (16 digit)" 
                     />
                 </div>
                 <div>
-                    <label class="block text-xs sm:text-sm font-bold text-gray-700 mb-1.5">NISN</label>
+                    <label class="block text-xs sm:text-sm font-bold text-gray-700 mb-1.5">
+                        NISN <span class="text-rose-500 font-bold">*</span>
+                    </label>
                     <input 
                         type="text" 
                         v-model="form.nisn" 
+                        autocomplete="off"
                         class="block w-full border rounded-xl shadow-2xs px-4 py-3 text-sm font-medium transition-all focus:ring-2 focus:ring-[#005B3C]/20"
-                        :class="form.nisn ? 'border-emerald-300 bg-white text-gray-900 focus:border-[#005B3C]' : 'border-rose-300 bg-rose-50/20 text-gray-900 focus:border-rose-500'"
+                        :class="form.nisn?.trim() ? 'border-emerald-300 bg-white text-gray-900 focus:border-[#005B3C]' : 'border-rose-300 bg-rose-50/20 text-gray-900 focus:border-rose-500'"
                         placeholder="10 Digit NISN" 
                     />
                 </div>
                 <div>
-                    <label class="block text-xs sm:text-sm font-bold text-gray-700 mb-1.5">Nomor BPJS Kesehatan</label>
+                    <label class="block text-xs sm:text-sm font-bold text-gray-700 mb-1.5">
+                        Nomor BPJS Kesehatan <span class="text-rose-500 font-bold">*</span>
+                    </label>
                     <input 
                         type="text" 
                         v-model="form.no_bpjs" 
+                        autocomplete="off"
                         class="block w-full border rounded-xl shadow-2xs px-4 py-3 text-sm font-medium transition-all focus:ring-2 focus:ring-[#005B3C]/20"
-                        :class="form.no_bpjs ? 'border-emerald-300 bg-white text-gray-900 focus:border-[#005B3C]' : 'border-rose-300 bg-rose-50/20 text-gray-900 focus:border-rose-500'"
+                        :class="form.no_bpjs?.trim() ? 'border-emerald-300 bg-white text-gray-900 focus:border-[#005B3C]' : 'border-rose-300 bg-rose-50/20 text-gray-900 focus:border-rose-500'"
                         placeholder="13 Digit Nomor BPJS" 
                     />
                 </div>
@@ -309,6 +324,7 @@ const lockedInputClass = "block w-full border border-gray-200 bg-gray-100 text-g
                         type="tel" 
                         :value="form.nomor_telepon" 
                         @input="handlePhoneInput"
+                        autocomplete="off"
                         class="block w-full border rounded-xl shadow-2xs px-4 py-3 text-sm font-mono font-bold transition-all focus:ring-2 focus:ring-[#005B3C]/20"
                         :class="isValidPhone(form.nomor_telepon) ? 'border-emerald-300 bg-white text-gray-900 focus:border-[#005B3C]' : 'border-rose-300 bg-rose-50/20 text-gray-900 focus:border-rose-500'"
                         placeholder="Contoh: 081234567890" 
@@ -323,20 +339,24 @@ const lockedInputClass = "block w-full border border-gray-200 bg-gray-100 text-g
                     <input 
                         type="email" 
                         v-model="form.email_pribadi" 
+                        autocomplete="off"
                         class="block w-full border rounded-xl shadow-2xs px-4 py-3 text-sm font-medium transition-all focus:ring-2 focus:ring-[#005B3C]/20"
                         :class="isValidEmail(form.email_pribadi || form.email) ? 'border-emerald-300 bg-white text-gray-900 focus:border-[#005B3C]' : 'border-rose-300 bg-rose-50/20 text-gray-900 focus:border-rose-500'"
                         placeholder="contoh: nama.alumni@gmail.com" 
                     />
                 </div>
                 
-                <!-- Email Students (Opsional) -->
+                <!-- Email Students -->
                 <div class="md:col-span-2">
-                    <label class="block text-xs sm:text-sm font-bold text-gray-700 mb-1.5">Email Mahasiswa (Students UKDW)</label>
+                    <label class="block text-xs sm:text-sm font-bold text-gray-700 mb-1.5">
+                        Email Mahasiswa (Students UKDW) <span class="text-rose-500 font-bold">*</span>
+                    </label>
                     <input 
                         type="email" 
                         v-model="form.email_students" 
+                        autocomplete="off"
                         class="block w-full border rounded-xl shadow-2xs px-4 py-3 text-sm font-medium transition-all focus:ring-2 focus:ring-[#005B3C]/20"
-                        :class="form.email_students ? 'border-emerald-300 bg-white text-gray-900 focus:border-[#005B3C]' : 'border-rose-300 bg-rose-50/20 text-gray-900 focus:border-rose-500'"
+                        :class="isValidEmail(form.email_students) ? 'border-emerald-300 bg-white text-gray-900 focus:border-[#005B3C]' : 'border-rose-300 bg-rose-50/20 text-gray-900 focus:border-rose-500'"
                         placeholder="nim@students.ukdw.ac.id" 
                     />
                 </div>
@@ -389,36 +409,45 @@ const lockedInputClass = "block w-full border border-gray-200 bg-gray-100 text-g
 
                 <!-- Kecamatan -->
                 <div>
-                    <label class="block text-xs sm:text-sm font-bold text-gray-700 mb-1.5">Kecamatan</label>
+                    <label class="block text-xs sm:text-sm font-bold text-gray-700 mb-1.5">
+                        Kecamatan <span class="text-rose-500 font-bold">*</span>
+                    </label>
                     <input 
                         type="text" 
                         v-model="form.kecamatan" 
+                        autocomplete="off"
                         class="block w-full border rounded-xl shadow-2xs px-4 py-3 text-sm font-medium transition-all focus:ring-2 focus:ring-[#005B3C]/20"
-                        :class="form.kecamatan ? 'border-emerald-300 bg-white text-gray-900 focus:border-[#005B3C]' : 'border-rose-300 bg-rose-50/20 text-gray-900 focus:border-rose-500'"
+                        :class="form.kecamatan?.trim() ? 'border-emerald-300 bg-white text-gray-900 focus:border-[#005B3C]' : 'border-rose-300 bg-rose-50/20 text-gray-900 focus:border-rose-500'"
                         placeholder="Kecamatan" 
                     />
                 </div>
 
                 <!-- Kelurahan / Desa -->
                 <div>
-                    <label class="block text-xs sm:text-sm font-bold text-gray-700 mb-1.5">Kelurahan / Desa</label>
+                    <label class="block text-xs sm:text-sm font-bold text-gray-700 mb-1.5">
+                        Kelurahan / Desa <span class="text-rose-500 font-bold">*</span>
+                    </label>
                     <input 
                         type="text" 
                         v-model="form.kelurahan" 
+                        autocomplete="off"
                         class="block w-full border rounded-xl shadow-2xs px-4 py-3 text-sm font-medium transition-all focus:ring-2 focus:ring-[#005B3C]/20"
-                        :class="form.kelurahan ? 'border-emerald-300 bg-white text-gray-900 focus:border-[#005B3C]' : 'border-rose-300 bg-rose-50/20 text-gray-900 focus:border-rose-500'"
+                        :class="form.kelurahan?.trim() ? 'border-emerald-300 bg-white text-gray-900 focus:border-[#005B3C]' : 'border-rose-300 bg-rose-50/20 text-gray-900 focus:border-rose-500'"
                         placeholder="Kelurahan/Desa" 
                     />
                 </div>
 
                 <!-- Kode Pos -->
                 <div>
-                    <label class="block text-xs sm:text-sm font-bold text-gray-700 mb-1.5">Kode Pos</label>
+                    <label class="block text-xs sm:text-sm font-bold text-gray-700 mb-1.5">
+                        Kode Pos <span class="text-rose-500 font-bold">*</span>
+                    </label>
                     <input 
                         type="text" 
                         v-model="form.kode_pos" 
+                        autocomplete="off"
                         class="block w-full border rounded-xl shadow-2xs px-4 py-3 text-sm font-medium transition-all focus:ring-2 focus:ring-[#005B3C]/20"
-                        :class="form.kode_pos ? 'border-emerald-300 bg-white text-gray-900 focus:border-[#005B3C]' : 'border-rose-300 bg-rose-50/20 text-gray-900 focus:border-rose-500'"
+                        :class="form.kode_pos?.trim() ? 'border-emerald-300 bg-white text-gray-900 focus:border-[#005B3C]' : 'border-rose-300 bg-rose-50/20 text-gray-900 focus:border-rose-500'"
                         placeholder="Kode Pos (5 digit)" 
                     />
                 </div>
