@@ -1,6 +1,44 @@
 # UPDATE LOG - SERU (Sistem Ekosistem Rekam Jejak Alumni)
 
-## [2026-09-21] Refactoring Dashboard Alumni & Standarisasi Ikon Power-Off Keluar Sesi
+## [2026-09-21] Perbaikan Akses Tombol Tambah Pertanyaan dan Edit Soal (Super Admin)
+
+### Ringkasan
+1. **Perbaikan Akses Tombol Tambah dan Edit Pertanyaan**:
+   - Memperbaiki deklarasi variabel `initialKeterangan` pada fungsi `openQuestionModal()` di [`Index.vue`](file:///c:/study/tracerstudy/resources/js/Pages/SuperAdmin/Pertanyaan/Index.vue) yang sebelumnya belum didefinisikan (`ReferenceError`), sehingga tombol **"Tambah Pertanyaan"** dan tombol pensil **"Edit"** dapat diakses dan memunculkan pop-up SweetAlert2 dengan normal.
+   - Mengganti pengisian nilai input (kode pertanyaan, bunyi soal, keterangan/constraint, dan urutan) agar diisikan secara aman melalui hook `didOpen` SweetAlert2, menghindari konflik karakter khusus/tanda petik pada HTML template string.
+2. **Sinkronisasi Validasi Backend ([`SimpanPertanyaanController.php`](file:///c:/study/tracerstudy/app/Http/Controllers/SuperAdmin/KelolaPertanyaan/SimpanPertanyaanController.php))**:
+   - Menambahkan tipe `radio`, `checkbox`, dan field `keterangan` (batasan nilai/constraint) ke dalam daftar aturan validasi `store` dan `update` agar penyimpanan soal baru dan pembaruan soal berjalan mulus tanpa tertolak validasi server.
+3. **Pengujian & Verifikasi**:
+   - Build frontend berhasil (`npm run build` sukses 1.82s).
+   - Seluruh 59 test suite PHPUnit lulus 100%.
+
+---
+
+## [2026-09-21] Eliminasi Duplikasi Tombol Tambah Opsi, Pembatasan Opsi Hanya Tipe Tertentu, dan Pembersihan Tipe Soal Tidak Terpakai
+
+### Ringkasan
+1. **Eliminasi Duplikasi Tombol Tambah Opsi**:
+   - Menghapus kontainer dan tombol duplikat *"Belum ada pilihan opsi jawaban untuk butir ini [+ + Tambah Opsi]"* dari baris pertanyaan.
+   - Tombol tambah opsi kini **hanya ada satu**, yaitu ikon **`+`** (warna hijau) yang rapi pada kolom **Aksi** di baris tabel.
+2. **Pembatasan Opsi Jawaban Hanya untuk Tipe yang Mendukung**:
+   - Tombol **`+`** dan kartu daftar opsi jawaban kini **hanya muncul** jika tipe pertanyaan termasuk dalam tipe yang mendukung opsi:
+     - `radio` (*Pilihan Ganda (Radio)*)
+     - `radio_input` (*Radio + Angka*)
+     - `radio_text` (*Radio + Teks*)
+     - `multiple_choice` (*Kotak Centang (Checkbox)*)
+     - `rating_5` (*Skala Rating (1-5)*)
+     - `multiple_number` (*Angka Ganda*)
+     - `matrix` (*Matriks Skala*)
+     - `matrix_dual` (*Dual Matrix*)
+     - `multiple_textbox` (*Multiple Textbox*)
+   - Untuk tipe isian langsung atau pemisah (`text`, `textarea`, `number`, `date`, `header`), tombol `+` dan blok opsi tidak ditampilkan sama sekali sehingga tampilan baris menjadi bersih dan tidak membingungkan.
+3. **Pembersihan Tipe Pertanyaan Duplikat dan Tidak Terpakai**:
+   - Menghapus tipe `single_choice` (duplikat dari `radio`), serta tipe yang tidak dipakai (`dropdown`, `searchable_select`, `time`, `file`) dari daftar pilihan tipe pada Super Admin dan Biro 3.
+4. **Verifikasi dan Pengujian**:
+   - Seluruh 59 feature tests di Laravel Unit & Feature Suite lulus 100% tanpa error.
+   - Kode PHP diformat rapi dengan Laravel Pint.
+
+---
 
 ### Ringkasan
 1. **Penyempurnaan Tampilan Dashboard Alumni ([`Dashboard.vue`](file:///c:/study/tracerstudy/resources/js/Pages/Alumni/Dashboard.vue))**:

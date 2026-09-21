@@ -422,7 +422,7 @@ class RefSubpertanyaan2021Seeder extends Seeder
                 'kode_pertanyaan' => 'F505',
                 'subpertanyaan' => 'Berapa rata-rata pendapatan anda per bulan ? (take home pay)?',
                 'type' => 'multiple_number',
-                'keterangan' => 'Nominal Rupiah per bulan (Pekerjaan Utama, Lembur/Tips, Lainnya)',
+                'keterangan' => 'Nominal Rupiah per bulan (Take Home Pay) - Batasan: Minimal Rp 1.000 (kelipatan ribuan)',
                 'wajib' => 1,
                 'order' => 38,
             ],

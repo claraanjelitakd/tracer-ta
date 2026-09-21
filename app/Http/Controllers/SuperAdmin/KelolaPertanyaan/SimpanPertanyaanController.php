@@ -30,13 +30,19 @@ class SimpanPertanyaanController extends Controller
             'kelompok_pertanyaan_id' => 'required|exists:kelompok_pertanyaan,id',
             'kode_pertanyaan' => 'required|string|max:50|unique:ref_subpertanyaan2021,kode_pertanyaan',
             'subpertanyaan' => 'required|string',
-            'type' => 'required|string|in:text,textarea,number,single_choice,radio_input,radio_text,multiple_choice,dropdown,searchable_select,rating_5,multiple_number,matrix,matrix_dual,multiple_textbox,date,time,file,header',
+            'type' => 'required|string|in:radio,single_choice,radio_input,radio_text,multiple_choice,checkbox,rating_5,multiple_number,matrix,matrix_dual,multiple_textbox,text,textarea,number,date,time,dropdown,searchable_select,file,header',
+            'keterangan' => 'nullable|string|max:500',
             'wajib' => 'required|boolean',
+            'tampil_di' => 'nullable|string|in:kuesioner,profile,both',
             'order' => 'nullable|integer',
         ]);
 
         if (empty($validated['order'])) {
             $validated['order'] = (RefSubpertanyaan2021::where('kelompok_pertanyaan_id', $validated['kelompok_pertanyaan_id'])->max('order') ?? 0) + 1;
+        }
+
+        if (empty($validated['tampil_di'])) {
+            $validated['tampil_di'] = 'kuesioner';
         }
 
         RefSubpertanyaan2021::create($validated);
@@ -58,10 +64,16 @@ class SimpanPertanyaanController extends Controller
             'kelompok_pertanyaan_id' => 'required|exists:kelompok_pertanyaan,id',
             'kode_pertanyaan' => 'required|string|max:50|unique:ref_subpertanyaan2021,kode_pertanyaan,'.$subpertanyaan->id,
             'subpertanyaan' => 'required|string',
-            'type' => 'required|string|in:text,textarea,number,single_choice,radio_input,radio_text,multiple_choice,dropdown,searchable_select,rating_5,multiple_number,matrix,matrix_dual,multiple_textbox,date,time,file,header',
+            'type' => 'required|string|in:radio,single_choice,radio_input,radio_text,multiple_choice,checkbox,rating_5,multiple_number,matrix,matrix_dual,multiple_textbox,text,textarea,number,date,time,dropdown,searchable_select,file,header',
+            'keterangan' => 'nullable|string|max:500',
             'wajib' => 'required|boolean',
+            'tampil_di' => 'nullable|string|in:kuesioner,profile,both',
             'order' => 'nullable|integer',
         ]);
+
+        if (empty($validated['tampil_di'])) {
+            $validated['tampil_di'] = $subpertanyaan->tampil_di ?? 'kuesioner';
+        }
 
         $subpertanyaan->update($validated);
 

@@ -182,6 +182,14 @@ const moveQuestion = (q, direction) => {
 const showOptionModal = ref(false);
 const isEditingOption = ref(false);
 const selectedQuestion = ref(null);
+const selectedJumpSectionId = ref('');
+
+const filteredJumpQuestions = computed(() => {
+    if (!selectedJumpSectionId.value) return [];
+    return (props.availableJumpTargets || []).filter(
+        (t) => t.kelompok_pertanyaan_id == selectedJumpSectionId.value
+    );
+});
 
 const optionForm = useForm({
     id: null,
@@ -197,6 +205,7 @@ const openAddOptionModal = (q) => {
     optionForm.code = '';
     optionForm.option_text = '';
     optionForm.jump_to = '';
+    selectedJumpSectionId.value = '';
     showOptionModal.value = true;
 };
 
@@ -207,6 +216,14 @@ const openEditOptionModal = (q, opt) => {
     optionForm.code = opt.code || opt.kode_opsi || '';
     optionForm.option_text = opt.option_text;
     optionForm.jump_to = opt.jump_to || '';
+
+    if (opt.jump_to) {
+        const found = (props.availableJumpTargets || []).find((t) => (t.kode_pertanyaan || '').toUpperCase() === (opt.jump_to || '').toUpperCase());
+        selectedJumpSectionId.value = found ? (found.kelompok_pertanyaan_id || '') : '';
+    } else {
+        selectedJumpSectionId.value = '';
+    }
+
     showOptionModal.value = true;
 };
 
@@ -243,20 +260,45 @@ const getTargetQuestionTitle = (code) => {
 
 const getTypeLabel = (type) => {
     const labels = {
-        single_choice: 'Pilihan Tunggal (Radio)',
-        multiple_choice: 'Pilihan Ganda (Checkbox)',
-        radio: 'Pilihan Tunggal (Radio)',
-        checkbox: 'Pilihan Ganda (Checkbox)',
-        text: 'Isian Teks Singkat',
-        number: 'Isian Angka (Numerik)',
-        radio_input: 'Radio dengan Isian Angka',
-        radio_text: 'Radio dengan Isian Teks',
-        multiple_number: 'Isian Multi Finansial / Numerik',
-        matrix: 'Matriks / Skala Penilaian',
-        matrix_dual: 'Matriks Komparasi Ganda',
-        searchable_select: 'Dropdown Pencarian',
+        // Tipe Opsi Pilihan
+        radio: 'Pilihan Ganda (Radio)',
+        single_choice: 'Pilihan Ganda (Radio)',
+        radio_input: 'Radio + Angka',
+        radio_text: 'Radio + Teks',
+        multiple_choice: 'Kotak Centang (Checkbox)',
+        checkbox: 'Kotak Centang (Checkbox)',
+        rating_5: 'Skala Rating (1-5)',
+        multiple_number: 'Angka Ganda',
+        matrix: 'Matriks Skala',
+        matrix_dual: 'Dual Matrix',
+        multiple_textbox: 'Multiple Textbox',
+
+        // Tipe Tanpa Opsi
+        text: 'Jawaban Singkat (Text)',
+        textarea: 'Paragraf (Textarea)',
+        number: 'Isian Angka (Number)',
+        date: 'Tanggal',
+        header: 'Header / Judul Bagian',
     };
     return labels[type] || type;
+};
+
+const OPTION_SUPPORTED_TYPES = [
+    'radio',
+    'single_choice',
+    'radio_input',
+    'radio_text',
+    'multiple_choice',
+    'checkbox',
+    'rating_5',
+    'multiple_number',
+    'matrix',
+    'matrix_dual',
+    'multiple_textbox',
+];
+
+const canHaveOptions = (type) => {
+    return OPTION_SUPPORTED_TYPES.includes(type);
 };
 </script>
 
@@ -545,10 +587,11 @@ const getTypeLabel = (type) => {
                     <div 
                         v-for="(q, idx) in activeSectionQuestions" 
                         :key="q.id" 
-                        class="bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-all overflow-hidden"
+                        class="rounded-xl border shadow-sm hover:shadow-md transition-all overflow-hidden"
+                        :class="q.type === 'header' ? 'bg-[#FEF9C3]/50 border-amber-300 border-l-4 border-l-[#EAB308]' : 'bg-white border-gray-200'"
                     >
                         <!-- Header Kartu Pertanyaan -->
-                        <div class="p-4 bg-gray-50/80 border-b border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                        <div class="p-4 border-b flex flex-col sm:flex-row sm:items-center justify-between gap-3" :class="q.type === 'header' ? 'bg-amber-100/60 border-amber-200' : 'bg-gray-50/80 border-gray-100'">
                             
                             <!-- Kontrol Urutan & Badge -->
                             <div class="flex items-center gap-2.5 flex-wrap">
@@ -573,8 +616,16 @@ const getTypeLabel = (type) => {
                                     </button>
                                 </div>
 
-                                <!-- Kode Pertanyaan (Hijau Resmi UKDW) -->
-                                <span class="px-2.5 py-0.5 bg-[#005B3C] text-white font-mono font-bold text-xs rounded-md">
+                                <!-- Badge Header Kuesioner (Kuning Khusus) -->
+                                <span v-if="q.type === 'header'" class="px-2.5 py-0.5 bg-[#FACC15] text-amber-950 font-bold text-xs rounded-md border border-amber-400">
+                                    Header Kuesioner
+                                </span>
+
+                                <!-- Kode Pertanyaan (Hijau Resmi UKDW / Kuning jika Header) -->
+                                <span 
+                                    class="px-2.5 py-0.5 font-mono font-bold text-xs rounded-md"
+                                    :class="q.type === 'header' ? 'bg-amber-200 text-amber-950 border border-amber-300' : 'bg-[#005B3C] text-white'"
+                                >
                                     {{ q.kode_pertanyaan }}
                                 </span>
 
@@ -617,13 +668,16 @@ const getTypeLabel = (type) => {
 
                         <!-- Teks Pertanyaan -->
                         <div class="px-6 py-4 border-b border-gray-100">
-                            <h3 class="text-base font-bold text-gray-900 leading-snug">
+                            <h3 class="text-base font-bold leading-snug" :class="q.type === 'header' ? 'text-amber-950' : 'text-gray-900'">
                                 {{ q.subpertanyaan }}
                             </h3>
+                            <p v-if="q.keterangan" class="text-xs italic mt-1.5 leading-relaxed" :class="q.type === 'header' ? 'text-amber-800 font-medium' : 'text-gray-500'">
+                                {{ q.keterangan }}
+                            </p>
                         </div>
 
-                        <!-- Tabel Opsi Jawaban & Alur Percabangan -->
-                        <div class="p-6">
+                        <!-- Tabel Opsi Jawaban & Alur Percabangan (Hanya untuk tipe yang mendukung opsi) -->
+                        <div v-if="canHaveOptions(q.type)" class="p-6">
                             <div class="flex items-center justify-between mb-3">
                                 <span class="text-xs font-bold uppercase tracking-wider text-gray-600">
                                     Pilihan Opsi Jawaban & Alur Percabangan ({{ (q.detils || q.options)?.length || 0 }})
@@ -758,26 +812,52 @@ const getTypeLabel = (type) => {
                         <span class="text-[10px] text-gray-400 block mt-1">Kosongkan jika ingin nomor kode digenerate otomatis.</span>
                     </div>
 
-                    <!-- Dropdown Branching (Kuning Landing Page Accent) -->
-                    <div class="p-4 bg-yellow-50/70 rounded-xl border border-yellow-200 space-y-1.5">
+                    <!-- Dropdown Branching Bercabang (Pilih Bagian dulu, baru Pertanyaan) -->
+                    <div class="p-4 bg-yellow-50/70 rounded-xl border border-yellow-200 space-y-2.5">
                         <label class="block text-xs font-bold text-yellow-950">
-                            Setelah Memilih Opsi Ini (Alur Branching / Lompatan)
+                            Alur Percabangan / Lompat ke Soal (Jump Logic)
                         </label>
-                        <select 
-                            v-model="optionForm.jump_to" 
-                            class="w-full text-xs font-medium rounded-lg border-yellow-300 bg-white focus:border-[#005B3C] focus:ring-[#005B3C] text-gray-800 py-2"
-                        >
-                            <option value="">Lanjut ke pertanyaan berikutnya (Alur Normal)</option>
-                            <option 
-                                v-for="target in availableJumpTargets" 
-                                :key="target.code" 
-                                :value="target.code"
+                        
+                        <div>
+                            <label class="block text-[11px] font-semibold text-yellow-900 mb-1">
+                                Langkah 1: Pilih Bagian / Section Target
+                            </label>
+                            <select 
+                                v-model="selectedJumpSectionId"
+                                class="w-full text-xs font-medium rounded-lg border-yellow-300 bg-white focus:border-[#005B3C] focus:ring-[#005B3C] text-gray-800 py-2"
                             >
-                                Lompat ke: [ {{ target.code }} ] {{ target.text }}
-                            </option>
-                        </select>
+                                <option value="">-- Tanpa Lompatan (Lanjut ke pertanyaan berikutnya) --</option>
+                                <option 
+                                    v-for="sec in sections" 
+                                    :key="sec.id" 
+                                    :value="sec.id"
+                                >
+                                    Bagian {{ sec.order }}: {{ sec.title }}
+                                </option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="block text-[11px] font-semibold text-yellow-900 mb-1">
+                                Langkah 2: Pilih Butir Pertanyaan Target
+                            </label>
+                            <select 
+                                v-model="optionForm.jump_to" 
+                                :disabled="!selectedJumpSectionId"
+                                class="w-full text-xs font-medium rounded-lg border-yellow-300 bg-white focus:border-[#005B3C] focus:ring-[#005B3C] text-gray-800 py-2 disabled:bg-gray-100 disabled:opacity-60"
+                            >
+                                <option value="">-- Pilih Pertanyaan Target --</option>
+                                <option 
+                                    v-for="target in filteredJumpQuestions" 
+                                    :key="target.kode_pertanyaan" 
+                                    :value="target.kode_pertanyaan"
+                                >
+                                    {{ target.label || `[ ${target.kode_pertanyaan} ] ${target.text}` }}
+                                </option>
+                            </select>
+                        </div>
                         <span class="text-[11px] text-yellow-900 block leading-tight">
-                            Pilih kode tujuan jika ingin melewati pertanyaan di antaranya saat opsi ini dipilih.
+                            Pilih bagian terlebih dahulu untuk memfilter daftar pertanyaan target agar tidak terlalu panjang.
                         </span>
                     </div>
 

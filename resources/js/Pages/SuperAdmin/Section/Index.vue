@@ -1,27 +1,15 @@
-<!--
-  Halaman Utama Kelola Bagian Kuesioner (Section) - SuperAdmin (Index.vue)
-  
-  Fungsi:
-  Pusat manajemen struktur dan pengelompokan kuesioner Tracer Study.
-  Superadmin dapat membuat, mengubah nama/judul, menghapus bagian kuesioner,
-  serta mengubah urutan posisi bagian (naik/turun) secara dinamis.
--->
 <script setup>
 import { Head, Link, router } from '@inertiajs/vue3';
 import { ref, computed } from 'vue';
 import Swal from 'sweetalert2';
 
 import Sidebar from '@/Pages/SuperAdmin/Components/Sidebar.vue';
-import SectionModal from './Components/SectionModal.vue';
 
-// Properti yang dikirimkan oleh SuperAdmin\KelolaSection\KelolaSectionController
 const props = defineProps({
-    // Daftar seluruh section kuesioner beserta relasi kuesioner dan jumlah pertanyaan
     sections: {
         type: Array,
         default: () => [],
     },
-    // Daftar seluruh instrumen kuesioner aktif
     kuesioners: {
         type: Array,
         default: () => [],
@@ -32,18 +20,13 @@ const props = defineProps({
     },
 });
 
-// ========================================================
-// 1. STATE PENCARIAN & FILTER
-// ========================================================
-// String input teks pencarian judul atau nomor bagian
 const searchQuery = ref('');
-
-// State indikator saat proses pemindahan urutan sedang berlangsung
 const isReordering = ref(false);
 
-/**
- * Komputasi daftar section yang lolos filter pencarian teks judul atau nomor urut.
- */
+const activeKuesioners = computed(() => {
+    return (props.kuesioners && props.kuesioners.length > 0) ? props.kuesioners : props.questionnaires;
+});
+
 const filteredSections = computed(() => {
     if (!searchQuery.value.trim()) {
         return props.sections;
@@ -57,71 +40,178 @@ const filteredSections = computed(() => {
     });
 });
 
-/**
- * Menghitung total keseluruhan pertanyaan dari seluruh section yang ada.
- */
 const totalQuestionsCount = computed(() => {
-    return props.sections.reduce((sum, sec) => sum + (sec.subpertanyaans_count ?? sec.questions_count ?? 0), 0);
+    return props.sections.reduce((sum, sec) => sum + (sec.subpertanyaans_count ?? sec.questions_count ?? (sec.subpertanyaans?.length ?? 0)), 0);
 });
 
 // ========================================================
-// 2. MODAL TAMBAH & EDIT SECTION
+// SWEETALERT2: TAMBAH & EDIT SECTION
 // ========================================================
-// Penanda visibilitas modal form section
-const showSectionModal = ref(false);
+const openSectionModal = (sectionToEdit = null) => {
+    const isEdit = !!sectionToEdit;
+    const initialKuesionerId = sectionToEdit?.kuesioner_id || (activeKuesioners.value[0]?.id || '');
+    const initialTitle = sectionToEdit?.title || '';
+    const initialDesc = sectionToEdit?.description || '';
+    const initialOrder = sectionToEdit?.order || (props.sections.length + 1);
 
-// Penanda apakah modal dalam mode edit (true) atau tambah baru (false)
-const isEditSection = ref(false);
+    const kuesionerOptionsHtml = activeKuesioners.value
+        .map((k) => `<option value="${k.id}" ${k.id == initialKuesionerId ? 'selected' : ''}>${k.title} (${k.year || '-'})</option>`)
+        .join('');
 
-// Menyimpan data section yang sedang dipilih untuk diedit
-const selectedSection = ref(null);
+    const htmlContent = `
+        <div class="text-left space-y-3.5 text-xs">
+            <div>
+                <label class="block font-bold text-gray-700 mb-1">Kuesioner Induk *</label>
+                <select id="swal-kuesioner-id" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-xs bg-white focus:outline-none focus:ring-1 focus:ring-emerald-700">
+                    ${kuesionerOptionsHtml}
+                </select>
+            </div>
 
-/**
- * Menghitung rekomendasi nomor urut section berikutnya jika menambah baru.
- */
-const nextAvailableOrder = computed(() => {
-    if (props.sections.length === 0) return 1;
-    const maxOrder = Math.max(...props.sections.map((s) => s.order || 0));
-    return maxOrder + 1;
-});
+            <div>
+                <label class="block font-bold text-gray-700 mb-1">Judul Bagian (Section Title) *</label>
+                <input id="swal-section-title" type="text" value="${initialTitle}" placeholder="Contoh: Identitas & Biodata Alumni" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-emerald-700" />
+            </div>
 
-/**
- * Membuka modal dialog untuk menambah section baru.
- */
-const openAddModal = () => {
-    isEditSection.value = false;
-    selectedSection.value = null;
-    showSectionModal.value = true;
+            <div>
+                <label class="block font-bold text-gray-700 mb-1">Deskripsi / Petunjuk Pengisian (Opsional)</label>
+                <textarea id="swal-section-desc" rows="3" placeholder="Ketikkan petunjuk pengisian bagi responden..." class="w-full px-3 py-2 border border-gray-300 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-emerald-700 leading-relaxed">${initialDesc}</textarea>
+            </div>
+
+            <div>
+                <label class="block font-bold text-gray-700 mb-1">Nomor Urut Posisi</label>
+                <input id="swal-section-order" type="number" value="${initialOrder}" min="1" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-emerald-700" />
+            </div>
+        </div>
+    `;
+
+    Swal.fire({
+        title: isEdit ? 'Sunting Bagian Kuesioner' : 'Tambah Bagian Kuesioner',
+        html: htmlContent,
+        showCancelButton: true,
+        confirmButtonText: isEdit ? 'Simpan Perubahan' : 'Tambah Bagian',
+        cancelButtonText: 'Batal',
+        confirmButtonColor: '#0D542B',
+        cancelButtonColor: '#6B7280',
+        width: '500px',
+        focusConfirm: false,
+        preConfirm: () => {
+            const kuesioner_id = document.getElementById('swal-kuesioner-id').value;
+            const title = document.getElementById('swal-section-title').value.trim();
+            const description = document.getElementById('swal-section-desc').value.trim();
+            const order = parseInt(document.getElementById('swal-section-order').value, 10) || null;
+
+            if (!kuesioner_id) {
+                Swal.showValidationMessage('Kuesioner induk wajib dipilih.');
+                return false;
+            }
+            if (!title) {
+                Swal.showValidationMessage('Judul bagian wajib diisi.');
+                return false;
+            }
+
+            return {
+                kuesioner_id,
+                title,
+                description,
+                order,
+            };
+        },
+    }).then((result) => {
+        if (result.isConfirmed && result.value) {
+            if (isEdit) {
+                router.put(`/superadmin/sections/${sectionToEdit.id}`, result.value, {
+                    preserveScroll: true,
+                    onSuccess: () => {
+                        Swal.fire('Berhasil', 'Bagian kuesioner berhasil diperbarui.', 'success');
+                    },
+                    onError: (errors) => {
+                        Swal.fire('Gagal Menyimpan', Object.values(errors).join('<br>'), 'error');
+                    },
+                });
+            } else {
+                router.post('/superadmin/sections', result.value, {
+                    preserveScroll: true,
+                    onSuccess: () => {
+                        Swal.fire('Berhasil', 'Bagian kuesioner baru berhasil ditambahkan.', 'success');
+                    },
+                    onError: (errors) => {
+                        Swal.fire('Gagal Menyimpan', Object.values(errors).join('<br>'), 'error');
+                    },
+                });
+            }
+        }
+    });
 };
 
-/**
- * Membuka modal dialog untuk menyunting section yang dipilih.
- *
- * @param {Object} sec - Objek data section yang akan diedit
- */
-const openEditModal = (sec) => {
-    isEditSection.value = true;
-    selectedSection.value = sec;
-    showSectionModal.value = true;
-};
+// ========================================================
+// SWEETALERT2: DETAIL SECTION (IKON MATA)
+// ========================================================
+const openDetailModal = (sec) => {
+    const questionCount = sec.subpertanyaans_count ?? sec.questions_count ?? (sec.subpertanyaans?.length ?? 0);
+    const contentHtml = `
+        <div class="text-left space-y-3 text-xs">
+            <div class="p-2.5 rounded-lg bg-gray-50 border border-gray-200">
+                <span class="text-gray-500 font-medium block">Judul Bagian:</span>
+                <p class="text-gray-900 font-bold mt-0.5 text-sm">${sec.title}</p>
+                ${sec.description ? `<p class="text-gray-600 mt-1.5 leading-relaxed">${sec.description}</p>` : '<p class="text-gray-400 italic mt-1">Tidak ada deskripsi tambahan.</p>'}
+            </div>
 
-/**
- * Menutup modal dialog form section.
- */
-const closeSectionModal = () => {
-    showSectionModal.value = false;
-    selectedSection.value = null;
+            <div class="grid grid-cols-2 gap-2">
+                <div class="p-2 rounded-lg bg-gray-50 border border-gray-200">
+                    <span class="text-gray-500 block">Nomor Urut:</span>
+                    <span class="font-bold text-gray-800 text-xs">Bagian ${sec.order}</span>
+                </div>
+                <div class="p-2 rounded-lg bg-gray-50 border border-gray-200">
+                    <span class="text-gray-500 block">Kuesioner Induk:</span>
+                    <span class="font-bold text-gray-800 text-xs">${sec.kuesioner?.title || sec.questionnaire?.title || 'Kuesioner Umum'}</span>
+                </div>
+            </div>
+
+            <div class="p-2.5 rounded-lg bg-emerald-50 border border-emerald-200 flex items-center justify-between">
+                <span class="font-bold text-emerald-900">Total Butir Pertanyaan Terdaftar:</span>
+                <span class="font-bold text-emerald-900 text-xs">${questionCount} Butir Soal</span>
+            </div>
+        </div>
+    `;
+
+    Swal.fire({
+        title: `Detail Bagian #${sec.order}`,
+        html: contentHtml,
+        confirmButtonText: 'Tutup',
+        confirmButtonColor: '#0D542B',
+        width: '500px',
+    });
 };
 
 // ========================================================
-// 3. OPERASI PENGURUTAN (REORDER NAIK / TURUN)
+// SWEETALERT2: HAPUS SECTION
 // ========================================================
-/**
- * Memindahkan urutan section satu langkah ke atas ('up') atau ke bawah ('down').
- *
- * @param {Object} sec - Section yang dipindahkan posisinya
- * @param {string} direction - Arah pergerakan ('up' atau 'down')
- */
+const handleDeleteSection = (sec) => {
+    const questionCount = sec.subpertanyaans_count ?? sec.questions_count ?? (sec.subpertanyaans?.length ?? 0);
+    Swal.fire({
+        title: 'Hapus Bagian Kuesioner?',
+        text: `Apakah Anda yakin ingin menghapus "Bagian ${sec.order}: ${sec.title}"? ${questionCount > 0 ? `(Akan menghapus ${questionCount} butir pertanyaan di dalamnya)` : ''}`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'Ya, Hapus',
+        cancelButtonText: 'Batal',
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#6B7280',
+    }).then((result) => {
+        if (result.isConfirmed) {
+            router.delete(`/superadmin/sections/${sec.id}`, {
+                preserveScroll: true,
+                onSuccess: () => {
+                    Swal.fire('Berhasil', 'Bagian kuesioner telah dihapus.', 'success');
+                },
+                onError: () => {
+                    Swal.fire('Gagal', 'Terjadi kesalahan saat menghapus data.', 'error');
+                },
+            });
+        }
+    });
+};
+
 const handleMoveSection = (sec, direction) => {
     isReordering.value = true;
     router.post(
@@ -138,325 +228,218 @@ const handleMoveSection = (sec, direction) => {
         }
     );
 };
-
-// ========================================================
-// 4. OPERASI PENGHAPUSAN SECTION (DELETE DENGAN SWEETALERT2)
-// ========================================================
-/**
- * Menghapus section kuesioner dengan konfirmasi peringatan SweetAlert2.
- * Jika section memiliki pertanyaan, pengguna diberikan peringatan tegas.
- *
- * @param {Object} sec - Section yang akan dihapus
- */
-const handleDeleteSection = (sec) => {
-    const questionCount = sec.subpertanyaans_count ?? sec.questions_count ?? 0;
-    
-    // Susun pesan peringatan jika terdapat pertanyaan di dalam section
-    const warningHtml = questionCount > 0 
-        ? `
-            <div class="text-center space-y-3">
-                <p class="text-sm text-gray-600">Apakah Anda yakin ingin menghapus bagian:</p>
-                <div class="inline-block px-4 py-2 rounded-xl bg-red-50 text-red-700 font-extrabold text-sm border border-red-200">
-                    Section ${sec.order}: ${sec.title}
-                </div>
-                <div class="p-3 bg-amber-50 rounded-xl border border-amber-200 text-amber-800 text-xs font-semibold">
-                    ⚠️ Peringatan Kritis: Bagian ini memuat <span class="font-extrabold">${questionCount} butir pertanyaan</span>. Menghapus bagian ini juga akan menghapus seluruh pertanyaan dan opsi jawaban di dalamnya secara permanen!
-                </div>
-            </div>
-        `
-        : `
-            <div class="text-center space-y-2">
-                <p class="text-sm text-gray-600">Apakah Anda yakin ingin menghapus bagian:</p>
-                <div class="inline-block px-4 py-2 rounded-xl bg-gray-100 text-gray-800 font-extrabold text-sm">
-                    Section ${sec.order}: ${sec.title}
-                </div>
-                <p class="text-xs text-gray-400">Bagian ini belum memiliki butir pertanyaan.</p>
-            </div>
-        `;
-
-    Swal.fire({
-        title: 'Hapus Bagian Kuesioner?',
-        html: warningHtml,
-        icon: questionCount > 0 ? 'warning' : 'question',
-        showCancelButton: true,
-        confirmButtonColor: '#d33',
-        cancelButtonColor: '#6B7280',
-        confirmButtonText: 'Ya, Hapus Sekarang',
-        cancelButtonText: 'Batal',
-        reverseButtons: true,
-    }).then((result) => {
-        if (result.isConfirmed) {
-            router.delete(`/superadmin/sections/${sec.id}`, {
-                preserveScroll: true,
-                onSuccess: () => {
-                    Swal.fire({
-                        title: 'Berhasil Dihapus!',
-                        text: `Section ${sec.order} telah dihapus dari sistem.`,
-                        icon: 'success',
-                        confirmButtonColor: '#005B3C',
-                        confirmButtonText: 'Tutup',
-                    });
-                },
-                onError: () => {
-                    Swal.fire({
-                        title: 'Gagal Menghapus!',
-                        text: 'Terjadi kendala pada sistem saat menghapus data bagian kuesioner.',
-                        icon: 'error',
-                        confirmButtonColor: '#d33',
-                    });
-                },
-            });
-        }
-    });
-};
 </script>
 
 <template>
     <Head title="Kelola Bagian Kuesioner - Super Admin" />
 
-    <div class="min-h-screen bg-[#f8fafc] flex font-sans">
-        
-        <!-- Sidebar Terpadu Superadmin -->
+    <div class="min-h-screen bg-slate-50 flex font-sans">
+        <!-- Sidebar Terpadu Super Admin -->
         <Sidebar />
 
         <!-- Area Konten Utama -->
         <div class="flex-1 flex flex-col min-w-0 lg:pl-72">
-            
-            <!-- Header Solid Hijau Resmi UKDW #0D542B -->
-            <header class="bg-[#0D542B] text-white pt-8 pb-20 px-4 sm:px-6 lg:px-8">
-                <div class="w-full max-w-[1400px] mx-auto flex flex-col md:flex-row md:items-center justify-between gap-6">
-                <div>
-                    <div class="flex items-center gap-2 mb-2">
-                        <Link 
-                            href="/superadmin/pertanyaan" 
-                            class="text-xs font-semibold text-white/80 hover:text-white flex items-center gap-1 transition-colors"
+            <!-- Header Halaman Bersih & Flat -->
+            <div class="bg-white border-b border-gray-200 px-6 py-5">
+                <div class="w-full flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div>
+                        <h1 class="text-xl font-bold text-gray-900">
+                            Kelola Bagian Kuesioner (Section)
+                        </h1>
+                        <p class="text-xs text-gray-500 mt-0.5">
+                            Pengaturan struktur kelompok bab/bagian kuesioner dan urutan alur pengisian alumni.
+                        </p>
+                    </div>
+
+                    <div class="flex items-center gap-2.5">
+                        <Link
+                            href="/superadmin/pertanyaan"
+                            class="px-3 py-1.5 rounded-lg border border-gray-300 text-xs font-semibold text-gray-700 hover:bg-gray-50 transition-colors flex items-center gap-1.5"
                         >
-                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
-                            <span>Kembali ke Kelola Pertanyaan</span>
+                            <svg class="w-3.5 h-3.5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            <span>Kelola Butir Pertanyaan</span>
                         </Link>
-                    </div>
-                    <h1 class="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
-                        Kelola Bagian Kuesioner (Section)
-                    </h1>
-                    <p class="text-white/90 font-medium mt-1 max-w-2xl text-sm sm:text-base leading-relaxed">
-                        Atur struktur bab/bagian kuesioner Tracer Study, urutan penomoran alur pengisian alumni, dan keterhubungan kuesioner.
-                    </p>
-                </div>
 
-                <!-- Tombol Pintas ke Halaman Pertanyaan -->
-                <div class="flex items-center gap-3">
-                    <Link
-                        href="/superadmin/pertanyaan"
-                        class="px-5 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 text-white font-bold text-xs sm:text-sm transition-all flex items-center gap-2"
-                    >
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                        <span>Kelola Butir Pertanyaan</span>
-                    </Link>
-                </div>
-            </div>
-        </header>
-
-        <!-- Main Card Container -->
-        <main class="w-full max-w-[1400px] mx-auto -mt-16 px-4 sm:px-6 lg:px-8 relative z-20">
-            <div class="bg-white rounded-[2rem] shadow-xl border border-gray-100 overflow-hidden relative transition-all duration-300">
-                
-                <!-- Bar Statistik & Filter Bagian Atas -->
-                <div class="p-6 md:p-8 border-b border-gray-100 flex flex-col md:flex-row md:items-center justify-between gap-6">
-                    
-                    <!-- Kiri: Statistik Ringkas -->
-                    <div class="flex items-center gap-4 sm:gap-6 flex-wrap">
-                        <div class="flex items-center gap-3 bg-emerald-50/60 border border-emerald-100 px-4 py-2.5 rounded-2xl">
-                            <div class="w-9 h-9 rounded-xl bg-[#005B3C] text-white flex items-center justify-center font-extrabold text-sm">
-                                {{ sections.length }}
-                            </div>
-                            <div>
-                                <div class="text-xs text-gray-500 font-semibold">Total Bagian</div>
-                                <div class="text-sm font-extrabold text-[#005B3C]">Section Kuesioner</div>
-                            </div>
-                        </div>
-
-                        <div class="flex items-center gap-3 bg-gray-50 border border-gray-200/80 px-4 py-2.5 rounded-2xl">
-                            <div class="w-9 h-9 rounded-xl bg-gray-700 text-white flex items-center justify-center font-extrabold text-sm">
-                                {{ totalQuestionsCount }}
-                            </div>
-                            <div>
-                                <div class="text-xs text-gray-500 font-semibold">Total Pertanyaan</div>
-                                <div class="text-sm font-extrabold text-gray-800">Butir Tersebar</div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Kanan: Pencarian & Tombol Tambah Section -->
-                    <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-                        <!-- Kotak Pencarian -->
-                        <div class="relative min-w-[260px]">
-                            <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-gray-400">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
-                            </span>
-                            <input
-                                type="text"
-                                v-model="searchQuery"
-                                placeholder="Cari nama bagian atau kuesioner..."
-                                class="w-full pl-9 pr-4 py-2.5 rounded-xl text-xs sm:text-sm border border-gray-200 focus:ring-2 focus:ring-[#005B3C] focus:border-transparent bg-gray-50/50"
-                            />
-                        </div>
-
-                        <!-- Tombol Tambah Section Baru -->
                         <button
                             type="button"
-                            @click="openAddModal"
-                            class="px-6 py-2.5 bg-[#0D542B] hover:bg-[#08381c] text-white font-bold text-xs sm:text-sm rounded-xl shadow-xs transition-all flex items-center justify-center gap-2 cursor-pointer shrink-0"
+                            @click="openSectionModal()"
+                            class="px-3.5 py-1.5 bg-[#0D542B] hover:bg-[#08381c] text-white font-semibold text-xs rounded-lg transition-colors flex items-center gap-1.5 cursor-pointer shadow-xs"
                         >
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                            </svg>
                             <span>Tambah Bagian</span>
                         </button>
                     </div>
                 </div>
+            </div>
 
-                <!-- Konten Daftar Section -->
-                <div class="p-6 md:p-8">
-                    
-                    <!-- Kondisi Jika Belum Ada Data Section Sama Sekali -->
-                    <div v-if="filteredSections.length === 0" class="text-center py-16 px-4 bg-gray-50/50 rounded-2xl border border-dashed border-gray-200">
-                        <div class="w-16 h-16 mx-auto mb-4 rounded-full bg-emerald-50 text-[#0D542B] flex items-center justify-center">
-                            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
-                            </svg>
-                        </div>
-                        <h3 class="text-base font-bold text-gray-800">
-                            {{ searchQuery ? 'Tidak ada bagian yang cocok dengan pencarian' : 'Belum Ada Bagian Kuesioner' }}
-                        </h3>
-                        <p class="text-xs text-gray-500 mt-1 max-w-sm mx-auto">
-                            {{ searchQuery ? 'Coba gunakan kata kunci pencarian yang lain.' : 'Mulai dengan menambahkan bagian pertama untuk mengelompokkan butir pertanyaan kuesioner Anda.' }}
-                        </p>
-                        <button
-                            v-if="!searchQuery"
-                            type="button"
-                            @click="openAddModal"
-                            class="mt-5 px-5 py-2 rounded-xl bg-[#0D542B] hover:bg-[#08381c] text-white font-bold text-xs shadow-xs transition-all cursor-pointer"
-                        >
-                            + Tambah Bagian Sekarang
-                        </button>
+            <!-- Konten Tabel Utama -->
+            <main class="w-full p-6 space-y-4">
+                <!-- Bilah Pencarian & Ringkasan -->
+                <div class="bg-white p-4 rounded-xl border border-gray-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+                    <div class="flex items-center gap-3">
+                        <span class="text-gray-600 font-medium">Total: <strong>{{ sections.length }}</strong> Bagian ({{ totalQuestionsCount }} Pertanyaan)</span>
                     </div>
 
-                    <!-- Daftar Kartu Section (Tampilan List Interaktif Bebas Hover Border) -->
-                    <div v-else class="space-y-4">
-                        <div
-                            v-for="(sec, index) in filteredSections"
-                            :key="sec.id"
-                            class="group bg-white rounded-2xl border border-gray-100 p-5 sm:p-6 shadow-xs hover:shadow-md transition-shadow flex flex-col md:flex-row md:items-center justify-between gap-5 relative overflow-hidden"
-                        >
-                            <!-- Garis Aksen Kiri Warna Hijau UKDW -->
-                            <div class="absolute left-0 top-0 bottom-0 w-1.5 bg-[#0D542B]"></div>
+                    <!-- Kotak Pencarian -->
+                    <div class="relative w-full sm:w-64">
+                        <span class="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none text-gray-400">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                            </svg>
+                        </span>
+                        <input
+                            type="text"
+                            v-model="searchQuery"
+                            placeholder="Cari nama bagian..."
+                            class="w-full pl-8 pr-3 py-1.5 border border-gray-300 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-emerald-700"
+                        />
+                    </div>
+                </div>
 
-                            <!-- Bagian Kiri: Nomor Urut, Judul Section, & Info Kuesioner -->
-                            <div class="flex items-start gap-4 sm:gap-5 pl-2">
-                                
-                                <!-- Badge Urutan Section -->
-                                <div class="shrink-0 flex flex-col items-center justify-center w-12 h-12 rounded-2xl bg-[#0D542B] text-white font-extrabold text-base shadow-xs">
-                                    <span class="text-[9px] font-bold uppercase tracking-wider text-white/80 -mb-1">Sec</span>
-                                    <span>{{ sec.order }}</span>
-                                </div>
-
-                                <!-- Judul & Metadata Section -->
-                                <div class="space-y-1.5">
-                                    <div class="flex items-center gap-2.5 flex-wrap">
-                                        <h3 class="text-base sm:text-lg font-extrabold text-gray-900 group-hover:text-[#005B3C] transition-colors tracking-tight">
-                                            {{ sec.title }}
-                                        </h3>
-                                        <!-- Badge Kuesioner Induk -->
-                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-gray-100 text-gray-600 border border-gray-200">
-                                            {{ sec.kuesioner?.title || sec.questionnaire?.title || 'Kuesioner Umum' }} ({{ sec.kuesioner?.year || sec.questionnaire?.year || '-' }})
-                                        </span>
-                                    </div>
-
-                                    <div class="flex items-center gap-4 text-xs font-medium text-gray-500 flex-wrap">
-                                        <!-- Jumlah Butir Pertanyaan -->
-                                        <div class="flex items-center gap-1.5">
-                                            <svg class="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path></svg>
-                                            <span class="font-bold text-gray-700">{{ sec.subpertanyaans_count ?? sec.questions_count ?? 0 }}</span> Butir Pertanyaan
+                <!-- Tabel Data Bagian Kuesioner -->
+                <div class="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-2xs">
+                    <table class="w-full text-left border-collapse text-xs">
+                        <thead>
+                            <tr class="bg-gray-50 border-b border-gray-200 text-gray-600 font-bold uppercase tracking-wider text-[11px]">
+                                <th class="py-3 px-3 w-16 text-center">Urut</th>
+                                <th class="py-3 px-4">Judul & Deskripsi Bagian</th>
+                                <th class="py-3 px-4 w-52">Kuesioner Induk</th>
+                                <th class="py-3 px-3 w-32 text-center">Jumlah Soal</th>
+                                <th class="py-3 px-3 w-28 text-center">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-200">
+                            <tr
+                                v-for="(sec, index) in filteredSections"
+                                :key="sec.id"
+                                class="hover:bg-slate-50/70 transition-colors"
+                            >
+                                <!-- Urutan -->
+                                <td class="py-3 px-2 text-center">
+                                    <div class="flex items-center justify-center gap-1">
+                                        <span class="font-bold text-gray-700 text-xs">{{ sec.order }}</span>
+                                        <div class="flex flex-col gap-0.5">
+                                            <button
+                                                type="button"
+                                                title="Naik"
+                                                :disabled="index === 0 || isReordering"
+                                                @click="handleMoveSection(sec, 'up')"
+                                                class="p-0.5 text-gray-400 hover:text-gray-800 disabled:opacity-20 cursor-pointer disabled:cursor-not-allowed"
+                                            >
+                                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 15l7-7 7 7" />
+                                                </svg>
+                                            </button>
+                                            <button
+                                                type="button"
+                                                title="Turun"
+                                                :disabled="index === filteredSections.length - 1 || isReordering"
+                                                @click="handleMoveSection(sec, 'down')"
+                                                class="p-0.5 text-gray-400 hover:text-gray-800 disabled:opacity-20 cursor-pointer disabled:cursor-not-allowed"
+                                            >
+                                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7" />
+                                                </svg>
+                                            </button>
                                         </div>
+                                    </div>
+                                </td>
 
-                                        <span class="text-gray-300">•</span>
+                                <!-- Judul & Deskripsi -->
+                                <td class="py-3 px-4">
+                                    <span class="font-bold text-gray-900 text-xs block">
+                                        {{ sec.title }}
+                                    </span>
+                                    <p v-if="sec.description" class="text-gray-500 text-[11px] mt-0.5 leading-normal">
+                                        {{ sec.description }}
+                                    </p>
+                                    <span v-else class="text-gray-400 text-[11px] italic">
+                                        Tidak ada deskripsi tambahan
+                                    </span>
+                                </td>
 
-                                        <!-- Tautan Langsung ke Kelola Pertanyaan di Section Ini -->
-                                        <Link
-                                             :href="`/superadmin/pertanyaan?sec_id=${sec.id}`"
-                                             class="text-[#005B3C] hover:underline font-bold inline-flex items-center gap-1"
-                                         >
-                                             <span>Buka Daftar Soal</span>
-                                             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
-                                         </Link>
-                                     </div>
-                                 </div>
-                             </div>
+                                <!-- Kuesioner Induk -->
+                                <td class="py-3 px-4">
+                                    <span class="text-gray-700 font-medium">
+                                        {{ sec.kuesioner?.title || sec.questionnaire?.title || 'Kuesioner Umum' }}
+                                        <span v-if="sec.kuesioner?.year || sec.questionnaire?.year" class="text-gray-500 text-[11px]">
+                                            ({{ sec.kuesioner?.year || sec.questionnaire?.year }})
+                                        </span>
+                                    </span>
+                                </td>
 
-                             <!-- Bagian Kanan: Kontrol Reorder & Tombol Aksi CRUD -->
-                             <div class="flex items-center justify-end gap-2.5 border-t md:border-t-0 pt-4 md:pt-0 border-gray-100 shrink-0">
-                                 
-                                 <!-- Grup Tombol Reorder Urutan (Naik / Turun) -->
-                                 <div class="flex items-center bg-gray-50 p-1 rounded-xl border border-gray-200">
-                                     <!-- Tombol Naik (Up) -->
-                                     <button
-                                         type="button"
-                                         title="Pindahkan Posisi ke Atas"
-                                         :disabled="index === 0 || isReordering"
-                                         @click="handleMoveSection(sec, 'up')"
-                                         class="p-1.5 rounded-lg text-gray-600 hover:text-[#005B3C] hover:bg-white disabled:opacity-30 disabled:hover:bg-transparent transition-all cursor-pointer disabled:cursor-not-allowed"
-                                     >
-                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 15l7-7 7 7"></path></svg>
-                                     </button>
+                                <!-- Jumlah Soal -->
+                                <td class="py-3 px-3 text-center">
+                                    <Link
+                                        :href="`/superadmin/pertanyaan?sec_id=${sec.id}`"
+                                        class="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-emerald-50 text-emerald-800 hover:bg-emerald-100 font-semibold text-[11px] border border-emerald-200 transition-colors"
+                                        title="Buka daftar soal untuk bagian ini"
+                                    >
+                                        <span>{{ sec.subpertanyaans_count ?? sec.questions_count ?? (sec.subpertanyaans?.length ?? 0) }} Soal</span>
+                                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                                        </svg>
+                                    </Link>
+                                </td>
 
-                                     <div class="h-3 w-px bg-gray-200 mx-0.5"></div>
+                                <!-- Aksi -->
+                                <td class="py-3 px-3 text-center">
+                                    <div class="flex items-center justify-center gap-1">
+                                        <!-- Detail (Mata) -->
+                                        <button
+                                            type="button"
+                                            @click="openDetailModal(sec)"
+                                            title="Detail Bagian"
+                                            class="p-1 text-gray-500 hover:text-gray-900 hover:bg-gray-100 rounded cursor-pointer"
+                                        >
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                            </svg>
+                                        </button>
 
-                                     <!-- Tombol Turun (Down) -->
-                                     <button
-                                         type="button"
-                                         title="Pindahkan Posisi ke Bawah"
-                                         :disabled="index === filteredSections.length - 1 || isReordering"
-                                         @click="handleMoveSection(sec, 'down')"
-                                         class="p-1.5 rounded-lg text-gray-600 hover:text-[#005B3C] hover:bg-white disabled:opacity-30 disabled:hover:bg-transparent transition-all cursor-pointer disabled:cursor-not-allowed"
-                                     >
-                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"></path></svg>
-                                     </button>
-                                 </div>
+                                        <!-- Edit (Pensil) -->
+                                        <button
+                                            type="button"
+                                            @click="openSectionModal(sec)"
+                                            title="Sunting Bagian"
+                                            class="p-1 text-gray-500 hover:text-emerald-800 hover:bg-emerald-50 rounded cursor-pointer"
+                                        >
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                            </svg>
+                                        </button>
 
-                                 <!-- Tombol Sunting (Edit) -->
-                                 <button
-                                     type="button"
-                                     @click="openEditModal(sec)"
-                                     title="Sunting Bagian"
-                                     class="p-2.5 text-gray-600 hover:text-[#005B3C] hover:bg-emerald-50 rounded-xl border border-gray-200 hover:border-emerald-200 transition-all cursor-pointer"
-                                 >
-                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
-                                 </button>
+                                        <!-- Hapus (Sampah) -->
+                                        <button
+                                            type="button"
+                                            @click="handleDeleteSection(sec)"
+                                            title="Hapus Bagian"
+                                            class="p-1 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded cursor-pointer"
+                                        >
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                            </svg>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
 
-                                 <!-- Tombol Hapus (Delete) -->
-                                 <button
-                                     type="button"
-                                     @click="handleDeleteSection(sec)"
-                                     title="Hapus Bagian"
-                                     class="p-2.5 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-xl border border-gray-200 hover:border-red-200 transition-all cursor-pointer"
-                                 >
-                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
-                                 </button>
-                             </div>
-                         </div>
-                     </div>
-                 </div>
-             </div>
-         </main>
-
-         <!-- Modal Dialog Tambah / Edit Section -->
-         <SectionModal
-             :show="showSectionModal"
-             :isEdit="isEditSection"
-             :section="selectedSection"
-             :kuesioners="kuesioners && kuesioners.length ? kuesioners : questionnaires"
-             :questionnaires="kuesioners && kuesioners.length ? kuesioners : questionnaires"
-             :nextOrder="nextAvailableOrder"
-             @close="closeSectionModal"
-         />
+                            <!-- Empty State -->
+                            <tr v-if="filteredSections.length === 0">
+                                <td colspan="5" class="py-10 text-center text-gray-500">
+                                    <p class="font-bold text-gray-700">Tidak ada bagian yang cocok</p>
+                                    <p class="text-xs text-gray-400 mt-1">Coba gunakan kata kunci pencarian yang lain.</p>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </main>
         </div>
     </div>
 </template>

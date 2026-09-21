@@ -45,22 +45,15 @@ class KuesionerController extends Controller
         // 2. Sinkronisasi otomatis data profil (Identitas & Perusahaan/Atasan) ke tabel tracer
         KuesionerSyncService::syncProfileResponses($biodata);
 
-        // 3. Daftar pertanyaan yang dikelola secara terpusat di formulir Profil Alumni (/alumni/profile)
-        // Pertanyaan-pertanyaan ini tidak perlu dimunculkan ulang di wizard kuesioner
-        $profileManagedCodes = [
-            'F1', 'F2A', 'F2B', 'F2C', 'F2D',
-            'BIO_TEMPAT_LAHIR', 'BIO_TANGGAL_LAHIR', 'BIO_JK', 'BIO_TGL_LULUS', 'BIO_JUDUL_TA', 'BIO_NIK', 'BIO_NPWP',
-            'F5a1', 'F5a2', 'F510', 'F5B', 'F5C', 'F5D',
-            'F2E', 'F2E1', 'F2E2', 'F2E3', 'F2F', 'F2G', 'F2H',
-            'F11', 'F505',
-        ];
-
-        // 4. Ambil data kuesioner aktif dengan mengecualikan butir pertanyaan profil
+        // 3. Ambil data kuesioner aktif dengan menyaring butir pertanyaan yang diatur tampil di kuesioner (kuesioner / both)
         $kuesioner = Kuesioner::where('is_active', true)
-            ->with(['sections' => function ($query) use ($profileManagedCodes) {
+            ->with(['sections' => function ($query) {
                 $query->orderBy('order', 'asc')
-                    ->with(['subpertanyaans' => function ($qQuery) use ($profileManagedCodes) {
-                        $qQuery->whereNotIn('kode_pertanyaan', $profileManagedCodes)
+                    ->with(['subpertanyaans' => function ($qQuery) {
+                        $qQuery->where(function ($subQ) {
+                            $subQ->whereIn('tampil_di', ['kuesioner', 'both'])
+                                ->orWhereNull('tampil_di');
+                        })
                             ->orderBy('order', 'asc')
                             ->with('detils');
                     }]);
@@ -68,7 +61,7 @@ class KuesionerController extends Controller
             ->first();
 
         if ($kuesioner) {
-            // Saring hanya seksi yang memiliki pertanyaan aktif (tidak kosong setelah butir profil disaring)
+            // Saring hanya seksi yang memiliki pertanyaan aktif untuk kuesioner
             $filteredSections = $kuesioner->sections->filter(function ($section) {
                 return $section->subpertanyaans->isNotEmpty();
             })->values();

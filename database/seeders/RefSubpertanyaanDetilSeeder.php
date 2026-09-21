@@ -62,10 +62,8 @@ class RefSubpertanyaanDetilSeeder extends Seeder
             ['kode_pertanyaan' => 'F504', 'order' => 1, 'kode_opsi' => '1', 'option_text' => 'Ya', 'jump_to' => 'F502'],
             ['kode_pertanyaan' => 'F504', 'order' => 2, 'kode_opsi' => '2', 'option_text' => 'Tidak', 'jump_to' => 'F506'],
 
-            // F505 (Berapa rata-rata pendapatan per bulan / Take home pay)
-            ['kode_pertanyaan' => 'F505', 'order' => 1, 'kode_opsi' => 'F5051', 'option_text' => 'Dari Pekerjaan Utama', 'jump_to' => null],
-            ['kode_pertanyaan' => 'F505', 'order' => 2, 'kode_opsi' => 'F5052', 'option_text' => 'Dari Lembur dan Tips', 'jump_to' => null],
-            ['kode_pertanyaan' => 'F505', 'order' => 3, 'kode_opsi' => 'F5053', 'option_text' => 'Dari Pekerjaan Lainnya', 'jump_to' => null],
+            // F505 (Berapa rata-rata pendapatan per bulan / Take home pay - hanya 1 opsi tunggal)
+            ['kode_pertanyaan' => 'F505', 'order' => 1, 'kode_opsi' => 'F5051', 'option_text' => 'Rata-rata Pendapatan per Bulan (Take Home Pay)', 'jump_to' => null],
 
             // F8 (Status pekerjaan saat ini)
             ['kode_pertanyaan' => 'F8', 'order' => 1, 'kode_opsi' => '1', 'option_text' => 'Bekerja (full time/part time)', 'jump_to' => null],
@@ -185,6 +183,11 @@ class RefSubpertanyaanDetilSeeder extends Seeder
                 ];
             }
         }
+
+        // Bersihkan opsi lama F505 yang berlebih jika sebelumnya ada 3 opsi (F5052, F5053)
+        RefSubpertanyaanDetil::where('kode_pertanyaan', 'F505')
+            ->whereNotIn('kode_opsi', ['F5051'])
+            ->delete();
 
         $subpertanyaans = RefSubpertanyaan2021::all()->keyBy('kode_pertanyaan');
 

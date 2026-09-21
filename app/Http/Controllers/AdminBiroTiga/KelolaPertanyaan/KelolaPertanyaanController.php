@@ -43,11 +43,13 @@ class KelolaPertanyaanController extends Controller
         // Peta kode pertanyaan ke teks pertanyaan untuk referensi jump_to di tabel
         $targetQuestionMap = RefSubpertanyaan2021::pluck('subpertanyaan', 'kode_pertanyaan')->toArray();
 
-        // Pilihan target jump_to untuk dropdown opsi (dengan label kode + teks lengkap)
+        // Pilihan target jump_to untuk dropdown opsi (dengan label kode + teks lengkap dan kelompok_pertanyaan_id)
         $availableJumpTargets = RefSubpertanyaan2021::orderBy('order', 'asc')
             ->get()
             ->map(function ($q) {
                 return [
+                    'id' => $q->id,
+                    'kelompok_pertanyaan_id' => $q->kelompok_pertanyaan_id,
                     'kode_pertanyaan' => $q->kode_pertanyaan,
                     'label' => $q->kode_pertanyaan.' — '.Str::limit($q->subpertanyaan, 65),
                     'text' => $q->subpertanyaan,

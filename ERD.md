@@ -397,7 +397,9 @@ erDiagram
 ### C. Modul Kuesioner Tracer Study Universitas (Standar 2021)
 1. **`kuesioner`**: Header master instrumen kuesioner tingkat universitas.
 2. **`kelompok_pertanyaan`**: Bagian atau seksi kuesioner universitas (misal: *Identitas, Status Bekerja, Penilaian Proses Pembelajaran, Kompetensi Lulusan*).
-3. **`ref_subpertanyaan2021`**: Butir pertanyaan kuesioner universitas (`F1` s.d. `F22`, `BIO_TEMPAT_LAHIR`, `BIO_TANGGAL_LAHIR`, dll.).
+3. **`ref_subpertanyaan2021`**: 
+   - Butir pertanyaan kuesioner universitas (`F1` s.d. `F22`, `BIO_TEMPAT_LAHIR`, `BIO_TANGGAL_LAHIR`, dll.).
+   - Kolom: `id`, `kelompok`, `kelompok_pertanyaan_id`, `kode_pertanyaan`, `subpertanyaan`, `type`, `keterangan`, `wajib`, `tampil_di` (`kuesioner`, `profile`, `both`), `order`.
 4. **`ref_subpertanyaan_detil`**: Pilihan opsi jawaban butir kuesioner universitas beserta kolom `jump_to` untuk alur percabangan (*branching logic*).
 5. **`tracer`**:
    - Tabel penyimpanan jawaban kuesioner universitas milik alumni.

@@ -344,10 +344,12 @@ c:/study/tracerstudy/resources/js/Pages/SuperAdmin/Alumni/Index.vue
 c:/study/tracerstudy/resources/js/Pages/SuperAdmin/Alumni/Show.vue
 c:/study/tracerstudy/resources/js/Pages/SuperAdmin/Pertanyaan/Index.vue
 c:/study/tracerstudy/resources/js/Pages/SuperAdmin/Pertanyaan/Components/QuestionModal.vue
+c:/study/tracerstudy/resources/js/Pages/SuperAdmin/Pertanyaan/Components/QuestionDetailModal.vue
 c:/study/tracerstudy/resources/js/Pages/SuperAdmin/Pertanyaan/Components/OptionModal.vue
 c:/study/tracerstudy/resources/js/Pages/SuperAdmin/Pertanyaan/Components/QuestionCard.vue
 c:/study/tracerstudy/resources/js/Pages/SuperAdmin/Section/Index.vue
 c:/study/tracerstudy/resources/js/Pages/SuperAdmin/Section/Components/SectionModal.vue
+c:/study/tracerstudy/resources/js/Pages/SuperAdmin/Section/Components/SectionDetailModal.vue
 c:/study/tracerstudy/resources/js/Pages/SuperAdmin/Components/Navbar.vue
 
 D. HALAMAN ADMIN BIRO 3 (AdminBiroTiga)

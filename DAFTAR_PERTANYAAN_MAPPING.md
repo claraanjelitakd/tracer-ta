@@ -26,6 +26,12 @@ Sistem Tracer Study UKDW membagi pengisian data alumni menjadi 3 pintu utama:
 | **Kuesioner Khusus Prodi** | `/alumni/kuesioner-prodi` | `resources/js/Pages/Alumni/KuesionerProdi.vue` | Dynamic Form Sections per Prodi |
 | **Navigasi Utama Terpadu** | *(Global)* | `resources/js/Pages/Alumni/Components/Navbar.vue` | Terintegrasi seragam di semua halaman alumni |
 
+> **Konfigurasi Lokasi Tampil Butir Soal (Super Admin)**:
+> Setiap butir pertanyaan pada instrumen kuesioner kini memiliki pengaturan kolom `tampil_di` pada tabel `ref_subpertanyaan2021` yang dapat dikonfigurasi melalui SuperAdmin:
+> 1. `kuesioner`: Butir pertanyaan hanya ditampilkan saat alumni mengisi formulir kuesioner Tracer Study.
+> 2. `profile`: Butir pertanyaan dikelola khusus pada formulir profil alumni (`/alumni/profile`) dan disinkronkan otomatis tanpa muncul ganda di kuesioner.
+> 3. `both`: Butir pertanyaan dapat diakses dan diisi baik melalui formulir kuesioner maupun profil biodata.
+
 > **Catatan untuk Admin**: Seluruh pembaruan profil melalui halaman admin (Super Admin, Biro 3, Admin Fakultas, Admin Prodi) dilayani oleh satu service terpusat: [`AdminAlumniProfileService`](app/Services/Alumni/AdminAlumniProfileService.php). Lihat [Bagian 6](#6-adminalumniprofileservice--persistensi-terpusat-oleh-admin) untuk detail.
 
 ---
@@ -47,7 +53,7 @@ Berikut adalah rincian setiap butir pertanyaan standar Dikti, peletakan komponen
 | **F4** | Bagaimana cara mencari pekerjaan | `multiple_choice` / `checkbox` | `KartuPertanyaan.vue` | `tracer.answer_json` (F4) | Multi-pilihan strategi mencari kerja (iklan, bursa kerja, relasi, dll.). |
 | **F504** | Apakah telah mendapatkan pekerjaan ≤ 6 bulan | `radio` | `KartuPertanyaan.vue` | `tracer.answer` (F504) | Opsi "Ya" $\rightarrow$ `jump_to: 'F502'`, Opsi "Tidak" $\rightarrow$ `jump_to: 'F506'`. |
 | **F502** | Dalam berapa bulan mendapatkan pekerjaan | `number` | `KartuPertanyaan.vue` | `tracer.answer` (F502) | Satuan unit: Bulan. Dilengkapi stepper angka `+` / `-`. |
-| **F505** | Rata-rata pendapatan per bulan (Take Home Pay) | `multiple_number` | `FormKarier.vue`<br>`KartuPertanyaan.vue` | `biodata.gaji`<br>`tracer.answer_json` (F5051..F5053) | Rincian: Pekerjaan Utama, Lembur/Tips, Pekerjaan Lainnya. Format ribuan otomatis. **Input gaji dari admin disanitasi oleh `AdminAlumniProfileService`: separator ribuan dibersihkan, hasil dibulatkan ke integer agar tidak berlipat ganda.** |
+| **F505** | Rata-rata pendapatan per bulan (Take Home Pay) | `multiple_number` | `FormKarier.vue`<br>`KartuPertanyaan.vue` | `biodata.gaji`<br>`tracer.answer_json` (F5051) | 1 Opsi tunggal: Rata-rata Pendapatan per Bulan (Take Home Pay). Batasan constraint: Minimal Rp 1.000 (kelipatan ribuan). Format ribuan otomatis. **Input gaji dari admin disanitasi oleh `AdminAlumniProfileService`: separator ribuan dibersihkan, hasil dibulatkan ke integer agar tidak berlipat ganda.** |
 | **F505A**| Kesesuaian Gaji dengan UMR | `radio` | `KartuPertanyaan.vue` | `tracer.answer` (F505A) | Pilihan: Sesuai / Tidak Sesuai. `jump_to: 'F6'`. |
 | **F506** | Dalam berapa bulan mendapatkan pekerjaan (pencarian > 6 bulan) | `number` | `KartuPertanyaan.vue` | `tracer.answer` (F506) | Satuan unit: Bulan. Dilengkapi stepper angka `+` / `-`. |
 | **F5C** | Posisi/jabatan wiraswasta | `select`, `text` | `FormKarier.vue`<br>`KartuPertanyaan.vue` | `biodata.posisi_wiraswasta`<br>`tracer.answer` (F5C) | **Eksklusif**: Hanya diisi jika `biodata.kategori_pekerjaan = 'Wiraswasta'`. Jika alumni bukan wiraswasta, field ini di-`null`-kan otomatis oleh `AdminAlumniProfileService::updateProfile()`. |

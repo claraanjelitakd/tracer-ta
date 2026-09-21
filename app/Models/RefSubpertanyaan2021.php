@@ -24,6 +24,7 @@ class RefSubpertanyaan2021 extends Model
         'type',
         'keterangan',
         'wajib',
+        'tampil_di',
         'order',
     ];
 
