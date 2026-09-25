@@ -98,31 +98,5 @@ class UserSeeder extends Seeder
             }
         }
 
-        // 2. Seed 10 Data User Alumni Dummy
-        $prodiList = Prodi::all();
-        if ($prodiList->isEmpty()) {
-            return;
-        }
-
-        for ($i = 1; $i <= 10; $i++) {
-            $randomProdi = $prodiList->random();
-            $angkatanKode = str_pad(rand(20, 24), 2, '0', STR_PAD_LEFT);
-            $nomorUrut = str_pad($i, 4, '0', STR_PAD_LEFT);
-            $nim = $randomProdi->kode_prodi.'1'.$angkatanKode.$nomorUrut;
-
-            // Password format DDMMYYYY
-            $tglLahir = '15082001';
-
-            User::updateOrCreate(
-                ['username' => $nim],
-                [
-                    'name' => null, // Dikosongkan agar tidak reduksi dengan DataAkademik
-                    'email' => null, // Dikosongkan, pakai email_pribadi di DataAkademik
-                    'password' => Hash::make($tglLahir),
-                    'role' => 'alumni',
-                    'must_change_password' => true,
-                ]
-            );
-        }
     }
 }

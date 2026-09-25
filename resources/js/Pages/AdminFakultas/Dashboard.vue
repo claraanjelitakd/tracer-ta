@@ -39,65 +39,68 @@ const props = defineProps({
 
         <!-- Area Konten Utama -->
         <div class="flex-1 flex flex-col min-w-0 lg:pl-72">
-            <!-- Header Solid Hijau Resmi UKDW #0D542B -->
-            <header class="bg-[#0D542B] text-white pt-8 pb-16 px-4 sm:px-6 lg:px-8">
-                <div class="w-full max-w-[1400px] mx-auto flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <!-- Header Halaman Bersih & Flat -->
+            <div class="bg-white border-b border-gray-200 px-6 py-5">
+                <div class="w-full flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div>
-                        <div class="inline-flex items-center px-3 py-1 bg-black/20 text-white rounded-full text-xs font-bold uppercase tracking-wider mb-2">
-                            Administrator Fakultas
+                        <div class="flex items-center gap-2 text-xs text-gray-500 font-medium mb-1">
+                            <span>Tracer Study</span>
+                            <span>/</span>
+                            <span class="text-gray-800 font-semibold">Dashboard Fakultas</span>
                         </div>
-                        <h1 class="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
+                        <h1 class="text-xl font-bold text-gray-900">
                             Dashboard {{ fakultas?.nama_fakultas || 'Fakultas' }}
                         </h1>
-                        <p class="text-white/90 text-sm sm:text-base font-normal mt-1 max-w-2xl leading-relaxed">
+                        <p class="text-xs text-gray-500 mt-0.5">
                             Pemantauan capaian kuesioner tracer study seluruh program studi di bawah naungan fakultas.
                         </p>
                     </div>
 
-                    <div class="bg-black/15 border border-white/20 px-5 py-3 rounded-2xl text-left md:text-right text-white">
-                        <span class="text-xs text-white/80 font-semibold uppercase tracking-wider block">Partisipasi Fakultas</span>
-                        <span class="text-base font-extrabold block text-[#FDC700]">{{ stats.persentase_selesai }}% Respon</span>
-                        <span class="text-xs text-white/80">{{ stats.total_selesai }} dari {{ stats.total_alumni }} Responden Selesai</span>
+                    <div class="flex items-center gap-2.5">
+                        <div class="px-3.5 py-1.5 rounded-lg bg-slate-50 border border-slate-200 text-slate-700 text-xs">
+                            <span class="text-[10px] text-slate-500 uppercase tracking-wider block font-semibold">Partisipasi Fakultas</span>
+                            <span class="font-bold text-[#0D542B] text-xs">{{ stats.persentase_selesai }}% ({{ stats.total_selesai }}/{{ stats.total_alumni }})</span>
+                        </div>
                     </div>
                 </div>
-            </header>
+            </div>
 
-            <!-- Main Content Area -->
-            <main class="w-full max-w-[1400px] mx-auto -mt-10 px-4 sm:px-6 lg:px-8 space-y-6 pb-16">
+            <!-- Main Content Area (Penuh, Flat, Tanpa Negative Margin) -->
+            <main class="flex-1 p-6 space-y-6 overflow-x-auto min-w-0">
                 
                 <!-- 4 KPI Summary Cards (Identik dengan Super Admin) -->
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-                    <div class="bg-white rounded-2xl p-6 shadow-sm">
+                    <div class="bg-white rounded-lg p-5 border border-slate-200 shadow-2xs">
                         <div class="flex items-center justify-between">
                             <span class="text-xs font-bold text-gray-500 uppercase tracking-wider">Total Alumni</span>
-                            <span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-gray-100 text-gray-700">Fakultas</span>
+                            <span class="px-2.5 py-0.5 rounded-md text-xs font-bold bg-gray-100 text-gray-700">Fakultas</span>
                         </div>
                         <div class="text-3xl font-extrabold text-gray-900 tracking-tight mt-3">{{ stats.total_alumni }}</div>
                         <p class="mt-1 text-xs text-gray-400">Seluruh prodi di fakultas</p>
                     </div>
 
-                    <div class="bg-white rounded-2xl p-6 shadow-sm">
+                    <div class="bg-white rounded-lg p-5 border border-slate-200 shadow-2xs">
                         <div class="flex items-center justify-between">
                             <span class="text-xs font-bold text-[#0D542B] uppercase tracking-wider">Tracer Selesai</span>
-                            <span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-[#0D542B] text-white">Lengkap</span>
+                            <span class="px-2.5 py-0.5 rounded-md text-xs font-bold bg-[#0D542B] text-white">Lengkap</span>
                         </div>
                         <div class="text-3xl font-extrabold text-[#0D542B] tracking-tight mt-3">{{ stats.total_selesai }}</div>
                         <p class="mt-1 text-xs text-gray-400">Profil & kuesioner lengkap</p>
                     </div>
 
-                    <div class="bg-white rounded-2xl p-6 shadow-sm">
+                    <div class="bg-white rounded-lg p-5 border border-slate-200 shadow-2xs">
                         <div class="flex items-center justify-between">
                             <span class="text-xs font-bold text-gray-700 uppercase tracking-wider">Belum Selesai</span>
-                            <span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-gray-100 text-gray-700">Proses</span>
+                            <span class="px-2.5 py-0.5 rounded-md text-xs font-bold bg-gray-100 text-gray-700">Proses</span>
                         </div>
                         <div class="text-3xl font-extrabold text-gray-900 tracking-tight mt-3">{{ stats.total_belum_selesai }}</div>
                         <p class="mt-1 text-xs text-gray-400">Masih dalam pengisian</p>
                     </div>
 
-                    <div class="bg-white rounded-2xl p-6 shadow-sm">
+                    <div class="bg-white rounded-lg p-5 border border-slate-200 shadow-2xs">
                         <div class="flex items-center justify-between">
                             <span class="text-xs font-bold text-gray-500 uppercase tracking-wider">Cakupan Prodi</span>
-                            <span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-gray-100 text-gray-700">Struktur</span>
+                            <span class="px-2.5 py-0.5 rounded-md text-xs font-bold bg-gray-100 text-gray-700">Struktur</span>
                         </div>
                         <div class="text-3xl font-extrabold text-gray-900 tracking-tight mt-3">{{ stats.total_prodi }}</div>
                         <p class="mt-1 text-xs text-gray-400">Program studi aktif</p>
@@ -107,7 +110,7 @@ const props = defineProps({
                 <!-- Grid 2 Modul Navigasi Utama -->
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <!-- Modul 1: Direktori Alumni Fakultas -->
-                    <div class="bg-white rounded-3xl p-8 shadow-sm flex flex-col justify-between">
+                    <div class="bg-white rounded-lg p-6 border border-slate-200 shadow-2xs flex flex-col justify-between">
                         <div>
                             <div class="flex items-center justify-between mb-3">
                                 <span class="px-3 py-1 bg-[#0D542B] text-white text-xs font-bold rounded-lg uppercase tracking-wider">
@@ -131,7 +134,7 @@ const props = defineProps({
                             </span>
                             <Link 
                                 href="/fakultas/alumni" 
-                                class="inline-flex items-center px-6 py-3 bg-[#0D542B] hover:bg-[#08381c] text-white text-xs font-bold rounded-xl shadow-xs transition-all cursor-pointer"
+                                class="inline-flex items-center px-6 py-3 bg-[#0D542B] hover:bg-[#08381c] text-white text-xs font-bold rounded-lg shadow-xs transition-all cursor-pointer"
                             >
                                 <span>Buka Data Alumni</span>
                                 <span class="ml-1.5">&rarr;</span>
@@ -140,7 +143,7 @@ const props = defineProps({
                     </div>
 
                     <!-- Modul 2: Evaluasi Partisipasi Prodi -->
-                    <div class="bg-white rounded-3xl p-8 shadow-sm flex flex-col justify-between">
+                    <div class="bg-white rounded-lg p-6 border border-slate-200 shadow-2xs flex flex-col justify-between">
                         <div>
                             <div class="flex items-center justify-between mb-3">
                                 <span class="px-3 py-1 bg-[#FDC700] text-black text-xs font-bold rounded-lg uppercase tracking-wider">
@@ -164,7 +167,7 @@ const props = defineProps({
                             </span>
                             <Link 
                                 href="/fakultas/alumni" 
-                                class="inline-flex items-center px-6 py-3 bg-[#0D542B] hover:bg-[#08381c] text-white text-xs font-bold rounded-xl shadow-xs transition-all cursor-pointer"
+                                class="inline-flex items-center px-6 py-3 bg-[#0D542B] hover:bg-[#08381c] text-white text-xs font-bold rounded-lg shadow-xs transition-all cursor-pointer"
                             >
                                 <span>Lihat Seluruh Alumni</span>
                                 <span class="ml-1.5">&rarr;</span>
@@ -218,9 +221,9 @@ const props = defineProps({
                                     </td>
                                     <td class="px-6 py-4">
                                         <div class="flex items-center gap-3">
-                                            <div class="flex-1 bg-gray-200 rounded-full h-2 overflow-hidden">
+                                            <div class="flex-1 bg-gray-200 rounded-md h-2 overflow-hidden">
                                                 <div 
-                                                    class="h-2 rounded-full transition-all duration-500" 
+                                                    class="h-2 rounded-md transition-all duration-500" 
                                                     :class="prodi.response_rate >= 50 ? 'bg-[#0D542B]' : 'bg-[#FDC700]'"
                                                     :style="{ width: `${Math.min(prodi.response_rate, 100)}%` }"
                                                 ></div>
@@ -276,13 +279,13 @@ const props = defineProps({
                                     <td class="px-6 py-4 text-center">
                                         <span 
                                             v-if="alumni.is_complete"
-                                            class="inline-block px-3 py-1 bg-[#0D542B] text-white font-bold text-xs rounded-full"
+                                            class="inline-block px-3 py-1 bg-[#0D542B] text-white font-bold text-xs rounded-md"
                                         >
                                             Selesai
                                         </span>
                                         <span 
                                             v-else
-                                            class="inline-block px-3 py-1 bg-[#FDC700] text-black font-bold text-xs rounded-full"
+                                            class="inline-block px-3 py-1 bg-[#FDC700] text-black font-bold text-xs rounded-md"
                                         >
                                             Belum Selesai
                                         </span>

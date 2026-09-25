@@ -27,6 +27,7 @@ class DaftarPertanyaanProdiController extends Controller
         // Ambil seluruh section kuesioner prodi ini
         $sections = $prodiId
             ? ProdiQuestionSection::where('prodi_id', $prodiId)
+                ->withCount('questions')
                 ->orderBy('order', 'asc')
                 ->get()
             : collect();
@@ -39,11 +40,20 @@ class DaftarPertanyaanProdiController extends Controller
                 ->get()
             : collect();
 
+        // Ambil kode pertanyaan yang tersedia untuk target lompatan (jump_to)
+        $availableJumpTargets = $prodiId
+            ? ProdiQuestion::where('prodi_id', $prodiId)
+                ->whereNotNull('code')
+                ->orderBy('order', 'asc')
+                ->pluck('code')
+            : collect();
+
         return Inertia::render('AdminProdi/Pertanyaan/Index', [
             'user' => $user,
             'prodi' => $prodi,
             'questions' => $questions,
             'sections' => $sections,
+            'availableJumpTargets' => $availableJumpTargets,
         ]);
     }
 }

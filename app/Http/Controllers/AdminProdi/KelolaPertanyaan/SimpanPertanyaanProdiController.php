@@ -33,11 +33,15 @@ class SimpanPertanyaanProdiController extends Controller
                 Rule::unique('prodi_question', 'code')->where('prodi_id', $user->prodi_id),
             ],
             'question_text' => 'required|string',
-            'type' => 'required|string|in:text,textarea,number,single_choice,radio_input,radio_text,multiple_choice,dropdown,searchable_select,rating_5,multiple_number,matrix,matrix_dual,multiple_textbox,date,time,file,header',
+            'type' => 'required|string|in:text,textarea,number,single_choice,radio,radio_input,radio_text,multiple_choice,dropdown,searchable_select,rating_5,multiple_number,matrix,matrix_dual,multiple_textbox,date,time,file,header',
             'is_required' => 'boolean',
             'prodi_question_section_id' => 'nullable|exists:prodi_question_section,id',
             'order' => 'nullable|integer',
         ]);
+
+        if ($validated['type'] === 'radio') {
+            $validated['type'] = 'single_choice';
+        }
 
         // Jika section tidak dipilih atau tidak ada, ambil section pertama milik prodi ini atau buat default
         if (empty($validated['prodi_question_section_id'])) {
@@ -107,11 +111,15 @@ class SimpanPertanyaanProdiController extends Controller
                     ->ignore($question->id),
             ],
             'question_text' => 'required|string',
-            'type' => 'required|string|in:text,textarea,number,single_choice,radio_input,radio_text,multiple_choice,dropdown,searchable_select,rating_5,multiple_number,matrix,matrix_dual,multiple_textbox,date,time,file,header',
+            'type' => 'required|string|in:text,textarea,number,single_choice,radio,radio_input,radio_text,multiple_choice,dropdown,searchable_select,rating_5,multiple_number,matrix,matrix_dual,multiple_textbox,date,time,file,header',
             'is_required' => 'boolean',
             'prodi_question_section_id' => 'nullable|exists:prodi_question_section,id',
             'order' => 'nullable|integer',
         ]);
+
+        if ($validated['type'] === 'radio') {
+            $validated['type'] = 'single_choice';
+        }
 
         if (! empty($validated['prodi_question_section_id'])) {
             // Pastikan section milik prodi user
@@ -145,5 +153,71 @@ class SimpanPertanyaanProdiController extends Controller
         $question->delete();
 
         return redirect()->back()->with('success', 'Pertanyaan kuesioner prodi berhasil dihapus.');
+    }
+
+    /**
+     * Mengatur ulang urutan posisi butir pertanyaan kuesioner prodi.
+     */
+    public function reorder(Request $request): RedirectResponse
+    {
+        $user = Auth::user();
+        $prodiId = $user->prodi_id;
+
+        if ($request->has(['id', 'direction'])) {
+            $validated = $request->validate([
+                'id' => 'required|exists:prodi_question,id',
+                'direction' => 'required|in:up,down',
+            ]);
+
+            $currentQuestion = ProdiQuestion::where('id', $validated['id'])
+                ->where('prodi_id', $prodiId)
+                ->firstOrFail();
+
+            $operator = $validated['direction'] === 'up' ? '<' : '>';
+            $sortOrder = $validated['direction'] === 'up' ? 'desc' : 'asc';
+
+            $adjacentQuery = ProdiQuestion::where('prodi_id', $prodiId);
+            if ($currentQuestion->prodi_question_section_id) {
+                $adjacentQuery->where('prodi_question_section_id', $currentQuestion->prodi_question_section_id);
+            }
+
+            $adjacentQuestion = $adjacentQuery
+                ->where('order', $operator, $currentQuestion->order)
+                ->orderBy('order', $sortOrder)
+                ->first();
+
+            if (! $adjacentQuestion) {
+                $adjacentQuestion = ProdiQuestion::where('prodi_id', $prodiId)
+                    ->where('order', $operator, $currentQuestion->order)
+                    ->orderBy('order', $sortOrder)
+                    ->first();
+            }
+
+            if ($adjacentQuestion) {
+                $tempOrder = $currentQuestion->order;
+                $currentQuestion->update(['order' => $adjacentQuestion->order]);
+                $adjacentQuestion->update(['order' => $tempOrder]);
+            }
+
+            return redirect()->back()->with('success', 'Urutan pertanyaan berhasil dipindahkan.');
+        }
+
+        if ($request->has('orders')) {
+            $validated = $request->validate([
+                'orders' => 'required|array',
+                'orders.*.id' => 'required|exists:prodi_question,id',
+                'orders.*.order' => 'required|integer',
+            ]);
+
+            foreach ($validated['orders'] as $item) {
+                ProdiQuestion::where('id', $item['id'])
+                    ->where('prodi_id', $prodiId)
+                    ->update(['order' => $item['order']]);
+            }
+
+            return redirect()->back()->with('success', 'Seluruh urutan pertanyaan berhasil diperbarui.');
+        }
+
+        return redirect()->back()->withErrors(['message' => 'Parameter pengurutan tidak valid.']);
     }
 }

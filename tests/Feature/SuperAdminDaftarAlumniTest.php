@@ -150,6 +150,22 @@ class SuperAdminDaftarAlumniTest extends TestCase
     }
 
     /**
+     * Test filter target kelulusan pada direktori alumni.
+     */
+    public function test_superadmin_can_filter_alumni_by_target(): void
+    {
+        $response = $this->actingAs($this->superadmin)
+            ->get(route('superadmin.alumni.index', ['target' => 'Gasal 2024/2025|2024']));
+
+        $response->assertStatus(200);
+        $response->assertInertia(fn (Assert $page) => $page
+            ->component('SuperAdmin/Alumni/Index')
+            ->has('daftarTarget')
+            ->where('filters.target', 'Gasal 2024/2025|2024')
+        );
+    }
+
+    /**
      * Test superadmin dapat melihat halaman detail mahasiswa dengan F24.
      */
     public function test_superadmin_can_view_alumni_detail_page_with_questionnaire(): void

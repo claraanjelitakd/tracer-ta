@@ -178,4 +178,82 @@ class SuperAdminKelolaSectionTest extends TestCase
         $this->assertEquals(5, $secA->fresh()->order);
         $this->assertEquals(6, $secB->fresh()->order);
     }
+
+    /**
+     * Test superadmin dapat membuat kuesioner induk baru.
+     */
+    public function test_superadmin_can_create_kuesioner(): void
+    {
+        $response = $this->actingAs($this->superadmin)
+            ->post(route('superadmin.kuesioner.store'), [
+                'title' => 'Tracer Study UKDW 2024',
+                'description' => 'Kuesioner evaluasi alumni tahun 2024',
+                'year' => 2024,
+                'is_active' => true,
+            ]);
+
+        $response->assertRedirect();
+        $this->assertDatabaseHas('kuesioner', [
+            'title' => 'Tracer Study UKDW 2024',
+            'year' => 2024,
+            'is_active' => true,
+        ]);
+
+        // Pastikan kuesioner lama otomatis dinonaktifkan jika yang baru diset aktif
+        $this->assertFalse((bool) $this->kuesioner->fresh()->is_active);
+    }
+
+    /**
+     * Test superadmin dapat memperbarui data kuesioner induk.
+     */
+    public function test_superadmin_can_update_kuesioner(): void
+    {
+        $response = $this->actingAs($this->superadmin)
+            ->put(route('superadmin.kuesioner.update', $this->kuesioner->id), [
+                'title' => 'Tracer Study UKDW 2026 Revisi',
+                'description' => 'Deskripsi diperbarui',
+                'year' => 2026,
+                'is_active' => true,
+            ]);
+
+        $response->assertRedirect();
+        $this->assertDatabaseHas('kuesioner', [
+            'id' => $this->kuesioner->id,
+            'title' => 'Tracer Study UKDW 2026 Revisi',
+        ]);
+    }
+
+    /**
+     * Test superadmin dapat melakukan toggle status aktif kuesioner.
+     */
+    public function test_superadmin_can_toggle_kuesioner_active_status(): void
+    {
+        $this->assertTrue((bool) $this->kuesioner->is_active);
+
+        $response = $this->actingAs($this->superadmin)
+            ->patch(route('superadmin.kuesioner.toggle-active', $this->kuesioner->id));
+
+        $response->assertRedirect();
+        $this->assertFalse((bool) $this->kuesioner->fresh()->is_active);
+    }
+
+    /**
+     * Test superadmin dapat menghapus kuesioner induk.
+     */
+    public function test_superadmin_can_delete_kuesioner(): void
+    {
+        $kuesionerToDelete = Kuesioner::create([
+            'title' => 'Kuesioner Sementara',
+            'year' => 2025,
+            'is_active' => false,
+        ]);
+
+        $response = $this->actingAs($this->superadmin)
+            ->delete(route('superadmin.kuesioner.destroy', $kuesionerToDelete->id));
+
+        $response->assertRedirect();
+        $this->assertDatabaseMissing('kuesioner', [
+            'id' => $kuesionerToDelete->id,
+        ]);
+    }
 }

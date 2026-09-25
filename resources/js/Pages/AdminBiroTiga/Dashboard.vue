@@ -51,7 +51,7 @@ const props = defineProps({
             <header class="bg-[#0D542B] text-white pt-8 pb-16 px-4 sm:px-6 lg:px-8">
                 <div class="w-full max-w-[1400px] mx-auto flex flex-col md:flex-row md:items-center justify-between gap-4">
                     <div>
-                        <div class="inline-flex items-center px-3 py-1 bg-black/20 text-white rounded-full text-xs font-bold uppercase tracking-wider mb-2">
+                        <div class="inline-flex items-center px-3 py-1 bg-black/20 text-white rounded-md text-xs font-bold uppercase tracking-wider mb-2">
                             Biro 3 Kemahasiswaan & Alumni
                         </div>
                         <h1 class="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
@@ -77,12 +77,12 @@ const props = defineProps({
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
                     
                     <!-- KPI 1: Total Alumni -->
-                    <div class="bg-white rounded-2xl p-6 shadow-sm">
+                    <div class="bg-white rounded-lg p-5 border border-slate-200 shadow-2xs">
                         <div class="flex items-center justify-between">
                             <span class="text-xs font-bold text-gray-500 uppercase tracking-wider">
                                 Total Alumni
                             </span>
-                            <span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-gray-100 text-gray-700">
+                            <span class="px-2.5 py-0.5 rounded-md text-xs font-bold bg-gray-100 text-gray-700">
                                 Database
                             </span>
                         </div>
@@ -95,12 +95,12 @@ const props = defineProps({
                     </div>
 
                     <!-- KPI 2: Responden Masuk -->
-                    <div class="bg-white rounded-2xl p-6 shadow-sm">
+                    <div class="bg-white rounded-lg p-5 border border-slate-200 shadow-2xs">
                         <div class="flex items-center justify-between">
                             <span class="text-xs font-bold text-gray-500 uppercase tracking-wider">
                                 Responden Masuk
                             </span>
-                            <span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-[#0D542B] text-white">
+                            <span class="px-2.5 py-0.5 rounded-md text-xs font-bold bg-[#0D542B] text-white">
                                 Respon
                             </span>
                         </div>
@@ -113,12 +113,12 @@ const props = defineProps({
                     </div>
 
                     <!-- KPI 3: LinkedIn Terdata -->
-                    <div class="bg-white rounded-2xl p-6 shadow-sm">
+                    <div class="bg-white rounded-lg p-5 border border-slate-200 shadow-2xs">
                         <div class="flex items-center justify-between">
                             <span class="text-xs font-bold text-gray-500 uppercase tracking-wider">
                                 Profil LinkedIn
                             </span>
-                            <span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-gray-100 text-gray-700">
+                            <span class="px-2.5 py-0.5 rounded-md text-xs font-bold bg-gray-100 text-gray-700">
                                 Karir
                             </span>
                         </div>
@@ -131,12 +131,12 @@ const props = defineProps({
                     </div>
 
                     <!-- KPI 4: Total Pertanyaan -->
-                    <div class="bg-white rounded-2xl p-6 shadow-sm">
+                    <div class="bg-white rounded-lg p-5 border border-slate-200 shadow-2xs">
                         <div class="flex items-center justify-between">
                             <span class="text-xs font-bold text-gray-500 uppercase tracking-wider">
                                 Butir Instrumen
                             </span>
-                            <span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-gray-100 text-gray-700">
+                            <span class="px-2.5 py-0.5 rounded-md text-xs font-bold bg-gray-100 text-gray-700">
                                 Instrumen
                             </span>
                         </div>
@@ -154,7 +154,7 @@ const props = defineProps({
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     
                     <!-- Modul 1: Data Alumni & Audit Tracer -->
-                    <div class="bg-white rounded-3xl p-8 shadow-sm flex flex-col justify-between">
+                    <div class="bg-white rounded-lg p-6 border border-slate-200 shadow-2xs flex flex-col justify-between">
                         <div>
                             <div class="flex items-center justify-between mb-3">
                                 <span class="px-3 py-1 bg-[#0D542B] text-white text-xs font-bold rounded-lg uppercase tracking-wider">
@@ -178,7 +178,7 @@ const props = defineProps({
                             </span>
                             <Link 
                                 href="/biro3/alumni" 
-                                class="inline-flex items-center px-6 py-3 bg-[#0D542B] hover:bg-[#08381c] text-white text-xs font-bold rounded-xl shadow-xs transition-all cursor-pointer"
+                                class="inline-flex items-center px-6 py-3 bg-[#0D542B] hover:bg-[#08381c] text-white text-xs font-bold rounded-lg shadow-xs transition-all cursor-pointer"
                             >
                                 <span>Buka Data Alumni</span>
                                 <span class="ml-1.5">&rarr;</span>
@@ -187,7 +187,7 @@ const props = defineProps({
                     </div>
 
                     <!-- Modul 2: Rekapitulasi per Program Studi -->
-                    <div class="bg-white rounded-3xl p-8 shadow-sm flex flex-col justify-between">
+                    <div class="bg-white rounded-lg p-6 border border-slate-200 shadow-2xs flex flex-col justify-between">
                         <div>
                             <div class="flex items-center justify-between mb-3">
                                 <span class="px-3 py-1 bg-[#FDC700] text-black text-xs font-bold rounded-lg uppercase tracking-wider">
@@ -211,7 +211,7 @@ const props = defineProps({
                             </span>
                             <Link 
                                 href="/biro3/alumni" 
-                                class="inline-flex items-center px-6 py-3 bg-[#0D542B] hover:bg-[#08381c] text-white text-xs font-bold rounded-xl shadow-xs transition-all cursor-pointer"
+                                class="inline-flex items-center px-6 py-3 bg-[#0D542B] hover:bg-[#08381c] text-white text-xs font-bold rounded-lg shadow-xs transition-all cursor-pointer"
                             >
                                 <span>Lihat Laporan Lengkap</span>
                                 <span class="ml-1.5">&rarr;</span>
@@ -265,9 +265,9 @@ const props = defineProps({
                                     </td>
                                     <td class="px-6 py-4">
                                         <div class="flex items-center gap-3">
-                                            <div class="flex-1 bg-gray-200 rounded-full h-2 overflow-hidden">
+                                            <div class="flex-1 bg-gray-200 rounded-md h-2 overflow-hidden">
                                                 <div 
-                                                    class="bg-[#0D542B] h-2 rounded-full transition-all"
+                                                    class="bg-[#0D542B] h-2 rounded-md transition-all"
                                                     :style="{ width: `${Math.min(prodi.response_rate, 100)}%` }"
                                                 ></div>
                                             </div>

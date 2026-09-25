@@ -1,5 +1,53 @@
 # UPDATE LOG - SERU (Sistem Ekosistem Rekam Jejak Alumni)
 
+## [2026-09-26] Standardisasi Verifikasi Perusahaan SweetAlert2, Apple Glossy Sidebars, Status Badges Refinement, dan Pembaruan ERD
+
+### Ringkasan
+1. **Penyempurnaan Fungsi Edit & Approval Perusahaan Menjadi Full SweetAlert2**:
+   - Mengubah modal sunting data perusahaan (`openEditModal`) pada modul Admin Program Studi ([`AdminProdi/Perusahaan/Index.vue`](file:///c:/study/tracerstudy/resources/js/Pages/AdminProdi/Perusahaan/Index.vue)) dan Admin Fakultas ([`AdminFakultas/Perusahaan/Index.vue`](file:///c:/study/tracerstudy/resources/js/Pages/AdminFakultas/Perusahaan/Index.vue)) menjadi dialog SweetAlert2 interaktif, elegan, dan terintegrasi penuh.
+   - Menyediakan form dinamis di dalam pop-up SweetAlert2: nama instansi, kategori skala instansi, jenis usaha, alamat lengkap, kode pos, serta keterkaitan dinamis provinsi dengan kabupaten/kota via event listener `change` pada elemen DOM dialog.
+   - Validasi nama perusahaan wajib diisi (`preConfirm`), umpan balik instan, dan penanganan respon sukses/gagal secara asinkron tanpa reload halaman.
+   - Menghapus modal floating kustom lama (`showEditModal` dan `showRecDetailModal`) sehingga antarmuka 100% konsisten menggunakan sistem notifikasi SweetAlert2 yang seragam.
+
+2. **Penyelarasan Desain Status Badges Sesuai Panduan Visual**:
+   - Mendesain ulang kartu ringkasan status di bagian header verifikasi perusahaan agar identik 1:1 dengan desain referensi:
+     - Badge *Menunggu Verifikasi*: Latar krem lembut (`bg-[#FFFBEB]`), garis tepi halus (`border-[#FDE68A]`), teks cokelat hangat (`text-[#78350F]`), sudut tumpul (`rounded-2xl`), dan penanda titik oranye bulat (`bg-[#F59E0B]`).
+     - Badge *Master Terverifikasi*: Latar mint lembut (`bg-[#ECFDF5]`), garis tepi mint (`border-[#A7F3D0]`), teks hijau tua (`text-[#065F46]`), dan sudut tumpul (`rounded-2xl`).
+
+3. **Penerapan Apple Glossy Aesthetic pada Navigation Sidebar**:
+   - Menerapkan bahasa desain *Apple Glassmorphism* (material tembus pandang dengan efek kabur `bg-white/85 backdrop-blur-2xl border-slate-200/70`) pada seluruh bilah navigasi stakeholder non-alumni:
+     - Admin Program Studi: [`AdminProdi/Components/Sidebar.vue`](file:///c:/study/tracerstudy/resources/js/Pages/AdminProdi/Components/Sidebar.vue)
+     - Admin Fakultas: [`AdminFakultas/Components/Sidebar.vue`](file:///c:/study/tracerstudy/resources/js/Pages/AdminFakultas/Components/Sidebar.vue)
+     - Super Admin: [`SuperAdmin/Components/Sidebar.vue`](file:///c:/study/tracerstudy/resources/js/Pages/SuperAdmin/Components/Sidebar.vue)
+     - Admin Biro 3: [`AdminBiroTiga/Components/Sidebar.vue`](file:///c:/study/tracerstudy/resources/js/Pages/AdminBiroTiga/Components/Sidebar.vue)
+   - Pill navigasi aktif dilengkapi pantulan kilau glossy (*gradient reflection highlight*) dengan gradasi resmi UKDW (`bg-gradient-to-r from-[#0D542B] to-[#157a41]`), bayangan halus (`shadow-md shadow-[#0D542B]/20`), dan ikon berlatar frosted glass.
+   - Navigasi mobile dilengkapi topbar melayang dengan efek blur `bg-white/80 backdrop-blur-xl`.
+   - Kartu profil pengguna di bagian bawah sidebar dikemas dalam kontainer frosted glass melengkung (`rounded-2xl`) yang estetik dan elegan.
+
+4. **Konsistensi Layout Layar Terkunci ("Stay on Resize/Shrink")**:
+   - Menerapkan penataan fixed viewport pada sidebar desktop (`fixed inset-y-0 left-0 w-72 h-screen overflow-hidden`) yang dipadukan dengan kontainer konten utama ber-padding `lg:pl-72` dan `min-w-0 overflow-x-auto` di seluruh halaman dashboard dan modul stakeholder.
+   - Struktur ini menjamin bahwa saat ukuran layar diperkecil atau diperbesar (zoom-in), sidebar tetap terkunci kokoh di sisi kiri dan tata letak tabel/kartu data tidak terdorong atau pecah ke bawah, melainkan menggulir (*scroll*) secara horizontal di dalam kontainernya secara rapi.
+
+5. **Koreksi Typo & Kelengkapan Relasi ERD ([`ERD.md`](file:///c:/study/tracerstudy/ERD.md))**:
+   - Menambahkan kolom `created_by` (FK `users.id`) dan `created_prodi_id` (FK `prodi.id`) pada entitas `perusahaan`.
+   - Menambahkan relasi Mermaid dan matriks relasi antar tabel untuk `users -> perusahaan` (pengaju), `prodi -> perusahaan` (prodi pengaju), `propinsi -> perusahaan`, `kabupaten -> perusahaan`, dan `ref_negara -> perusahaan`.
+   - Mengoreksi deskripsi kamus data `users` pada Bagian 2.A dengan menambahkan role `admin_fakultas` dan referensi `fakultas_id`.
+
+
+### Refinement Tampilan Admin Bersih, Tipis, & Kotak (Enterprise Standard)
+1. **Redesain Navigasi Sidebar Menjadi Ramping & Kotak**:
+   - Menghapus background gradasi dan kilau berlebih, digantikan dengan warna hijau solid resmi UKDW (`bg-[#0D542B]`).
+   - Menghilangkan kontainer kotak berlapis di sekeliling ikon SVG. Ikon kini menyatu langsung dengan teks menu secara minimalis.
+   - Mengubah bentuk *bubble* tumpul (`rounded-2xl`) menjadi sudut kotak presisi (`rounded-lg` / `rounded-md`) dengan padding ramping (`px-3 py-2 text-xs`) agar lebih hemat ruang dan berbobot profesional.
+2. **Standardisasi Seluruh Dashboard Mengikuti Format Header Putih Flat**:
+   - Menghapus hero header hijau raksasa (`bg-[#0D542B] pt-8 pb-16`) dan *negative margin* (`-mt-10`) pada Dashboard Admin Prodi, Admin Fakultas, Super Admin, dan Admin Biro 3.
+   - Menggantinya dengan bilah header putih bersih dan datar (`bg-white border-b border-gray-200 px-6 py-5`) dengan breadcrumbs rapi, persis seperti pada halaman verifikasi perusahaan.
+   - Seluruh kartu metrik KPI dan tabel alumni kini menggunakan sudut kotak (`rounded-lg`) dengan batas halus (`border border-slate-200`) yang terkunci kokoh dan tidak bergeser saat ukuran layar diperkecil.
+3. **Penyelarasan Badges Ringkasan**:
+   - Badge ringkasan statistik ("Menunggu Verifikasi" dan "Master Terverifikasi") disesuaikan menjadi format kotak ramping (`rounded-lg`, `px-3.5 py-1.5`) dengan penanda titik status solid.
+
+---
+
 ## [2026-09-21] Perbaikan Akses Tombol Tambah Pertanyaan dan Edit Soal (Super Admin)
 
 ### Ringkasan

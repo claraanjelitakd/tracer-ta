@@ -21,6 +21,10 @@ class KelolaOpsiProdiController extends Controller
     {
         $user = Auth::user();
 
+        if ($request->has('prodi_question_id') && ! $request->has('question_id')) {
+            $request->merge(['question_id' => $request->prodi_question_id]);
+        }
+
         $validated = $request->validate([
             'question_id' => 'required|exists:prodi_question,id',
             'option_text' => 'required|string',
@@ -93,5 +97,31 @@ class KelolaOpsiProdiController extends Controller
         $option->delete();
 
         return redirect()->back()->with('success', 'Opsi pilihan jawaban berhasil dihapus.');
+    }
+
+    /**
+     * Alias method untuk menyimpan opsi via route pertanyaan/{questionId}/options.
+     */
+    public function storeOption(Request $request, int $questionId): RedirectResponse
+    {
+        $request->merge(['question_id' => $questionId]);
+
+        return $this->store($request);
+    }
+
+    /**
+     * Alias method untuk update opsi via route pertanyaan/options/{optionId}.
+     */
+    public function updateOption(Request $request, int $optionId): RedirectResponse
+    {
+        return $this->update($request, $optionId);
+    }
+
+    /**
+     * Alias method untuk hapus opsi via route pertanyaan/options/{optionId}.
+     */
+    public function destroyOption(int $optionId): RedirectResponse
+    {
+        return $this->destroy($optionId);
     }
 }

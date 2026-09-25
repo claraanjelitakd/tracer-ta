@@ -22,6 +22,10 @@ const props = defineProps({
         type: Array,
         default: () => [],
     },
+    daftarTarget: {
+        type: Array,
+        default: () => [],
+    },
     prodis: {
         type: Array,
         default: () => [],
@@ -45,6 +49,7 @@ const props = defineProps({
 const search = ref(props.filters.search || '');
 const tahun = ref(props.filters.tahun || 'all');
 const semester = ref(props.filters.semester || 'all');
+const target = ref(props.filters.target || 'all');
 const status = ref(props.filters.status || 'all');
 const prodiId = ref(props.filters.prodi_id || 'all');
 
@@ -75,6 +80,7 @@ const applyFilters = () => {
         search: search.value || undefined,
         tahun: tahun.value !== 'all' ? tahun.value : undefined,
         semester: semester.value !== 'all' ? semester.value : undefined,
+        target: target.value !== 'all' ? target.value : undefined,
         status: status.value !== 'all' ? status.value : undefined,
         prodi_id: prodiId.value !== 'all' ? prodiId.value : undefined,
     }, {
@@ -94,6 +100,7 @@ const resetFilters = () => {
     search.value = '';
     tahun.value = 'all';
     semester.value = 'all';
+    target.value = 'all';
     status.value = 'all';
     prodiId.value = 'all';
     currentPage.value = 1;
@@ -182,7 +189,7 @@ const resetFilters = () => {
                     </button>
                 </div>
 
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
                     <!-- Pencarian Nama / NIM -->
                     <div>
                         <label class="block text-xs font-bold text-gray-600 mb-1.5">Cari Nama / NIM</label>
@@ -193,6 +200,21 @@ const resetFilters = () => {
                             placeholder="Ketik nama atau NIM..." 
                             class="w-full text-xs rounded-xl border border-gray-200 bg-gray-50 py-2.5 px-3.5 font-medium text-gray-900 focus:bg-white focus:border-[#0D542B] focus:ring-1 focus:ring-[#0D542B] outline-none"
                         />
+                    </div>
+
+                    <!-- Filter Target Kelulusan -->
+                    <div>
+                        <label class="block text-xs font-bold text-gray-600 mb-1.5">Target Kelulusan</label>
+                        <select 
+                            v-model="target" 
+                            @change="applyFilters" 
+                            class="w-full text-xs rounded-xl border border-gray-200 bg-gray-50 py-2.5 px-3.5 font-medium text-gray-900 focus:bg-white focus:border-[#0D542B] focus:ring-1 focus:ring-[#0D542B] outline-none"
+                        >
+                            <option value="all">Semua Target</option>
+                            <option v-for="tgt in daftarTarget" :key="tgt" :value="tgt">
+                                Target {{ tgt }}
+                            </option>
+                        </select>
                     </div>
 
                     <!-- Filter Tahun Kelulusan -->
@@ -212,13 +234,13 @@ const resetFilters = () => {
 
                     <!-- Filter Semester Kelulusan -->
                     <div>
-                        <label class="block text-xs font-bold text-gray-600 mb-1.5">Semester Kelulusan</label>
+                        <label class="block text-xs font-bold text-gray-600 mb-1.5">Semester</label>
                         <select 
                             v-model="semester" 
                             @change="applyFilters" 
                             class="w-full text-xs rounded-xl border border-gray-200 bg-gray-50 py-2.5 px-3.5 font-medium text-gray-900 focus:bg-white focus:border-[#0D542B] focus:ring-1 focus:ring-[#0D542B] outline-none"
                         >
-                            <option value="all">Semua Semester (All)</option>
+                            <option value="all">Semua Semester</option>
                             <option value="Gasal">Gasal</option>
                             <option value="Genap">Genap</option>
                         </select>
@@ -285,7 +307,7 @@ const resetFilters = () => {
                                 <th class="py-4 px-5">No</th>
                                 <th class="py-4 px-5">Mahasiswa / Alumni</th>
                                 <th class="py-4 px-5">Program Studi</th>
-                                <th class="py-4 px-5">Tahun & Semester</th>
+                                <th class="py-4 px-5">Target Kelulusan</th>
                                 <th class="py-4 px-5 text-center">Profil</th>
                                 <th class="py-4 px-5 text-center">Kuesioner</th>
                                 <th class="py-4 px-5 text-center">Status</th>
@@ -317,11 +339,14 @@ const resetFilters = () => {
                                     <span class="font-semibold text-gray-800">{{ alumni.prodi }}</span>
                                 </td>
 
-                                <!-- Periode Kelulusan -->
+                                <!-- Periode / Target Kelulusan -->
                                 <td class="py-4 px-5">
-                                    <span class="font-medium text-gray-600">
-                                        {{ alumni.tahun_akademik_lulus }}
-                                    </span>
+                                    <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-emerald-50 text-[#0D542B] border border-emerald-200 text-[11px] font-bold">
+                                        <span>Target: {{ alumni.tahun_akademik_lulus }}</span>
+                                    </div>
+                                    <div class="text-[10px] text-gray-400 mt-1">
+                                        Tahun {{ alumni.tahun_lulus }} &bull; Status: <span class="font-semibold text-gray-600">{{ alumni.status_yudisium }}</span>
+                                    </div>
                                 </td>
 
                                 <!-- Kelengkapan Profil (%) -->

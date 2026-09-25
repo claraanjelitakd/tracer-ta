@@ -40,10 +40,11 @@ class KelolaSectionController extends Controller
             ->orderBy('order', 'asc')
             ->get();
 
-        // 2. Ambil daftar kuesioner aktif untuk pilihan dropdown saat menambah atau mengedit section
-        $kuesioners = Kuesioner::orderBy('year', 'desc')
+        // 2. Ambil seluruh kuesioner beserta jumlah seksi dan atribut lengkap
+        $kuesioners = Kuesioner::withCount('kelompokPertanyaan')
+            ->orderBy('year', 'desc')
             ->orderBy('id', 'desc')
-            ->get(['id', 'title', 'year', 'is_active']);
+            ->get(['id', 'title', 'description', 'year', 'is_active']);
 
         // 3. Render halaman Vue dengan data yang dibutuhkan
         return Inertia::render('SuperAdmin/Section/Index', [

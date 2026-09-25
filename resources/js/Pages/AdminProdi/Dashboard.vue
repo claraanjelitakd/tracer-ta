@@ -43,43 +43,45 @@ const props = defineProps({
 
         <!-- Area Konten Utama -->
         <div class="flex-1 flex flex-col min-w-0 lg:pl-72">
-            <!-- Header Solid Hijau Resmi UKDW #0D542B -->
-            <header class="bg-[#0D542B] text-white pt-8 pb-16 px-4 sm:px-6 lg:px-8">
-                <div class="w-full max-w-[1400px] mx-auto flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <!-- Header Halaman Bersih & Flat -->
+            <div class="bg-white border-b border-gray-200 px-6 py-5">
+                <div class="w-full flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div>
-                        <div class="inline-flex items-center px-3 py-1 bg-black/20 text-white rounded-full text-xs font-bold uppercase tracking-wider mb-2">
-                            Administrator Program Studi
+                        <div class="flex items-center gap-2 text-xs text-gray-500 font-medium mb-1">
+                            <span>Tracer Study</span>
+                            <span>/</span>
+                            <span class="text-gray-800 font-semibold">Dashboard Utama</span>
                         </div>
-                        <h1 class="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
+                        <h1 class="text-xl font-bold text-gray-900">
                             Dashboard {{ prodi?.nama_prodi || 'Program Studi' }}
                         </h1>
-                        <p class="text-white/90 text-sm sm:text-base font-normal mt-1 max-w-2xl leading-relaxed">
+                        <p class="text-xs text-gray-500 mt-0.5">
                             Pusat kendali instrumen kuesioner prodi, pemantauan kelengkapan tracer study alumni prodi, dan direktori data alumni UKDW.
                         </p>
                     </div>
 
-
-                <div class="bg-black/15 border border-white/20 px-5 py-3 rounded-2xl text-left md:text-right text-white">
-                    <span class="text-xs text-white/80 font-semibold uppercase tracking-wider block">Program Studi</span>
-                    <span class="text-base font-extrabold block text-[#FDC700]">{{ prodi?.nama_prodi }} ({{ prodi?.kode_prodi }})</span>
-                    <span class="text-xs text-white/80">{{ user?.name }} &bull; {{ user?.username }}</span>
+                    <div class="flex items-center gap-2.5">
+                        <div class="px-3.5 py-1.5 rounded-lg bg-slate-50 border border-slate-200 text-slate-700 text-xs">
+                            <span class="text-[10px] text-slate-500 uppercase tracking-wider block font-semibold">Program Studi</span>
+                            <span class="font-bold text-[#0D542B] text-xs">{{ prodi?.nama_prodi }} ({{ prodi?.kode_prodi }})</span>
+                        </div>
+                    </div>
                 </div>
             </div>
-        </header>
 
-        <!-- Main Body Area -->
-        <main class="w-full max-w-[1400px] mx-auto -mt-10 px-4 sm:px-6 lg:px-8 space-y-6">
+            <!-- Main Body Area (Penuh, Flat, Tanpa Negative Margin) -->
+            <main class="flex-1 p-6 space-y-6 overflow-x-auto min-w-0">
             
             <!-- Grid 4 Kartu KPI Metrik (Putih Bersih, Tanpa Border Hover) -->
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
                 
                 <!-- KPI 1: Total Pertanyaan Prodi -->
-                <div class="bg-white rounded-2xl p-6 shadow-sm">
+                <div class="bg-white rounded-lg p-5 border border-slate-200 shadow-2xs">
                     <div class="flex items-center justify-between">
                         <span class="text-xs font-bold text-gray-500 uppercase tracking-wider">
                             Pertanyaan Prodi
                         </span>
-                        <span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-gray-100 text-gray-700">
+                        <span class="px-2.5 py-0.5 rounded-md text-xs font-bold bg-gray-100 text-gray-700">
                             Instrumen
                         </span>
                     </div>
@@ -92,12 +94,12 @@ const props = defineProps({
                 </div>
 
                 <!-- KPI 2: Total Bagian (Sections) -->
-                <div class="bg-white rounded-2xl p-6 shadow-sm">
+                <div class="bg-white rounded-lg p-5 border border-slate-200 shadow-2xs">
                     <div class="flex items-center justify-between">
                         <span class="text-xs font-bold text-gray-500 uppercase tracking-wider">
                             Bagian (Section)
                         </span>
-                        <span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-gray-100 text-gray-700">
+                        <span class="px-2.5 py-0.5 rounded-md text-xs font-bold bg-gray-100 text-gray-700">
                             Struktur
                         </span>
                     </div>
@@ -110,12 +112,12 @@ const props = defineProps({
                 </div>
 
                 <!-- KPI 3: Basis Data Alumni Prodi -->
-                <div class="bg-white rounded-2xl p-6 shadow-sm">
+                <div class="bg-white rounded-lg p-5 border border-slate-200 shadow-2xs">
                     <div class="flex items-center justify-between">
                         <span class="text-xs font-bold text-gray-500 uppercase tracking-wider">
                             Alumni Terdaftar
                         </span>
-                        <span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-gray-100 text-gray-700">
+                        <span class="px-2.5 py-0.5 rounded-md text-xs font-bold bg-gray-100 text-gray-700">
                             Database
                         </span>
                     </div>
@@ -128,12 +130,12 @@ const props = defineProps({
                 </div>
 
                 <!-- KPI 4: Partisipasi Respon Prodi -->
-                <div class="bg-white rounded-2xl p-6 shadow-sm">
+                <div class="bg-white rounded-lg p-5 border border-slate-200 shadow-2xs">
                     <div class="flex items-center justify-between">
                         <span class="text-xs font-bold text-gray-500 uppercase tracking-wider">
                             Responden Masuk
                         </span>
-                        <span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-[#0D542B] text-white">
+                        <span class="px-2.5 py-0.5 rounded-md text-xs font-bold bg-[#0D542B] text-white">
                             Respon
                         </span>
                     </div>
@@ -151,7 +153,7 @@ const props = defineProps({
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 
                 <!-- Modul 1: Direktori Mahasiswa & Hasil Tracer -->
-                <div class="bg-white rounded-3xl p-8 shadow-sm flex flex-col justify-between">
+                <div class="bg-white rounded-lg p-6 border border-slate-200 shadow-2xs flex flex-col justify-between">
                     <div>
                         <div class="flex items-center justify-between mb-3">
                             <span class="px-3 py-1 bg-[#0D542B] text-white text-xs font-bold rounded-lg uppercase tracking-wider">
@@ -175,7 +177,7 @@ const props = defineProps({
                         </span>
                         <Link 
                             href="/prodi/alumni" 
-                            class="inline-flex items-center px-6 py-3 bg-[#0D542B] hover:bg-[#08381c] text-white text-xs font-bold rounded-xl shadow-xs transition-all cursor-pointer"
+                            class="inline-flex items-center px-4 py-2 bg-[#0D542B] hover:bg-[#08381c] text-white text-xs font-semibold rounded-lg transition-all cursor-pointer"
                         >
                             Buka Direktori Alumni &rarr;
                         </Link>
@@ -183,7 +185,7 @@ const props = defineProps({
                 </div>
 
                 <!-- Modul 2: Kelola Instrumen Kuesioner & Section -->
-                <div class="bg-white rounded-3xl p-8 shadow-sm flex flex-col justify-between">
+                <div class="bg-white rounded-lg p-6 border border-slate-200 shadow-2xs flex flex-col justify-between">
                     <div>
                         <div class="flex items-center justify-between mb-3">
                             <span class="px-3 py-1 bg-[#FDC700] text-black text-xs font-bold rounded-lg uppercase tracking-wider">
@@ -204,13 +206,13 @@ const props = defineProps({
                     <div class="mt-8 pt-4 border-t border-gray-100 flex items-center justify-between gap-2">
                         <Link 
                             href="/prodi/sections" 
-                            class="inline-flex items-center px-4 py-3 bg-gray-100 hover:bg-gray-200 text-gray-800 text-xs font-bold rounded-xl transition-all cursor-pointer"
+                            class="inline-flex items-center px-3.5 py-2 bg-gray-100 hover:bg-gray-200 text-gray-800 text-xs font-semibold rounded-lg transition-all cursor-pointer"
                         >
                             Kelola Section
                         </Link>
                         <Link 
                             href="/prodi/pertanyaan" 
-                            class="inline-flex items-center px-6 py-3 bg-[#0D542B] hover:bg-[#08381c] text-white text-xs font-bold rounded-xl shadow-xs transition-all cursor-pointer"
+                            class="inline-flex items-center px-4 py-2 bg-[#0D542B] hover:bg-[#08381c] text-white text-xs font-semibold rounded-lg transition-all cursor-pointer"
                         >
                             Kelola Butir Pertanyaan &rarr;
                         </Link>
@@ -220,7 +222,7 @@ const props = defineProps({
             </div>
 
             <!-- Tabel Ringkasan Alumni Terbaru (Bersih ala DataTables) -->
-            <div class="bg-white rounded-2xl shadow-sm overflow-hidden">
+            <div class="bg-white rounded-lg border border-slate-200 shadow-2xs overflow-hidden">
                 <div class="p-6 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
                     <div>
                         <h3 class="text-sm font-extrabold text-gray-900 uppercase tracking-wider">
@@ -270,13 +272,13 @@ const props = defineProps({
                                 <td class="py-4 px-5 text-center">
                                     <span 
                                         v-if="alumni.is_univ_complete"
-                                        class="inline-block px-3 py-1 bg-[#0D542B] text-white font-bold text-xs rounded-full"
+                                        class="inline-block px-3 py-1 bg-[#0D542B] text-white font-bold text-xs rounded-md"
                                     >
                                         Selesai
                                     </span>
                                     <span 
                                         v-else
-                                        class="inline-block px-3 py-1 bg-gray-100 text-gray-600 font-medium text-xs rounded-full"
+                                        class="inline-block px-3 py-1 bg-gray-100 text-gray-600 font-medium text-xs rounded-md"
                                     >
                                         Belum Lengkap
                                     </span>
@@ -284,13 +286,13 @@ const props = defineProps({
                                 <td class="py-4 px-5 text-center">
                                     <span 
                                         v-if="alumni.is_prodi_complete"
-                                        class="inline-block px-3 py-1 bg-[#0D542B] text-white font-bold text-xs rounded-full"
+                                        class="inline-block px-3 py-1 bg-[#0D542B] text-white font-bold text-xs rounded-md"
                                     >
                                         Selesai
                                     </span>
                                     <span 
                                         v-else
-                                        class="inline-block px-3 py-1 bg-[#FDC700] text-black font-bold text-xs rounded-full"
+                                        class="inline-block px-3 py-1 bg-[#FDC700] text-black font-bold text-xs rounded-md"
                                     >
                                         Belum Selesai
                                     </span>

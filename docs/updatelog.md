@@ -2,6 +2,14 @@
 
 Semua perubahan besar pada sistem dicatat dalam dokumen ini.
 
+## [2026-09-26]
+- **Redesain Navigasi Kotak & Tipis (Flat Admin Style)**: Menghapus gradasi dan kotak ikon berlapis pada sidebar, mengubah bentuk menu menjadi kotak ramping (`rounded-lg`, `px-3 py-2`), serta meratakan header dashboard seluruh stakeholder (Prodi, Fakultas, SuperAdmin, Biro 3) menjadi header putih datar tanpa banner hijau raksasa agar terkunci stabil saat layar diperkecil.
+- **SweetAlert2 Edit & Approval Perusahaan**: Mengubah fungsi sunting perusahaan menjadi pop-up dialog interaktif SweetAlert2 dengan filter dinamis provinsi/kabupaten dan validasi preConfirm di Admin Prodi & Admin Fakultas. Menghapus floating modal kustom lama.
+- **Penyelarasan Warna & Bentuk Badges Status**: Mendesain ulang badge status "Menunggu Verifikasi" (warna krem #FFFBEB, border kuning #FDE68A, dot oranye #F59E0B) dan "Master Terverifikasi" (warna mint #ECFDF5, border #A7F3D0) dengan sudut rounded-2xl sesuai desain referensi.
+- **Apple Glossy Sidebars di Semua Role Non-Alumni**: Menerapkan estetika frosted glass (backdrop-blur-2xl, bg-white/85), glossy gradient active pills (#0D542B ke #157a41 dengan pantulan kilau halus), dan fixed pinned viewport (h-screen overflow-hidden) pada Admin Prodi, Admin Fakultas, Super Admin, dan Admin Biro 3.
+- **Layout Responsif "Stay on Resize"**: Memastikan layout desktop fixed sidebar (lg:pl-72, min-w-0, overflow-x-auto) konsisten di semua stakeholder sehingga layar tetap stabil dan rapi saat dikecilkan/dizoom.
+- **Koreksi Typo & Kolom Relasi ERD**: Menambahkan `created_by` dan `created_prodi_id` pada tabel `perusahaan`, memperbarui diagram relasi Mermaid serta tabel matriks relasi, dan melengkapi kamus data `users` dengan `admin_fakultas` dan `fakultas_id`.
+
 ## [2026-09-21]
 - **Perbaikan Akses Modal Tambah & Edit Pertanyaan**: Memperbaiki variabel `initialKeterangan` yang belum terdefinisi pada fungsi `openQuestionModal()` di `SuperAdmin/Pertanyaan/Index.vue` serta mengisi form value secara aman via hook `didOpen` SweetAlert2 agar tombol "Tambah Pertanyaan" dan tombol pensil "Edit" dapat diakses normal.
 - **Validasi Backend Simpan Pertanyaan**: Menambahkan tipe `radio`, `checkbox`, dan field `keterangan` (batasan nilai/constraint) ke dalam daftar aturan validasi `store` dan `update` di `SimpanPertanyaanController.php`.

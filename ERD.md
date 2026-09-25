@@ -12,7 +12,9 @@ erDiagram
     %% 1. AUTENTIKASI & PENGGUNA
     %% ==========================================
     users ||--o| biodata : "memiliki profil (user_id)"
+    users ||--o{ perusahaan : "mengajukan (created_by)"
     prodi ||--o{ users : "menaungi admin prodi (prodi_id)"
+    prodi ||--o{ perusahaan : "prodi pengaju (created_prodi_id)"
     ref_fakultas ||--o{ users : "menaungi admin fakultas (fakultas_id)"
 
     users {
@@ -34,6 +36,8 @@ erDiagram
     ref_fakultas ||--o{ prodi : "menaungi (fakultas_id)"
     propinsi ||--o{ kabupaten : "memiliki (propinsi_id)"
     propinsi ||--o| ump : "memiliki standar UMP (kode_provinsi)"
+    propinsi ||--o{ perusahaan : "lokasi provinsi (propinsi_id)"
+    kabupaten ||--o{ perusahaan : "lokasi kabupaten (kabupaten_id)"
     ref_negara ||--o{ perusahaan : "lokasi internasional (negara)"
     prodi ||--o{ biodata : "memiliki alumni (prodi_id)"
     propinsi ||--o{ biodata : "domisili alumni (propinsi_id)"
@@ -224,6 +228,8 @@ erDiagram
         string jenis_perusahaan "nullable"
         string jenis_perusahaan_lainnya "nullable"
         string status_verifikasi "Menunggu Verifikasi, Terverifikasi, Ditolak"
+        bigint created_by FK "nullable, references users.id"
+        bigint created_prodi_id FK "nullable, references prodi.id"
         timestamp created_at
         timestamp updated_at
     }
@@ -369,7 +375,7 @@ erDiagram
 ## 2. Kelompok Entitas & Kamus Data (*Data Dictionary*)
 
 ### A. Modul Akun & Wilayah Master
-1. **`users`**: Menyimpan kredensial autentikasi, role pengguna (`superadmin`, `admin_biro3`, `admin_prodi`, `alumni`), status wajib ubah password, dan referensi `prodi_id` untuk admin program studi.
+1. **`users`**: Menyimpan kredensial autentikasi, role pengguna (`superadmin`, `admin_biro3`, `admin_fakultas`, `admin_prodi`, `alumni`), status wajib ubah password, referensi `prodi_id` untuk admin program studi, dan referensi `fakultas_id` untuk admin fakultas.
 2. **`prodi`**: Master data program studi di lingkungan UKDW (misal: Sistem Informasi, Informatika, Teologi, Manajemen, dll.).
 3. **`ref_fakultas`**: Master data fakultas di UKDW yang menaungi program studi.
 4. **`ref_negara`**: Master data referensi negara seluruh dunia (193 negara, kode ISO 2, ibu kota, dan benua) dari `daftar_negara_dunia.csv` untuk perusahaan internasional dan kewarganegaraan alumni.
@@ -391,6 +397,7 @@ erDiagram
    - Profil kontak orang tua atau wali alumni (Nama, No Telepon, Pekerjaan, Alamat).
 5. **`perusahaan`** & **`atasan`**:
    - Profil instansi/perusahaan tempat alumni bekerja beserta data kontak atasan langsung (Nama, Jabatan, Telepon, Email).
+   - Kolom verifikasi pendaftaran instansi oleh alumni: `status_verifikasi` (`Menunggu Verifikasi`, `Terverifikasi`, `Ditolak`), `created_by` (ID alumni pengaju), dan `created_prodi_id` (program studi pengaju untuk scope verifikasi admin prodi & fakultas).
 
 ---
 
@@ -448,6 +455,11 @@ erDiagram
 | `data_akademik` | 1 : 1 | `biodata` | `biodata.nim = data_akademik.nim` | Relasi identitas akademik via NIM. |
 | `biodata` | 1 : 1 | `yudisium` | `yudisium.nim = biodata.nim` | Relasi data kelulusan & status yudisium. |
 | `biodata` | 1 : 1 | `data_orang_tua` | `data_orang_tua.nim = biodata.nim` | Relasi data orang tua/wali. |
+| `users` | 1 : N | `perusahaan` | `perusahaan.created_by` | Alumni pengaju saat mendaftarkan data perusahaan baru. |
+| `prodi` | 1 : N | `perusahaan` | `perusahaan.created_prodi_id` | Program studi pengaju untuk verifikasi admin prodi & fakultas. |
+| `propinsi` | 1 : N | `perusahaan` | `perusahaan.propinsi_id` | Wilayah provinsi kantor perusahaan di Indonesia. |
+| `kabupaten` | 1 : N | `perusahaan` | `perusahaan.kabupaten_id` | Wilayah kabupaten/kota kantor perusahaan di Indonesia. |
+| `ref_negara` | 1 : N | `perusahaan` | `perusahaan.negara = ref_negara.nama_negara` | Negara lokasi kantor perusahaan internasional. |
 | `perusahaan` | 1 : N | `biodata` | `biodata.perusahaan_id` | Tempat bekerja alumni. |
 | `atasan` | 1 : N | `biodata` | `biodata.atasan_id` | Atasan langsung alumni di perusahaan. |
 | `propinsi` | 1 : N | `kabupaten` | `kabupaten.propinsi_id` | Hirarki wilayah provinsi ke kabupaten/kota. |

@@ -9,6 +9,7 @@ use App\Models\Perusahaan;
 use App\Models\Yudisium;
 use App\Services\Kuesioner\KuesionerSyncService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 /**
  * SimpanProfilController
@@ -76,6 +77,7 @@ class SimpanProfilController extends Controller
             $alamat = ! empty($dataTervalidasi['company_alamat']) ? $dataTervalidasi['company_alamat'] : (! empty($dataTervalidasi['perusahaan_alamat']) ? $dataTervalidasi['perusahaan_alamat'] : null);
             $kodePos = ! empty($dataTervalidasi['zipcode']) ? $dataTervalidasi['zipcode'] : (! empty($dataTervalidasi['kode_pos']) ? $dataTervalidasi['kode_pos'] : null);
 
+            $prodiIdPengaju = $user?->prodi_id ?? $biodata?->prodi_id;
             $perusahaan = Perusahaan::firstOrCreate(
                 ['nama_perusahaan' => $dataTervalidasi['nama_perusahaan']],
                 [
@@ -89,6 +91,8 @@ class SimpanProfilController extends Controller
                     'jenis_lokasi' => $jenisLokasi,
                     'negara' => $negara,
                     'status_verifikasi' => 'Menunggu Verifikasi',
+                    'created_by_user_id' => $user?->id,
+                    'created_by_prodi_id' => $prodiIdPengaju,
                 ]
             );
 
@@ -294,6 +298,10 @@ class SimpanProfilController extends Controller
         $kabupatenId = $jenisLokasi === 'Luar Negeri' ? null : ($validated['kabupaten_id'] ?? null);
         $negara = $jenisLokasi === 'Luar Negeri' ? $validated['negara'] : 'Indonesia';
 
+        $user = Auth::user();
+        $biodata = $user?->biodata;
+        $prodiIdPengaju = $user?->prodi_id ?? $biodata?->prodi_id;
+
         $perusahaan = Perusahaan::create([
             'nama_perusahaan' => $validated['nama_perusahaan'],
             'jenis_lokasi' => $jenisLokasi,
@@ -306,7 +314,13 @@ class SimpanProfilController extends Controller
             'jenis_perusahaan' => $validated['jenis_perusahaan'] ?? null,
             'jenis_perusahaan_lainnya' => $validated['jenis_perusahaan_lainnya'] ?? null,
             'status_verifikasi' => 'Menunggu Verifikasi',
+            'created_by_user_id' => $user?->id,
+            'created_by_prodi_id' => $prodiIdPengaju,
         ]);
+
+        if ($biodata) {
+            $biodata->update(['perusahaan_id' => $perusahaan->id]);
+        }
 
         return response()->json([
             'success' => true,

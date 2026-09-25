@@ -1,12 +1,8 @@
 <!--
   Komponen Navigasi Sidebar Terpadu Super Admin (Sidebar.vue)
-  File: resources/js/Pages/SuperAdmin/Components/Sidebar.vue
-  
-  Desain Mengikuti Estetika Resmi UKDW:
-  - Hijau: #0D542B / #005B3C (Solid, Bersih)
-  - Kuning: #FDC700 (Kuning Resmi UKDW)
-  - Putih & Netral: #FFFFFF / #F8FAFC
-  - Tata letak: Fixed Desktop Sidebar + Responsive Mobile Slide-over Drawer
+  Desain Profesional Admin UKDW:
+  - Format Bersih, Tipis, Kotak (rounded-lg), Solid #0D542B (Tanpa Gradasi)
+  - Fixed Pinned Viewport (h-screen overflow-hidden, flex-1 scrollable)
 -->
 <script setup>
 import { Link, router, usePage } from '@inertiajs/vue3';
@@ -77,30 +73,30 @@ const handleLogout = () => {
 
 <template>
     <div>
-        <!-- TOPBAR KHUSUS MOBILE / TABLET (Tampil hanya di layar < lg) -->
-        <header class="lg:hidden bg-white/95 backdrop-blur-md border-b border-gray-200/80 sticky top-0 z-40 px-4 py-3 flex items-center justify-between shadow-2xs">
+        <!-- TOPBAR KHUSUS MOBILE / TABLET -->
+        <header class="lg:hidden bg-white border-b border-slate-200 sticky top-0 z-40 px-4 py-2.5 flex items-center justify-between shadow-2xs">
             <div class="flex items-center gap-3">
                 <button
                     type="button"
                     @click="toggleMobileMenu"
-                    class="p-2 rounded-xl text-gray-700 hover:bg-gray-100 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#0D542B] transition-colors cursor-pointer"
+                    class="p-1.5 rounded-lg text-slate-700 hover:bg-slate-100 hover:text-slate-900 focus:outline-none transition-colors cursor-pointer"
                     aria-label="Buka Menu"
                 >
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
                     </svg>
                 </button>
                 <Link href="/superadmin/dashboard" class="flex items-center gap-2">
-                    <img src="/uploads/landing/2.png" alt="Logo UKDW" class="h-8 w-8 object-contain" onerror="this.style.display='none'" />
+                    <img src="/uploads/landing/2.png" alt="Logo UKDW" class="h-7 w-7 object-contain" onerror="this.style.display='none'" />
                     <div>
-                        <span class="font-extrabold text-sm text-gray-900 tracking-tight block leading-tight">Tracer Study</span>
-                        <span class="text-[10px] font-bold text-[#0D542B] uppercase tracking-wider">Super Admin</span>
+                        <span class="font-bold text-xs text-slate-900 tracking-tight block leading-tight">Tracer Study</span>
+                        <span class="text-[10px] font-semibold text-[#0D542B] uppercase tracking-wider">Super Admin</span>
                     </div>
                 </Link>
             </div>
 
             <div class="flex items-center gap-2">
-                <span class="text-xs font-bold text-gray-700 bg-gray-100 px-2.5 py-1 rounded-full">
+                <span class="text-xs font-bold text-slate-700 bg-slate-100 border border-slate-200 px-2 py-0.5 rounded-md">
                     {{ userInitials }}
                 </span>
             </div>
@@ -109,181 +105,155 @@ const handleLogout = () => {
         <!-- BACKDROP OVERLAY UNTUK MOBILE DRAWER -->
         <div
             v-if="isMobileOpen"
-            class="fixed inset-0 bg-black/50 backdrop-blur-xs z-50 lg:hidden transition-opacity duration-300"
+            class="fixed inset-0 bg-black/40 z-50 lg:hidden transition-opacity duration-200"
             @click="closeMobileMenu"
         ></div>
 
-        <!-- SIDEBAR UTAMA (Desktop: Fixed di Kiri | Mobile: Slide-over Drawer) -->
+        <!-- SIDEBAR UTAMA ADMIN (BERSIH, TIPIS, KOTAK) -->
         <aside
-            class="fixed inset-y-0 left-0 z-50 w-72 bg-white border-r border-gray-200/80 flex flex-col justify-between transition-transform duration-300 ease-in-out shadow-lg lg:shadow-none"
+            class="fixed inset-y-0 left-0 z-50 w-72 bg-white border-r border-slate-200 flex flex-col justify-between transition-transform duration-200 ease-in-out shadow-lg lg:shadow-none h-screen overflow-hidden"
             :class="[
                 isMobileOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
             ]"
         >
             <!-- BAGIAN ATAS: LOGO & BRANDING -->
-            <div>
-                <!-- Brand Header -->
-                <div class="p-6 border-b border-gray-100 flex items-center justify-between">
-                    <Link href="/superadmin/dashboard" class="flex items-center gap-3.5 group">
-                        <div class="w-11 h-11 rounded-2xl bg-white border border-gray-100 p-1.5 shadow-2xs flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+            <div class="shrink-0">
+                <div class="p-4 border-b border-slate-200 flex items-center justify-between bg-white">
+                    <Link href="/superadmin/dashboard" class="flex items-center gap-3 min-w-0">
+                        <div class="w-9 h-9 rounded-lg border border-slate-200 p-1 flex items-center justify-center shrink-0 bg-white shadow-2xs">
                             <img src="/uploads/landing/2.png" alt="Logo UKDW" class="w-full h-full object-contain" onerror="this.style.display='none'" />
                         </div>
-                        <div>
-                            <span class="font-black text-gray-900 text-base tracking-tight block leading-tight group-hover:text-[#0D542B] transition-colors">
+                        <div class="min-w-0 flex-1">
+                            <span class="font-bold text-slate-900 text-sm tracking-tight block leading-tight">
                                 Tracer Study UKDW
                             </span>
                             <div class="flex items-center gap-1.5 mt-0.5">
-                                <span class="inline-block w-2 h-2 rounded-full bg-[#0D542B]"></span>
-                                <span class="text-[11px] font-extrabold text-[#0D542B] uppercase tracking-wider">
-                                    Super Admin
+                                <span class="inline-block w-1.5 h-1.5 rounded-full bg-[#0D542B] shrink-0"></span>
+                                <span class="text-[11px] font-semibold text-[#0D542B] uppercase tracking-wider block truncate">
+                                    Super Administrator
                                 </span>
                             </div>
                         </div>
                     </Link>
 
-                    <!-- Tombol Tutup Mobile -->
                     <button
                         type="button"
                         @click="closeMobileMenu"
-                        class="lg:hidden p-1.5 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 cursor-pointer"
+                        class="lg:hidden p-1.5 rounded-md text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
+                        aria-label="Tutup Menu"
                     >
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                         </svg>
                     </button>
                 </div>
-
-                <!-- NAVIGASI MENU UTAMA -->
-                <div class="px-4 py-6 space-y-6 overflow-y-auto max-h-[calc(100vh-220px)]">
-                    <div>
-                        <div class="px-3 mb-2 text-[10px] font-black uppercase tracking-widest text-gray-400">
-                            Menu Utama
-                        </div>
-                        <nav class="space-y-1.5">
-                            
-                            <!-- 1. Dashboard -->
-                            <Link
-                                href="/superadmin/dashboard"
-                                @click="closeMobileMenu"
-                                class="flex items-center gap-3.5 px-3.5 py-3 rounded-xl text-sm font-bold transition-all group"
-                                :class="[
-                                    isDashboardActive
-                                        ? 'bg-[#0D542B] text-white shadow-xs'
-                                        : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
-                                ]"
-                            >
-                                <svg
-                                    class="w-5 h-5 shrink-0 transition-colors"
-                                    :class="isDashboardActive ? 'text-[#FDC700]' : 'text-gray-400 group-hover:text-gray-700'"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    viewBox="0 0 24 24"
-                                >
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-                                </svg>
-                                <span>Dashboard</span>
-                            </Link>
-
-                            <!-- 2. Kelola Kuesioner -->
-                            <Link
-                                href="/superadmin/pertanyaan"
-                                @click="closeMobileMenu"
-                                class="flex items-center gap-3.5 px-3.5 py-3 rounded-xl text-sm font-bold transition-all group"
-                                :class="[
-                                    isPertanyaanActive
-                                        ? 'bg-[#0D542B] text-white shadow-xs'
-                                        : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
-                                ]"
-                            >
-                                <svg
-                                    class="w-5 h-5 shrink-0 transition-colors"
-                                    :class="isPertanyaanActive ? 'text-[#FDC700]' : 'text-gray-400 group-hover:text-gray-700'"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    viewBox="0 0 24 24"
-                                >
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                </svg>
-                                <span>Kelola Kuesioner</span>
-                            </Link>
-
-                            <!-- 3. Kelola Section -->
-                            <Link
-                                href="/superadmin/sections"
-                                @click="closeMobileMenu"
-                                class="flex items-center gap-3.5 px-3.5 py-3 rounded-xl text-sm font-bold transition-all group"
-                                :class="[
-                                    isSectionsActive
-                                        ? 'bg-[#0D542B] text-white shadow-xs'
-                                        : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
-                                ]"
-                            >
-                                <svg
-                                    class="w-5 h-5 shrink-0 transition-colors"
-                                    :class="isSectionsActive ? 'text-[#FDC700]' : 'text-gray-400 group-hover:text-gray-700'"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    viewBox="0 0 24 24"
-                                >
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-                                </svg>
-                                <span>Kelola Section</span>
-                            </Link>
-
-                            <!-- 4. Data Alumni -->
-                            <Link
-                                href="/superadmin/alumni"
-                                @click="closeMobileMenu"
-                                class="flex items-center gap-3.5 px-3.5 py-3 rounded-xl text-sm font-bold transition-all group"
-                                :class="[
-                                    isAlumniActive
-                                        ? 'bg-[#0D542B] text-white shadow-xs'
-                                        : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
-                                ]"
-                            >
-                                <svg
-                                    class="w-5 h-5 shrink-0 transition-colors"
-                                    :class="isAlumniActive ? 'text-[#FDC700]' : 'text-gray-400 group-hover:text-gray-700'"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    viewBox="0 0 24 24"
-                                >
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-                                </svg>
-                                <span>Data Alumni</span>
-                            </Link>
-                        </nav>
-                    </div>
-                </div>
             </div>
 
-            <!-- BAGIAN BAWAH: KARTU PROFIL USER & LOGOUT -->
-            <div class="p-4 border-t border-gray-100 bg-gray-50/70">
-                <div class="p-3 bg-white rounded-2xl border border-gray-100 shadow-2xs space-y-3">
-                    <div class="flex items-center gap-3">
-                        <div class="w-10 h-10 rounded-xl bg-[#0D542B] text-[#FDC700] font-black text-sm flex items-center justify-center shadow-xs shrink-0">
+            <!-- NAVIGASI MENU UTAMA SUPERADMIN (SLIM, FLAT, KOTAK) -->
+            <div class="flex-1 overflow-y-auto min-h-0 px-3 py-3 space-y-1">
+                <div class="px-2.5 pb-1 pt-1">
+                    <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                        Menu Utama
+                    </span>
+                </div>
+
+                <!-- 1. Dashboard -->
+                <Link
+                    href="/superadmin/dashboard"
+                    @click="closeMobileMenu"
+                    class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-semibold transition-colors"
+                    :class="[
+                        isDashboardActive
+                            ? 'bg-[#0D542B] text-white shadow-2xs'
+                            : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                    ]"
+                >
+                    <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                    </svg>
+                    <span class="truncate">Dashboard Utama</span>
+                </Link>
+
+                <!-- 2. Kelola Kuesioner -->
+                <Link
+                    href="/superadmin/pertanyaan"
+                    @click="closeMobileMenu"
+                    class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-semibold transition-colors"
+                    :class="[
+                        isPertanyaanActive
+                            ? 'bg-[#0D542B] text-white shadow-2xs'
+                            : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                    ]"
+                >
+                    <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    <span class="truncate">Kelola Butir Kuesioner</span>
+                </Link>
+
+                <!-- 3. Kelola Section -->
+                <Link
+                    href="/superadmin/sections"
+                    @click="closeMobileMenu"
+                    class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-semibold transition-colors"
+                    :class="[
+                        isSectionsActive
+                            ? 'bg-[#0D542B] text-white shadow-2xs'
+                            : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                    ]"
+                >
+                    <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                    </svg>
+                    <span class="truncate">Kelola Bagian / Seksi</span>
+                </Link>
+
+                <!-- 4. Data Alumni -->
+                <Link
+                    href="/superadmin/alumni"
+                    @click="closeMobileMenu"
+                    class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-semibold transition-colors"
+                    :class="[
+                        isAlumniActive
+                            ? 'bg-[#0D542B] text-white shadow-2xs'
+                            : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                    ]"
+                >
+                    <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                    </svg>
+                    <span class="truncate">Direktori Data Alumni</span>
+                </Link>
+            </div>
+
+            <!-- BAGIAN BAWAH: INFO PENGGUNA & TOMBOL LOGOUT (KOTAK, BERSIH) -->
+            <div class="p-3 border-t border-slate-200 shrink-0 bg-white">
+                <div class="p-2.5 bg-slate-50 rounded-lg border border-slate-200 flex items-center justify-between gap-2.5">
+                    <div class="flex items-center gap-2.5 min-w-0 flex-1">
+                        <div class="w-8 h-8 rounded-lg bg-[#0D542B] text-white flex items-center justify-center font-bold text-xs shrink-0 shadow-2xs">
                             {{ userInitials }}
                         </div>
                         <div class="min-w-0 flex-1">
-                            <span class="font-extrabold text-xs text-gray-900 break-words leading-snug block">
+                            <span class="block text-xs font-semibold text-slate-900 truncate">
                                 {{ currentUser.name }}
                             </span>
-                            <span class="text-[11px] text-gray-500 break-words leading-tight block mt-0.5">
+                            <span class="block text-[10px] text-slate-500 truncate">
                                 {{ currentUser.email || 'admin@ukdw.ac.id' }}
                             </span>
                         </div>
                     </div>
 
+                    <!-- Tombol Logout -->
                     <button
                         type="button"
                         @click="handleLogout"
-                        class="w-full py-2 px-3 bg-red-50 hover:bg-red-100 text-red-700 hover:text-red-800 font-bold text-xs rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer border border-red-100"
+                        class="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-white rounded-md transition-colors cursor-pointer shrink-0 border border-transparent hover:border-slate-200"
+                        title="Keluar dari Sistem"
+                        aria-label="Logout"
                     >
-                        <!-- Ikon Power Off untuk Keluar Sesi -->
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 5.636a9 9 0 11-12.728 0M12 3v9" />
                         </svg>
-                        <span>Keluar Sesi</span>
                     </button>
                 </div>
             </div>

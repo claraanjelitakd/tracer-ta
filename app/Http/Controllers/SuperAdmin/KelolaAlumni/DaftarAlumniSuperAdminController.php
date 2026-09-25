@@ -29,6 +29,7 @@ class DaftarAlumniSuperAdminController extends Controller
         $semesterTerpilih = $request->input('semester');
         $statusTerpilih = $request->input('status');
         $prodiIdTerpilih = $request->input('prodi_id');
+        $targetTerpilih = $request->input('target');
 
         // 1. Ambil list tahun kelulusan unik dari view untuk dropdown filter
         $daftarTahun = DB::table('v_alumni_audit_rekap')
@@ -44,12 +45,27 @@ class DaftarAlumniSuperAdminController extends Controller
                 return trim($item);
             })->unique()->sortDesc()->values()->all();
 
+        // 1b. Ambil daftar target periode kelulusan unik (Semester & Tahun Lulus)
+        $daftarTarget = DB::table('v_alumni_audit_rekap')
+            ->whereNotNull('tahun_akademik_lulus')
+            ->where('tahun_akademik_lulus', '!=', '')
+            ->pluck('tahun_akademik_lulus')
+            ->unique()
+            ->sortDesc()
+            ->values()
+            ->all();
+
         // 2. Kueri cepat berbasis Database View (v_alumni_audit_rekap)
         $query = DB::table('v_alumni_audit_rekap');
 
         // Filter Program Studi
         if ($prodiIdTerpilih && $prodiIdTerpilih !== 'all') {
             $query->where('prodi_id', $prodiIdTerpilih);
+        }
+
+        // Filter Target Kelulusan (Semester + Tahun)
+        if ($targetTerpilih && $targetTerpilih !== 'all') {
+            $query->where('tahun_akademik_lulus', $targetTerpilih);
         }
 
         // Filter Pencarian (Nama Lengkap atau NIM)
@@ -156,11 +172,13 @@ class DaftarAlumniSuperAdminController extends Controller
             'biodatas' => $alumniList,
             'alumnis' => $alumniList,
             'daftarTahun' => $daftarTahun,
+            'daftarTarget' => $daftarTarget,
             'prodis' => $daftarProdi,
             'filters' => [
                 'search' => $pencarian ?? '',
                 'tahun' => $tahunTerpilih,
                 'semester' => $semesterTerpilih,
+                'target' => $targetTerpilih ?? 'all',
                 'status' => $statusTerpilih,
                 'prodi_id' => $prodiIdTerpilih,
             ],

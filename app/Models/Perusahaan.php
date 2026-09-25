@@ -29,6 +29,8 @@ class Perusahaan extends Model
         'jenis_lokasi',
         'negara',
         'status_verifikasi',
+        'created_by_user_id',
+        'created_by_prodi_id',
     ];
 
     protected $appends = ['province_id'];
@@ -51,5 +53,15 @@ class Perusahaan extends Model
     public function biodata()
     {
         return $this->hasMany(Biodata::class, 'perusahaan_id');
+    }
+
+    public function creator()
+    {
+        return $this->belongsTo(User::class, 'created_by_user_id');
+    }
+
+    public function createdProdi()
+    {
+        return $this->belongsTo(Prodi::class, 'created_by_prodi_id');
     }
 }

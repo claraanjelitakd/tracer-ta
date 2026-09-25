@@ -6,11 +6,13 @@ use App\Http\Controllers\AdminBiroTiga\KelolaAlumni\SinkronisasiLinkedinControll
 use App\Http\Controllers\AdminFakultas\Dashboard\DashboardController as DashboardFakultasController;
 use App\Http\Controllers\AdminFakultas\KelolaAlumni\DaftarAlumniFakultasController;
 use App\Http\Controllers\AdminFakultas\KelolaAlumni\DetailAlumniFakultasController;
+use App\Http\Controllers\AdminFakultas\VerifikasiPerusahaan\VerifikasiPerusahaanFakultasController;
 use App\Http\Controllers\AdminProdi\KelolaAlumni\DaftarAlumniProdiController;
 use App\Http\Controllers\AdminProdi\KelolaPertanyaan\DaftarPertanyaanProdiController;
 use App\Http\Controllers\AdminProdi\KelolaPertanyaan\KelolaOpsiProdiController;
 use App\Http\Controllers\AdminProdi\KelolaPertanyaan\KelolaSectionProdiController;
 use App\Http\Controllers\AdminProdi\KelolaPertanyaan\SimpanPertanyaanProdiController;
+use App\Http\Controllers\AdminProdi\VerifikasiPerusahaan\VerifikasiPerusahaanProdiController;
 use App\Http\Controllers\Alumni\Dashboard\DashboardController;
 use App\Http\Controllers\Alumni\Kuesioner\KuesionerController;
 use App\Http\Controllers\Alumni\Kuesioner\KuesionerProdiController;
@@ -24,6 +26,7 @@ use App\Http\Controllers\SuperAdmin\KelolaAlumni\DetailAlumniSuperAdminControlle
 use App\Http\Controllers\SuperAdmin\KelolaPertanyaan\DaftarPertanyaanController;
 use App\Http\Controllers\SuperAdmin\KelolaPertanyaan\KelolaOpsiController;
 use App\Http\Controllers\SuperAdmin\KelolaPertanyaan\SimpanPertanyaanController;
+use App\Http\Controllers\SuperAdmin\KelolaSection\KelolaKuesionerController;
 use App\Http\Controllers\SuperAdmin\KelolaSection\KelolaSectionController;
 use App\Http\Controllers\Tamu\BerandaController;
 use Illuminate\Support\Facades\Route;
@@ -120,6 +123,7 @@ Route::middleware('auth')->group(function () {
             // Kelola Pertanyaan & Opsi Kuesioner Khusus Prodi
             Route::get('/prodi/pertanyaan', [DaftarPertanyaanProdiController::class, 'index'])->name('prodi.pertanyaan.index');
             Route::post('/prodi/pertanyaan', [SimpanPertanyaanProdiController::class, 'store'])->name('prodi.pertanyaan.store');
+            Route::post('/prodi/pertanyaan/reorder', [SimpanPertanyaanProdiController::class, 'reorder'])->name('prodi.pertanyaan.reorder');
             Route::put('/prodi/pertanyaan/{id}', [SimpanPertanyaanProdiController::class, 'update'])->name('prodi.pertanyaan.update');
             Route::delete('/prodi/pertanyaan/{id}', [SimpanPertanyaanProdiController::class, 'destroy'])->name('prodi.pertanyaan.destroy');
 
@@ -127,6 +131,13 @@ Route::middleware('auth')->group(function () {
             Route::post('/prodi/opsi', [KelolaOpsiProdiController::class, 'store'])->name('prodi.opsi.store');
             Route::put('/prodi/opsi/{id}', [KelolaOpsiProdiController::class, 'update'])->name('prodi.opsi.update');
             Route::delete('/prodi/opsi/{id}', [KelolaOpsiProdiController::class, 'destroy'])->name('prodi.opsi.destroy');
+            // Verifikasi & Approval Perusahaan Pengajuan Alumni (Khusus Prodi)
+            Route::get('/prodi/perusahaan', [VerifikasiPerusahaanProdiController::class, 'index'])->name('prodi.perusahaan.index');
+            Route::post('/prodi/perusahaan/{id}/verify', [VerifikasiPerusahaanProdiController::class, 'verify'])->name('prodi.perusahaan.verify');
+            Route::post('/prodi/perusahaan/{id}/replace', [VerifikasiPerusahaanProdiController::class, 'replace'])->name('prodi.perusahaan.replace');
+            Route::put('/prodi/perusahaan/{id}', [VerifikasiPerusahaanProdiController::class, 'updateAndVerify'])->name('prodi.perusahaan.update');
+            Route::post('/prodi/perusahaan/{id}/reject', [VerifikasiPerusahaanProdiController::class, 'reject'])->name('prodi.perusahaan.reject');
+            Route::get('/prodi/perusahaan/search-verified', [VerifikasiPerusahaanProdiController::class, 'searchVerified'])->name('prodi.perusahaan.search-verified');
         });
 
         // -----------------------------------------------------------------
@@ -141,6 +152,14 @@ Route::middleware('auth')->group(function () {
             Route::get('/fakultas/alumni/{id}', [DetailAlumniFakultasController::class, 'show'])->name('fakultas.alumni.show');
             Route::get('/fakultas/alumni/{id}/export-excel', [DetailAlumniFakultasController::class, 'exportExcel'])->name('fakultas.alumni.export-excel');
             Route::post('/fakultas/alumni/{id}/profile', [DetailAlumniFakultasController::class, 'updateProfile'])->name('fakultas.alumni.profile.update');
+
+            // Verifikasi & Approval Perusahaan Pengajuan Alumni (Lingkup Fakultas)
+            Route::get('/fakultas/perusahaan', [VerifikasiPerusahaanFakultasController::class, 'index'])->name('fakultas.perusahaan.index');
+            Route::post('/fakultas/perusahaan/{id}/verify', [VerifikasiPerusahaanFakultasController::class, 'verify'])->name('fakultas.perusahaan.verify');
+            Route::post('/fakultas/perusahaan/{id}/replace', [VerifikasiPerusahaanFakultasController::class, 'replace'])->name('fakultas.perusahaan.replace');
+            Route::put('/fakultas/perusahaan/{id}', [VerifikasiPerusahaanFakultasController::class, 'updateAndVerify'])->name('fakultas.perusahaan.update');
+            Route::post('/fakultas/perusahaan/{id}/reject', [VerifikasiPerusahaanFakultasController::class, 'reject'])->name('fakultas.perusahaan.reject');
+            Route::get('/fakultas/perusahaan/search-verified', [VerifikasiPerusahaanFakultasController::class, 'searchVerified'])->name('fakultas.perusahaan.search-verified');
         });
 
         // -----------------------------------------------------------------
@@ -175,6 +194,12 @@ Route::middleware('auth')->group(function () {
             Route::post('/superadmin/sections/reorder', [KelolaSectionController::class, 'reorder'])->name('superadmin.sections.reorder');
             Route::put('/superadmin/sections/{id}', [KelolaSectionController::class, 'update'])->name('superadmin.sections.update');
             Route::delete('/superadmin/sections/{id}', [KelolaSectionController::class, 'destroy'])->name('superadmin.sections.destroy');
+
+            // Kelola Kuesioner Induk (CRUD & Toggle Active)
+            Route::post('/superadmin/kuesioner', [KelolaKuesionerController::class, 'store'])->name('superadmin.kuesioner.store');
+            Route::put('/superadmin/kuesioner/{id}', [KelolaKuesionerController::class, 'update'])->name('superadmin.kuesioner.update');
+            Route::patch('/superadmin/kuesioner/{id}/toggle-active', [KelolaKuesionerController::class, 'toggleActive'])->name('superadmin.kuesioner.toggle-active');
+            Route::delete('/superadmin/kuesioner/{id}', [KelolaKuesionerController::class, 'destroy'])->name('superadmin.kuesioner.destroy');
         });
 
     });

@@ -27,6 +27,10 @@ const activeKuesioners = computed(() => {
     return (props.kuesioners && props.kuesioners.length > 0) ? props.kuesioners : props.questionnaires;
 });
 
+const activeKuesioner = computed(() => {
+    return activeKuesioners.value.find((k) => k.is_active) || activeKuesioners.value[0];
+});
+
 const filteredSections = computed(() => {
     if (!searchQuery.value.trim()) {
         return props.sections;
@@ -228,6 +232,238 @@ const handleMoveSection = (sec, direction) => {
         }
     );
 };
+
+// ========================================================
+// SWEETALERT2: KELOLA KUESIONER INDUK
+// ========================================================
+const openKuesionerManagerModal = () => {
+    const kList = activeKuesioners.value;
+
+    const listHtml = kList.map((k) => `
+        <div class="p-3 bg-white border ${k.is_active ? 'border-emerald-400 ring-1 ring-emerald-200' : 'border-gray-200'} rounded-xl text-left space-y-2 mb-2 shadow-2xs">
+            <div class="flex items-center justify-between gap-2">
+                <div class="flex items-center gap-2 flex-wrap">
+                    <span class="font-bold text-gray-900 text-xs">${k.title}</span>
+                    <span class="px-1.5 py-0.5 text-[10px] font-bold bg-gray-100 border border-gray-200 rounded text-gray-700">Tahun ${k.year}</span>
+                    ${k.is_active 
+                        ? '<span class="px-2 py-0.5 text-[10px] font-bold rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300">● Aktif (Alumni)</span>' 
+                        : '<span class="px-2 py-0.5 text-[10px] font-semibold rounded-full bg-gray-100 text-gray-500">Nonaktif</span>'}
+                </div>
+                <div class="flex items-center gap-1 shrink-0">
+                    <button type="button" class="swal-btn-toggle px-2.5 py-1 text-[10px] font-bold rounded border ${k.is_active ? 'border-amber-300 text-amber-800 bg-amber-50 hover:bg-amber-100' : 'border-emerald-300 text-emerald-800 bg-emerald-50 hover:bg-emerald-100'} cursor-pointer" data-id="${k.id}">
+                        ${k.is_active ? 'Nonaktifkan' : 'Jadikan Aktif'}
+                    </button>
+                    <button type="button" class="swal-btn-edit px-2 py-1 text-[10px] font-semibold text-gray-700 hover:text-emerald-800 hover:bg-emerald-50 rounded border border-gray-200 cursor-pointer" data-id="${k.id}" title="Sunting">
+                        Sunting
+                    </button>
+                    <button type="button" class="swal-btn-delete px-2 py-1 text-[10px] font-semibold text-red-600 hover:bg-red-50 rounded border border-gray-200 cursor-pointer" data-id="${k.id}" title="Hapus">
+                        Hapus
+                    </button>
+                </div>
+            </div>
+            <p class="text-[11px] text-gray-500 leading-relaxed">${k.description || '<span class="italic text-gray-400">Tidak ada deskripsi tambahan.</span>'}</p>
+            <div class="text-[10px] text-gray-400">Total Bagian: <strong class="text-gray-700">${k.kelompok_pertanyaan_count ?? k.sections_count ?? '-'} Seksi</strong></div>
+        </div>
+    `).join('');
+
+    Swal.fire({
+        title: 'Kelola Kuesioner Induk',
+        html: `
+            <div class="text-left space-y-3 text-xs">
+                <div class="flex items-center justify-between pb-2 border-b border-gray-200">
+                    <div>
+                        <span class="text-gray-800 font-bold block">Daftar Instrumen Kuesioner (${kList.length})</span>
+                        <span class="text-[11px] text-gray-500">Kuesioner yang aktif akan ditampilkan pada halaman pengisian alumni.</span>
+                    </div>
+                    <button id="swal-btn-create-kuesioner" type="button" class="px-3 py-1.5 bg-[#0D542B] hover:bg-[#08381c] text-white text-[11px] font-bold rounded-lg transition-colors cursor-pointer flex items-center gap-1 shadow-xs">
+                        + Tambah Kuesioner
+                    </button>
+                </div>
+                <div class="max-h-80 overflow-y-auto pr-1">
+                    ${listHtml || '<p class="text-center text-gray-400 py-6">Belum ada data kuesioner.</p>'}
+                </div>
+            </div>
+        `,
+        showConfirmButton: false,
+        showCancelButton: true,
+        cancelButtonText: 'Tutup',
+        cancelButtonColor: '#6B7280',
+        width: '600px',
+        didOpen: () => {
+            document.getElementById('swal-btn-create-kuesioner')?.addEventListener('click', () => {
+                openKuesionerFormModal();
+            });
+
+            document.querySelectorAll('.swal-btn-edit').forEach((btn) => {
+                btn.addEventListener('click', (e) => {
+                    const id = parseInt(e.currentTarget.getAttribute('data-id'), 10);
+                    const k = kList.find((item) => item.id === id);
+                    if (k) openKuesionerFormModal(k);
+                });
+            });
+
+            document.querySelectorAll('.swal-btn-toggle').forEach((btn) => {
+                btn.addEventListener('click', (e) => {
+                    const id = parseInt(e.currentTarget.getAttribute('data-id'), 10);
+                    const k = kList.find((item) => item.id === id);
+                    if (k) handleToggleKuesionerActive(k);
+                });
+            });
+
+            document.querySelectorAll('.swal-btn-delete').forEach((btn) => {
+                btn.addEventListener('click', (e) => {
+                    const id = parseInt(e.currentTarget.getAttribute('data-id'), 10);
+                    const k = kList.find((item) => item.id === id);
+                    if (k) handleDeleteKuesioner(k);
+                });
+            });
+        },
+    });
+};
+
+const openKuesionerFormModal = (kuesionerToEdit = null) => {
+    const isEdit = !!kuesionerToEdit;
+    const initialTitle = kuesionerToEdit?.title || '';
+    const initialYear = kuesionerToEdit?.year || new Date().getFullYear();
+    const initialDesc = kuesionerToEdit?.description || '';
+    const initialActive = isEdit ? !!kuesionerToEdit.is_active : true;
+
+    const htmlContent = `
+        <div class="text-left space-y-3.5 text-xs">
+            <div>
+                <label class="block font-bold text-gray-700 mb-1">Judul Kuesioner *</label>
+                <input id="swal-kuesioner-title" type="text" value="${initialTitle}" placeholder="Contoh: Tracer Study UKDW 2021" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-emerald-700" />
+            </div>
+
+            <div>
+                <label class="block font-bold text-gray-700 mb-1">Tahun Kuesioner *</label>
+                <input id="swal-kuesioner-year" type="number" value="${initialYear}" min="2000" max="2100" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-emerald-700" />
+            </div>
+
+            <div>
+                <label class="block font-bold text-gray-700 mb-1">Deskripsi / Keterangan (Opsional)</label>
+                <textarea id="swal-kuesioner-desc" rows="3" placeholder="Contoh: Kuesioner Pelacakan Jejak Alumni Universitas Kristen Duta Wacana (Standar Tracer Study 2021)" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-emerald-700 leading-relaxed">${initialDesc}</textarea>
+            </div>
+
+            <div class="pt-1">
+                <label class="inline-flex items-center gap-2 cursor-pointer select-none">
+                    <input id="swal-kuesioner-active" type="checkbox" ${initialActive ? 'checked' : ''} class="w-4 h-4 rounded text-emerald-700 focus:ring-emerald-600 border-gray-300" />
+                    <span class="font-bold text-gray-700 text-xs">Jadikan Kuesioner Aktif (Ditampilkan kepada Alumni)</span>
+                </label>
+                <p class="text-[11px] text-gray-500 mt-0.5 ml-6">Jika diaktifkan, kuesioner lain otomatis dinonaktifkan.</p>
+            </div>
+        </div>
+    `;
+
+    Swal.fire({
+        title: isEdit ? 'Sunting Kuesioner Induk' : 'Tambah Kuesioner Induk',
+        html: htmlContent,
+        showCancelButton: true,
+        confirmButtonText: isEdit ? 'Simpan Perubahan' : 'Tambah Kuesioner',
+        cancelButtonText: 'Batal',
+        confirmButtonColor: '#0D542B',
+        cancelButtonColor: '#6B7280',
+        width: '500px',
+        focusConfirm: false,
+        preConfirm: () => {
+            const title = document.getElementById('swal-kuesioner-title').value.trim();
+            const year = parseInt(document.getElementById('swal-kuesioner-year').value, 10);
+            const description = document.getElementById('swal-kuesioner-desc').value.trim();
+            const is_active = document.getElementById('swal-kuesioner-active').checked;
+
+            if (!title) {
+                Swal.showValidationMessage('Judul kuesioner wajib diisi.');
+                return false;
+            }
+            if (!year || year < 2000 || year > 2100) {
+                Swal.showValidationMessage('Tahun kuesioner harus antara 2000 - 2100.');
+                return false;
+            }
+
+            return {
+                title,
+                year,
+                description,
+                is_active,
+            };
+        },
+    }).then((result) => {
+        if (result.isConfirmed && result.value) {
+            if (isEdit) {
+                router.put(`/superadmin/kuesioner/${kuesionerToEdit.id}`, result.value, {
+                    preserveScroll: true,
+                    onSuccess: () => {
+                        Swal.fire('Berhasil', 'Data kuesioner berhasil diperbarui.', 'success');
+                    },
+                    onError: (errors) => {
+                        Swal.fire('Gagal Menyimpan', Object.values(errors).join('<br>'), 'error');
+                    },
+                });
+            } else {
+                router.post('/superadmin/kuesioner', result.value, {
+                    preserveScroll: true,
+                    onSuccess: () => {
+                        Swal.fire('Berhasil', 'Kuesioner baru berhasil ditambahkan.', 'success');
+                    },
+                    onError: (errors) => {
+                        Swal.fire('Gagal Menyimpan', Object.values(errors).join('<br>'), 'error');
+                    },
+                });
+            }
+        }
+    });
+};
+
+const handleToggleKuesionerActive = (k) => {
+    const actionText = k.is_active ? 'menonaktifkan' : 'mengaktifkan';
+    Swal.fire({
+        title: 'Konfirmasi Status',
+        text: `Apakah Anda yakin ingin ${actionText} kuesioner "${k.title}"?`,
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: 'Ya, Lanjutkan',
+        cancelButtonText: 'Batal',
+        confirmButtonColor: '#0D542B',
+        cancelButtonColor: '#6B7280',
+    }).then((res) => {
+        if (res.isConfirmed) {
+            router.patch(`/superadmin/kuesioner/${k.id}/toggle-active`, {}, {
+                preserveScroll: true,
+                onSuccess: () => {
+                    Swal.fire('Berhasil', `Kuesioner "${k.title}" berhasil diperbarui.`, 'success');
+                },
+                onError: () => {
+                    Swal.fire('Gagal', 'Terjadi kesalahan saat memperbarui status.', 'error');
+                },
+            });
+        }
+    });
+};
+
+const handleDeleteKuesioner = (k) => {
+    Swal.fire({
+        title: 'Hapus Kuesioner Induk?',
+        html: `Apakah Anda yakin ingin menghapus <strong>"${k.title}"</strong>?<br><br><span class="text-xs text-red-600">Perhatian: Seluruh seksi dan butir pertanyaan di dalam kuesioner ini akan ikut terhapus!</span>`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'Ya, Hapus',
+        cancelButtonText: 'Batal',
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#6B7280',
+    }).then((res) => {
+        if (res.isConfirmed) {
+            router.delete(`/superadmin/kuesioner/${k.id}`, {
+                preserveScroll: true,
+                onSuccess: () => {
+                    Swal.fire('Berhasil', 'Kuesioner berhasil dihapus.', 'success');
+                },
+                onError: () => {
+                    Swal.fire('Gagal', 'Terjadi kesalahan saat menghapus kuesioner.', 'error');
+                },
+            });
+        }
+    });
+};
 </script>
 
 <template>
@@ -252,15 +488,20 @@ const handleMoveSection = (sec, direction) => {
                     </div>
 
                     <div class="flex items-center gap-2.5">
-                        <Link
-                            href="/superadmin/pertanyaan"
-                            class="px-3 py-1.5 rounded-lg border border-gray-300 text-xs font-semibold text-gray-700 hover:bg-gray-50 transition-colors flex items-center gap-1.5"
+                        <button
+                            type="button"
+                            @click="openKuesionerManagerModal()"
+                            class="px-3 py-1.5 rounded-lg border border-gray-300 text-xs font-semibold text-gray-700 hover:bg-gray-50 transition-colors flex items-center gap-1.5 cursor-pointer shadow-2xs"
+                            title="Kelola Kuesioner Induk Tracer Study"
                         >
-                            <svg class="w-3.5 h-3.5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            <svg class="w-3.5 h-3.5 text-emerald-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                             </svg>
-                            <span>Kelola Butir Pertanyaan</span>
-                        </Link>
+                            <span>Kelola Kuesioner Induk</span>
+                            <span v-if="activeKuesioner" class="px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800 text-[10px] font-bold">
+                                {{ activeKuesioner.year }}
+                            </span>
+                        </button>
 
                         <button
                             type="button"

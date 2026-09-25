@@ -75,5 +75,10 @@ class DatabaseSeeder extends Seeder
         $this->call([
             JoshuaAndreanSeeder::class,
         ]);
+
+        // 6. Seed Data Simulasi Komprehensif Lintas 12 Program Studi
+        $this->call([
+            AlumniSimulationSeeder::class,
+        ]);
     }
 }
