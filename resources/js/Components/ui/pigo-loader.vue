@@ -1,28 +1,45 @@
 <template>
     <transition name="fade">
-        <div v-if="isLoading" class="fixed inset-0 z-[100] flex items-center justify-center bg-black/20 transition-opacity">
-            <div class="bg-white py-4 px-6 rounded-xl shadow-2xl flex items-center space-x-5 animate-bounce-short">
-                
-                <!-- Pigo Mascot dengan Spinner mengelilinginya -->
-                <div class="relative flex items-center justify-center w-12 h-12 shrink-0">
-                    <svg class="absolute inset-0 w-full h-full text-gray-100 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle class="opacity-100" cx="12" cy="12" r="11" stroke="currentColor" stroke-width="2"></circle>
-                        <path class="opacity-100 text-[#005B3C]" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M12 1A11 11 0 001 12"></path>
-                    </svg>
-                    <img src="/uploads/landing/2.png" alt="Pigo Mascot" class="w-8 h-8 object-contain z-10 animate-pulse" onerror="this.src='/uploads/landing/3.png'" />
-                </div>
+        <div v-if="isLoading" class="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-black/65 backdrop-blur-xs transition-opacity">
+            
+            <!-- Container Spinner Dotted (Gaya Gambar 3) -->
+            <div class="relative flex items-center justify-center w-36 h-36">
 
-                <div class="flex flex-col">
-                    <span class="text-gray-900 font-bold text-base">Memproses...</span>
-                    <span class="text-gray-500 text-xs font-medium">Harap tunggu sebentar...</span>
-                </div>
+                <!-- 12-Dot Circular Spinner berputar -->
+                <svg class="absolute inset-0 w-full h-full animate-dots-spin" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <!-- 12 dots disusun melingkar dengan gradasi opacity seperti Gambar 3 -->
+                    <circle cx="60" cy="12" r="5.2" fill="#ffffff" opacity="1.0" />
+                    <circle cx="84" cy="18.43" r="5.2" fill="#ffffff" opacity="0.91" />
+                    <circle cx="101.57" cy="36" r="5.2" fill="#ffffff" opacity="0.82" />
+                    <circle cx="108" cy="60" r="5.2" fill="#ffffff" opacity="0.73" />
+                    <circle cx="101.57" cy="84" r="5.2" fill="#ffffff" opacity="0.64" />
+                    <circle cx="84" cy="101.57" r="5.2" fill="#ffffff" opacity="0.55" />
+                    <circle cx="60" cy="108" r="5.2" fill="#ffffff" opacity="0.45" />
+                    <circle cx="36" cy="101.57" r="5.2" fill="#ffffff" opacity="0.36" />
+                    <circle cx="18.43" cy="84" r="5.2" fill="#ffffff" opacity="0.27" />
+                    <circle cx="12" cy="60" r="5.2" fill="#ffffff" opacity="0.18" />
+                    <circle cx="18.43" cy="36" r="5.2" fill="#ffffff" opacity="0.11" />
+                    <circle cx="36" cy="18.43" r="5.2" fill="#ffffff" opacity="0.06" />
+                </svg>
+
+                <!-- Gambar Pigo saat ini tetap di tengah lingkaran dot -->
+                <img
+                    src="/uploads/pigo/loading-pigo.png"
+                    alt="Loading"
+                    class="w-16 h-16 object-contain z-10 drop-shadow-md select-none pointer-events-none"
+                    onerror="this.src='/uploads/landing/2.png'"
+                />
             </div>
+
+            <!-- Teks Loading persis seperti Gambar 3 -->
+            <p class="text-white text-base font-normal tracking-wide mt-4 select-none drop-shadow-sm">Loading...</p>
+
         </div>
     </transition>
 </template>
 
 <script setup>
-const props = defineProps({
+defineProps({
     isLoading: {
         type: Boolean,
         default: true
@@ -33,7 +50,7 @@ const props = defineProps({
 <style scoped>
 .fade-enter-active,
 .fade-leave-active {
-    transition: opacity 0.8s ease;
+    transition: opacity 0.3s ease;
 }
 
 .fade-enter-from,
@@ -41,30 +58,17 @@ const props = defineProps({
     opacity: 0;
 }
 
-.animate-pulse-slow {
-    animation: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+/* Animasi putaran 12 langkah seperti indikator standar Apple / Gambar 3 */
+.animate-dots-spin {
+    animation: dots-spin 1s steps(12, end) infinite;
 }
 
-@keyframes pulse {
-    0%, 100% {
-        opacity: 1;
-        transform: scale(1);
+@keyframes dots-spin {
+    from {
+        transform: rotate(0deg);
     }
-    50% {
-        opacity: .8;
-        transform: scale(0.95);
+    to {
+        transform: rotate(360deg);
     }
-}
-</style>
-
-<style scoped>
-/* Animasi ringan untuk popup */
-.animate-bounce-short {
-    animation: bounce-short 0.3s ease-out 1;
-}
-@keyframes bounce-short {
-    0% { transform: translateY(20px); opacity: 0; }
-    50% { transform: translateY(-5px); }
-    100% { transform: translateY(0); opacity: 1; }
 }
 </style>

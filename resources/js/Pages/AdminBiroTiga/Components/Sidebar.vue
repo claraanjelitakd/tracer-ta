@@ -79,7 +79,7 @@ const handleLogout = () => {
                     </svg>
                 </button>
                 <Link href="/biro3/dashboard" class="flex items-center gap-2">
-                    <img src="/uploads/landing/2.png" alt="Logo UKDW" class="h-7 w-7 object-contain" onerror="this.style.display='none'" />
+                    <img src="/uploads/logo/logo-ukdw.png" alt="Logo UKDW" class="h-7 w-7 object-contain" onerror="this.style.display='none'" />
                     <div>
                         <span class="font-bold text-xs text-slate-900 tracking-tight block leading-tight">Tracer Study</span>
                         <span class="text-[10px] font-semibold text-[#0D542B] uppercase tracking-wider">Biro 3 UKDW</span>
@@ -113,7 +113,7 @@ const handleLogout = () => {
                 <div class="p-4 border-b border-slate-200 flex items-center justify-between bg-white">
                     <Link href="/biro3/dashboard" class="flex items-center gap-3 min-w-0">
                         <div class="w-9 h-9 rounded-lg border border-slate-200 p-1 flex items-center justify-center shrink-0 bg-white shadow-2xs">
-                            <img src="/uploads/landing/2.png" alt="Logo UKDW" class="w-full h-full object-contain" onerror="this.style.display='none'" />
+                            <img src="/uploads/logo/logo-ukdw.png" alt="Logo UKDW" class="w-full h-full object-contain" onerror="this.style.display='none'" />
                         </div>
                         <div class="min-w-0 flex-1">
                             <span class="font-bold text-slate-900 text-sm tracking-tight block leading-tight">

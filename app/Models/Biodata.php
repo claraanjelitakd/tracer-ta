@@ -24,6 +24,7 @@ class Biodata extends Model
         'prodi_id',
         'tahun_lulus',
         'nama',
+        'foto',
         'tempat_lahir',
         'tanggal_lahir',
         'jenis_kelamin',
@@ -120,15 +121,11 @@ class Biodata extends Model
     }
 
     /**
-     * Relasi ke Yudisium (Status Kelulusan Akademik & Dosen).
+     * Relasi ke Yudisium (Status Kelulusan Akademik, Tugas Akhir, & Publikasi).
      */
     public function yudisium()
     {
-        if ($this->yudisium_id) {
-            return $this->belongsTo(Yudisium::class, 'yudisium_id');
-        }
-
-        return $this->hasOne(Yudisium::class, 'nim', 'nim');
+        return $this->belongsTo(Yudisium::class, 'yudisium_id');
     }
 
     /**

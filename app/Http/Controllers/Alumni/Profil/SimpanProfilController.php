@@ -77,7 +77,7 @@ class SimpanProfilController extends Controller
             $alamat = ! empty($dataTervalidasi['company_alamat']) ? $dataTervalidasi['company_alamat'] : (! empty($dataTervalidasi['perusahaan_alamat']) ? $dataTervalidasi['perusahaan_alamat'] : null);
             $kodePos = ! empty($dataTervalidasi['zipcode']) ? $dataTervalidasi['zipcode'] : (! empty($dataTervalidasi['kode_pos']) ? $dataTervalidasi['kode_pos'] : null);
 
-            $prodiIdPengaju = $user?->prodi_id ?? $biodata?->prodi_id;
+            $prodiIdPengaju = $pengguna?->prodi_id ?? $biodata?->prodi_id;
             $perusahaan = Perusahaan::firstOrCreate(
                 ['nama_perusahaan' => $dataTervalidasi['nama_perusahaan']],
                 [
@@ -91,7 +91,7 @@ class SimpanProfilController extends Controller
                     'jenis_lokasi' => $jenisLokasi,
                     'negara' => $negara,
                     'status_verifikasi' => 'Menunggu Verifikasi',
-                    'created_by_user_id' => $user?->id,
+                    'created_by_user_id' => $pengguna?->id,
                     'created_by_prodi_id' => $prodiIdPengaju,
                 ]
             );

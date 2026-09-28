@@ -3,9 +3,13 @@
 namespace App\Http\Controllers\Otentikasi;
 
 use App\Http\Controllers\Controller;
+use App\Models\DataAkademik;
+use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
 use Inertia\Inertia;
 
 /**
@@ -43,6 +47,34 @@ class LoginController extends Controller
             }
 
             return self::arahkanBerdasarkanPeran($pengguna->role);
+        }
+
+        // Khusus role Alumni: Dukungan masuk menggunakan kata sandi bawaan (default password) berupa tanggal lahir
+        $alumniUser = User::where('username', $kredensial['username'])
+            ->where('role', 'alumni')
+            ->first();
+
+        if ($alumniUser) {
+            $tglLahir = $alumniUser->biodata?->tanggal_lahir
+                ?? DataAkademik::where('nim', $alumniUser->username)->value('tanggal_lahir');
+
+            if ($tglLahir) {
+                $carbonDate = Carbon::parse($tglLahir);
+                $expectedFormat = $carbonDate->format('dmY'); // Format ddmmyyyy, contoh: 15082001
+                $cleanInput = preg_replace('/[^0-9]/', '', $kredensial['password']);
+
+                if ($cleanInput === $expectedFormat || $kredensial['password'] === $expectedFormat) {
+                    // Update kata sandi ke hash baru dan wajibkan ganti kata sandi
+                    $alumniUser->password = Hash::make($kredensial['password']);
+                    $alumniUser->must_change_password = true;
+                    $alumniUser->save();
+
+                    Auth::login($alumniUser);
+                    $request->session()->regenerate();
+
+                    return redirect()->intended('/change-password');
+                }
+            }
         }
 
         return back()->withErrors([

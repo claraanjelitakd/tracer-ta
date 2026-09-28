@@ -100,7 +100,7 @@ erDiagram
     %% 3. ENTITAS BIODATA & PROFIL ALUMNI
     %% ==========================================
     data_akademik ||--|| biodata : "sinkronisasi data (nim)"
-    biodata ||--o| yudisium : "status yudisium (yudisium_id/nim)"
+    biodata ||--o| yudisium : "kelulusan, skripsi & publikasi (yudisium_id/nim)"
     biodata ||--o| data_orang_tua : "kontak wali (orang_tua_id/nim)"
     perusahaan ||--o{ biodata : "tempat bekerja (perusahaan_id)"
     atasan ||--o{ biodata : "atasan langsung (atasan_id)"
@@ -115,6 +115,7 @@ erDiagram
         string kode_prodi "nullable"
         string tahun_lulus "nullable"
         string nama "nullable"
+        string foto "nullable (Path foto di /uploads/profile)"
         string tempat_lahir "nullable"
         date tanggal_lahir "nullable"
         string jenis_kelamin "nullable"
@@ -190,13 +191,21 @@ erDiagram
 
     yudisium {
         bigint id PK
-        string nim FK "references biodata.nim"
+        string nim FK "references data_akademik.nim"
         string nama_mahasiswa
-        string judul_ta "nullable"
+        string dosen_pembimbing_1 "nullable"
+        string dosen_pembimbing_2 "nullable"
+        string dosen_penguji_1 "nullable"
+        string dosen_penguji_2 "nullable"
+        text judul_ta "nullable (Judul Skripsi/Thesis/Karya Ilmiah)"
+        text judul_ta_inggris "nullable"
+        string url_publikasi "nullable (Link repositori/jurnal ilmiah)"
+        string jenis_publikasi "nullable"
+        string status_publikasi "nullable"
         string status_yudisium "Lulus, Belum Lulus"
-        string proses_yudisium "Lulus, Belum Lulus"
+        string proses_yudisium "Belum, Proses, Lulus, Tidak Lulus"
         string tahun_akademik_lulus "nullable"
-        string tahun_lulus "nullable"
+        year tahun_lulus "nullable"
         timestamp created_at
         timestamp updated_at
     }
@@ -387,12 +396,12 @@ erDiagram
 ### B. Modul Profil Alumni & Akademik
 1. **`biodata`**:
    - Entitas utama profil alumni.
-   - Menyimpan field profil pribadi (NIK, No KK, BPJS, NPWP, Agama, Kontak, Domisili, Media Sosial) serta data karier (Perusahaan, Atasan Langsung, Posisi/Jabatan, Jenis Pekerjaan).
-   - Terhubung dengan `users.id` (1:1), `data_akademik.nim` (1:1), `prodi.id`, `perusahaan.id`, `atasan.id`, `yudisium.nim`, dan `data_orang_tua.nim`.
+   - Menyimpan field profil pribadi (Foto Profil `foto` di `/uploads/profile`, NIK, No KK, BPJS, NPWP, Agama, Kontak, Domisili, Media Sosial) serta data karier (Perusahaan, Atasan Langsung, Posisi/Jabatan, Jenis Pekerjaan).
+   - Terhubung dengan `users.id` (1:1), `data_akademik.nim` (1:1), `prodi.id`, `perusahaan.id`, `atasan.id`, `yudisium.id` / `yudisium.nim` (kelulusan & skripsi), dan `data_orang_tua.nim`.
 2. **`data_akademik`**:
    - Pangkalan data akademik statis bersumber dari Biro Akademik (NIM, NIRM, Nama, TTL, IPK Kumulatif `ip_kumulatif`, Status Mahasiswa `AR`, No Ijazah, Asal Sekolah & Alamat Sekolah).
 3. **`yudisium`**:
-   - Status kelulusan resmi mahasiswa (`Lulus` / `Belum Lulus`), Judul Tugas Akhir / Skripsi, dan Tahun Kelulusan (`tahun_akademik_lulus`, `tahun_lulus`).
+   - Status kelulusan resmi mahasiswa (`Lulus` / `Belum Lulus`), Dosen Pembimbing & Penguji, Judul Tugas Akhir / Skripsi (`judul_ta`, `judul_ta_inggris`), Link Repositori Karya Ilmiah (`url_publikasi`), Jenis Publikasi (`jenis_publikasi`), Status Publikasi (`status_publikasi`), dan Periode Kelulusan (`tahun_akademik_lulus`, `tahun_lulus`).
 4. **`data_orang_tua`**:
    - Profil kontak orang tua atau wali alumni (Nama, No Telepon, Pekerjaan, Alamat).
 5. **`perusahaan`** & **`atasan`**:
@@ -453,7 +462,7 @@ erDiagram
 | `ref_fakultas` | 1 : N | `users` | `users.fakultas_id` | Admin fakultas terikat ke fakultas tertentu. |
 | `prodi` | 1 : N | `biodata` | `biodata.prodi_id` | Alumni terikat ke prodi kelulusannya. |
 | `data_akademik` | 1 : 1 | `biodata` | `biodata.nim = data_akademik.nim` | Relasi identitas akademik via NIM. |
-| `biodata` | 1 : 1 | `yudisium` | `yudisium.nim = biodata.nim` | Relasi data kelulusan & status yudisium. |
+| `biodata` | 1 : 1 | `yudisium` | `biodata.yudisium_id` / `yudisium.nim = biodata.nim` | Relasi data kelulusan, skripsi/TA, dan link repositori publikasi karya ilmiah. |
 | `biodata` | 1 : 1 | `data_orang_tua` | `data_orang_tua.nim = biodata.nim` | Relasi data orang tua/wali. |
 | `users` | 1 : N | `perusahaan` | `perusahaan.created_by` | Alumni pengaju saat mendaftarkan data perusahaan baru. |
 | `prodi` | 1 : N | `perusahaan` | `perusahaan.created_prodi_id` | Program studi pengaju untuk verifikasi admin prodi & fakultas. |

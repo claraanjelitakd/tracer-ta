@@ -74,8 +74,7 @@ const handleLogout = () => {
                     <Link href="/alumni/dashboard" class="flex items-center space-x-3 group">
                         <div class="bg-white p-1 rounded-xl shadow-2xs border border-gray-100 flex items-center justify-center">
                             <img 
-                                src="/uploads/landing/2.png" 
-                                onerror="this.src='/uploads/logo/logo-ukdw.png'" 
+                                src="/uploads/logo/logo-ukdw.png" 
                                 alt="Logo UKDW" 
                                 class="h-8 w-8 object-contain" 
                             />

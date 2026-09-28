@@ -1,16 +1,19 @@
-<!--
-  Halaman Login Otentikasi (Desain ala SIMASTER UGM)
-  Fungsi: Menampilkan antarmuka untuk masuk ke dalam sistem Tracer Study.
--->
 <script setup>
+import { ref } from 'vue';
 import { Head, useForm, Link } from '@inertiajs/vue3';
 
-// Form state untuk menangani login (username untuk nim alumni)
+// Form state untuk menangani login
 const form = useForm({
     username: '',
     password: '',
     remember: false,
 });
+
+// State visibilitas kata sandi
+const showPassword = ref(false);
+
+// State modal lupa kata sandi
+const showForgotModal = ref(false);
 
 const submit = () => {
     form.post('/login', {
@@ -20,148 +23,298 @@ const submit = () => {
 </script>
 
 <template>
-    <Head title="Masuk - Tracer Study" />
+    <Head title="Masuk - Tracer Study UKDW" />
 
-    <div class="relative min-h-screen flex items-center justify-center lg:justify-end font-sans overflow-hidden">
+    <div class="min-h-screen bg-[#002813] flex items-center justify-center p-3 sm:p-6 lg:p-8 font-sans selection:bg-[#FFC700] selection:text-slate-950">
         
-        <!-- Gambar Background Full Screen dengan Overlay Hijau -->
-        <div class="absolute inset-0 z-0">
-            <img src="/uploads/landing/1.png" alt="Background Kampus UKDW" class="w-full h-full object-cover" onerror="this.style.display='none'">
-            <div class="absolute inset-0 bg-gradient-to-r from-[#005B3C]/95 via-[#005B3C]/80 to-[#003B26]/90 mix-blend-multiply"></div>
-        </div>
-
-        <!-- Konten Kiri (Branding & Teks) - Tampil di layar besar -->
-        <div class="hidden lg:flex absolute left-0 top-0 bottom-0 w-1/2 z-10 flex-col justify-center px-16 xl:px-24 text-white">
-            <div class="flex items-center gap-6 mb-8">
-                <!-- Logo UKDW dengan efek glow halus -->
-                <div class="bg-white p-3 rounded-2xl shadow-[0_0_30px_rgba(255,255,255,0.3)]">
-                    <img src="/uploads/logo/logo-ukdw.png" alt="Logo UKDW" class="w-20 h-20 object-contain" onerror="this.src='https://www.ukdw.ac.id/wp-content/uploads/2017/10/logo-ukdw.png'" />
-                </div>
-            </div>
+        <!-- Master Card Split 2 Kolom (Bentuk Tegas & Elegan, Tidak Tumpul Berlebihan) -->
+        <div class="max-w-5xl w-full bg-[#004D25] rounded-xl p-3 sm:p-5 shadow-2xl border border-white/15 grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-6 items-stretch relative overflow-hidden">
             
-            <h1 class="text-5xl xl:text-6xl font-black mb-4 tracking-tight drop-shadow-lg">
-                TRACER STUDY <span class="text-yellow-400">UKDW</span>
-            </h1>
-            
-            <p class="text-green-50 text-lg leading-relaxed max-w-lg mb-12 drop-shadow-md">
-                Sistem Informasi <span class="font-bold text-yellow-300">Penelusuran Alumni</span> untuk Mendukung Tercapainya Universitas Berkelas yang Berakar Kuat dan Menjulang Tinggi.
-            </p>
+            <!-- Glow Latar Belakang Hijau Botol -->
+            <div class="absolute -top-32 -left-32 w-80 h-80 bg-[#03542B] rounded-full blur-3xl pointer-events-none opacity-50"></div>
+            <div class="absolute -bottom-32 -right-32 w-80 h-80 bg-[#FFC700]/10 rounded-full blur-3xl pointer-events-none opacity-50"></div>
 
-        </div>
-
-        <!-- Konten Kanan (Card Form Login) -->
-        <div class="w-full max-w-md px-6 z-10 lg:mr-16 xl:mr-32">
-            
-            <!-- Card Putih Melayang -->
-            <div class="bg-white/95 backdrop-blur-xl rounded-[2.5rem] p-8 sm:p-10 shadow-2xl border border-white/50 relative overflow-hidden">
+            <!-- 
+              ========================================================================
+              KOLOM KIRI: INFORMASI PETUNJUK PENGISIAN AKUN
+              ========================================================================
+            -->
+            <div class="lg:col-span-6 flex flex-col justify-between p-6 sm:p-8 rounded-lg bg-gradient-to-b from-[#00381a] via-[#004D25] to-[#022813] border border-white/10 relative overflow-hidden text-white shadow-inner">
                 
-                <!-- Ornamen atas form -->
-                <div class="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-[#005B3C] to-yellow-400"></div>
+                <div>
+                    <!-- Top Branding Logo & Title -->
+                    <div class="flex items-center gap-3.5 mb-6">
+                        <Link href="/" class="w-12 h-12 rounded-lg bg-white p-2 flex items-center justify-center shadow-md shrink-0 hover:scale-105 transition-transform">
+                            <img src="/uploads/logo/logo-ukdw.png" alt="Logo UKDW" class="w-full h-full object-contain" />
+                        </Link>
+                        <div>
+                            <span class="text-base font-black tracking-tight text-white block leading-tight">TRACER STUDY UKDW</span>
+                            <span class="text-[11px] text-white/75 font-semibold tracking-wide">Universitas Kristen Duta Wacana</span>
+                        </div>
+                    </div>
 
-                <div class="text-center mb-8 pt-2">
-                    <!-- Logo mobile saja -->
-                    <img src="/uploads/logo/logo-ukdw.png" alt="Logo UKDW" class="w-16 h-16 mx-auto mb-4 lg:hidden" onerror="this.src='https://www.ukdw.ac.id/wp-content/uploads/2017/10/logo-ukdw.png'" />
-                    <h2 class="text-3xl font-black text-[#001D13] tracking-tight">SIGN IN</h2>
-                    <p class="text-gray-500 font-medium mt-1">Akun Tracer Study Anda</p>
+                    <!-- Headline Inspiratif -->
+                    <h2 class="text-xl sm:text-2xl lg:text-3xl font-black text-white tracking-tight leading-tight mb-2">
+                        Design your future, one milestone at a time.
+                    </h2>
+                    <p class="text-xs sm:text-sm text-white/80 leading-relaxed font-medium mb-6">
+                        Bergabunglah bersama ribuan alumni Duta Wacana dalam membangun almamater yang unggul dan melayani dunia.
+                    </p>
+
+                    <!-- Petunjuk Akun Pengisian Box -->
+                    <div class="space-y-3.5 bg-black/25 backdrop-blur-xl p-4 sm:p-5 rounded-lg border border-white/15 shadow-sm">
+                        <div class="flex items-center gap-2 mb-1">
+                            <span class="w-2 h-2 rounded-full bg-[#FFC700]"></span>
+                            <h3 class="text-xs font-black uppercase tracking-wider text-[#FFC700]">
+                                Petunjuk Akun Pengisian
+                            </h3>
+                        </div>
+
+                        <!-- Alumni UKDW -->
+                        <div class="text-xs space-y-1 pl-3 border-l-2 border-[#FFC700]">
+                            <div class="font-bold text-white flex items-center justify-between">
+                                <span>Alumni UKDW</span>
+                                <span class="text-[10px] text-[#FFC700] font-semibold bg-[#FFC700]/10 px-2 py-0.5 rounded">Akun Terdaftar</span>
+                            </div>
+                            <p class="text-white/85 leading-relaxed">
+                                <strong>Username:</strong> Menggunakan <span class="font-bold text-[#FFC700]">NIM</span> saat kuliah.
+                            </p>
+                            <p class="text-white/85 leading-relaxed">
+                                <strong>Password:</strong> Tanggal lahir format <code class="bg-black/40 px-1.5 py-0.5 rounded font-bold text-[#FFC700] border border-white/10">ddmmyyyy</code>.
+                            </p>
+                            <p class="text-[11px] text-white/60 italic pt-0.5">
+                                Contoh: 01011990 (kelahiran 1 Januari 1990). Wajib ubah kata sandi saat pertama kali masuk.
+                            </p>
+                        </div>
+
+                        <!-- Pengguna Lulusan / Perusahaan -->
+                        <div class="text-xs space-y-1 pl-3 border-l-2 border-white/30 pt-2 border-t border-white/10">
+                            <div class="font-bold text-white flex items-center justify-between">
+                                <span>Pengguna Lulusan / Perusahaan</span>
+                                <span class="text-[10px] text-white/70 font-semibold bg-white/10 px-2 py-0.5 rounded">Mitra</span>
+                            </div>
+                            <p class="text-white/85 leading-relaxed">
+                                <strong>Akses Kuesioner Mitra:</strong> Menggunakan kredensial khusus yang telah dikirimkan secara resmi melalui email penanggung jawab instansi.
+                            </p>
+                        </div>
+                    </div>
                 </div>
 
-                <!-- Pesan Error Global -->
-                <div v-if="form.errors.username" class="mb-6 bg-red-50 text-red-600 text-sm p-4 rounded-2xl border border-red-100 flex items-start gap-3">
-                    <svg class="w-5 h-5 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                    <span>{{ form.errors.username }}</span>
+                <!-- Footer Slogan & Kembali Link -->
+                <div class="pt-6 mt-6 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
+                    <p class="text-white/70 text-[11px] italic leading-relaxed text-center sm:text-left">
+                        Mari sukseskan Tracer Study UKDW untuk kemajuan bersama almamater.
+                    </p>
+                    <Link 
+                        href="/" 
+                        class="shrink-0 inline-flex items-center gap-1.5 text-white/90 hover:text-[#FFC700] font-bold transition-colors py-1"
+                    >
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                        </svg>
+                        <span>Beranda</span>
+                    </Link>
                 </div>
 
-                <form @submit.prevent="submit" class="space-y-5">
+            </div>
+
+            <!-- 
+              ========================================================================
+              KOLOM KANAN: FORM LOGIN OTENTIKASI
+              ========================================================================
+            -->
+            <div class="lg:col-span-6 bg-[#023319] sm:bg-[#00381a] p-6 sm:p-9 lg:p-10 rounded-lg border border-white/10 flex flex-col justify-center text-white relative">
+                
+                <div class="mb-7">
+                    <span class="text-[11px] font-black uppercase tracking-widest text-[#FFC700] block mb-1">
+                        Autentikasi Pengguna
+                    </span>
+                    <h1 class="text-2xl sm:text-3xl font-black text-white tracking-tight leading-snug">
+                        Masuk ke Akun
+                    </h1>
+                    <p class="text-xs sm:text-sm text-white/75 mt-1 font-medium">
+                        Masukkan NIM/Username dan kata sandi Anda untuk melanjutkan.
+                    </p>
+                </div>
+
+                <!-- Error Banner -->
+                <div v-if="form.errors.username || form.errors.password" class="mb-5 p-3.5 bg-red-950/80 border border-red-500/50 rounded-lg flex items-start gap-2.5 text-red-200 text-xs sm:text-sm animate-fade-in">
+                    <svg class="w-5 h-5 shrink-0 text-red-400 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                    </svg>
+                    <span>{{ form.errors.username || form.errors.password }}</span>
+                </div>
+
+                <!-- Form Login -->
+                <form @submit.prevent="submit" class="space-y-4">
                     
+                    <!-- Input Username / NIM -->
                     <div>
-                        <label for="username" class="block text-sm font-bold text-gray-700 mb-1.5 ml-1">Username / NIM Alumni</label>
+                        <label for="username" class="block text-xs font-bold text-white/90 uppercase tracking-wider mb-1.5">
+                            Username / NIM Alumni
+                        </label>
                         <div class="relative">
+                            <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-white/40">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                </svg>
+                            </div>
                             <input
                                 id="username"
                                 type="text"
                                 v-model="form.username"
                                 required
                                 autofocus
-                                class="block w-full pl-4 pr-4 py-3.5 bg-gray-50 border-2 border-gray-100 rounded-2xl text-gray-900 font-medium focus:ring-0 focus:border-[#005B3C] focus:bg-white transition-colors"
                                 placeholder="Masukkan NIM atau Username"
+                                class="block w-full pl-11 pr-4 py-3 bg-black/30 border border-white/20 rounded-lg text-sm text-white placeholder-white/40 focus:outline-none focus:border-[#FFC700] focus:ring-1 focus:ring-[#FFC700] transition-all font-medium"
                             />
                         </div>
                     </div>
 
+                    <!-- Input Kata Sandi -->
                     <div>
-                        <label for="password" class="block text-sm font-bold text-gray-700 mb-1.5 ml-1">Kata Sandi</label>
+                        <div class="flex items-center justify-between mb-1.5">
+                            <label for="password" class="block text-xs font-bold text-white/90 uppercase tracking-wider">
+                                Kata Sandi
+                            </label>
+                        </div>
                         <div class="relative">
+                            <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-white/40">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                                </svg>
+                            </div>
                             <input
                                 id="password"
-                                type="password"
+                                :type="showPassword ? 'text' : 'password'"
                                 v-model="form.password"
                                 required
-                                class="block w-full pl-4 pr-4 py-3.5 bg-gray-50 border-2 border-gray-100 rounded-2xl text-gray-900 font-medium focus:ring-0 focus:border-[#005B3C] focus:bg-white transition-colors"
-                                placeholder="••••••••"
+                                placeholder="Masukkan kata sandi"
+                                class="block w-full pl-11 pr-11 py-3 bg-black/30 border border-white/20 rounded-lg text-sm text-white placeholder-white/40 focus:outline-none focus:border-[#FFC700] focus:ring-1 focus:ring-[#FFC700] transition-all font-medium"
                             />
+                            <button
+                                type="button"
+                                @click="showPassword = !showPassword"
+                                class="absolute inset-y-0 right-0 pr-3.5 flex items-center text-white/40 hover:text-white focus:outline-none cursor-pointer"
+                                tabindex="-1"
+                            >
+                                <svg v-if="!showPassword" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                                </svg>
+                                <svg v-else class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l18 18"/>
+                                </svg>
+                            </button>
                         </div>
-                        <div v-if="form.errors.password" class="text-red-500 text-xs mt-2 ml-1 font-medium">{{ form.errors.password }}</div>
                     </div>
 
-                    <div class="flex items-center justify-between pt-1 pb-2">
-                        <label class="flex items-center cursor-pointer group">
-                            <input 
-                                type="checkbox" 
-                                v-model="form.remember" 
-                                class="w-5 h-5 text-[#005B3C] border-2 border-gray-200 rounded-lg focus:ring-[#005B3C] focus:ring-offset-0 transition-colors cursor-pointer group-hover:border-[#005B3C]" 
+                    <!-- Ingat Saya & Lupa Kata Sandi -->
+                    <div class="flex items-center justify-between pt-1">
+                        <label class="flex items-center cursor-pointer select-none">
+                            <input
+                                type="checkbox"
+                                v-model="form.remember"
+                                class="w-4 h-4 rounded text-[#FFC700] bg-black/40 border-white/30 focus:ring-[#FFC700] cursor-pointer"
                             />
-                            <span class="ml-2.5 text-sm font-medium text-gray-600 group-hover:text-gray-900 transition-colors">Ingat Saya</span>
+                            <span class="ml-2 text-xs font-semibold text-white/80">Ingat Saya</span>
                         </label>
-                    </div>
-
-                    <div>
-                        <button 
-                            type="submit" 
-                            :disabled="form.processing"
-                            class="w-full flex justify-center py-4 px-4 border border-transparent rounded-2xl shadow-sm text-base font-bold text-white bg-[#0077b5] hover:bg-[#005c8a] focus:outline-none focus:ring-4 focus:ring-[#0077b5]/30 transition-all hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
+                        <button
+                            type="button"
+                            @click="showForgotModal = true"
+                            class="text-xs font-bold text-[#FFC700] hover:text-[#FBBF24] hover:underline transition-colors focus:outline-none cursor-pointer"
                         >
-                            <span class="flex items-center gap-2">
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"></path></svg>
-                                Masuk dengan Akun Sistem
-                            </span>
+                            Lupa Kata Sandi?
                         </button>
                     </div>
 
-                    <!-- Divider -->
-                    <div class="relative mt-6">
-                        <div class="absolute inset-0 flex items-center">
-                            <div class="w-full border-t border-gray-200"></div>
-                        </div>
-                        <div class="relative flex justify-center text-sm">
-                            <span class="px-3 bg-white text-gray-500 font-medium">Atau</span>
-                        </div>
+                    <!-- Tombol Submit Masuk (Tegas, Solid, rounded-lg) -->
+                    <div class="pt-3">
+                        <button
+                            type="submit"
+                            :disabled="form.processing"
+                            class="w-full flex justify-center items-center py-3.5 px-6 rounded-lg shadow-lg text-sm font-black text-slate-950 bg-[#FFC700] hover:bg-[#FBBF24] focus:outline-none focus:ring-2 focus:ring-[#FFC700] transition-all duration-200 active:scale-[0.99] disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
+                        >
+                            <svg v-if="form.processing" class="animate-spin -ml-1 mr-2 h-4 w-4 text-slate-950" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            <span>{{ form.processing ? 'Memproses...' : 'Masuk ke Sistem' }}</span>
+                        </button>
                     </div>
 
-                    <!-- Link Lupa Sandi -->
-                    <div class="mt-6 text-center">
-                        <Link href="#" class="inline-block w-full py-3.5 px-4 bg-gray-50 hover:bg-gray-100 text-gray-700 font-semibold rounded-2xl transition-colors border border-gray-200">
-                            Lupa Kata Sandi
-                        </Link>
-                    </div>
                 </form>
+
+                <p class="text-[11px] text-white/50 text-center mt-6">
+                    © {{ new Date().getFullYear() }} Universitas Kristen Duta Wacana
+                </p>
+
+            </div>
+
+        </div>
+
+        <!-- Modal Bantuan Lupa Kata Sandi (Tegas & Ramping, rounded-xl) -->
+        <div v-if="showForgotModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in">
+            <div class="bg-[#00381A] text-white rounded-xl max-w-sm w-full p-6 sm:p-7 shadow-2xl border border-white/20 relative text-left">
+                <div class="flex items-center justify-between mb-4 pb-3 border-b border-white/10">
+                    <div class="flex items-center gap-2">
+                        <span class="w-2.5 h-2.5 rounded-sm bg-[#FFC700]"></span>
+                        <h3 class="text-base font-black text-white">Bantuan Lupa Kata Sandi</h3>
+                    </div>
+                    <button 
+                        @click="showForgotModal = false"
+                        class="text-white/60 hover:text-white rounded-lg p-1 transition-colors cursor-pointer"
+                    >
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+
+                <div class="text-xs text-white/85 space-y-3 leading-relaxed">
+                    <p>
+                        Bagi Alumni atau Civitas Akademika yang lupa kata sandi atau mengalami kendala masuk, silakan menghubungi PIC resmi:
+                    </p>
+                    <div class="bg-black/35 p-3.5 rounded-lg border border-white/10 space-y-1.5 font-medium text-white/90">
+                        <div class="flex items-center gap-2">
+                            <span class="text-white/50">Unit:</span>
+                            <span class="font-bold">Biro 3 UKDW (Alumni &amp; Karier)</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="text-white/50">Email:</span>
+                            <a href="mailto:biro3@staff.ukdw.ac.id" class="text-[#FFC700] font-bold underline">biro3@staff.ukdw.ac.id</a>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="text-white/50">Telp:</span>
+                            <span>(0274) 563929 ext. 103</span>
+                        </div>
+                        <div class="flex items-start gap-2 pt-1 border-t border-white/10 text-[11px] text-white/70">
+                            <span>Sertakan Nama Lengkap, NIM, dan Prodi saat menghubungi admin.</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-6">
+                    <button
+                        type="button"
+                        @click="showForgotModal = false"
+                        class="w-full py-2.5 bg-[#FFC700] hover:bg-[#FBBF24] text-slate-950 text-xs font-black rounded-lg transition-all cursor-pointer"
+                    >
+                        Tutup Bantuan
+                    </button>
+                </div>
             </div>
         </div>
 
     </div>
 </template>
+
 <style scoped>
-/* Animasi ringan untuk popup */
-.animate-bounce-short {
-    animation: bounce-short 0.25s ease-out 1;
+@keyframes fadeIn {
+    from { opacity: 0; transform: scale(0.98); }
+    to { opacity: 1; transform: scale(1); }
 }
-@keyframes bounce-short {
-    0% { transform: scale(0.9); opacity: 0; }
-    100% { transform: scale(1); opacity: 1; }
-}
-.fade-enter-active, .fade-leave-active {
-    transition: opacity 0.2s ease;
-}
-.fade-enter-from, .fade-leave-to {
-    opacity: 0;
+.animate-fade-in {
+    animation: fadeIn 0.15s ease-out;
 }
 </style>

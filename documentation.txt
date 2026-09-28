@@ -30,6 +30,9 @@ c:/study/tracerstudy/bootstrap/             -> Inisialisasi awal aplikasi Larave
 c:/study/tracerstudy/config/                -> File konfigurasi (app, database, auth, cors, session, dll)
 c:/study/tracerstudy/database/              -> Struktur skema (migrations), data awal (seeders), dan factories
 c:/study/tracerstudy/public/                -> Public document root web server & compiled assets (build/)
+c:/study/tracerstudy/public/uploads/pigo/   -> Aset resmi varian maskot Pigo (loading-pigo, pigo-laptop, pigo-dokter, dll)
+c:/study/tracerstudy/public/uploads/profile/ -> Direktori penyimpanan file foto profil alumni
+c:/study/tracerstudy/public/geojson/        -> Peta batas wilayah GeoJSON 38 provinsi dan kabupaten/kota Indonesia
 c:/study/tracerstudy/resources/             -> Raw assets frontend Vue 3, Inertia Pages, CSS, dan Blade view
 c:/study/tracerstudy/routes/                -> Definisi endpoint rute web (web.php) dan konsol (console.php)
 c:/study/tracerstudy/tests/                 -> Pengujian otomatis PHPUnit (Feature & Unit tests)
@@ -51,7 +54,7 @@ c:/study/tracerstudy/app/Http/Controllers/Otentikasi/UbahKataSandiController.php
 B. MODUL PENGUNJUNG PUBLIK (GUEST)
 ----------------------------------------------------------------------------------------------------
 c:/study/tracerstudy/app/Http/Controllers/Tamu/BerandaController.php
-- Menampilkan landing page publik SERU UKDW, grafik ringkasan statistik capaian alumni, dan peta sebaran alumni.
+- Menampilkan landing page publik SERU UKDW, grafik ringkasan statistik capaian alumni, agregasi spasial peta sebaran wilayah Leaflet Map (alumniWilayah: domisili, karier, summary per provinsi dengan daftar nama alumni & PT), kueri alumniList riil lengkap dengan foto profil, judul skripsi, dan link publikasi repositori, serta referensi dropdown allProvinsi & allKabupaten.
 
 C. MODUL ALUMNI (Role: alumni)
 ----------------------------------------------------------------------------------------------------
@@ -140,10 +143,10 @@ c:/study/tracerstudy/app/Http/Controllers/AdminBiroTiga/KelolaPertanyaan/KelolaP
 Seluruh nama model menggunakan PascalCase tunggal dan terhubung ke tabel singular di basis data:
 
 c:/study/tracerstudy/app/Models/User.php
-- Akun pengguna login, hash password, flag ganti sandi, relasi `biodata()` dan `prodi()`.
+- Akun pengguna login, hash password, flag ganti sandi, relasi `biodata()`, `prodi()`, dan `fakultas()`.
 
 c:/study/tracerstudy/app/Models/Biodata.php (Tabel: `biodata`)
-- Master entitas profil biodata alumni (28 kolom pribadi, kontak, kependudukan, karier).
+- Master entitas profil biodata alumni (29 kolom: identitas pribadi, foto profil `foto` di `/uploads/profile`, kontak, kependudukan, karier, dan relasi eksplisit `yudisium_id` untuk judul skripsi & link repositori publikasi).
 
 c:/study/tracerstudy/app/Models/DataAkademik.php (Tabel: `data_akademik`)
 - Pangkalan data akademik resmi (NIM, NIRM, Nama, IPK, tahun kelulusan, asal sekolah).
@@ -152,10 +155,10 @@ c:/study/tracerstudy/app/Models/DataOrangTua.php (Tabel: `data_orang_tua`)
 - Data kontak dan profil orang tua / wali alumni (NIM, Nama, Telepon, Pekerjaan, Alamat).
 
 c:/study/tracerstudy/app/Models/Yudisium.php (Tabel: `yudisium`)
-- Status kelulusan resmi yudisium ('Lulus'/'Belum Lulus'), judul tugas akhir/skripsi, dan tahun lulus.
+- Status kelulusan resmi yudisium ('Lulus'/'Belum Lulus'), dosen pembimbing & penguji, judul tugas akhir/skripsi (`judul_ta`, `judul_ta_inggris`), link publikasi karya ilmiah (`url_publikasi`), jenis publikasi, status publikasi, dan tahun lulus.
 
 c:/study/tracerstudy/app/Models/Perusahaan.php (Tabel: `perusahaan`)
-- Master data instansi/perusahaan tempat alumni bekerja, alamat, skala industri, propinsi, kabupaten.
+- Master data instansi/perusahaan tempat alumni bekerja, status verifikasi (`status_verifikasi`), pengaju (`created_by`, `created_prodi_id`), alamat, skala industri, propinsi, kabupaten.
 
 c:/study/tracerstudy/app/Models/Atasan.php (Tabel: `atasan`)
 - Data atasan langsung alumni di instansi/perusahaan (Nama, Posisi, Telepon, Email).
@@ -179,7 +182,7 @@ c:/study/tracerstudy/app/Models/KelompokPertanyaan.php (Tabel: `kelompok_pertany
 - Seksi/bagian kelompok pertanyaan dalam instrumen kuesioner universitas.
 
 c:/study/tracerstudy/app/Models/RefSubpertanyaan2021.php (Tabel: `ref_subpertanyaan2021`)
-- Butir pertanyaan kuesioner universitas (F1 s/d F22), tipe input (`type`), status wajib, urutan.
+- Butir pertanyaan kuesioner universitas (F1 s/d F22), tipe input (`type`), konfigurasi lokasi tampil (`tampil_di`), status wajib, urutan.
 
 c:/study/tracerstudy/app/Models/RefSubpertanyaanDetil.php (Tabel: `ref_subpertanyaan_detil`)
 - Pilihan opsi jawaban pertanyaan universitas dan target lompatan branching (`jump_to`).
@@ -202,9 +205,15 @@ c:/study/tracerstudy/app/Models/ProdiResponse.php (Tabel: `prodi_response`)
 c:/study/tracerstudy/app/Models/QuestionMapping.php (Tabel: `question_mappings` & VIEW `v_question_mappings`)
 - Konfigurasi pemetaan kolom data profil ke butir kuesioner untuk auto-sinkronisasi.
 
+c:/study/tracerstudy/app/Models/AlumniAuditRekap.php (VIEW: `v_alumni_audit_rekap`)
+- Master view audit profil lengkap 4 sub-tab dan status respon kuesioner universitas & prodi.
+
 ====================================================================================================
 4. BACKEND: DOMAIN SERVICES (app/Services)
 ====================================================================================================
+c:/study/tracerstudy/app/Services/Alumni/AdminAlumniProfileService.php
+- Service terpusat pembacaan dan penyimpanan profil biodata alumni oleh admin lintas stakeholder.
+
 c:/study/tracerstudy/app/Services/Kuesioner/KuesionerSyncService.php
 - Mengotomatiskan sinkronisasi data profil (NIM, Nama, Tempat/Tanggal Lahir, Perusahaan, Atasan) ke tabel `tracer` dan `prodi_response`.
 
@@ -218,7 +227,7 @@ c:/study/tracerstudy/app/Services/LinkedIn/LinkedInService.php
 5. BACKEND: MIDDLEWARE (app/Http/Middleware)
 ====================================================================================================
 c:/study/tracerstudy/app/Http/Middleware/RoleMiddleware.php
-- Membatasi akses rute berdasarkan role pengguna (`superadmin`, `admin_biro3`, `admin_prodi`, `alumni`).
+- Membatasi akses rute berdasarkan role pengguna (`superadmin`, `admin_biro3`, `admin_fakultas`, `admin_prodi`, `alumni`).
 
 c:/study/tracerstudy/app/Http/Middleware/CheckMustChangePassword.php
 - Menahan alumni yang baru login pertama kali agar mengganti password default sebelum mengakses sistem.
@@ -230,7 +239,7 @@ c:/study/tracerstudy/app/Http/Middleware/HandleInertiaRequests.php
 6. BACKEND: ROUTING (routes)
 ====================================================================================================
 c:/study/tracerstudy/routes/web.php
-- Seluruh endpoint URL web aplikasi (Tamu, Login, Ganti Sandi, Alumni, Admin Prodi, Super Admin, Biro 3).
+- Seluruh endpoint URL web aplikasi (Tamu, Login, Ganti Sandi, Alumni, Admin Prodi, Admin Fakultas, Super Admin, Biro 3).
 
 c:/study/tracerstudy/routes/console.php
 - Perintah Artisan terjadwal dan cron jobs.
@@ -239,24 +248,33 @@ c:/study/tracerstudy/routes/console.php
 7. DATABASE: MIGRATIONS (database/migrations)
 ====================================================================================================
 c:/study/tracerstudy/database/migrations/0001_01_01_000000_create_users_table.php
-c:/study/tracerstudy/database/migrations/2026_09_01_171330_create_prodis_table.php
 c:/study/tracerstudy/database/migrations/2026_09_01_171340_create_provinces_table.php
-c:/study/tracerstudy/database/migrations/2026_09_01_171345_create_kabupatens_table.php
-c:/study/tracerstudy/database/migrations/2026_09_01_171348_create_companies_table.php
+c:/study/tracerstudy/database/migrations/2026_09_01_171341_create_kabupatens_table.php
+c:/study/tracerstudy/database/migrations/2026_09_01_171342_create_companies_table.php
+c:/study/tracerstudy/database/migrations/2026_09_01_171343_create_atasans_table.php
+c:/study/tracerstudy/database/migrations/2026_09_01_171344_create_ref_fakultas_table.php
+c:/study/tracerstudy/database/migrations/2026_09_01_171345_create_ref_negara_table.php
 c:/study/tracerstudy/database/migrations/2026_09_01_171350_create_data_akademiks_table.php
-c:/study/tracerstudy/database/migrations/2026_09_01_171352_create_biodatas_table.php
+c:/study/tracerstudy/database/migrations/2026_09_01_171351_create_prodis_table.php
+c:/study/tracerstudy/database/migrations/2026_09_01_171352_create_data_orang_tuas_table.php
+c:/study/tracerstudy/database/migrations/2026_09_01_171353_create_yudisiums_table.php
+c:/study/tracerstudy/database/migrations/2026_09_01_171354_create_biodatas_table.php
 c:/study/tracerstudy/database/migrations/2026_09_01_184424_create_kuesioners_table.php
 c:/study/tracerstudy/database/migrations/2026_09_01_184425_create_kelompok_pertanyaans_table.php
 c:/study/tracerstudy/database/migrations/2026_09_01_184426_create_ref_subpertanyaan2021_table.php
 c:/study/tracerstudy/database/migrations/2026_09_01_184427_create_ref_subpertanyaan_detil_table.php
 c:/study/tracerstudy/database/migrations/2026_09_01_184428_create_tracers_table.php
 c:/study/tracerstudy/database/migrations/2026_09_01_193004_create_v_question_mappings_view.php
-c:/study/tracerstudy/database/migrations/2026_09_03_113912_create_data_orang_tuas_table.php
-c:/study/tracerstudy/database/migrations/2026_09_03_200206_create_yudisiums_table.php
-c:/study/tracerstudy/database/migrations/2026_09_03_204459_create_atasans_table.php
-c:/study/tracerstudy/database/migrations/2026_09_13_090000_add_prodi_id_to_users_table.php
+c:/study/tracerstudy/database/migrations/2026_09_01_193005_create_v_alumni_kuesioner_autofill_view.php
+c:/study/tracerstudy/database/migrations/2026_09_09_174732_create_umps_table.php
 c:/study/tracerstudy/database/migrations/2026_09_13_092000_create_prodi_questionnaire_tables.php
-c:/study/tracerstudy/database/migrations/2026_09_16_100000_create_umps_table.php
+c:/study/tracerstudy/database/migrations/2026_09_20_234000_create_alumni_audit_database_views.php
+c:/study/tracerstudy/database/migrations/2026_09_20_234500_add_fakultas_id_to_users_table.php
+c:/study/tracerstudy/database/migrations/2026_09_21_010500_alter_url_and_text_columns_in_biodata_tables.php
+c:/study/tracerstudy/database/migrations/2026_09_21_020000_add_tampil_di_to_ref_subpertanyaan2021_table.php
+c:/study/tracerstudy/database/migrations/2026_09_21_152810_update_alumni_tracer_univ_status_views.php
+c:/study/tracerstudy/database/migrations/2026_09_25_163300_add_created_by_to_perusahaan_table.php
+c:/study/tracerstudy/database/migrations/2026_09_28_054830_add_foto_to_biodata_table.php
 
 ====================================================================================================
 8. DATABASE: SEEDERS (database/seeders)
@@ -364,6 +382,43 @@ E. HALAMAN AUTENTIKASI & PUBLIK
 c:/study/tracerstudy/resources/js/Pages/Otentikasi/Login.vue
 c:/study/tracerstudy/resources/js/Pages/Otentikasi/UbahKataSandi.vue
 c:/study/tracerstudy/resources/js/Pages/Tamu/Beranda.vue
+
+F. KOMPONEN MODULAR LANDING PAGE (resources/js/components/landing)
+----------------------------------------------------------------------------------------------------
+c:/study/tracerstudy/resources/js/components/landing/hero-section.vue
+- Hero banner visual dengan video background UKDW bebas subtitle, tombol aksi tracer, highlight pills, dan maskot hallo-alumni.png.
+
+c:/study/tracerstudy/resources/js/components/landing/alumni-map-section.vue
+- Peta sebaran interaktif Leaflet + OpenStreetMap 38 provinsi dengan layout 2-kolom sejajar, filter multi-dimensi, hover tooltip informatif (daftar PT & alumni), paginasi grid 2x2 kartu alumni, dan popup SweetAlert2 detail alumni lengkap foto profil & link publikasi repositori.
+
+c:/study/tracerstudy/resources/js/components/landing/testimonial-slider-section.vue
+- Etalase Karya & Tugas Akhir Alumni UKDW memuat inovasi skripsi, penulis, institusi kerja saat ini, jenis publikasi, dan tautan repositori dokumen karya ilmiah kampus.
+
+c:/study/tracerstudy/resources/js/components/landing/stats-transformation-section.vue
+- Statistik capaian transformasi kurikulum dan serapan lulusan berpadu maskot pigo-update-data.png.
+
+c:/study/tracerstudy/resources/js/components/landing/sektor-alumni-section.vue
+- Etalase sektor industri alumni (Teknologi & IT, Pendidikan & Riset, Bisnis & Publik).
+
+c:/study/tracerstudy/resources/js/components/landing/career-pillars-section.vue
+- Tiga pilar keilmuan UKDW dengan maskot Pigo (anak-it.png, pigo-dokter.png, pigo-laptop.png).
+
+c:/study/tracerstudy/resources/js/components/landing/user-guide-section.vue
+- Panduan 4 tahap mudah alur pengisian kuesioner tracer study bagi alumni pemula.
+
+c:/study/tracerstudy/resources/js/components/landing/berkas-section.vue
+- Pusat pengunduhan berkas panduan kuesioner tracer study.
+
+c:/study/tracerstudy/resources/js/components/landing/blog-section.vue
+- Warta berita dan artikel seputar alumni dan tracer study UKDW.
+
+c:/study/tracerstudy/resources/js/components/landing/tentang-section.vue
+- Profil singkat dan visi ekosistem SERU UKDW.
+
+G. KOMPONEN UI GLOBAL (resources/js/components/ui)
+----------------------------------------------------------------------------------------------------
+c:/study/tracerstudy/resources/js/components/ui/pigo-loader.vue
+- Indikator loading visual global maskot Pigo saat perpindahan rute dan proses asinkron.
 
 ====================================================================================================
 10. AUTOMATED TESTS (tests/Feature & tests/Unit)

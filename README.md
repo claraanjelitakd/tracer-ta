@@ -95,20 +95,20 @@ tracerstudy/
 │   │       ├── HandleInertiaRequests.php           # Shared data Inertia (auth user, flash session, navigasi)
 │   │       └── RoleMiddleware.php                  # Pembatas hak akses berdasarkan role pengguna
 │   ├── Models/                                     # Definisi Model Eloquent & Relasi Database (Nama Tunggal/Singular)
-│   │   ├── User.php                                # Akun pengguna, role, relasi ke biodata & prodi_id
-│   │   ├── Biodata.php                             # Entitas profil biodata alumni (tabel `biodata`), relasi ke akademik, tracers, dll.
+│   │   ├── User.php                                # Akun pengguna, role, relasi ke biodata, prodi_id, & fakultas_id
+│   │   ├── Biodata.php                             # Entitas profil biodata alumni (tabel `biodata`, 29 atribut termasuk `foto`), relasi akademik, yudisium_id, dll.
 │   │   ├── DataAkademik.php                        # Pangkalan data akademik (tabel `data_akademik`: NIM, IPK, tahun lulus, asal sekolah)
 │   │   ├── DataOrangTua.php                        # Data kontak & profil orang tua / wali alumni (tabel `data_orang_tua`)
-│   │   ├── Yudisium.php                            # Data kelulusan & status yudisium resmi dari universitas (tabel `yudisium`)
+│   │   ├── Yudisium.php                            # Data kelulusan, skripsi/TA, & publikasi ilmiah (tabel `yudisium`: judul_ta, url_publikasi, jenis_publikasi)
 │   │   ├── Prodi.php                               # Data master program studi UKDW (tabel `prodi`)
-│   │   ├── Perusahaan.php                          # Profil perusahaan tempat alumni bekerja (tabel `perusahaan`)
+│   │   ├── Perusahaan.php                          # Profil perusahaan tempat alumni bekerja (tabel `perusahaan`, status_verifikasi, created_by)
 │   │   ├── Atasan.php                              # Data atasan langsung alumni di perusahaan (tabel `atasan`)
 │   │   ├── Propinsi.php                            # Master data wilayah provinsi Indonesia (tabel `propinsi`)
 │   │   ├── Kabupaten.php                           # Master data kabupaten/kota Indonesia (tabel `kabupaten`)
 │   │   ├── Ump.php                                 # Data referensi Upah Minimum Provinsi (tabel `ump`)
 │   │   ├── Kuesioner.php                           # Header kuesioner tracer study universitas (tabel `kuesioner`)
 │   │   ├── KelompokPertanyaan.php                  # Bagian/seksi kuesioner universitas (tabel `kelompok_pertanyaan`)
-│   │   ├── RefSubpertanyaan2021.php                # Butir pertanyaan kuesioner universitas 2021 (tabel `ref_subpertanyaan2021`)
+│   │   ├── RefSubpertanyaan2021.php                # Butir pertanyaan kuesioner universitas 2021 (tabel `ref_subpertanyaan2021`, tampil_di)
 │   │   ├── RefSubpertanyaanDetil.php               # Opsi jawaban & nilai jump_to kuesioner univ (tabel `ref_subpertanyaan_detil`)
 │   │   ├── Tracer.php                              # Jawaban kuesioner tracer study alumni (tabel `tracer`)
 │   │   ├── QuestionMapping.php                     # Pemetaan profil biodata via tabel `question_mappings` & VIEW `v_question_mappings`
@@ -125,7 +125,7 @@ tracerstudy/
 │   │   └── AppServiceProvider.php                  # Konfigurasi layanan global aplikasi
 │   └── Services/                                   # Domain Services & Logika Bisnis Terpusat
 │       ├── Alumni/
-│       │   └── AdminAlumniProfileService.php       # [BARU] Service terpusat penyimpanan & pembacaan profil alumni oleh admin (Super Admin, Biro 3, Fakultas, Prodi)
+│       │   └── AdminAlumniProfileService.php       # Service terpusat penyimpanan & pembacaan profil alumni oleh admin (Super Admin, Biro 3, Fakultas, Prodi)
 │       ├── Export/
 │       │   └── AlumniTracerExcelExporter.php       # Generator ekspor Excel (.xls) per alumni dengan 4 blok identitas lengkap & tabel kuesioner
 │       ├── Kuesioner/
@@ -134,7 +134,7 @@ tracerstudy/
 │       └── LinkedIn/
 │           └── LinkedInService.php                 # Integrasi data profil profesional LinkedIn
 ├── database/                                       # Skema & Data Awal Database
-│   ├── migrations/                                 # Seluruh riwayat migrasi struktur tabel DDL (Nama Tunggal/Singular)
+│   ├── migrations/                                 # Seluruh riwayat migrasi struktur tabel DDL (termasuk migrasi add_foto_to_biodata)
 │   └── seeders/                                    # Data benih (Seeder)
 │       ├── DatabaseSeeder.php                      # Seeder master yang memanggil seluruh seeder
 │       ├── UserSeeder.php                          # Akun demo (superadmin, biro3, admin prodi SI/Filsafat, alumni)
@@ -151,15 +151,22 @@ tracerstudy/
 │       ├── RefSubpertanyaanDetilSeeder.php         # Seeder 185 opsi jawaban & jump logic
 │       ├── QuestionMappingSeeder.php               # Seeder sinkronisasi data profil
 │       └── ProdiQuestionnaireSeeder.php            # Seeder instrumen Prodi SI & Filsafat
+├── public/                                         # Public Assets Root
+│   ├── uploads/
+│   │   ├── pigo/                                   # Aset resmi varian maskot Pigo (loading-pigo, pigo-laptop, pigo-dokter, dll)
+│   │   ├── profile/                                # Direktori penyimpanan berkas foto profil alumni
+│   │   └── logo/                                   # Logo resmi Universitas Kristen Duta Wacana
+│   └── geojson/                                    # Data batas poligon GeoJSON 38 provinsi dan kabupaten/kota Indonesia
 ├── resources/                                      # [FRONTEND] Antarmuka Pengguna (Vue 3, Inertia & Asset)
 │   ├── js/
 │   │   ├── app.js                                  # Bootstrapper Vue 3, Inertia SPA, & konfigurasi progress bar
 │   │   ├── components/                             # Komponen Reusable Global
 │   │   │   ├── form/searchable-select.vue          # Dropdown pencarian dinamis (propinsi, kabupaten, prodi)
-│   │   │   ├── landing/                            # Komponen landing page (Hero, CTA, Map, Stats, Alur, dll)
-│   │   │   └── ui/                                 # Komponen tombol loading & animasi Pigo
+│   │   │   ├── landing/                            # Komponen modular landing page (Hero, Map 2-Kolom, Showcase Karya Alumni, Stats, dll)
+│   │   │   └── ui/                                 # Komponen UI global (pigo-loader.vue, dll)
 │   │   └── Pages/                                  # Halaman Tampilan Inertia.js (View Routes)
 │   │       ├── AdminProdi/                         # Antarmuka Admin Program Studi
+│   │       ├── AdminFakultas/                      # Antarmuka Admin Fakultas
 │   │       ├── Alumni/                             # Antarmuka Alumni
 │   │       ├── SuperAdmin/                         # Antarmuka Super Admin Universitas
 │   │       ├── AdminBiroTiga/                      # Antarmuka Admin Biro III (Kemahasiswaan & Alumni)
@@ -168,7 +175,7 @@ tracerstudy/
 │   └── views/
 │       └── app.blade.php                           # Template dasar HTML & container root Inertia SPA
 └── routes/                                         # [ROUTING] Konfigurasi Rute Aplikasi
-    ├── web.php                                     # Seluruh endpoint URL web aplikasi (Tamu, Auth, Alumni, Prodi, Superadmin, Biro 3)
+    ├── web.php                                     # Seluruh endpoint URL web aplikasi (Tamu, Auth, Alumni, Prodi, Fakultas, Superadmin, Biro 3)
     └── console.php                                 # Perintah konsol Artisan terjadwal
 ```
 
@@ -182,10 +189,10 @@ Dokumentasi lengkap diagram relasi antar tabel (ERD Mermaid), kamus data (*data 
 Ringkasan relasi utama:
 - **`ref_fakultas` (1:N) $\rightarrow$ `prodi`**: Master data 7 fakultas UKDW terhubung ke program studi.
 - **`prodi` (1:N) $\rightarrow$ `biodata`**: Program studi alumni UKDW.
-- **`users` (1:1) $\rightarrow$ `biodata`**: Profil alumni (identitas lengkap, kontak, kependudukan, karier, Take Home Pay).
+- **`users` (1:1) $\rightarrow$ `biodata`**: Profil alumni (foto profil di `/uploads/profile`, identitas lengkap, kontak, kependudukan, karier, Take Home Pay).
 - **`data_akademik` (1:1) $\rightarrow$ `biodata`**: Pangkalan data akademik resmi terhubung via `nim`.
 - **`data_orang_tua` (1:1) $\rightarrow$ `biodata`**: Data orang tua/wali alumni terhubung via `orang_tua_id` & `nim`.
-- **`yudisium` (1:1) $\rightarrow$ `biodata`**: Data yudisium, dosen, dan tugas akhir terhubung via `yudisium_id` & `nim`.
+- **`yudisium` (1:1) $\rightarrow$ `biodata`**: Data kelulusan resmi, dosen pembimbing/penguji, judul tugas akhir (`judul_ta`), dan link publikasi repositori karya ilmiah (`url_publikasi`) terhubung via `yudisium_id` & `nim`.
 - **`biodata` (1:N) $\rightarrow$ `tracer`**: Respon pengisian kuesioner tracer study tingkat universitas.
 - **`biodata` (1:N) $\rightarrow$ `prodi_response`**: Respon pengisian kuesioner evaluasi program studi.
 - **`prodi` (1:N) $\rightarrow$ `prodi_question_section` $\rightarrow$ `prodi_question`**: Manajemen kuesioner mandiri prodi.
@@ -265,7 +272,16 @@ Komponen pengisian kuesioner dipecah secara modular untuk memudahkan pemeliharaa
 
 ## Log Pembaruan (Changelog)
 
-- **v2.4 (Terbaru)**:
+- **v2.5 (28 September 2026 - Terbaru)**:
+  - **Migrasi Kolom Foto Profil**: Menambahkan kolom `foto` (nullable string) pada tabel `biodata` (`2026_09_28_054830_add_foto_to_biodata_table.php`) yang terhubung ke direktori `public/uploads/profile/`.
+  - **Refaktor Relasi Yudisium & Skripsi**: Menghubungkan relasi `yudisium()` pada model `Biodata.php` secara eksplisit untuk membaca judul tugas akhir (`judul_ta`), link publikasi karya ilmiah (`url_publikasi`), dan jenis publikasi.
+  - **Agregasi Spasial Beranda (`BerandaController.php`)**: Menghitung sebaran wilayah domisili dan karier alumni serta ringkasan per provinsi berisi daftar nama alumni dan daftar nama instansi/perusahaan untuk hover tooltip peta interaktif.
+  - **Modularisasi Komponen Landing Page (`resources/js/components/landing/`)**: Memecah halaman landing page menjadi 10 komponen terisolasi (`hero-section.vue`, `alumni-map-section.vue`, `testimonial-slider-section.vue`, `stats-transformation-section.vue`, `sektor-alumni-section.vue`, `career-pillars-section.vue`, `user-guide-section.vue`, `berkas-section.vue`, `blog-section.vue`, `tentang-section.vue`).
+  - **Peta Interaktif 2-Kolom & SweetAlert2 Detail**: Peta Leaflet GeoJSON 38 provinsi di sisi kiri dan daftar alumni 2x2 di sisi kanan dengan filter multi-dimensi, hover tooltip informatif, dan dialog pop-up SweetAlert2 lengkap dengan foto profil, judul skripsi, link publikasi repositori kampus, serta tombol sorot peta.
+  - **Etalase Karya & Tugas Akhir**: Menampilkan karya ilmiah dan skripsi unggulan alumni UKDW terhubung langsung dengan repositori kampus.
+  - **Standardisasi Maskot Pigo & Aset Visual Branding**: Memusatkan aset maskot resmi di `public/uploads/pigo/`, menambahkan global loader `pigo-loader.vue`, dan menyelaraskan logo resmi UKDW pada seluruh bilah navigasi stakeholder.
+
+- **v2.4**:
   - Menghilangkan seluruh `jump_to` pada seeder (`RefSubpertanyaanDetilSeeder`) agar semua butir kuesioner dapat ditinjau dan diisi secara utuh.
   - Menyusun ulang 10 seksi kuesioner sesuai alur logis baru: `F8` &rarr; `F3` &rarr; `F10` &rarr; `F4` &rarr; `F504` &rarr; `F6` &rarr; `F7` &rarr; `F7A` &rarr; `F18` &rarr; `F12` &rarr; `F14` &rarr; `F15` &rarr; `F17` &rarr; `F2` &rarr; `F16`.
   - Mengimplementasikan proteksi data perusahaan terverifikasi di form karier alumni.

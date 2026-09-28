@@ -27,14 +27,14 @@
                     </div>
                 </div>
 
-                <!-- Card 2 (Down) - Cyan Accent -->
-                <div class="gsap-fade-down relative bg-white/10 backdrop-blur-xl rounded-2xl p-8 border border-white/20 text-white shadow-[0_8px_32px_0_rgba(31,38,135,0.2)] hover:shadow-[0_8px_32px_0_rgba(6,182,212,0.3)] hover:-translate-y-3 transition-all duration-500 group overflow-hidden">
-                    <div class="absolute -top-10 -right-10 w-32 h-32 bg-cyan-400/20 rounded-full blur-3xl group-hover:bg-cyan-400/40 transition-colors duration-500"></div>
+                <!-- Card 2 (Down) - Emerald/Gold Accent -->
+                <div class="gsap-fade-down relative bg-white/10 backdrop-blur-xl rounded-2xl p-8 border border-white/20 text-white shadow-[0_8px_32px_0_rgba(0,56,26,0.2)] hover:shadow-[0_8px_32px_0_rgba(255,199,0,0.3)] hover:-translate-y-3 transition-all duration-500 group overflow-hidden">
+                    <div class="absolute -top-10 -right-10 w-32 h-32 bg-[#FFC700]/20 rounded-full blur-3xl group-hover:bg-[#FFC700]/40 transition-colors duration-500"></div>
                     <div class="relative z-10">
-                        <div class="w-14 h-14 bg-cyan-400/20 border border-cyan-400/30 rounded-xl flex items-center justify-center mb-6 text-cyan-400 group-hover:bg-cyan-400 group-hover:text-green-900 transition-colors duration-300 shadow-lg">
+                        <div class="w-14 h-14 bg-[#FFC700]/20 border border-[#FFC700]/30 rounded-xl flex items-center justify-center mb-6 text-[#FFC700] group-hover:bg-[#FFC700] group-hover:text-slate-950 transition-colors duration-300 shadow-lg">
                             <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
                         </div>
-                        <h3 class="text-xl font-bold text-white mb-3 group-hover:text-cyan-300 transition-colors">Evaluasi Pendidikan</h3>
+                        <h3 class="text-xl font-bold text-white mb-3 group-hover:text-[#FFC700] transition-colors">Evaluasi Pendidikan</h3>
                         <p class="text-green-50 text-sm leading-relaxed">Menjadi salah satu sumber informasi untuk mengevaluasi relevansi pendidikan dengan kebutuhan dunia kerja.</p>
                     </div>
                 </div>

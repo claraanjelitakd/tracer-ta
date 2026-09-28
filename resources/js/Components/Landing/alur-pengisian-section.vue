@@ -26,7 +26,7 @@ import { Link } from '@inertiajs/vue3';
                     <!-- Thumbnail 2 -->
                     <div class="relative rounded-xl overflow-hidden shadow-lg group cursor-pointer border border-gray-200 bg-gray-100 aspect-video flex items-center justify-center">
                         <img src="https://images.unsplash.com/photo-1571260899304-42507011ec70?auto=format&fit=crop&q=80&w=800" alt="Video Thumbnail" class="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-                        <div class="absolute top-4 left-0 bg-blue-500 text-white font-bold py-2 px-4 shadow-md max-w-[80%] uppercase transform -skew-x-12 -ml-2">
+                        <div class="absolute top-4 left-0 bg-[#004D25] text-white font-bold py-2 px-4 shadow-md max-w-[80%] uppercase transform -skew-x-12 -ml-2">
                             <div class="skew-x-12 px-2">Serba-Serbi Tracer Study UKDW</div>
                         </div>
                         <div class="absolute z-10 w-16 h-12 bg-white rounded flex items-center justify-center shadow-lg group-hover:bg-green-600 group-hover:text-white transition-colors duration-300">

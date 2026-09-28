@@ -1,5 +1,12 @@
 # Update Log Tracer Study
 
+## 28 September 2026
+- **Database (Kolom Foto Alumni)**: Menambahkan kolom `foto` (nullable string) pada tabel `biodata` (`2026_09_28_054830_add_foto_to_biodata_table.php`) untuk direktori `/uploads/profile`.
+- **Backend & Model**: Memperbarui `$fillable` pada `Biodata.php` dan memperjelas relasi `yudisium()` ke `belongsTo(Yudisium::class, 'yudisium_id')` untuk mengakses judul TA, URL publikasi, dan jenis publikasi.
+- **Backend (BerandaController)**: Eager loading relasi `yudisium` dan atribut `foto`, agregasi spasial `alumniWilayah` untuk Leaflet tooltip hover (nama PT dan nama alumni), serta query referensi `allProvinsi` dan `allKabupaten`.
+- **Frontend (Modular Landing Components)**: Menata 10 komponen beranda di `resources/js/components/landing/` (`hero-section.vue`, `alumni-map-section.vue`, `testimonial-slider-section.vue`, `stats-transformation-section.vue`, `sektor-alumni-section.vue`, `career-pillars-section.vue`, `user-guide-section.vue`, `berkas-section.vue`, `blog-section.vue`, `tentang-section.vue`).
+- **Frontend (SweetAlert2 Detail Alumni & Leaflet Map)**: Pop-up detail lengkap berbasis SweetAlert2 yang memuat identitas, foto, institusi, skripsi & tautan publikasi repositori, serta tombol sorot peta Leaflet 38 provinsi.
+
 ## 21 September 2026
 - **Fix (Tombol Tambah & Edit Pertanyaan)**: Memperbaiki referensi variabel `initialKeterangan` pada modal SweetAlert2 di `SuperAdmin/Pertanyaan/Index.vue` serta mengisi form value secara aman via `didOpen` agar tombol **Tambah Pertanyaan** dan tombol pensil **Edit** dapat dibuka dengan normal tanpa error JavaScript.
 - **Backend (Validasi Tipe & Keterangan)**: Menambahkan tipe `radio`, `checkbox`, dan field `keterangan` (batasan nilai/constraint) ke dalam validasi `SimpanPertanyaanController.php` pada method `store` dan `update`.

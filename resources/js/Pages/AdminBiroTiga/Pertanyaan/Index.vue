@@ -314,7 +314,7 @@ const canHaveOptions = (type) => {
                     
                     <!-- Logo & Brand -->
                     <div class="flex items-center space-x-3">
-                        <img src="/uploads/landing/2.png" alt="Logo UKDW" class="h-10 w-10 object-contain" onerror="this.style.display='none'" />
+                        <img src="/uploads/logo/logo-ukdw.png" alt="Logo UKDW" class="h-10 w-10 object-contain" onerror="this.style.display='none'" />
                         <div class="border-l border-gray-200 pl-3">
                             <span class="text-xs uppercase tracking-wider text-gray-500 font-medium block leading-tight">Tracer Study UKDW</span>
                             <span class="text-base font-bold text-gray-900 leading-tight">Biro Kemahasiswaan, Alumni & Pengembangan Karir</span>

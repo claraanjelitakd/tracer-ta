@@ -1,6 +1,212 @@
 # UPDATE LOG - SERU (Sistem Ekosistem Rekam Jejak Alumni)
 
-## [2026-09-26] Standardisasi Verifikasi Perusahaan SweetAlert2, Apple Glossy Sidebars, Status Badges Refinement, dan Pembaruan ERD
+## [2026-09-28] Migrasi Foto Profil Biodata, Integrasi Eager Loading Yudisium & Link Publikasi, Agregasi Spasial Beranda, Modularisasi Komponen Landing Page, Navbar iOS Glossy, dan Presisi Desain Login
+
+### Ringkasan Pembaruan
+1. **Penyesuaian Skema Warna Per Section Landing Page**:
+   - **Section Sambutan WR III ([`tentang-section.vue`](file:///c:/study/tracerstudy/resources/js/components/landing/tentang-section.vue))**: Background hijau botol UKDW pekat (`bg-gradient-to-b from-[#00381A] via-[#004D25] to-[#003318]`) dengan kartu kaca frosted dan aksen emas.
+   - **Section Alur Partisipasi ([`user-guide-section.vue`](file:///c:/study/tracerstudy/resources/js/components/landing/user-guide-section.vue))**: Background kuning hangat UKDW (`bg-gradient-to-b from-[#FFC700] via-[#FBBF24] to-[#F59E0B]`) berpadu kartu kontras tinggi warna putih mutiara (`bg-white/90`) dan badge langkah hijau pekat (`bg-[#004D25] text-[#FFC700]`).
+   - **Eliminasi Total Warna Biru di Seluruh Landing Page**: Menghilangkan seluruh aksen `blue` dan `cyan` pada badge verified, tombol interaktif, dan tautan eksternal, digantikan dengan identitas resmi hijau UKDW (`#004D25`) dan emas cerah (`#FFC700`).
+
+2. **Bilah Navigasi (Navbar) Tema iOS Glossy & Bening Dinamis ([`navbar.vue`](file:///c:/study/tracerstudy/resources/js/components/landing/navbar.vue))**:
+   - Mendeteksi pergerakan scroll layar secara real-time (`isScrolled`).
+   - Saat berada di posisi paling atas: latar semi-transparan hijau UKDW halus (`bg-[#004D25]/80 backdrop-blur-md`).
+   - Saat di-scroll: otomatis bertransisi menjadi frosted glass bening transparan khas iOS (`bg-[#002f17]/40 backdrop-blur-2xl backdrop-saturate-200 border-b border-white/20 shadow-[0_8px_32px_0_rgba(0,0,0,0.35)]`).
+   - Tombol menu dan link navigasi menggunakan kapsul pill iOS yang halus.
+
+3. **Geometri Tegas Non-Tumpul Halaman Login & Ubah Sandi (Bebas dari AI Template Look)**:
+   - Merapikan [`Login.vue`](file:///c:/study/tracerstudy/resources/js/Pages/Otentikasi/Login.vue) dan [`UbahKataSandi.vue`](file:///c:/study/tracerstudy/resources/js/Pages/Otentikasi/UbahKataSandi.vue) dengan menghilangkan sudut bulat tumpul berlebihan (`rounded-[2.5rem]`, `rounded-full`, `rounded-3xl`).
+   - Menerapkan sudut kotak tajam dan proporsional enterprise-grade (`rounded-xl`, `rounded-lg`, `rounded-md`) pada kartu kontainer, input formulir, tombol submit, serta dialog pop-up Lupa Kata Sandi.
+
+4. **Autentikasi Alumni Berbasis Tanggal Lahir & Siklus Ubah Sandi Wajib ([`LoginController.php`](file:///c:/study/tracerstudy/app/Http/Controllers/Otentikasi/LoginController.php))**:
+   - Mendukung login alumni menggunakan kata sandi bawaan (default password) format tanggal lahir `ddmmyyyy` (contoh: `15082001` untuk kelahiran 15 Agustus 2001) yang tersinkronisasi otomatis dari `data_akademik`.
+   - Mengarahkan akun dengan kata sandi bawaan secara wajib ke halaman ganti sandi awal (`/change-password` via `must_change_password = true`).
+   - Setelah alumni menyimpan kata sandi baru, flag `must_change_password` kembali menjadi `false`, sehingga pada sesi login berikutnya alumni langsung masuk ke dashboard seperti biasa.
+   - Dilengkapi pengujian otomatis komprehensif pada [`AlumniLoginBirthDateTest.php`](file:///c:/study/tracerstudy/tests/Feature/AlumniLoginBirthDateTest.php).
+
+5. **Migrasi Basis Data Kolom Foto Alumni (`add_foto_to_biodata_table`)**:
+   - Menambahkan migrasi [`2026_09_28_054830_add_foto_to_biodata_table.php`](file:///c:/study/tracerstudy/database/migrations/2026_09_28_054830_add_foto_to_biodata_table.php) untuk menyematkan kolom `foto` (`string`, nullable) pada tabel `biodata` yang merujuk ke path file foto profil alumni di `public/uploads/profile/`.
+   - Mendaftarkan kolom `foto` ke dalam properti `$fillable` pada model [`Biodata.php`](file:///c:/study/tracerstudy/app/Models/Biodata.php).
+
+2. **Refaktor & Ketegasan Relasi Yudisium ([`Biodata.php`](file:///c:/study/tracerstudy/app/Models/Biodata.php))**:
+   - Memperbarui relasi `yudisium()` pada model `Biodata` menjadi `belongsTo(Yudisium::class, 'yudisium_id')` secara eksplisit guna menghubungkan status kelulusan, judul tugas akhir/skripsi (`judul_ta`), URL repositori karya ilmiah (`url_publikasi`), dan tipe publikasi (`jenis_publikasi`).
+
+3. **Optimasi & Agregasi Spasial Backend Beranda ([`BerandaController.php`](file:///c:/study/tracerstudy/app/Http/Controllers/Tamu/BerandaController.php))**:
+   - Mengintegrasikan atribut `foto` dan eager loading relasi `yudisium` pada kueri `alumniList` sehingga landing page dapat menampilkan foto asli alumni beserta judul skripsi dan tautan publikasi repositori kampus.
+   - Menghitung agregasi sebaran geografis per provinsi (`alumniWilayah`: domisili, lokasi kantor/perusahaan, dan ringkasan provinsi) yang menyajikan daftar nama alumni dan daftar nama institusi/perusahaan untuk hover tooltip peta interaktif.
+   - Menyediakan data master referensi wilayah lengkap (`allProvinsi` dan `allKabupaten`) untuk mendukung filter interaktif kabupaten/kota secara real-time.
+
+4. **Modularisasi Menyeluruh Komponen Landing Page (`resources/js/components/landing/`)**:
+   - Memecah tampilan beranda publik menjadi 10 komponen modular yang terisolasi dan mudah dipelihara:
+     - [`hero-section.vue`](file:///c:/study/tracerstudy/resources/js/components/landing/hero-section.vue): Hero banner visual dengan video background UKDW bebas takarir (eliminasi takarir YouTube via CSS viewport translation dan dark bottom gradient masking), tombol CTA, dan maskot `hallo-alumni.png`.
+     - [`alumni-map-section.vue`](file:///c:/study/tracerstudy/resources/js/components/landing/alumni-map-section.vue): Peta interaktif Leaflet + OpenStreetMap 38 provinsi dengan layout 2-kolom sejajar (peta di kiri, 4 kartu alumni per halaman dalam grid 2x2 di kanan), filter multi-dimensi, hover tooltip informatif (menampilkan nama PT dan nama alumni), serta modal detail lengkap SweetAlert2 dengan foto profil, judul skripsi, link publikasi, dan tombol sorot di peta.
+     - [`testimonial-slider-section.vue`](file:///c:/study/tracerstudy/resources/js/components/landing/testimonial-slider-section.vue): Etalase "Karya & Tugas Akhir Alumni UKDW" yang menampilkan judul skripsi, penulis, instansi kerja saat ini, jenis publikasi, dan tautan repositori dokumen karya ilmiah.
+     - [`stats-transformation-section.vue`](file:///c:/study/tracerstudy/resources/js/components/landing/stats-transformation-section.vue): Statistik capaian transformasi kurikulum dan serapan lulusan berpadu maskot `pigo-update-data.png`.
+     - [`sektor-alumni-section.vue`](file:///c:/study/tracerstudy/resources/js/components/landing/sektor-alumni-section.vue): Etalase kategori industri dan karier alumni (Teknologi & IT, Pendidikan & Riset, Bisnis & Publik).
+     - [`career-pillars-section.vue`](file:///c:/study/tracerstudy/resources/js/components/landing/career-pillars-section.vue): Tiga pilar keilmuan UKDW dengan ilustrasi maskot Pigo (`anak-it.png`, `pigo-dokter.png`, `pigo-laptop.png`).
+     - [`user-guide-section.vue`](file:///c:/study/tracerstudy/resources/js/components/landing/user-guide-section.vue): Panduan 4 langkah mudah alur pengisian kuesioner tracer study bagi alumni pemula.
+     - [`berkas-section.vue`](file:///c:/study/tracerstudy/resources/js/components/landing/berkas-section.vue), [`blog-section.vue`](file:///c:/study/tracerstudy/resources/js/components/landing/blog-section.vue), dan [`tentang-section.vue`](file:///c:/study/tracerstudy/resources/js/components/landing/tentang-section.vue).
+
+5. **Standardisasi Maskot Pigo & Aset Visual Branding**:
+   - Memindahkan seluruh varian maskot ke direktori resmi `public/uploads/pigo/` (`loading-pigo.png`, `pigo-laptop.png`, `pigo-update-data.png`, `hallo-alumni.png`, `anak-it.png`, `pigo-dokter.png`).
+   - Menyediakan direktori penyimpanan foto profil alumni di `public/uploads/profile/`.
+   - Mengintegrasikan komponen loader visual global [`pigo-loader.vue`](file:///c:/study/tracerstudy/resources/js/Components/ui/pigo-loader.vue) dan menyelaraskan logo resmi UKDW pada bilah navigasi seluruh stakeholder.
+
+## [2026-09-26] Layout 2 Kolom (Peta Kiri & Alumni Kanan 2x2), Hover Peta Detail PT & Nama, Detail SweetAlert2 dengan TA & Link, Eliminasi Total Caption Video, dan Showcase Karya Alumni
+
+### Ringkasan Pembaruan
+1. **Eliminasi Total Takarir / Caption Video YouTube (`hero-section.vue`)**:
+   - Memindahkan koordinat video canvas (`-translate-y-[36%]` dan `scale-115`) sehingga area bawah tempat takarir/subtitle YouTube muncul secara fisik terpotong ke luar batas viewport *overflow-hidden*.
+   - Menambahkan lapisan masking gradasi gelap bawah (`h-44 bg-gradient-to-t from-slate-950 via-slate-950/80`) untuk memastikan teks subtitle YouTube tertutup 100% dan tidak pernah tampak di bawah kartu hero.
+
+2. **Tata Letak 2 Kolom Sejajar (Filter Atas, Peta Kiri & Alumni Kanan) (`alumni-map-section.vue`)**:
+   - **Filter Atas Terpadu**: Input pencarian multi-dimensi (*nama, jabatan, perusahaan, kode pos...*), dropdown *Semua Kab/Kota*, dan tombol *Lihat Semua*.
+   - **Kolom Kiri (OpenStreetMap Leaflet)**: Menampilkan peta interaktif 38 provinsi berukuran proporsional yang tersinkronisasi langsung.
+   - **Kolom Kanan (Daftar Alumni)**: Menampilkan daftar alumni langsung di sisi kanan peta dalam tata letak **2 baris x 2 kolom (4 alumni per halaman)** lengkap dengan navigasi paginasi ringkas (*Prev / Next*).
+
+3. **Hover Peta Super Informatif (Menampilkan Nama PT & Nama Alumni)**:
+   - Tooltip Leaflet saat kursor diarahkan ke suatu provinsi kini menampilkan data riil yang sangat berguna:
+     - Nama Provinsi & Total Alumni
+     - **Daftar Perusahaan / PT**: Menampilkan nama-nama instansi tempat alumni bekerja di provinsi tersebut (misal: PT Niagahoster, PT Gameloft, BCA, Astra).
+     - **Daftar Nama Alumni**: Menampilkan nama-nama alumni yang berkiprah di wilayah tersebut.
+   - Mengeklik provinsi di peta akan langsung memfilter daftar alumni di kolom kanan secara instan.
+
+4. **Penyederhanaan Kartu Alumni (Nilai Langsung Tanpa Label Repetitif)**:
+   - Menghilangkan label teks "Jabatan" dan "Perusahaan / Instansi" pada kartu; langsung menyajikan:
+     - **Nama Alumni** & Tahun Kelulusan
+     - **Posisi Kerja Langsung** (aksen hijau tua tebal)
+     - **Nama Perusahaan Langsung** & Wilayah
+     - **Judul Tugas Akhir (TA)** ringkas
+     - **Tombol "Detail"** menuju pop-up SweetAlert2.
+
+5. **Detail Lengkap Berbasis SweetAlert2**:
+   - Mengganti modal kustom dengan dialog **SweetAlert2** modern:
+     - Nama, NIM, Prodi, Tahun Kelulusan.
+     - Posisi/Jabatan, Perusahaan, Sektor Usaha, Alamat Lengkap, Wilayah, & Kode Pos (Zipcode).
+     - **Tugas Akhir / Skripsi**: Judul lengkap dan tautan aktif menuju dokumen repositori/jurnal (`url_publikasi`).
+     - Riwayat Studi Lanjut (jika ada).
+     - Tautan Media Sosial Aktif (LinkedIn, Instagram, Facebook).
+     - Tombol aksi *"Sorot di Peta"* dan *"Tutup"*.
+
+6. **Pembersihan Elemen Sesuai Arahan**:
+   - Menghapus badge & tulisan "Alumni Terverifikasi UKDW".
+   - Menghapus opsi "Domisili Alumni" (fokus murni pada karier & lokasi kerja/mitra).
+   - Menghapus deretan tombol pilihan cepat.
+
+7. **Penggantian Section "Satisfied Alumni Speaks" Menjadi "Karya & Tugas Akhir Alumni UKDW" (`testimonial-slider-section.vue`)**:
+   - Mengganti seluruh slider testimoni lama dengan section berbobot akademis: **Karya & Tugas Akhir Alumni UKDW**.
+   - Menampilkan inovasi skripsi mahasiswa, penulis, instansi kerja saat ini, jenis publikasi, dan tombol tautan langsung ke repositori dokumen karya ilmiah UKDW.
+
+2. **Estetika Light Model & iPhone Glassmorphism (`alumni-map-section.vue`)**:
+   - Menerapkan tema terang (*light mode*) bersih dengan estetika kaca iPhone (*iOS frosted glass*): `backdrop-blur-2xl`, latar putih transparan `bg-white/80`, garis batas halus `border-white/90`, dan bayangan lembut elevasi Apple `shadow-[0_12px_40px_rgba(0,0,0,0.06)]`.
+   - Mengubah tampilan kontrol, segmented button (*Lokasi Kerja* vs *Domisili*), search bar, dan kartu alumni menjadi gaya widget iOS modern.
+
+3. **Pemicu Interaktif Klik Peta (Alumni Muncul Saat Peta / Wilayah Diklik)**:
+   - Menampilkan panduan interaktif Apple Glass di awal: *"Klik Wilayah pada Peta Interaktif"* dengan tombol akses cepat provinsi populer.
+   - Ketika pengguna mengeklik suatu wilayah/provinsi di peta (atau memilih filter/pencarian), daftar alumni untuk daerah tersebut otomatis terbuka dan meluncur (*smooth scroll*) ke tampilan pengguna.
+
+4. **Penyederhanaan Kartu Alumni Beranda (Nama, Jabatan, Perusahaan & Detail)**:
+   - Kartu alumni dibuat sangat ringkas dan rapi, hanya berfokus pada 3 informasi inti yang dibutuhkan masyarakat:
+     - **Nama Lengkap Alumni** & Program Studi
+     - **Posisi / Jabatan Pekerjaan**
+     - **Perusahaan / Instansi** & Kota Wilayah
+     - **Tombol "Lihat Detail Lengkap"** bergaya iPhone Glass.
+   - Menghilangkan tampilan foto alumni pada seluruh kartu sesuai arahan.
+
+5. **Modal Rincian Data Lengkap Alumni (iPhone Frosted Glass Sheet)**:
+   - Menekan tombol "Detail" membuka lembar dialog modal kaca (*iOS Frosted Glass Modal Sheet*) dengan efek blur sinematik `backdrop-blur-md` dan indikator *handle grabber* Apple di bagian atas.
+   - Menyajikan informasi komprehensif: Nama, NIM, Prodi, Tahun Lulus, Posisi/Jabatan, Perusahaan Lengkap (Negara, Provinsi, Kab/Kota, Alamat Kantor, Kode Pos/Zipcode, Sektor), Riwayat Studi Lanjut (S2/S3, Kampus, Prodi), Domisili, serta Tautan Medsos Aktif (LinkedIn, Instagram, Facebook).
+   - Dilengkapi tombol *"Sorot di Peta"* dan tombol *"Tutup"* dengan dukungan tombol keyboard `Escape`.
+
+2. **Pembersihan Total Visual Neon Hijau Menyala**:
+   - Menghapus semua efek visual neon, pendaran glow hijau menyala (*glowing green filter/drop-shadow*), dan watermark raksasa menyilaukan.
+   - Menggantikannya dengan palet warna resmi dual-tone yang profesional: Hijau Hutan UKDW (`#0D542B`) dan Kuning Emas (`#FACC15` / `#EAB308`).
+   - Menerapkan badge *Alumni Terverifikasi* halus dan elegan (`bg-[#ECFDF5] border-[#A7F3D0] text-[#065F46]`) dengan indikator titik hijau emerald solid.
+
+3. **Direktori Alumni Instan & Mandiri**:
+   - Menampilkan daftar kartu alumni terverifikasi secara langsung (*instant list*) tanpa mengharuskan pengguna membuka atau mengeklik peta terlebih dahulu.
+   - Menyediakan navigasi paginasi (6 kartu per halaman) yang responsif dan cepat.
+   - Menghilangkan foto profil alumni pada kartu sesuai arahan (*gausah nampilin foto*), digantikan dengan layout data karier yang rapi dan profesional.
+
+4. **Pencarian Cerdas Wilayah, Provinsi, Kabupaten/Kota, & Kode Pos (Zipcode)**:
+   - Input pencarian multi-dimensi: mencari instan berdasarkan Nama, NIM, Posisi/Jabatan, Perusahaan, Wilayah, Provinsi, Kabupaten/Kota, maupun Kode Pos (*Zipcode*).
+   - Filter dropdown dinamis: Pilihan 38 Provinsi dan Kabupaten/Kota yang otomatis menyesuaikan (*cascading*).
+   - Filter kategori karier: Bekerja, Wirausaha, dan Melanjutkan Pendidikan.
+
+5. **Interaktivitas Dua Arah Peta Sebaran Leaflet.js**:
+   - Peta Leaflet OpenStreetMap Indonesia (`[-2.55, 118.02]`, zoom 5) tersinkronisasi dua arah:
+     - Mengeklik polygon provinsi di peta akan langsung memfilter daftar alumni di bawahnya dan memperbesar (*fitBounds*) ke provinsi tersebut.
+     - Memilih filter provinsi atau mengeklik *"Lihat di Peta"* pada kartu alumni akan memfokuskan kamera peta secara otomatis ke wilayah terkait.
+
+6. **Kelengkapan Informasi Alumni pada Kartu**:
+   - **Nama Lengkap & NIM**: Identitas resmi alumni Duta Wacana.
+   - **Program Studi & Tahun Lulus**: Informasi almamater.
+   - **Posisi / Jabatan Pekerjaan**: Jabatan aktif di dunia industri.
+   - **Perusahaan / Instansi**: Nama kantor, sektor bidang usaha, serta lokasi lengkap (Negara, Provinsi, Kabupaten/Kota, Alamat Kantor, dan Kode Pos).
+   - **Riwayat Lanjut Pendidikan**: Jenjang (S2/S3), nama perguruan tinggi, dan program studi lanjutan.
+   - **Tautan Media Sosial Profesional**: Akses langsung ke profil LinkedIn, Instagram, dan Facebook alumni.
+
+---
+
+
+### Ringkasan
+1. **Penerapan Layout Kartu & Hero Ala Portal UB (Universitas Brawijaya)**:
+   - Mengubah struktur hero section [`hero-section.vue`](file:///c:/study/tracerstudy/resources/js/components/landing/hero-section.vue) menjadi layout persis Portal Tracer Study UB:
+     - Background nuansa kampus dengan overlay hijau tua pekat (`#00381e` ke `#002213`).
+     - Tipografi kontras: `PORTAL TRACER STUDY` (putih bold), `UNIVERSITAS KRISTEN DUTA WACANA` (kuning cerah `#FACC15`), dan kalimat penjelasan almamater.
+     - Kolom pencarian terpadu (*"Cari apapun disini..."*) dengan tombol kotak kuning berikon kaca pembesar.
+     - Tiga kartu bertumpuk (*overlapping cards*) di bagian bawah hero:
+       - **Tracer Study**: Ditujukan kepada seluruh alumni UKDW dalam rentang waktu 1-2 tahun setelah lulus guna mengevaluasi proses pendidikan.
+       - **Survey Pengguna Lulusan**: Ditujukan kepada seluruh instansi/perusahaan pengguna lulusan UKDW dalam mengukur mutu lulusan.
+       - **Laporan Tracer Study**: Laporan hasil tracer study yang dilaporkan dan disosialisasikan secara berkala.
+     - Setiap kartu dilengkapi garis tepi atas kuning cerah (*border-t-4 border-yellow-400*), latar hijau gelap semi-transparan (`#002B17`), dan tombol tautan `Selengkapnya →`.
+   - Menambahkan tombol melayang bulat warna kuning (*floating scroll-to-top button*) di pojok kanan bawah persis seperti antarmuka Portal UB.
+
+2. **Implementasi Peta Sebaran Alumni Interaktif (Leaflet.js & OpenStreetMap)**:
+   - Membuat komponen peta interaktif [`alumni-map-section.vue`](file:///c:/study/tracerstudy/resources/js/components/landing/alumni-map-section.vue):
+     - Menggunakan *tile layer* resmi **OpenStreetMap** dengan titik pusat Indonesia di koordinat `[-2.55, 118.02]` dan zoom awal level 5 (sesuai spesifikasi).
+     - Mengintegrasikan data batas wilayah **GeoJSON 38 Provinsi Indonesia** (`/geojson/indonesia-provinsi.json`) dan **518 Kabupaten/Kota** (`/geojson/indonesia-kabupaten.json`).
+     - Fitur *choropleth* gradasi warna hijau khas UKDW (`#0D542B`), hijau emerald (`#15803D`), dan kuning emas (`#EAB308`) sesuai kepekatan data alumni riil.
+     - Interaktivitas klik: Ketika pengguna mengeklik suatu provinsi, peta secara otomatis melakukan *zoom-in* halus (`fitBounds`) ke wilayah provinsi tersebut dan menampilkan batas wilayah kabupaten/kota di dalamnya.
+     - Panel rincian samping dinamis: Menampilkan nama provinsi, total alumni, rincian per kabupaten/kota, serta tombol *Reset* ke seluruh Indonesia.
+     - Toggle filter: Beralih antara *"Domisili Alumni"* dan *"Lokasi Kerja / Mitra Perusahaan"*.
+
+3. **Penyelarasan Warna Hijau dan Kuning (Dual Tone Sesuai Referensi Gambar)**:
+   - Menerapkan palet warna utama hijau botol/hutan khas UKDW (`#0D542B` / `#00381e`) dipadukan dengan kuning cerah/emas (`#FACC15` / `#EAB308`).
+   - Menerapkan pill badge *Alumni Terverifikasi* (`bg-[#ECFDF5] border-[#A7F3D0] text-[#065F46]`) dengan indikator titik hijau berkedip di berbagai section.
+
+## [2026-09-26] Redesain Landing Page Berbasis Wireframe, Integrasi Data Riil Database, dan Migrasi Aset Maskot Pigo
+
+### Ringkasan
+1. **Migrasi dan Standardisasi Aset Maskot Pigo & Logo UKDW**:
+   - Memindahkan seluruh varian maskot resmi dari `/Pigo` ke dalam struktur direktori aplikasi:
+     - `public/uploads/pigo/loading-pigo.png` (Maskot Pigo saat memuat)
+     - `public/uploads/pigo/pigo-laptop.png` (Maskot Pigo membuka laptop)
+     - `public/uploads/pigo/pigo-update-data.png` (Maskot Pigo memperbarui data)
+     - `public/uploads/pigo/hallo-alumni.png` (Maskot Pigo menyapa alumni)
+     - `public/uploads/pigo/anak-it.png` (Maskot Pigo bidang IT & Rekayasa)
+     - `public/uploads/pigo/pigo-dokter.png` (Maskot Pigo bidang Kedokteran & Kesehatan)
+     - `public/uploads/logo/logo-ukdw.png` (Logo resmi UKDW)
+   - Memperbarui komponen `pigo-loader.vue` agar menggunakan `/uploads/pigo/loading-pigo.png`.
+   - Mengintegrasikan kartu ilustrasi maskot Pigo pada halaman otentikasi [`Login.vue`](file:///c:/study/tracerstudy/resources/js/Pages/Otentikasi/Login.vue) (`pigo-laptop.png`) dan [`UbahKataSandi.vue`](file:///c:/study/tracerstudy/resources/js/Pages/Otentikasi/UbahKataSandi.vue) (`pigo-update-data.png`).
+   - Memperbarui seluruh referensi logo bilah navigasi stakeholder (`SuperAdmin`, `AdminProdi`, `AdminFakultas`, `AdminBiroTiga`, dan `Alumni`) ke `/uploads/logo/logo-ukdw.png`.
+
+2. **Penyajian Data Dinamis & Riil dari Database ([`BerandaController.php`](file:///c:/study/tracerstudy/app/Http/Controllers/Tamu/BerandaController.php))**:
+   - Menghubungkan landing page langsung dengan database produksi tanpa data dummy/slop:
+     - `stats`: Menghitung total alumni (`120+`), total mitra perusahaan terverifikasi (`32+`), total prodi terintegrasi (`12`), total responden tracer (`88+`), dan persentase serapan karier (`94%`).
+     - `featuredAlumni`: Mengambil data alumni riil beserta program studi, jabatan pekerjaan aktif, dan perusahaan/instansi terafiliasi dari tabel `biodata`, `prodi`, dan `perusahaan`.
+     - `sektorKarier`: Mengelompokkan sebaran industri alumni (Teknologi & IT, Pendidikan & Riset, Bisnis & Publik).
+
+3. **Redesain Menyeluruh Landing Page Sesuai Referensi Wireframe ([`Beranda.vue`](file:///c:/study/tracerstudy/resources/js/Pages/Tamu/Beranda.vue))**:
+   - **Hero Section**: Headline profesional, tombol aksi *[Mulai Isi Kuesioner]* & *[Pelajari Alur]*, serta kartu visual maskot `hallo-alumni.png` berpadu 3 highlight feature pills horizontal.
+   - **Sektor Alumni Showcase**: Tab kategori (*Semua*, *Teknologi & IT*, *Pendidikan & Riset*) dengan kartu rekam jejak alumni riil dan navigasi geser panah kiri/kanan.
+   - **User Guide for First Timer**: Penataan vertikal terstruktur 4 tahap pengisian kuesioner (Step 1 s/d Step 4) dengan ikon quote besar.
+   - **Satisfied Alumni Speaks**: Slider/carousel interaktif dengan efek transisi *slide & fade show*, bintang ulasan, kutipan profesional, dan profil alumni terverifikasi.
+   - **Key Statistics & Transformation Narrative**: Penataan angka metrik riil di sisi kiri, maskot `pigo-update-data.png` di tengah, dan capaian transformasi kurikulum di sisi kanan.
+   - **Warta & Blog Section**: 4 kartu informasi kegiatan dan akreditasi kampus dengan tombol panah navigasi.
+   - **Pilar Keilmuan (Services 01, 02, 03)**: Tiga kartu bidang utama: 01 Teknologi & Rekayasa (`anak-it.png`), 02 Kedokteran & Kesehatan (`pigo-dokter.png`), dan 03 Bisnis & Humaniora (`pigo-laptop.png`).
+   - Efek transisi halus dan animasi *fade show* via GSAP ScrollTrigger.
+
 
 ### Ringkasan
 1. **Penyempurnaan Fungsi Edit & Approval Perusahaan Menjadi Full SweetAlert2**:
