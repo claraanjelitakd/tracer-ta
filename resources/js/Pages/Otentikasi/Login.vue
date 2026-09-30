@@ -2,6 +2,10 @@
 import { ref } from 'vue';
 import { Head, useForm, Link } from '@inertiajs/vue3';
 
+defineProps({
+    status: String,
+});
+
 // Form state untuk menangani login
 const form = useForm({
     username: '',
@@ -9,15 +13,29 @@ const form = useForm({
     remember: false,
 });
 
+// Form state untuk menangani lupa kata sandi
+const forgotForm = useForm({
+    username_atau_email: '',
+});
+
 // State visibilitas kata sandi
 const showPassword = ref(false);
 
 // State modal lupa kata sandi
 const showForgotModal = ref(false);
+const showContactInfo = ref(false);
 
 const submit = () => {
     form.post('/login', {
         onFinish: () => form.reset('password'),
+    });
+};
+
+const submitForgot = () => {
+    forgotForm.post('/forgot-password', {
+        onSuccess: () => {
+            forgotForm.reset('username_atau_email');
+        },
     });
 };
 </script>
@@ -118,6 +136,14 @@ const submit = () => {
                     <p class="text-xs sm:text-sm text-white/75 mt-1 font-medium">
                         Masukkan NIM/Username dan kata sandi Anda untuk melanjutkan.
                     </p>
+                </div>
+
+                <!-- Status / Success Banner -->
+                <div v-if="status" class="mb-5 p-3.5 bg-emerald-950/90 border border-emerald-500/50 rounded-lg flex items-start gap-2.5 text-emerald-200 text-xs sm:text-sm animate-fade-in">
+                    <svg class="w-5 h-5 shrink-0 text-emerald-400 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                    <span>{{ status }}</span>
                 </div>
 
                 <!-- Error Banner -->
@@ -236,13 +262,14 @@ const submit = () => {
 
         </div>
 
-        <!-- Modal Bantuan Lupa Kata Sandi (Tegas & Ramping, rounded-xl) -->
+        <!-- Modal Form Lupa Kata Sandi (Tegas & Ramping, rounded-xl) -->
         <div v-if="showForgotModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in">
-            <div class="bg-[#00381A] text-white rounded-xl max-w-sm w-full p-6 sm:p-7 shadow-2xl border border-white/20 relative text-left">
+            <div class="bg-[#00381A] text-white rounded-xl max-w-md w-full p-6 sm:p-7 shadow-2xl border border-white/20 relative text-left">
+                
                 <div class="flex items-center justify-between mb-4 pb-3 border-b border-white/10">
                     <div class="flex items-center gap-2">
                         <span class="w-2.5 h-2.5 rounded-sm bg-[#FFC700]"></span>
-                        <h3 class="text-base font-black text-white">Bantuan Lupa Kata Sandi</h3>
+                        <h3 class="text-base font-black text-white">Lupa Kata Sandi</h3>
                     </div>
                     <button 
                         @click="showForgotModal = false"
@@ -254,9 +281,67 @@ const submit = () => {
                     </button>
                 </div>
 
-                <div class="text-xs text-white/85 space-y-3 leading-relaxed">
+                <!-- Notifikasi Status / Error di dalam Modal -->
+                <div v-if="$page.props.flash?.status" class="mb-4 p-3 bg-emerald-950/90 border border-emerald-500/50 rounded-lg text-xs text-emerald-200">
+                    {{ $page.props.flash.status }}
+                </div>
+                
+                <div v-if="forgotForm.errors.username_atau_email" class="mb-4 p-3 bg-red-950/80 border border-red-500/50 rounded-lg text-xs text-red-200">
+                    {{ forgotForm.errors.username_atau_email }}
+                </div>
+
+                <div v-if="!showContactInfo">
+                    <p class="text-xs text-white/85 mb-4 leading-relaxed">
+                        Masukkan <strong>NIM / Username</strong> atau <strong>Email terdaftar</strong> Anda. Tautan pemulihan kata sandi akan otomatis dikirimkan ke Gmail/Email akun Anda.
+                    </p>
+
+                    <form @submit.prevent="submitForgot" class="space-y-4">
+                        <div>
+                            <label class="block text-xs font-bold text-white/90 uppercase tracking-wider mb-1.5">
+                                NIM / Username / Email
+                            </label>
+                            <input
+                                type="text"
+                                v-model="forgotForm.username_atau_email"
+                                required
+                                placeholder="Contoh: 71200101 atau nama@gmail.com"
+                                class="block w-full px-4 py-3 bg-black/30 border border-white/20 rounded-lg text-sm text-white placeholder-white/40 focus:outline-none focus:border-[#FFC700] focus:ring-1 focus:ring-[#FFC700] transition-all font-medium"
+                            />
+                        </div>
+
+                        <button
+                            type="submit"
+                            :disabled="forgotForm.processing"
+                            class="w-full flex justify-center items-center py-3 px-5 rounded-lg shadow-lg text-xs font-black text-slate-950 bg-[#FFC700] hover:bg-[#FBBF24] transition-all disabled:opacity-60 cursor-pointer"
+                        >
+                            <svg v-if="forgotForm.processing" class="animate-spin -ml-1 mr-2 h-4 w-4 text-slate-950" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            <span>{{ forgotForm.processing ? 'Mengirim Email...' : 'Kirim Tautan Reset Password' }}</span>
+                        </button>
+                    </form>
+
+                    <div class="mt-4 pt-3 border-t border-white/10 flex items-center justify-between text-[11px]">
+                        <button 
+                            @click="showContactInfo = true" 
+                            class="text-[#FFC700] hover:underline font-medium cursor-pointer"
+                        >
+                            Tidak tahu email terdaftar?
+                        </button>
+                        <button 
+                            @click="showForgotModal = false" 
+                            class="text-white/60 hover:text-white cursor-pointer"
+                        >
+                            Batal
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Kontak Bantuan Manual Jika Tidak Tahu Email -->
+                <div v-else class="text-xs text-white/85 space-y-3 leading-relaxed">
                     <p>
-                        Bagi Alumni atau Civitas Akademika yang lupa kata sandi atau mengalami kendala masuk, silakan menghubungi PIC resmi:
+                        Silakan hubungi PIC resmi Biro 3 UKDW jika email Anda belum terdaftar di sistem:
                     </p>
                     <div class="bg-black/35 p-3.5 rounded-lg border border-white/10 space-y-1.5 font-medium text-white/90">
                         <div class="flex items-center gap-2">
@@ -271,21 +356,18 @@ const submit = () => {
                             <span class="text-white/50">Telp:</span>
                             <span>(0274) 563929 ext. 103</span>
                         </div>
-                        <div class="flex items-start gap-2 pt-1 border-t border-white/10 text-[11px] text-white/70">
-                            <span>Sertakan Nama Lengkap, NIM, dan Prodi saat menghubungi admin.</span>
-                        </div>
+                    </div>
+                    <div class="mt-4 flex gap-2">
+                        <button
+                            type="button"
+                            @click="showContactInfo = false"
+                            class="w-full py-2 bg-white/10 hover:bg-white/20 text-white text-xs font-bold rounded-lg transition-all cursor-pointer"
+                        >
+                            &larr; Kembali ke Form Reset
+                        </button>
                     </div>
                 </div>
 
-                <div class="mt-6">
-                    <button
-                        type="button"
-                        @click="showForgotModal = false"
-                        class="w-full py-2.5 bg-[#FFC700] hover:bg-[#FBBF24] text-slate-950 text-xs font-black rounded-lg transition-all cursor-pointer"
-                    >
-                        Tutup Bantuan
-                    </button>
-                </div>
             </div>
         </div>
 

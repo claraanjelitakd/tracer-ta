@@ -187,7 +187,7 @@ class Biodata extends Model
      */
     public function getEmailAttribute(): ?string
     {
-        return $this->email_pribadi ?? $this->dataAkademik?->email_pribadi ?? $this->user?->email;
+        return $this->email_pribadi ?? $this->user?->email;
     }
 
     /**

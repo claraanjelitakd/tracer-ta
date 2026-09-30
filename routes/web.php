@@ -22,6 +22,7 @@ use App\Http\Controllers\Alumni\Kuesioner\SimpanJawabanController;
 use App\Http\Controllers\Alumni\Profil\ProfilController;
 use App\Http\Controllers\Alumni\Profil\SimpanProfilController;
 use App\Http\Controllers\Otentikasi\LoginController;
+use App\Http\Controllers\Otentikasi\LupaKataSandiController;
 use App\Http\Controllers\Otentikasi\UbahKataSandiController;
 use App\Http\Controllers\SuperAdmin\KelolaAlumni\DaftarAlumniSuperAdminController;
 use App\Http\Controllers\SuperAdmin\KelolaAlumni\DetailAlumniSuperAdminController;
@@ -44,6 +45,11 @@ Route::get('/', [BerandaController::class, 'tampilkanBeranda']);
 Route::middleware('guest')->group(function () {
     Route::get('/login', [LoginController::class, 'tampilkanHalamanLogin'])->name('login');
     Route::post('/login', [LoginController::class, 'prosesLogin']);
+
+    // Lupa & Reset Kata Sandi via Email
+    Route::post('/forgot-password', [LupaKataSandiController::class, 'prosesKirimLinkReset'])->name('password.email');
+    Route::get('/reset-password/{token}', [LupaKataSandiController::class, 'tampilkanHalamanResetKataSandi'])->name('password.reset');
+    Route::post('/reset-password', [LupaKataSandiController::class, 'prosesResetKataSandi'])->name('password.update');
 });
 
 // =========================================================================
@@ -244,6 +250,9 @@ Route::middleware('auth')->group(function () {
             Route::post('/superadmin/prodi-kuesioner/opsi', [KelolaKuesionerProdiSuperAdminController::class, 'storeOption'])->name('superadmin.prodi-kuesioner.opsi.store');
             Route::put('/superadmin/prodi-kuesioner/opsi/{id}', [KelolaKuesionerProdiSuperAdminController::class, 'updateOption'])->name('superadmin.prodi-kuesioner.opsi.update');
             Route::delete('/superadmin/prodi-kuesioner/opsi/{id}', [KelolaKuesionerProdiSuperAdminController::class, 'destroyOption'])->name('superadmin.prodi-kuesioner.opsi.destroy');
+
+            // Log Aktivitas / Audit Trail Sistem
+            Route::get('/superadmin/logs', [\App\Http\Controllers\SuperAdmin\LogAktivitasController::class, 'index'])->name('superadmin.logs.index');
         });
 
     });

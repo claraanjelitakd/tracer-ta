@@ -49,12 +49,13 @@ class VerifikasiPerusahaanFakultasController extends Controller
         $filters = [
             'search' => $request->query('search', ''),
             'prodi_id' => $request->query('prodi_id', ''),
+            'status' => $request->query('status', 'all'),
             'per_page' => $request->query('per_page', 10),
         ];
 
         $companies = $this->verificationService->getPendingForFakultas($fakultasId, $filters);
 
-        // Lampirkan data rekomendasi kemiripan perusahaan terverifikasi untuk setiap item di halaman ini
+        // Lampirkan data rekomendasi kemiripan perusahaan terverifikasi untuk membantu konsolidasi/penggabungan data
         $companies->getCollection()->transform(function ($company) {
             $company->recommendations = $this->verificationService->getSimilarRecommendations($company, 5);
 

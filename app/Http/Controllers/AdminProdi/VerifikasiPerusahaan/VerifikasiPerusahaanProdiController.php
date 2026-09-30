@@ -39,12 +39,13 @@ class VerifikasiPerusahaanProdiController extends Controller
         $filters = [
             'search' => $request->query('search', ''),
             'scope' => $request->query('scope', 'prodi'), // 'prodi' atau 'all'
+            'status' => $request->query('status', 'all'),
             'per_page' => $request->query('per_page', 10),
         ];
 
         $companies = $this->verificationService->getPendingForProdi($prodiId, $filters);
 
-        // Lampirkan data rekomendasi kemiripan perusahaan terverifikasi untuk setiap item di halaman ini
+        // Lampirkan data rekomendasi kemiripan perusahaan terverifikasi untuk membantu konsolidasi/penggabungan data
         $companies->getCollection()->transform(function ($company) {
             $company->recommendations = $this->verificationService->getSimilarRecommendations($company, 5);
 

@@ -51,6 +51,9 @@ c:/study/tracerstudy/app/Http/Controllers/Otentikasi/LoginController.php
 c:/study/tracerstudy/app/Http/Controllers/Otentikasi/UbahKataSandiController.php
 - Menangani form penggantian password awal wajib bagi alumni sebelum dapat mengakses dashboard dan kuesioner.
 
+c:/study/tracerstudy/app/Http/Controllers/Otentikasi/LupaKataSandiController.php
+- Menangani pemulihan akun lupa kata sandi via email, pengiriman token reset password (expired 60 menit) dengan template email Blade HTML, dan pembaruan kata sandi baru.
+
 B. MODUL PENGUNJUNG PUBLIK (GUEST)
 ----------------------------------------------------------------------------------------------------
 c:/study/tracerstudy/app/Http/Controllers/Tamu/BerandaController.php
@@ -129,6 +132,9 @@ c:/study/tracerstudy/app/Http/Controllers/SuperAdmin/Perusahaan/VerifikasiPerusa
 c:/study/tracerstudy/app/Http/Controllers/SuperAdmin/ManajemenAkunController.php
 - Menangani manajemen akun pengguna terpadu untuk Admin Fakultas, Admin Prodi, dan Mahasiswa/Alumni per Prodi.
 - Menyediakan fitur pengiriman pemulihan password ke email pribadi terdaftar pengguna (`user.email`) dan reset password langsung.
+
+c:/study/tracerstudy/app/Http/Controllers/SuperAdmin/LogAktivitasController.php
+- Menampilkan tabel audit trail log aktivitas sistem (`/superadmin/logs`), pencarian realtime, filter jenis aksi, dan modal detail JSON old/new values.
 
 F. MODUL ADMIN BIRO 3 (Role: admin_biro3)
 ----------------------------------------------------------------------------------------------------

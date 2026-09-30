@@ -35,6 +35,7 @@ class VerifikasiPerusahaanSuperAdminController extends Controller
             'search' => $request->query('search', ''),
             'scope' => $request->query('scope', 'all'), // 'all' atau 'prodi'
             'prodi_id' => $request->query('prodi_id', ''),
+            'status' => $request->query('status', 'all'),
             'per_page' => (int) $request->query('per_page', 10),
         ];
 
@@ -56,8 +57,11 @@ class VerifikasiPerusahaanSuperAdminController extends Controller
                         $q->select('id', 'user_id', 'nim', 'prodi_id', 'posisi_jabatan', 'kategori_pekerjaan', 'perusahaan_id')
                             ->with(['dataAkademik:nim,nama,tahun_lulus', 'prodi:id,nama_prodi']);
                     },
-                ])
-                ->where('status_verifikasi', 'Menunggu Verifikasi');
+                ]);
+
+            if ($filters['status'] !== 'all') {
+                $query->where('status_verifikasi', $filters['status']);
+            }
 
             if (! empty($filters['search'])) {
                 $search = trim($filters['search']);
@@ -74,7 +78,7 @@ class VerifikasiPerusahaanSuperAdminController extends Controller
             $companies = $query->latest('updated_at')->paginate($filters['per_page'])->withQueryString();
         }
 
-        // Lampirkan data rekomendasi kemiripan perusahaan terverifikasi untuk setiap item di halaman ini
+        // Lampirkan data rekomendasi kemiripan perusahaan terverifikasi untuk membantu konsolidasi/penggabungan data
         $companies->getCollection()->transform(function ($company) {
             $company->recommendations = $this->verificationService->getSimilarRecommendations($company, 5);
 

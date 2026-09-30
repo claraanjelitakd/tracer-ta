@@ -56,6 +56,10 @@ const isManajemenAkunActive = computed(() => {
     return page.url.startsWith('/superadmin/manajemen-akun');
 });
 
+const isLogsActive = computed(() => {
+    return page.url.startsWith('/superadmin/logs');
+});
+
 const toggleMobileMenu = () => {
     isMobileOpen.value = !isMobileOpen.value;
 };
@@ -251,7 +255,7 @@ const handleLogout = () => {
                     </span>
                 </div>
 
-                <!-- 5. ACC Perusahaan -->
+                <!-- 5. Master Data & Verifikasi Perusahaan -->
                 <Link
                     href="/superadmin/perusahaan"
                     @click="closeMobileMenu"
@@ -263,9 +267,9 @@ const handleLogout = () => {
                     ]"
                 >
                     <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5m3 0h1m-1-4h.01M9 16h.01M9 12h.01M13 16h.01M13 12h.01M17 16h.01M17 12h.01" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                     </svg>
-                    <span class="truncate">Verifikasi Perusahaan</span>
+                    <span class="truncate">Master Data Perusahaan</span>
                 </Link>
 
                 <!-- 6. Data Alumni -->
@@ -300,6 +304,23 @@ const handleLogout = () => {
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 11-4 0 2 2 0 014 0zM4 19v-2a3 3 0 013-3h10a3 3 0 013 3v2" />
                     </svg>
                     <span class="truncate">Manajemen Akun</span>
+                </Link>
+
+                <!-- 8. Log Aktivitas / Audit Trail -->
+                <Link
+                    href="/superadmin/logs"
+                    @click="closeMobileMenu"
+                    class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-semibold transition-colors"
+                    :class="[
+                        isLogsActive
+                            ? 'bg-[#0D542B] text-white shadow-2xs'
+                            : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                    ]"
+                >
+                    <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    <span class="truncate">Log Aktivitas</span>
                 </Link>
             </div>
 

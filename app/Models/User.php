@@ -78,6 +78,6 @@ class User extends Authenticatable
      */
     public function getEmailAttribute($value)
     {
-        return $value ?? $this->biodata?->email_pribadi ?? $this->biodata?->dataAkademik?->email_pribadi;
+        return $this->biodata?->email_pribadi ?? $value;
     }
 }

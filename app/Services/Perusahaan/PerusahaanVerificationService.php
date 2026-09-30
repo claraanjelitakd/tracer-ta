@@ -44,8 +44,12 @@ class PerusahaanVerificationService
                     $q->select('id', 'user_id', 'nim', 'prodi_id', 'posisi_jabatan', 'kategori_pekerjaan', 'perusahaan_id')
                         ->with(['dataAkademik:nim,nama,tahun_lulus', 'prodi:id,nama_prodi']);
                 },
-            ])
-            ->where('status_verifikasi', 'Menunggu Verifikasi');
+            ]);
+
+        $status = $filters['status'] ?? 'all';
+        if ($status !== 'all') {
+            $query->where('status_verifikasi', $status);
+        }
 
         // Filter apakah hanya pengajuan dari alumni prodi ini atau semua
         $scope = $filters['scope'] ?? 'prodi';
@@ -93,8 +97,12 @@ class PerusahaanVerificationService
                     $q->select('id', 'user_id', 'nim', 'prodi_id', 'posisi_jabatan', 'kategori_pekerjaan', 'perusahaan_id')
                         ->with(['dataAkademik:nim,nama,tahun_lulus', 'prodi:id,nama_prodi']);
                 },
-            ])
-            ->where('status_verifikasi', 'Menunggu Verifikasi');
+            ]);
+
+        $status = $filters['status'] ?? 'all';
+        if ($status !== 'all') {
+            $query->where('status_verifikasi', $status);
+        }
 
         if (! empty($filters['prodi_id']) && in_array((int) $filters['prodi_id'], $prodiIds)) {
             $targetProdiId = (int) $filters['prodi_id'];

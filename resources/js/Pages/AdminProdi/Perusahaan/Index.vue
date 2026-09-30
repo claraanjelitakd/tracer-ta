@@ -37,6 +37,7 @@ const props = defineProps({
 // State Filter & Pencarian
 const search = ref(props.filters.search || '');
 const scope = ref(props.filters.scope || 'prodi');
+const statusFilter = ref(props.filters.status || 'all');
 const perPage = ref(props.filters.per_page || 10);
 
 let searchTimeout = null;
@@ -47,10 +48,16 @@ const handleSearch = () => {
     }, 400);
 };
 
+const changeStatusTab = (newStatus) => {
+    statusFilter.value = newStatus;
+    applyFilters();
+};
+
 const applyFilters = () => {
     router.get('/prodi/perusahaan', {
         search: search.value || undefined,
         scope: scope.value !== 'prodi' ? scope.value : undefined,
+        status: statusFilter.value !== 'all' ? statusFilter.value : undefined,
         per_page: perPage.value != 10 ? perPage.value : undefined,
     }, {
         preserveState: true,
@@ -476,6 +483,35 @@ const openEditModal = (company) => {
 
             <!-- Konten Utama -->
             <main class="w-full p-6 space-y-4">
+
+                <!-- Tab Navigasi Filter Status Perusahaan -->
+                <div class="flex items-center gap-2 border-b border-gray-200 pb-2">
+                    <button
+                        @click="changeStatusTab('all')"
+                        class="px-4 py-2 text-xs font-bold rounded-lg transition-colors flex items-center gap-1.5 cursor-pointer"
+                        :class="statusFilter === 'all' ? 'bg-[#0D542B] text-white shadow-xs' : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'"
+                    >
+                        <span>Semua Perusahaan</span>
+                        <span class="px-1.5 py-0.5 rounded-full text-[10px]" :class="statusFilter === 'all' ? 'bg-white/20 text-white' : 'bg-gray-100 text-gray-700'">{{ stats.total_all || companies.total }}</span>
+                    </button>
+                    <button
+                        @click="changeStatusTab('Menunggu Verifikasi')"
+                        class="px-4 py-2 text-xs font-bold rounded-lg transition-colors flex items-center gap-1.5 cursor-pointer"
+                        :class="statusFilter === 'Menunggu Verifikasi' ? 'bg-[#0D542B] text-white shadow-xs' : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'"
+                    >
+                        <span>Menunggu Verifikasi</span>
+                        <span class="px-1.5 py-0.5 rounded-full text-[10px]" :class="statusFilter === 'Menunggu Verifikasi' ? 'bg-white/20 text-white' : 'bg-amber-100 text-amber-800'">{{ stats.total_pending_prodi }}</span>
+                    </button>
+                    <button
+                        @click="changeStatusTab('Terverifikasi')"
+                        class="px-4 py-2 text-xs font-bold rounded-lg transition-colors flex items-center gap-1.5 cursor-pointer"
+                        :class="statusFilter === 'Terverifikasi' ? 'bg-[#0D542B] text-white shadow-xs' : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'"
+                    >
+                        <span>Master Terverifikasi</span>
+                        <span class="px-1.5 py-0.5 rounded-full text-[10px]" :class="statusFilter === 'Terverifikasi' ? 'bg-white/20 text-white' : 'bg-emerald-100 text-emerald-800'">{{ stats.total_verified }}</span>
+                    </button>
+                </div>
+
                 <!-- Bilah Filter & Pencarian (DataTables Top Bar) -->
                 <div class="bg-white p-3.5 rounded-lg border border-gray-200 flex flex-col md:flex-row md:items-center justify-between gap-3 text-xs shadow-2xs">
                     <div class="flex items-center gap-3 flex-wrap">

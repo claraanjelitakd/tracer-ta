@@ -1,5 +1,36 @@
 # UPDATE LOG - SERU (Sistem Ekosistem Rekam Jejak Alumni)
 
+## [2026-09-30] Fitur Otomatis Reset Password via Email, Master Data Perusahaan Terpadu, & Tabel Audit Trail Log Aktivitas SuperAdmin
+
+### Ringkasan Pembaruan
+1. **Fitur Otomatis Reset Password via Gmail / SMTP**:
+   - Integrasi pengiriman email pemulihan akun secara otomatis berbasis SMTP (Google App Passwords / Sandi Aplikasi 16 digit).
+   - Dibuat Mailable [`ResetPasswordMail.php`](file:///c:/study/tracerstudy/app/Mail/ResetPasswordMail.php) dengan template HTML e-mail bermerek khas UKDW ([`reset_password.blade.php`](file:///c:/study/tracerstudy/resources/views/emails/reset_password.blade.php)).
+   - Dibuat Controller [`LupaKataSandiController.php`](file:///c:/study/tracerstudy/app/Http/Controllers/Otentikasi/LupaKataSandiController.php) untuk mengelola token acak (expired 60 menit) di tabel `password_reset_tokens`, pengiriman email, serta pemrosesan ganti password baru.
+   - Halaman Modal **Lupa Kata Sandi** di [`Login.vue`](file:///c:/study/tracerstudy/resources/js/Pages/Otentikasi/Login.vue) diubah menjadi form interaktif yang menerima NIM / Username atau Email terdaftar.
+   - Halaman **Reset Password Baru** disajikan dengan Inertia Vue ([`ResetPassword.vue`](file:///c:/study/tracerstudy/resources/js/Pages/Otentikasi/ResetPassword.vue)).
+   - **Logika Prioritas Email**: Mengutamakan `email_pribadi` pada tabel `biodata` (email aktif terkini alumni) sebelum `users.email`.
+
+2. **Master Data & Verifikasi Perusahaan Terpadu (SuperAdmin, Admin Fakultas, & Admin Prodi)**:
+   - Menyatukan tampilan antarmuka **Master Data Perusahaan** pada 3 tingkatan peran admin (SuperAdmin, Admin Fakultas, dan Admin Prodi) di bawah kategori sidebar **Master Data & Verifikasi**.
+   - Disediakan **Tab Navigasi Filter Status**:
+     - *Semua Perusahaan* (Menampilkan seluruh data perusahaan).
+     - *Menunggu Verifikasi* (Daftar pengajuan baru alumni).
+     - *Master Terverifikasi* (Daftar institusi/perusahaan resmi terverifikasi).
+   - Diaktifkan algoritma pendeteksi rekomendasi kemiripan nama (*fuzzy matching & token overlap*) untuk mempermudah konsolidasi dan penggabungan (*merge*) data perusahaan yang berpotensi ganda.
+   - Dibuat migrasi [`2026_09_30_125458_add_created_by_user_id_to_perusahaan_table.php`](file:///c:/study/tracerstudy/database/migrations/2026_09_30_125458_add_created_by_user_id_to_perusahaan_table.php) untuk menjamin keberadaan kolom `created_by_user_id` dan `created_by_prodi_id` pada tabel `perusahaan`.
+
+3. **Halaman Audit Trail / Tabel Log Aktivitas SuperAdmin**:
+   - Dibuat Controller [`LogAktivitasController.php`](file:///c:/study/tracerstudy/app/Http/Controllers/SuperAdmin/LogAktivitasController.php) dan rute `/superadmin/logs` (`superadmin.logs.index`).
+   - Dibuat antarmuka Vue [`Index.vue`](file:///c:/study/tracerstudy/resources/js/Pages/SuperAdmin/Logs/Index.vue) untuk menyajikan tabel log audit aktivitas sistem:
+     - Widget Statistik (Total Log, Total Aktivitas Hari Ini).
+     - Bilah Pencarian Realtime (Deskripsi, Username, Pelaku, IP Address).
+     - Filter Berdasarkan Jenis Aksi (`VERIFY_COMPANY`, `REPLACE_COMPANY`, `RESET_PASSWORD`, `UPDATE_PROFILE`, dll).
+     - Modal Detail JSON (*Old Values* & *New Values*) menggunakan SweetAlert2.
+   - Ditambahkan menu **Log Aktivitas** di Sidebar SuperAdmin.
+
+---
+
 ## [2026-09-30] Pemisahan Pertanyaan Profil dari Kuesioner Universitas & Penguncian Permanen Master Data Akademik di Seluruh Role
 
 ### Ringkasan Pembaruan

@@ -2,6 +2,13 @@
 
 Semua perubahan besar pada sistem dicatat dalam dokumen ini.
 
+## [2026-09-30]
+- **Fitur Otomatis Reset Password via Gmail / SMTP**: Integrasi pengiriman email pemulihan kata sandi berbasis SMTP Google App Passwords dengan Mailable `ResetPasswordMail.php`, template HTML Blade `reset_password.blade.php`, Controller `LupaKataSandiController.php`, form modal interaktif di `Login.vue`, dan halaman Inertia Vue `ResetPassword.vue`.
+- **Pengutamaan Prioritas Email Pribadi Biodata**: Mengubah logika accessor `getEmailAttribute()` pada model `User.php` dan `Biodata.php` agar mengutamakan `email_pribadi` pada tabel `biodata` (email aktif alumni terkini).
+- **Keseragaman Tampilan Master Data Perusahaan**: Menyeragamkan halaman Master Data & Verifikasi Perusahaan di 3 tingkatan peran (SuperAdmin, Admin Fakultas, dan Admin Prodi) dengan tab navigasi filter status (*Semua Perusahaan*, *Menunggu Verifikasi*, *Master Terverifikasi*) serta fitur rekomendasi kecocokan nama otomatis (*fuzzy matching & token overlap*).
+- **Tabel Log Aktivitas & Audit Trail SuperAdmin**: Menambahkan rute `/superadmin/logs`, Controller `LogAktivitasController.php`, dan komponen Vue `SuperAdmin/Logs/Index.vue` lengkap dengan widget statistik, pencarian realtime, filter jenis aksi, dan modal detail JSON (*old values* & *new values*).
+- **Migrasi Kolom `created_by_user_id` & `created_by_prodi_id`**: Menambahkan migrasi `2026_09_30_125458_add_created_by_user_id_to_perusahaan_table.php` untuk menjamin integritas tabel `perusahaan`.
+
 ## [2026-09-28]
 - **Penyesuaian Warna Per Section Landing Page**: Background section Sambutan WR III diatur hijau botol UKDW pekat (`bg-gradient-to-b from-[#00381A] via-[#004D25] to-[#003318]`) dan background section Alur Partisipasi diatur kuning cerah UKDW (`bg-gradient-to-b from-[#FFC700] via-[#FBBF24] to-[#F59E0B]`) berpadu kartu kontras tinggi mutiara.
 - **Eliminasi Total Warna Biru di Landing Page**: Menghilangkan seluruh warna dan aksen biru/cyan di komponen landing page, digantikan dengan hijau UKDW (`#004D25`) dan emas (`#FFC700`).
