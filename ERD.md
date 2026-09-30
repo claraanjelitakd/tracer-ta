@@ -9,23 +9,40 @@ Dokumentasi lengkap skema basis data, kamus data (*data dictionary*), relasi ent
 ```mermaid
 erDiagram
     %% ==========================================
-    %% 1. AUTENTIKASI & PENGGUNA
+    %% 1. AUTENTIKASI, PENGGUNA & AUDIT TRAIL
     %% ==========================================
     users ||--o| biodata : "memiliki profil (user_id)"
-    users ||--o{ perusahaan : "mengajukan (created_by)"
+    users ||--o{ perusahaan : "mengajukan perusahaan (created_by_user_id)"
     prodi ||--o{ users : "menaungi admin prodi (prodi_id)"
-    prodi ||--o{ perusahaan : "prodi pengaju (created_prodi_id)"
+    prodi ||--o{ perusahaan : "prodi pengaju (created_by_prodi_id)"
     ref_fakultas ||--o{ users : "menaungi admin fakultas (fakultas_id)"
+    users ||--o{ log_activities : "melakukan aktivitas (user_id)"
 
     users {
         bigint id PK
         string name
         string email UK
+        string username UK "NIM / NIK / Kode Akun"
         string role "superadmin, admin_biro3, admin_fakultas, admin_prodi, alumni"
         bigint prodi_id FK "nullable"
         bigint fakultas_id FK "nullable"
         string password
         boolean must_change_password
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    log_activities {
+        bigint id PK
+        bigint user_id FK "nullable, references users.id"
+        string action "100, e.g. VERIFIKASI_PERUSAHAAN, RESET_PASSWORD_DOB, UPDATE_USER"
+        string model_type "nullable"
+        unsigned_bigint model_id "nullable"
+        text description
+        json old_values "nullable"
+        json new_values "nullable"
+        string ip_address "45, nullable"
+        text user_agent "nullable"
         timestamp created_at
         timestamp updated_at
     }
@@ -42,6 +59,8 @@ erDiagram
     prodi ||--o{ biodata : "memiliki alumni (prodi_id)"
     propinsi ||--o{ biodata : "domisili alumni (propinsi_id)"
     kabupaten ||--o{ biodata : "domisili alumni (kabupaten_id)"
+    propinsi ||--o{ data_akademik : "provinsi domisili akademik (propinsi_id)"
+    kabupaten ||--o{ data_akademik : "kabupaten domisili akademik (kabupaten_id)"
 
     ref_fakultas {
         bigint id PK
@@ -82,6 +101,7 @@ erDiagram
         bigint fakultas_id FK "nullable, references ref_fakultas.id"
         string kode_prodi UK
         string nama_prodi
+        string jenjang "nullable, e.g. S1, S2, Profesi"
         timestamp created_at
         timestamp updated_at
     }
@@ -97,115 +117,108 @@ erDiagram
     }
 
     %% ==========================================
-    %% 3. ENTITAS BIODATA & PROFIL ALUMNI
+    %% 3. ENTITAS AKADEMIK, YUDISIUM & PROFIL BIODATA
     %% ==========================================
-    data_akademik ||--|| biodata : "sinkronisasi data (nim)"
-    biodata ||--o| yudisium : "kelulusan, skripsi & publikasi (yudisium_id/nim)"
+    data_akademik ||--|| biodata : "relasi identitas tunggal bebas duplikasi (nim)"
+    data_akademik ||--o| yudisium : "kelulusan & tugas akhir (nim)"
+    biodata ||--o| yudisium : "referensi yudisium (yudisium_id)"
     biodata ||--o| data_orang_tua : "kontak wali (orang_tua_id/nim)"
     perusahaan ||--o{ biodata : "tempat bekerja (perusahaan_id)"
     atasan ||--o{ biodata : "atasan langsung (atasan_id)"
 
-    biodata {
+    data_akademik {
         bigint id PK
-        bigint user_id FK "references users.id"
-        string nim UK "references data_akademik.nim"
-        bigint orang_tua_id FK "nullable"
-        bigint yudisium_id FK "nullable"
-        bigint prodi_id FK "nullable"
-        string kode_prodi "nullable"
-        string tahun_lulus "nullable"
-        string nama "nullable"
-        string foto "nullable (Path foto di /uploads/profile)"
+        string nim UK "Primary Identifier Akademik"
+        string nama "Master Nama Lengkap Mahasiswa"
+        string angkatan_masuk "nullable"
         string tempat_lahir "nullable"
         date tanggal_lahir "nullable"
-        string jenis_kelamin "nullable"
-        string golongan_darah "nullable"
-        string warga_negara "WNI"
+        string agama "nullable"
+        string jenis_kelamin "enum: Laki-laki, Perempuan"
+        string golongan_darah "5, nullable"
+        string warga_negara "default WNI"
         string nomor_telepon "nullable"
-        string email "nullable"
         string email_pribadi "nullable"
-        text alamat "nullable"
-        bigint kabupaten_id FK "nullable"
-        bigint propinsi_id FK "nullable"
+        string email_students "nullable (Email resmi kampus UKDW)"
+        text alamat_saat_ini "nullable"
         string kelurahan "nullable"
         string kecamatan "nullable"
+        bigint kabupaten_id FK "nullable"
+        bigint propinsi_id FK "nullable"
         string kode_pos "nullable"
-        string agama "nullable"
-        string nik "nullable (read-only)"
-        string no_kk "nullable"
-        string nisn "nullable"
-        string no_bpjs "nullable"
-        string npwp "nullable"
-        string instagram_url "nullable"
-        string facebook_url "nullable"
-        string linkedin_url "nullable"
-        string linkedin_username "nullable"
-        string expert "nullable"
-        string minat "nullable"
-        bigint perusahaan_id FK "nullable"
-        bigint atasan_id FK "nullable"
-        string kategori_pekerjaan "Pekerja, Wiraswasta, Melanjutkan Pendidikan"
-        string posisi_jabatan "nullable"
-        string posisi_wiraswasta "nullable"
-        string pendidikan_tingkat "nullable (Profesi, S2, S3, dll)"
-        string perguruan_tinggi "nullable (Perguruan tinggi studi lanjut)"
-        string pendidikan_prodi "nullable (Program studi studi lanjut)"
-        unsigned_bigint gaji "nullable (Take Home Pay)"
-        string jenis_pekerjaan "nullable"
-        string zipcode "nullable"
-        timestamp created_at
-        timestamp updated_at
-    }
-
-    data_akademik {
-        string nim PK
-        string nirm "nullable"
-        string nama
-        string tempat_lahir "nullable"
-        date tanggal_lahir "nullable"
-        string jenis_kelamin "nullable"
-        string agama "nullable"
-        string jalur_penerimaan "nullable"
-        string program_studi "nullable"
-        string fakultas "nullable"
-        string strata "S1"
-        string status_mahasiswa "AR"
-        decimal ip_kumulatif "3,2"
-        string angkatan_masuk "nullable"
-        string tahun_akademik_masuk "nullable"
-        string tahun_akademik_lulus "nullable"
-        string tahun_lulus "nullable"
-        string nomor_telepon "nullable"
-        string email_pribadi "nullable"
-        string alamat_saat_ini "nullable"
-        string nik "nullable"
-        string no_ijazah "nullable"
+        string nik "20, nullable"
+        string no_kk "20, nullable"
+        string nisn "20, nullable"
+        string no_bpjs "30, nullable"
         string asal_sekolah "nullable"
-        string alamat_asal_sekolah "nullable"
+        text alamat_asal_sekolah "nullable"
         string kota_kabupaten_asal_sekolah "nullable"
         string provinsi_asal_sekolah "nullable"
         string jurusan_asal_sekolah "nullable"
+        char status_mahasiswa "2, default AR, L jika lulus"
+        string tahun_akademik_lulus "nullable, misal: Gasal 2026/2027"
+        year tahun_lulus "nullable, e.g. 2026"
+        date tanggal_lulus "nullable, tanggal SK yudisium"
+        decimal ip_kumulatif "3,2, nullable"
+        int total_sks "nullable"
+        decimal total_angka_kualitas "8,2, nullable"
         timestamp created_at
         timestamp updated_at
     }
 
     yudisium {
         bigint id PK
-        string nim FK "references data_akademik.nim"
-        string nama_mahasiswa
+        string nim UK "FK references data_akademik.nim"
         string dosen_pembimbing_1 "nullable"
         string dosen_pembimbing_2 "nullable"
         string dosen_penguji_1 "nullable"
         string dosen_penguji_2 "nullable"
-        text judul_ta "nullable (Judul Skripsi/Thesis/Karya Ilmiah)"
+        text judul_ta "nullable (Skripsi/Tesis/TA)"
         text judul_ta_inggris "nullable"
-        string url_publikasi "nullable (Link repositori/jurnal ilmiah)"
+        text url_publikasi "nullable (Link repositori/jurnal ilmiah)"
         string jenis_publikasi "nullable"
         string status_publikasi "nullable"
-        string status_yudisium "Lulus, Belum Lulus"
-        string proses_yudisium "Belum, Proses, Lulus, Tidak Lulus"
-        string tahun_akademik_lulus "nullable"
-        year tahun_lulus "nullable"
+        string keterangan_hasil_yudisium "nullable"
+        enum status_lulus "Belum, Proses, Lulus, Tidak Lulus"
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    biodata {
+        bigint id PK
+        bigint user_id FK "references users.id"
+        string nim UK "references data_akademik.nim"
+        bigint orang_tua_id FK "nullable, references data_orang_tua.id"
+        bigint yudisium_id FK "nullable, references yudisium.id"
+        bigint prodi_id FK "nullable, references prodi.id"
+        string foto "nullable (Path file di /uploads/profile)"
+        string nomor_telepon "nullable"
+        string email_pribadi "nullable (Korespondensi aktif alumni)"
+        text alamat "nullable (Alamat domisili saat ini)"
+        bigint kabupaten_id FK "nullable, references kabupaten.id"
+        bigint propinsi_id FK "nullable, references propinsi.id"
+        string kelurahan "nullable"
+        string kecamatan "nullable"
+        string kode_pos "nullable"
+        string nik "20, nullable"
+        string npwp "30, nullable"
+        text instagram_url "nullable"
+        text facebook_url "nullable"
+        text linkedin_url "nullable"
+        text linkedin_username "nullable"
+        text expert "nullable (Keahlian spesifik)"
+        text minat "nullable (Minat bidang kerja)"
+        bigint perusahaan_id FK "nullable, references perusahaan.id"
+        bigint atasan_id FK "nullable, references atasan.id"
+        string kategori_pekerjaan "Pekerja, Wiraswasta, Melanjutkan Pendidikan"
+        string posisi_jabatan "500, nullable"
+        string posisi_wiraswasta "500, nullable"
+        string pendidikan_tingkat "500, nullable (Profesi, S2, S3)"
+        string perguruan_tinggi "500, nullable"
+        string pendidikan_prodi "500, nullable"
+        decimal gaji "15,2, nullable (Take Home Pay)"
+        string jenis_pekerjaan "500, nullable"
+        string zipcode "nullable (Kode pos lokasi kerja)"
         timestamp created_at
         timestamp updated_at
     }
@@ -217,39 +230,39 @@ erDiagram
         string pekerjaan "nullable"
         string nomor_telepon "nullable"
         string alamat "nullable"
+        string kota "nullable"
+        bigint kabupaten_id FK "nullable"
+        bigint propinsi_id FK "nullable"
+        string kode_pos "nullable"
         timestamp created_at
         timestamp updated_at
     }
 
     perusahaan {
         bigint id PK
-        string nama_perusahaan
-        string jenis_lokasi "Dalam Negeri, Luar Negeri"
-        string negara "Indonesia / nama negara resmi"
+        string nama_perusahaan "500"
+        foreignId propinsi_id FK "nullable, references propinsi.id"
+        foreignId kabupaten_id FK "nullable, references kabupaten.id"
         text alamat "nullable"
-        bigint propinsi_id FK "nullable"
-        bigint kabupaten_id FK "nullable"
-        string kode_pos "nullable"
-        string nomor_telepon "nullable"
-        string email "nullable"
-        string skala "Regional/Lokal, Nasional, Multinasional/Internasional"
+        string kode_pos "15, nullable"
         string sektor "nullable"
+        string skala "default Nasional (Lokal, Nasional, Internasional)"
+        enum status_verifikasi "Menunggu Verifikasi, Terverifikasi, Ditolak"
+        enum jenis_lokasi "Dalam Negeri, Luar Negeri"
+        string negara "default Indonesia"
         string jenis_perusahaan "nullable"
-        string jenis_perusahaan_lainnya "nullable"
-        string status_verifikasi "Menunggu Verifikasi, Terverifikasi, Ditolak"
-        bigint created_by FK "nullable, references users.id"
-        bigint created_prodi_id FK "nullable, references prodi.id"
+        text jenis_perusahaan_lainnya "nullable"
+        bigint created_by_user_id FK "nullable, references users.id"
+        bigint created_by_prodi_id FK "nullable, index prodi pengaju"
         timestamp created_at
         timestamp updated_at
     }
 
     atasan {
         bigint id PK
-        bigint perusahaan_id FK "nullable"
         string nama
-        string posisi "nullable"
-        string telepon "nullable"
         string email "nullable"
+        string telepon "nullable"
         timestamp created_at
         timestamp updated_at
     }
@@ -276,6 +289,7 @@ erDiagram
     kelompok_pertanyaan {
         bigint id PK
         bigint kuesioner_id FK
+        string kode_kelompok "nullable, e.g. 1..9"
         string title
         text description "nullable"
         int order
@@ -285,13 +299,14 @@ erDiagram
 
     ref_subpertanyaan2021 {
         bigint id PK
+        char kelompok "3, e.g. BIO, F1, F2"
         bigint kelompok_pertanyaan_id FK
-        string kelompok "nullable"
-        string kode_pertanyaan "varchar(50)"
+        string kode_pertanyaan UK "20"
         text subpertanyaan
-        string type "single_choice, multiple_choice, text, number, rating_5, multiple_number, radio_input, matrix, dll"
-        boolean wajib
-        string keterangan "nullable"
+        string type "50, single_choice, multiple_choice, text, number, rating_5, multiple_number, radio_input, matrix, dll"
+        string keterangan "100, nullable"
+        tinyint wajib "1=wajib, 0=opsional"
+        string tampil_di "100, nullable, profil vs kuesioner"
         int order
         timestamp created_at
         timestamp updated_at
@@ -311,7 +326,7 @@ erDiagram
 
     tracer {
         bigint id PK
-        bigint biodata_id FK "references biodata.id, UK [biodata_id, question_id], UK [biodata_id, kode_pertanyaan]"
+        bigint biodata_id FK "references biodata.id"
         bigint question_id FK "references ref_subpertanyaan2021.id"
         string nim
         string kelompok "char(3), misal: BIO, F1, F2, F17"
@@ -383,103 +398,117 @@ erDiagram
 
 ## 2. Kelompok Entitas & Kamus Data (*Data Dictionary*)
 
-### A. Modul Akun & Wilayah Master
-1. **`users`**: Menyimpan kredensial autentikasi, role pengguna (`superadmin`, `admin_biro3`, `admin_fakultas`, `admin_prodi`, `alumni`), status wajib ubah password, referensi `prodi_id` untuk admin program studi, dan referensi `fakultas_id` untuk admin fakultas.
-2. **`prodi`**: Master data program studi di lingkungan UKDW (misal: Sistem Informasi, Informatika, Teologi, Manajemen, dll.).
-3. **`ref_fakultas`**: Master data fakultas di UKDW yang menaungi program studi.
-4. **`ref_negara`**: Master data referensi negara seluruh dunia (193 negara, kode ISO 2, ibu kota, dan benua) dari `daftar_negara_dunia.csv` untuk perusahaan internasional dan kewarganegaraan alumni.
-5. **`propinsi`** & **`kabupaten`**: Master data batas wilayah administratif Republik Indonesia (38 Provinsi dan ratusan Kabupaten/Kota).
-6. **`ump`**: Data Upah Minimum Provinsi (UMP) tahun 2026 terhubung via foreign key `kode_provinsi` untuk evaluasi kesesuaian gaji `F505A`.
+### A. Modul Akun, Autentikasi & Audit Trail
+1. **`users`**:
+   - Menyimpan kredensial autentikasi pengguna.
+   - Kolom: `id`, `name`, `email` (UK), `username` (UK), `password`, `role` (`superadmin`, `admin_biro3`, `admin_fakultas`, `admin_prodi`, `alumni`), `must_change_password` (boolean), `prodi_id` (FK nullable), `fakultas_id` (FK nullable).
+   - Fitur Manajemen Akun: Reset password instan ke format tanggal lahir alumni (`DDMMYYYY`) dan konfirmasi langsung ke `email` pribadi yang terdaftar.
+2. **`log_activities`**:
+   - Menyimpan seluruh rekaman audit trail (*audit logging*) sistem secara komprehensif.
+   - Kolom: `id`, `user_id` (FK ke `users`, nullable), `action` (e.g. `ACC_VERIFIKASI_PERUSAHAAN`, `GANTI_PERUSAHAAN`, `REJECT_PERUSAHAAN`, `RESET_PASSWORD_DOB`, `UPDATE_USER`, `UPDATE_PROFIL_ALUMNI`), `model_type`, `model_id`, `description`, `old_values` (JSON), `new_values` (JSON), `ip_address`, `user_agent`.
 
 ---
 
-### B. Modul Profil Alumni & Akademik
-1. **`biodata`**:
-   - Entitas utama profil alumni.
-   - Menyimpan field profil pribadi (Foto Profil `foto` di `/uploads/profile`, NIK, No KK, BPJS, NPWP, Agama, Kontak, Domisili, Media Sosial) serta data karier (Perusahaan, Atasan Langsung, Posisi/Jabatan, Jenis Pekerjaan).
-   - Terhubung dengan `users.id` (1:1), `data_akademik.nim` (1:1), `prodi.id`, `perusahaan.id`, `atasan.id`, `yudisium.id` / `yudisium.nim` (kelulusan & skripsi), dan `data_orang_tua.nim`.
-2. **`data_akademik`**:
-   - Pangkalan data akademik statis bersumber dari Biro Akademik (NIM, NIRM, Nama, TTL, IPK Kumulatif `ip_kumulatif`, Status Mahasiswa `AR`, No Ijazah, Asal Sekolah & Alamat Sekolah).
-3. **`yudisium`**:
-   - Status kelulusan resmi mahasiswa (`Lulus` / `Belum Lulus`), Dosen Pembimbing & Penguji, Judul Tugas Akhir / Skripsi (`judul_ta`, `judul_ta_inggris`), Link Repositori Karya Ilmiah (`url_publikasi`), Jenis Publikasi (`jenis_publikasi`), Status Publikasi (`status_publikasi`), dan Periode Kelulusan (`tahun_akademik_lulus`, `tahun_lulus`).
-4. **`data_orang_tua`**:
-   - Profil kontak orang tua atau wali alumni (Nama, No Telepon, Pekerjaan, Alamat).
+### B. Modul Wilayah & Master Institusi
+1. **`prodi`**: Master program studi di lingkungan UKDW (Sistem Informasi, Informatika, Arsitektur, Desain Produk, Manajemen, Akuntansi, Biologi, Kedokteran, Teologi, dll.).
+2. **`ref_fakultas`**: Master fakultas di UKDW yang menaungi program studi terkait.
+3. **`ref_negara`**: Master data 193 negara resmi dunia (kode ISO 2, nama negara, ibu kota, benua) untuk lokasi perusahaan internasional dan kewarganegaraan alumni.
+4. **`propinsi`** & **`kabupaten`**: Master data wilayah administratif Republik Indonesia (38 Provinsi dan ratusan Kabupaten/Kota).
+5. **`ump`**: Data Upah Minimum Provinsi (UMP) tahun 2026 terhubung via `kode_provinsi` untuk evaluasi kesesuaian gaji standar kelayakan hidup.
+
+---
+
+### C. Modul Data Akademik, Kelulusan & Profil Biodata Alumni
+1. **`data_akademik`** (*Single Source of Truth* Master Identitas & Akademik):
+   - Menyimpan seluruh data resmi mahasiswa/alumni yang bersumber dari Pangkalan Data Akademik universitas:
+     - Kunci Utama: `id`, `nim` (Unique).
+     - Identitas Kependudukan & Pribadi: `nama`, `angkatan_masuk`, `tempat_lahir`, `tanggal_lahir`, `agama`, `jenis_kelamin`, `golongan_darah`, `warga_negara`, `nik`, `no_kk`, `nisn`, `no_bpjs`.
+     - Riwayat Pendidikan Menengah: `asal_sekolah`, `alamat_asal_sekolah`, `kota_kabupaten_asal_sekolah`, `provinsi_asal_sekolah`, `jurusan_asal_sekolah`.
+     - Kontak & Alamat Resmi: `nomor_telepon`, `email_students` (email kampus `@students.ukdw.ac.id`), `email_pribadi`, `alamat_saat_ini`, `kelurahan`, `kecamatan`, `kabupaten_id`, `propinsi_id`, `kode_pos`.
+     - Parameter Kelulusan: `status_mahasiswa` (`AR`, `L`, dll.), `tahun_akademik_lulus`, `tahun_lulus`, `tanggal_lulus`, `ip_kumulatif`, `total_sks`, `total_angka_kualitas`.
+   - **Karakteristik**: Seluruh field identitas kependudukan & akademik dikunci permanen (*read-only/disabled*) di halaman profil untuk semua role (Alumni, SuperAdmin, Fakultas, Prodi, Biro 3).
+2. **`yudisium`**:
+   - Menyimpan data penyelesaian tugas akhir dan kelulusan yudisium:
+     - `nim` (Unique FK ke `data_akademik.nim`).
+     - Dosen Pembimbing (`dosen_pembimbing_1`, `dosen_pembimbing_2`) & Dosen Penguji (`dosen_penguji_1`, `dosen_penguji_2`).
+     - Judul Tugas Akhir (`judul_ta`, `judul_ta_inggris`).
+     - Publikasi Ilmiah (`url_publikasi`, `jenis_publikasi`, `status_publikasi`).
+     - Hasil & Status Yudisium: `keterangan_hasil_yudisium`, `status_lulus` (`Belum`, `Proses`, `Lulus`, `Tidak Lulus`).
+   - **Otomasi**: Ketika `status_lulus` diset `'Lulus'`, model event secara otomatis memperbarui record `data_akademik` terkait (`status_mahasiswa = 'L'`, tanggal lulus, tahun lulus, dan periode semester kelulusan).
+3. **`biodata`** (Profil Dinamis & Pelacak Tracer Karier):
+   - Menyimpan profil aktif alumni, kontak pribadi, domisili terkini, media sosial, dan data karier tanpa duplikasi data master akademik:
+     - Relasi: `user_id` (1:1 ke `users`), `nim` (1:1 ke `data_akademik`), `prodi_id`, `orang_tua_id`, `yudisium_id`, `perusahaan_id`, `atasan_id`.
+     - Foto: `foto` (Path foto di `/uploads/profile`).
+     - Kontak Pribadi: `email_pribadi` (digunakan untuk login dan notifikasi reset password), `nomor_telepon`.
+     - Domisili Terkini: `alamat`, `kelurahan`, `kecamatan`, `kabupaten_id`, `propinsi_id`, `kode_pos`.
+     - Perpajakan & Medsos: `nik`, `npwp`, `instagram_url`, `facebook_url`, `linkedin_url`, `linkedin_username`.
+     - Portofolio & Karier: `expert`, `minat`, `kategori_pekerjaan` (`Pekerja`, `Wiraswasta`, `Melanjutkan Pendidikan`), `posisi_jabatan`, `posisi_wiraswasta`, `pendidikan_tingkat`, `perguruan_tinggi`, `pendidikan_prodi`, `gaji`, `jenis_pekerjaan`, `zipcode`.
+4. **`data_orang_tua`**: Kontak dan domisili orang tua/wali alumni (`nama_orang_tua`, `pekerjaan`, `nomor_telepon`, `alamat`, `kota`, `kabupaten_id`, `propinsi_id`, `kode_pos`).
 5. **`perusahaan`** & **`atasan`**:
-   - Profil instansi/perusahaan tempat alumni bekerja beserta data kontak atasan langsung (Nama, Jabatan, Telepon, Email).
-   - Kolom verifikasi pendaftaran instansi oleh alumni: `status_verifikasi` (`Menunggu Verifikasi`, `Terverifikasi`, `Ditolak`), `created_by` (ID alumni pengaju), dan `created_prodi_id` (program studi pengaju untuk scope verifikasi admin prodi & fakultas).
+   - Master data entitas institusi/perusahaan dan atasan alumni.
+   - Kolom verifikasi: `status_verifikasi` (`Menunggu Verifikasi`, `Terverifikasi`, `Ditolak`), `created_by_user_id` (FK ke `users.id` pengaju), `created_by_prodi_id` (FK ke `prodi.id` pengaju).
 
 ---
 
-### C. Modul Kuesioner Tracer Study Universitas (Standar 2021)
-1. **`kuesioner`**: Header master instrumen kuesioner tingkat universitas.
-2. **`kelompok_pertanyaan`**: Bagian atau seksi kuesioner universitas (misal: *Identitas, Status Bekerja, Penilaian Proses Pembelajaran, Kompetensi Lulusan*).
-3. **`ref_subpertanyaan2021`**: 
-   - Butir pertanyaan kuesioner universitas (`F1` s.d. `F22`, `BIO_TEMPAT_LAHIR`, `BIO_TANGGAL_LAHIR`, dll.).
-   - Kolom: `id`, `kelompok`, `kelompok_pertanyaan_id`, `kode_pertanyaan`, `subpertanyaan`, `type`, `keterangan`, `wajib`, `tampil_di` (`kuesioner`, `profile`, `both`), `order`.
-4. **`ref_subpertanyaan_detil`**: Pilihan opsi jawaban butir kuesioner universitas beserta kolom `jump_to` untuk alur percabangan (*branching logic*).
-5. **`tracer`**:
-   - Tabel penyimpanan jawaban kuesioner universitas milik alumni.
-   - Kolom: `biodata_id`, `question_id`, `nim`, `kelompok` (`char(3)`), `kode_pertanyaan`, `subpertanyaan`, `answer`, `answer_json`, `keterangan`, `tahun_lulus`.
+### D. Modul Kuesioner Tracer Study Universitas (Standar 2021)
+1. **`kuesioner`**: Master paket kuesioner tracer study tingkat universitas yang aktif (`title`, `year`, `is_active`).
+2. **`kelompok_pertanyaan`**: Seksi instrumen kuesioner universitas (`kuesioner_id`, `kode_kelompok`, `title`, `order`).
+3. **`ref_subpertanyaan2021`**:
+   - Butir pertanyaan kuesioner universitas (`kode_pertanyaan`, `subpertanyaan`, `type`, `wajib`, `order`).
+   - Kolom `tampil_di`:
+     - `'profil'`: Ditampilkan pada halaman Profil Alumni (Seksi 1 / Identitas & Biodata Mahasiswa).
+     - `'kuesioner'`: Ditampilkan pada alur Kuesioner Universitas (Seksi 2 s.d. 9).
+4. **`ref_subpertanyaan_detil`**: Opsi pilihan jawaban butir pertanyaan universitas dengan kolom `jump_to` untuk alur percabangan (*branching/skip logic*).
+5. **`tracer`**: Tabel jawaban kuesioner universitas per alumni (`biodata_id`, `question_id`, `nim`, `kode_pertanyaan`, `answer`, `answer_json`, `keterangan`, `tahun_lulus`).
 
 ---
 
-### D. Modul Kuesioner Khusus Program Studi (Mandiri)
-1. **`prodi_question_section`**: Seksi kuesioner yang dikelola mandiri oleh masing-masing Program Studi (`prodi_id`).
-2. **`prodi_question`**: Butir pertanyaan kuesioner evaluasi prodi (misal: Konsentrasi Peminatan, Kurikulum, Fasilitas Lab, Saran Akreditasi).
-3. **`prodi_question_option`**: Opsi pilihan jawaban kuesioner prodi.
-4. **`prodi_response`**:
-   - Tabel penyimpanan jawaban alumni untuk kuesioner khusus program studinya.
-   - Kolom: `biodata_id`, `prodi_question_id`, `answer_text`, `answer_json`.
-   - Mengisi otomatis data identitas dari profil/akademik (`PSI-1-01` Nama, `PSI-1-02` NIM, `PSI-1-03` Tahun Lulus).
+### E. Modul Kuesioner Khusus Program Studi
+1. **`prodi_question_section`**: Seksi pertanyaan kuesioner yang dikelola mandiri oleh masing-masing Program Studi (`prodi_id`, `title`, `order`).
+2. **`prodi_question`**: Butir pertanyaan kuesioner prodi (`code`, `question_text`, `type`, `is_required`, `order`).
+3. **`prodi_question_option`**: Opsi jawaban butir pertanyaan prodi (`code`, `option_text`, `jump_to`, `order`).
+4. **`prodi_response`**: Tabel jawaban kuesioner prodi alumni (`biodata_id`, `prodi_question_id`, `answer_text`, `answer_json`).
 
 ---
 
-### E. Database Views & Model Eloquent Terkait (Modular & Performa Tinggi)
-1. **`v_alumni_audit_rekap`** (Model: [`AlumniAuditRekap`](file:///c:/study/tracerstudy/app/Models/AlumniAuditRekap.php)):
-   - **Master View Utama (89 Kolom)**: Menyatukan seluruh data profil 4 sub-tab lengkap (`v_alumni_profile_summary`) dengan agregasi status kuesioner universitas (`v_alumni_tracer_univ_status`) dan status kuesioner program studi (`v_alumni_tracer_prodi_status`) ke dalam 1 baris instan per alumni (*single-query fetch*).
-   - Digunakan aktif oleh seluruh direktori mahasiswa & alumni (Super Admin, Biro 3, Fakultas, Prodi) untuk mengeliminasi kueri loop PHP N+1.
-2. **`v_alumni_profile_summary`** (Model: [`AlumniProfileSummary`](file:///c:/study/tracerstudy/app/Models/AlumniProfileSummary.php)):
-   - **Lengkap 4 Sub-Tab (78 Kolom)**: Menggabungkan seluruh data identitas pribadi (NIK, KK, BPJS, NISN, NPWP, TTL, JK, Agama, Gol. Darah, Domisili lengkap provinsi/kabupaten, medsos, minat, keahlian), data akademik (NIM, Nama, Angkatan, Tahun Lulus, IPK, SKS, Asal Sekolah & Jurusan SMA, Prodi, Fakultas), data orang tua/wali (Nama, Pekerjaan, Alamat, Telepon, Kode Pos), serta data karier (Status, Posisi, Gaji, Info Perusahaan lengkap, dan Kontak Atasan). Sesuai kebutuhan, data yudisium tidak disertakan dalam profile summary.
-3. **`v_alumni_tracer_univ_status`** (Model: [`AlumniTracerUnivStatus`](file:///c:/study/tracerstudy/app/Models/AlumniTracerUnivStatus.php)):
-   - Agregasi status kelengkapan kuesioner universitas (`tracer`) per alumni: total butir wajib, jumlah terjawab, dan total butir terjawab.
-4. **`v_alumni_tracer_prodi_status`** (Model: [`AlumniTracerProdiStatus`](file:///c:/study/tracerstudy/app/Models/AlumniTracerProdiStatus.php)):
-   - Agregasi status kelengkapan kuesioner program studi (`prodi_response`) per alumni: total butir kuesioner prodi dan jumlah terjawab.
-5. **`v_alumni_kuesioner_autofill`** (Model: [`AlumniKuesionerAutofill`](file:///c:/study/tracerstudy/app/Models/AlumniKuesionerAutofill.php)):
-   - Menyediakan data profil alumni yang dipetakan langsung ke kode instrumen kuesioner (`F1` s/d `F18C`, `BIO_*`) untuk autofill instan.
-6. **`v_question_mappings`** (Model: [`QuestionMapping`](file:///c:/study/tracerstudy/app/Models/QuestionMapping.php)):
-   - Pemetaan kolom data profil ke butir kuesioner universitas untuk sinkronisasi otomatis via `KuesionerSyncService`.
-
-*(Catatan: View tidak terpakai `v_alumni_tracer_export` telah dihapus dari basis data dan migrasi karena fungsionalitas ekspor dilayani langsung secara visual dan berstruktur oleh `AlumniTracerExcelExporter`)*.
+### F. Database Views Terkonsolidasi
+1. **`v_alumni_audit_rekap`** (Model: [`AlumniAuditRekap`](file:///c:/study/tracerstudy/app/Models/AlumniAuditRekap.php)): View agregat utama 89 kolom yang menyatukan profil biodata, status kuesioner universitas, dan status kuesioner prodi untuk direktori alumni tanpa masalah query N+1.
+2. **`v_alumni_profile_summary`** (Model: [`AlumniProfileSummary`](file:///c:/study/tracerstudy/app/Models/AlumniProfileSummary.php)): View ringkasan profil lengkap 4 sub-tab (Pribadi, Akademik, Orang Tua, Karier).
+3. **`v_alumni_tracer_univ_status`** (Model: [`AlumniTracerUnivStatus`](file:///c:/study/tracerstudy/app/Models/AlumniTracerUnivStatus.php)): Menghitung persentase dan progres kelengkapan kuesioner universitas (otomatis mengecualikan butir identitas Seksi 1).
+4. **`v_alumni_tracer_prodi_status`** (Model: [`AlumniTracerProdiStatus`](file:///c:/study/tracerstudy/app/Models/AlumniTracerProdiStatus.php)): Menghitung status pengisian kuesioner mandiri program studi.
+5. **`v_alumni_kuesioner_autofill`** (Model: [`AlumniKuesionerAutofill`](file:///c:/study/tracerstudy/app/Models/AlumniKuesionerAutofill.php)): Pemetaan data profil alumni ke kode pertanyaan kuesioner untuk pengisian otomatis.
 
 ---
 
 ## 3. Matriks Relasi Antar Tabel
 
-| Entitas Sumber (Parent) | Relasi | Entitas Tujuan (Child) | Foreign Key / Pivot | Keterangan |
+| Entitas Sumber (Parent) | Relasi | Entitas Tujuan (Child) | Foreign Key / Constraint | Deskripsi & Perilaku Relasi |
 |---|:---:|---|---|---|
-| `users` | 1 : 1 | `biodata` | `biodata.user_id` | Setiap user alumni memiliki 1 baris biodata profil. |
-| `prodi` | 1 : N | `users` | `users.prodi_id` | Admin prodi terikat ke prodi tertentu. |
-| `ref_fakultas` | 1 : N | `users` | `users.fakultas_id` | Admin fakultas terikat ke fakultas tertentu. |
-| `prodi` | 1 : N | `biodata` | `biodata.prodi_id` | Alumni terikat ke prodi kelulusannya. |
-| `data_akademik` | 1 : 1 | `biodata` | `biodata.nim = data_akademik.nim` | Relasi identitas akademik via NIM. |
-| `biodata` | 1 : 1 | `yudisium` | `biodata.yudisium_id` / `yudisium.nim = biodata.nim` | Relasi data kelulusan, skripsi/TA, dan link repositori publikasi karya ilmiah. |
-| `biodata` | 1 : 1 | `data_orang_tua` | `data_orang_tua.nim = biodata.nim` | Relasi data orang tua/wali. |
-| `users` | 1 : N | `perusahaan` | `perusahaan.created_by` | Alumni pengaju saat mendaftarkan data perusahaan baru. |
-| `prodi` | 1 : N | `perusahaan` | `perusahaan.created_prodi_id` | Program studi pengaju untuk verifikasi admin prodi & fakultas. |
-| `propinsi` | 1 : N | `perusahaan` | `perusahaan.propinsi_id` | Wilayah provinsi kantor perusahaan di Indonesia. |
-| `kabupaten` | 1 : N | `perusahaan` | `perusahaan.kabupaten_id` | Wilayah kabupaten/kota kantor perusahaan di Indonesia. |
-| `ref_negara` | 1 : N | `perusahaan` | `perusahaan.negara = ref_negara.nama_negara` | Negara lokasi kantor perusahaan internasional. |
-| `perusahaan` | 1 : N | `biodata` | `biodata.perusahaan_id` | Tempat bekerja alumni. |
-| `atasan` | 1 : N | `biodata` | `biodata.atasan_id` | Atasan langsung alumni di perusahaan. |
-| `propinsi` | 1 : N | `kabupaten` | `kabupaten.propinsi_id` | Hirarki wilayah provinsi ke kabupaten/kota. |
-| `propinsi` | 1 : 1 | `ump` | `ump.kode_provinsi` | Standar UMP per provinsi. |
-| `kuesioner` | 1 : N | `kelompok_pertanyaan` | `kelompok_pertanyaan.kuesioner_id` | Seksi dalam instrumen universitas. |
-| `kelompok_pertanyaan` | 1 : N | `ref_subpertanyaan2021` | `ref_subpertanyaan2021.kelompok_pertanyaan_id` | Butir soal per bagian universitas. |
-| `ref_subpertanyaan2021` | 1 : N | `ref_subpertanyaan_detil` | `ref_subpertanyaan_detil.pertanyaan_id` | Pilihan opsi & jump logic soal univ. |
-| `biodata` | 1 : N | `tracer` | `tracer.biodata_id` | Jawaban kuesioner universitas alumni. |
-| `ref_subpertanyaan2021` | 1 : N | `tracer` | `tracer.question_id` | Referensi butir pertanyaan universitas. |
-| `prodi` | 1 : N | `prodi_question_section` | `prodi_question_section.prodi_id` | Seksi kuesioner mandiri prodi. |
-| `prodi_question_section` | 1 : N | `prodi_question` | `prodi_question.prodi_question_section_id` | Butir pertanyaan mandiri prodi. |
-| `prodi_question` | 1 : N | `prodi_question_option` | `prodi_question_option.prodi_question_id` | Pilihan opsi pertanyaan prodi. |
-| `biodata` | 1 : N | `prodi_response` | `prodi_response.biodata_id` | Jawaban kuesioner prodi alumni. |
-| `prodi_question` | 1 : N | `prodi_response` | `prodi_response.prodi_question_id` | Referensi butir pertanyaan prodi. |
+| `users` | 1 : 1 | `biodata` | `biodata.user_id` | Setiap user akun alumni terhubung ke 1 entitas biodata profil. |
+| `users` | 1 : N | `log_activities` | `log_activities.user_id` | Jejak audit mencatat user pelaku aksi sistem. |
+| `prodi` | 1 : N | `users` | `users.prodi_id` | Admin Program Studi terikat pada 1 program studi. |
+| `ref_fakultas` | 1 : N | `users` | `users.fakultas_id` | Admin Fakultas terikat pada 1 fakultas. |
+| `prodi` | 1 : N | `biodata` | `biodata.prodi_id` | Alumni terafiliasi dengan program studi kelulusannya. |
+| `data_akademik` | 1 : 1 | `biodata` | `biodata.nim = data_akademik.nim` | Relasi identitas akademik master bebas duplikasi data. |
+| `data_akademik` | 1 : 1 | `yudisium` | `yudisium.nim = data_akademik.nim` | Relasi data kelulusan, skripsi/TA, dan repositori publikasi. |
+| `biodata` | 1 : 1 | `yudisium` | `biodata.yudisium_id` | Referensi langsung hasil yudisium pada profil alumni. |
+| `biodata` | 1 : 1 | `data_orang_tua` | `data_orang_tua.nim = biodata.nim` | Kontak wali dan data orang tua alumni. |
+| `users` | 1 : N | `perusahaan` | `perusahaan.created_by_user_id` | Pengguna pengaju pendaftaran institusi/perusahaan baru. |
+| `prodi` | 1 : N | `perusahaan` | `perusahaan.created_by_prodi_id` | Program studi pengaju untuk pembatasan verifikasi prodi & fakultas. |
+| `propinsi` | 1 : N | `perusahaan` | `perusahaan.propinsi_id` | Provinsi kantor perusahaan di Indonesia. |
+| `kabupaten` | 1 : N | `perusahaan` | `perusahaan.kabupaten_id` | Kabupaten/Kota kantor perusahaan di Indonesia. |
+| `ref_negara` | 1 : N | `perusahaan` | `perusahaan.negara = ref_negara.nama_negara` | Negara domisili kantor perusahaan internasional. |
+| `perusahaan` | 1 : N | `biodata` | `biodata.perusahaan_id` | Tempat instansi/perusahaan alumni bekerja. |
+| `atasan` | 1 : N | `biodata` | `biodata.atasan_id` | Atasan langsung alumni di tempat kerja. |
+| `propinsi` | 1 : N | `kabupaten` | `kabupaten.propinsi_id` | Hierarki kewilayahan provinsi ke kabupaten/kota. |
+| `propinsi` | 1 : 1 | `ump` | `ump.kode_provinsi` | Standar UMP ketetapan pemerintah provinsi. |
+| `kuesioner` | 1 : N | `kelompok_pertanyaan` | `kelompok_pertanyaan.kuesioner_id` | Seksi/bagian dalam instrumen tracer study universitas. |
+| `kelompok_pertanyaan` | 1 : N | `ref_subpertanyaan2021` | `ref_subpertanyaan2021.kelompok_pertanyaan_id` | Butir soal per seksi instrumen universitas. |
+| `ref_subpertanyaan2021` | 1 : N | `ref_subpertanyaan_detil` | `ref_subpertanyaan_detil.pertanyaan_id` | Opsi pilihan jawaban & branching logic kuesioner. |
+| `biodata` | 1 : N | `tracer` | `tracer.biodata_id` | Rekaman jawaban butir kuesioner universitas. |
+| `ref_subpertanyaan2021` | 1 : N | `tracer` | `tracer.question_id` | Referensi butir soal kuesioner universitas. |
+| `prodi` | 1 : N | `prodi_question_section` | `prodi_question_section.prodi_id` | Seksi instrumen kuesioner mandiri program studi. |
+| `prodi_question_section` | 1 : N | `prodi_question` | `prodi_question.prodi_question_section_id` | Butir soal instrumen mandiri program studi. |
+| `prodi_question` | 1 : N | `prodi_question_option` | `prodi_question_option.prodi_question_id` | Pilihan opsi kuesioner mandiri program studi. |
+| `biodata` | 1 : N | `prodi_response` | `prodi_response.biodata_id` | Rekaman jawaban butir kuesioner mandiri program studi. |
+| `prodi_question` | 1 : N | `prodi_response` | `prodi_response.prodi_question_id` | Referensi butir soal kuesioner program studi. |
