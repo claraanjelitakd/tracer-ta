@@ -9,6 +9,14 @@ use Illuminate\Database\Eloquent\Model;
  * Model Biodata (tabel: biodata)
  *
  * Mengelola data profil aktif alumni untuk sistem Tracer Study UKDW.
+ *
+ * Kebijakan Integritas & Anti-Duplikasi Data:
+ * - Data akademik master (nama, tempat/tanggal lahir, jenis kelamin, agama,
+ *   golongan darah, dokumen kependudukan, status kelulusan, dan email_students)
+ *   tersimpan terpusat di tabel `data_akademik`.
+ * - Model Biodata ini menyediakan Accessor dinamis ke `dataAkademik` sehingga kode
+ *   aplikasi yang memanggil `$biodata->nama`, `$biodata->tahun_lulus`, dsb. tetap berjalan lancar.
+ * - Untuk korespondensi alumni, tabel ini hanya menyimpan `email_pribadi`.
  */
 class Biodata extends Model
 {
@@ -16,22 +24,18 @@ class Biodata extends Model
 
     protected $table = 'biodata';
 
+    /**
+     * Kolom yang dapat diisi secara massal (Mass Assignable).
+     * Telah diaudit bersih dari kolom-kolom yang menduplikasi tabel data_akademik.
+     */
     protected $fillable = [
         'user_id',
         'nim',
         'orang_tua_id',
         'yudisium_id',
         'prodi_id',
-        'tahun_lulus',
-        'nama',
         'foto',
-        'tempat_lahir',
-        'tanggal_lahir',
-        'jenis_kelamin',
-        'golongan_darah',
-        'warga_negara',
         'nomor_telepon',
-        'email',
         'email_pribadi',
         'alamat',
         'kabupaten_id',
@@ -39,11 +43,7 @@ class Biodata extends Model
         'kelurahan',
         'kecamatan',
         'kode_pos',
-        'agama',
         'nik',
-        'no_kk',
-        'nisn',
-        'no_bpjs',
         'npwp',
         'instagram_url',
         'facebook_url',
@@ -64,8 +64,12 @@ class Biodata extends Model
         'gaji',
     ];
 
+    // =========================================================================
+    // RELASI ELOQUENT
+    // =========================================================================
+
     /**
-     * Relasi ke User akun login.
+     * Relasi ke Akun Pengguna (User).
      */
     public function user()
     {
@@ -73,47 +77,7 @@ class Biodata extends Model
     }
 
     /**
-     * Relasi ke Atasan (Pimpinan di Perusahaan).
-     */
-    public function atasan()
-    {
-        return $this->belongsTo(Atasan::class);
-    }
-
-    /**
-     * Relasi ke master Program Studi.
-     */
-    public function prodi()
-    {
-        return $this->belongsTo(Prodi::class);
-    }
-
-    /**
-     * Relasi ke Perusahaan tempat bekerja.
-     */
-    public function perusahaan()
-    {
-        return $this->belongsTo(Perusahaan::class, 'perusahaan_id');
-    }
-
-    /**
-     * Relasi ke Propinsi tempat tinggal alumni.
-     */
-    public function propinsi()
-    {
-        return $this->belongsTo(Propinsi::class, 'propinsi_id');
-    }
-
-    /**
-     * Relasi ke Kabupaten tempat tinggal alumni.
-     */
-    public function kabupaten()
-    {
-        return $this->belongsTo(Kabupaten::class, 'kabupaten_id');
-    }
-
-    /**
-     * Relasi ke DataAkademik (menggunakan NIM).
+     * Relasi ke Data Akademik Master Mahasiswa (Kunci Penghubung: NIM).
      */
     public function dataAkademik()
     {
@@ -121,7 +85,7 @@ class Biodata extends Model
     }
 
     /**
-     * Relasi ke Yudisium (Status Kelulusan Akademik, Tugas Akhir, & Publikasi).
+     * Relasi ke Yudisium (Kelulusan Akademik & Tugas Akhir).
      */
     public function yudisium()
     {
@@ -141,41 +105,189 @@ class Biodata extends Model
     }
 
     /**
-     * Relasi ke Tracer (Jawaban Kuesioner Universitas).
+     * Relasi ke Program Studi.
+     */
+    public function prodi()
+    {
+        return $this->belongsTo(Prodi::class);
+    }
+
+    /**
+     * Relasi ke Perusahaan tempat bekerja.
+     */
+    public function perusahaan()
+    {
+        return $this->belongsTo(Perusahaan::class, 'perusahaan_id');
+    }
+
+    /**
+     * Relasi ke Atasan Langsung.
+     */
+    public function atasan()
+    {
+        return $this->belongsTo(Atasan::class);
+    }
+
+    /**
+     * Relasi ke Provinsi Domisili.
+     */
+    public function propinsi()
+    {
+        return $this->belongsTo(Propinsi::class, 'propinsi_id');
+    }
+
+    /**
+     * Relasi ke Kabupaten/Kota Domisili.
+     */
+    public function kabupaten()
+    {
+        return $this->belongsTo(Kabupaten::class, 'kabupaten_id');
+    }
+
+    /**
+     * Relasi ke Hasil Pengisian Kuesioner Universitas (Tracer).
      */
     public function tracer()
     {
         return $this->hasMany(Tracer::class, 'biodata_id');
     }
 
-    /**
-     * Relasi ke Tracer (Plural alias untuk kompatibilitas template jika diperlukan).
-     */
     public function tracers()
     {
         return $this->tracer();
     }
 
     /**
-     * Relasi ke ProdiResponse (Jawaban Kuesioner Khusus Prodi).
+     * Relasi ke Hasil Pengisian Kuesioner Khusus Program Studi.
      */
     public function prodiResponse()
     {
         return $this->hasMany(ProdiResponse::class, 'biodata_id');
     }
 
-    /**
-     * Relasi ke ProdiResponse (Plural alias).
-     */
     public function prodiResponses()
     {
         return $this->prodiResponse();
     }
 
+    // =========================================================================
+    // ACCESSOR (DELEGASI DATA MASTER AKADEMIK TANPA DUPLIKASI TABEL)
+    // =========================================================================
+
+    /**
+     * Akses nama alumni (mengambil langsung dari tabel data_akademik master).
+     */
+    public function getNamaAttribute(): ?string
+    {
+        return $this->dataAkademik?->nama;
+    }
+
+    /**
+     * Akses email umum (mengutamakan email_pribadi aktif alumni).
+     */
+    public function getEmailAttribute(): ?string
+    {
+        return $this->email_pribadi ?? $this->dataAkademik?->email_pribadi ?? $this->user?->email;
+    }
+
+    /**
+     * Akses email mahasiswa kampus (mengambil dari data_akademik saja).
+     */
+    public function getEmailStudentsAttribute(): ?string
+    {
+        return $this->dataAkademik?->email_students;
+    }
+
+    /**
+     * Akses tempat lahir (dari data_akademik).
+     */
+    public function getTempatLahirAttribute(): ?string
+    {
+        return $this->dataAkademik?->tempat_lahir;
+    }
+
+    /**
+     * Akses tanggal lahir (dari data_akademik).
+     */
+    public function getTanggalLahirAttribute(): ?string
+    {
+        return $this->dataAkademik?->tanggal_lahir;
+    }
+
+    /**
+     * Akses jenis kelamin (dari data_akademik).
+     */
+    public function getJenisKelaminAttribute(): ?string
+    {
+        return $this->dataAkademik?->jenis_kelamin;
+    }
+
+    /**
+     * Akses golongan darah (dari data_akademik).
+     */
+    public function getGolonganDarahAttribute(): ?string
+    {
+        return $this->dataAkademik?->golongan_darah;
+    }
+
+    /**
+     * Akses agama (dari data_akademik).
+     */
+    public function getAgamaAttribute(): ?string
+    {
+        return $this->dataAkademik?->agama;
+    }
+
+    /**
+     * Akses tahun kelulusan resmi (otomatis mengambil dari data_akademik).
+     */
+    public function getTahunLulusAttribute(): ?string
+    {
+        return $this->dataAkademik?->tahun_lulus ? (string) $this->dataAkademik->tahun_lulus : null;
+    }
+
+    /**
+     * Akses tahun akademik kelulusan (dari data_akademik).
+     */
+    public function getTahunAkademikLulusAttribute(): ?string
+    {
+        return $this->dataAkademik?->tahun_akademik_lulus;
+    }
+
+    /**
+     * Akses status kewarganegaraan (dari data_akademik).
+     */
+    public function getWargaNegaraAttribute(): string
+    {
+        return $this->dataAkademik?->warga_negara ?? 'WNI';
+    }
+
+    /**
+     * Akses dokumen kependudukan tambahan (dari data_akademik).
+     */
+    public function getNoKkAttribute(): ?string
+    {
+        return $this->dataAkademik?->no_kk;
+    }
+
+    public function getNisnAttribute(): ?string
+    {
+        return $this->dataAkademik?->nisn;
+    }
+
+    public function getNoBpjsAttribute(): ?string
+    {
+        return $this->dataAkademik?->no_bpjs;
+    }
+
+    // =========================================================================
+    // HELPER METHODS
+    // =========================================================================
+
     /**
      * Helper: Ekstrak Angkatan dan Kode Prodi dari NIM.
      */
-    public static function parseNim($nim)
+    public static function parseNim($nim): ?array
     {
         if (strlen((string) $nim) >= 4) {
             $kodeProdi = substr((string) $nim, 0, 2);

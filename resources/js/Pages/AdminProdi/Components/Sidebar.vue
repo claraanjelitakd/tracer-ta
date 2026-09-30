@@ -56,6 +56,10 @@ const isPerusahaanActive = computed(() => {
     return page.url.startsWith('/prodi/perusahaan');
 });
 
+const isManajemenAkunActive = computed(() => {
+    return page.url.startsWith('/prodi/manajemen-akun');
+});
+
 const toggleMobileMenu = () => {
     isMobileOpen.value = !isMobileOpen.value;
 };
@@ -140,7 +144,6 @@ const handleLogout = () => {
                                 Tracer Study UKDW
                             </span>
                             <div class="flex items-center gap-1.5 mt-0.5">
-                                <span class="inline-block w-1.5 h-1.5 rounded-full bg-[#0D542B] shrink-0"></span>
                                 <span class="text-[11px] font-semibold text-[#0D542B] uppercase tracking-wider block truncate">
                                     {{ currentProdi.nama_prodi || 'Program Studi' }}
                                 </span>
@@ -165,7 +168,7 @@ const handleLogout = () => {
             <div class="flex-1 overflow-y-auto min-h-0 px-3 py-3 space-y-1">
                 <div class="px-2.5 pb-1 pt-1">
                     <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                        Menu Program Studi
+                        Ringkasan & Analisis
                     </span>
                 </div>
 
@@ -205,7 +208,7 @@ const handleLogout = () => {
 
                 <div class="px-2.5 pt-3 pb-1">
                     <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                        Kuesioner Internal Prodi
+                        Manajemen Kuesioner Prodi
                     </span>
                 </div>
 
@@ -245,7 +248,7 @@ const handleLogout = () => {
 
                 <div class="px-2.5 pt-3 pb-1">
                     <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                        Verifikasi & Master
+                        Master Data & Verifikasi
                     </span>
                 </div>
 
@@ -264,6 +267,23 @@ const handleLogout = () => {
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                     </svg>
                     <span class="truncate">Verifikasi Perusahaan</span>
+                </Link>
+
+                <!-- 6. Manajemen Akun Mahasiswa -->
+                <Link
+                    href="/prodi/manajemen-akun"
+                    @click="closeMobileMenu"
+                    class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-semibold transition-colors"
+                    :class="[
+                        isManajemenAkunActive
+                            ? 'bg-[#0D542B] text-white shadow-2xs'
+                            : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                    ]"
+                >
+                    <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 11-4 0 2 2 0 014 0zM4 19v-2a3 3 0 013-3h10a3 3 0 013 3v2" />
+                    </svg>
+                    <span class="truncate">Manajemen Akun Mahasiswa</span>
                 </Link>
             </div>
 

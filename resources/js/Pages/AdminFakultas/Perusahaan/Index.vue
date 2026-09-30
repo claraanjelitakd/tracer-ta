@@ -197,7 +197,7 @@ const openReviewModal = (company) => {
         showCancelButton: true,
         showDenyButton: true,
         confirmButtonText: '✓ Verifikasi Sesuai Inputan',
-        denyButtonText: '✏️ Edit Dulu',
+        denyButtonText: 'Edit',
         cancelButtonText: 'Tutup',
         confirmButtonColor: '#0D542B',
         denyButtonColor: '#D97706',
@@ -463,14 +463,16 @@ const openEditModal = (company) => {
                         </p>
                     </div>
 
-                    <!-- Statistik Ringkas Badge -->
-                    <div class="flex items-center gap-2.5">
-                        <div class="px-3 py-1.5 rounded-lg bg-[#FFFBEB] border border-[#FDE68A] text-[#78350F] text-xs font-semibold flex items-center gap-2 shadow-2xs">
-                            <span class="w-2.5 h-2.5 rounded-full bg-[#F59E0B] shrink-0"></span>
-                            <div class="leading-tight"><div>{{ stats.total_pending_fakultas }} Menunggu</div><div>Verifikasi</div></div>
+                    <!-- Widget Statistik Dual Sesuai Foto Pengguna -->
+                    <div class="bg-slate-50/80 border border-slate-200/80 rounded-2xl px-8 py-3.5 flex items-center gap-8 text-center shadow-2xs">
+                        <div>
+                            <div class="text-2xl font-black text-[#0D542B] leading-none mb-1.5">{{ stats.total_pending_fakultas }}</div>
+                            <div class="text-[11px] font-bold text-slate-600 tracking-wide uppercase">MENUNGGU VERIFIKASI</div>
                         </div>
-                        <div class="px-3 py-1.5 rounded-lg bg-[#ECFDF5] border border-[#A7F3D0] text-[#065F46] text-xs font-semibold flex items-center shadow-2xs">
-                            <div class="leading-tight"><div>{{ stats.total_verified }} Master</div><div>Terverifikasi</div></div>
+                        <div class="w-px h-10 bg-slate-300/80"></div>
+                        <div>
+                            <div class="text-2xl font-black text-[#D97706] leading-none mb-1.5">{{ stats.total_verified }}</div>
+                            <div class="text-[11px] font-bold text-slate-600 tracking-wide uppercase">MASTER TERVERIFIKASI</div>
                         </div>
                     </div>
                 </div>

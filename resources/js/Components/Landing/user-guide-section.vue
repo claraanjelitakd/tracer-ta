@@ -34,15 +34,6 @@ import { Link } from '@inertiajs/vue3';
                             <span class="text-xs text-slate-700 font-medium">Hanya membutuhkan sekitar 5 - 10 menit</span>
                         </div>
                     </div>
-
-                    <Link
-                        v-if="!$page.props.auth?.user"
-                        href="/login"
-                        class="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-[#004D25] hover:bg-[#00381A] text-[#FFC700] hover:text-white text-xs sm:text-sm font-black shadow-lg hover:shadow-xl transition-all active:scale-95 cursor-pointer"
-                    >
-                        <span>Mulai Sekarang</span>
-                        <svg class="w-4 h-4 font-bold" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
-                    </Link>
                 </div>
 
                 <!-- Right Column (Vertical Steps 1, 2, 3, 4 - High Contrast Cards) -->
@@ -125,7 +116,7 @@ import { Link } from '@inertiajs/vue3';
               PETUNJUK AKUN PENGISIAN (Username & Password) 
               ========================================================================
             -->
-            <div class="bg-[#00381A] rounded-2xl border border-white/20 p-6 sm:p-8 shadow-2xl text-white">
+            <div class="bg-[#00381A]  border border-white/20 p-6 sm:p-8 shadow-2xl text-white">
                 <div class="flex items-center gap-2.5 mb-5">
                     <span class="w-3 h-3 rounded-full bg-[#FFC700] shadow-sm"></span>
                     <h3 class="text-base sm:text-lg font-black text-white uppercase tracking-wider">
@@ -150,7 +141,7 @@ import { Link } from '@inertiajs/vue3';
                                 <strong class="text-white">Password:</strong> Tanggal lahir format <code class="bg-white/15 px-2 py-0.5 rounded-md font-bold text-[#FFC700] border border-[#FFC700]/30">ddmmyyyy</code>.
                             </p>
                             <p class="text-xs text-white/80 italic bg-white/5 p-2.5 rounded-lg border border-white/10 mt-2">
-                                💡 Contoh: <strong class="text-[#FFC700]">01011990</strong> (untuk kelahiran 1 Januari 1990).
+                                Contoh: <strong class="text-[#FFC700]">01011990</strong> (untuk kelahiran 1 Januari 1990).
                             </p>
                         </div>
                     </div>
@@ -171,23 +162,10 @@ import { Link } from '@inertiajs/vue3';
                                 Menggunakan kredensial khusus yang telah dikirimkan secara resmi melalui email penanggung jawab instansi/perusahaan.
                             </p>
                             <p class="text-xs text-white/80 italic bg-white/5 p-2.5 rounded-lg border border-white/10 mt-2">
-                                📩 Cek kotak masuk atau folder spam email PIC perusahaan Anda.
+                                Cek kotak masuk atau folder spam email PIC perusahaan Anda.
                             </p>
                         </div>
                     </div>
-                </div>
-
-                <div class="pt-4 border-t border-white/15 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
-                    <p class="text-white/85 font-medium">
-                        Mari sukseskan pelaksanaan Tracer Study Universitas Kristen Duta Wacana untuk kemajuan bersama almamater.
-                    </p>
-                    <Link
-                        v-if="!$page.props.auth?.user"
-                        href="/login"
-                        class="shrink-0 px-6 py-2.5 rounded-full bg-[#FFC700] hover:bg-[#FBBF24] text-slate-950 font-black text-xs shadow-md transition-all active:scale-95"
-                    >
-                        Masuk ke Halaman Login ›
-                    </Link>
                 </div>
             </div>
 

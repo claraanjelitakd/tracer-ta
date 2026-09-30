@@ -2,11 +2,16 @@
 
 namespace Database\Seeders;
 
-use App\Models\Biodata;
 use App\Models\User;
 use App\Models\Yudisium;
 use Illuminate\Database\Seeder;
 
+/**
+ * Seeder Yudisium
+ *
+ * Mengisi data kelulusan tugas akhir, dosen pembimbing & penguji, serta status yudisium.
+ * Tanpa duplikasi tahun akademik / tahun lulus (terkelola di DataAkademik).
+ */
 class YudisiumSeeder extends Seeder
 {
     /**
@@ -62,18 +67,12 @@ class YudisiumSeeder extends Seeder
             'Memuaskan',
         ];
 
-        $periodeLulusList = ['Gasal 2023/2024', 'Genap 2023/2024', 'Gasal 2024/2025', 'Genap 2024/2025'];
-
         foreach ($alumniUsers as $index => $user) {
             $nim = $user->username;
-            $parsedInfo = Biodata::parseNim($nim);
-            $angkatan = $parsedInfo ? (int) $parsedInfo['angkatan'] : 2020;
 
             Yudisium::updateOrCreate(
                 ['nim' => $nim],
                 [
-                    'tahun_akademik_lulus' => $periodeLulusList[$index % count($periodeLulusList)],
-                    'tahun_lulus' => $angkatan + 4,
                     'dosen_pembimbing_1' => $dosenList[$index % count($dosenList)],
                     'dosen_pembimbing_2' => $dosenList[($index + 1) % count($dosenList)],
                     'dosen_penguji_1' => $dosenList[($index + 2) % count($dosenList)],
@@ -85,7 +84,7 @@ class YudisiumSeeder extends Seeder
                     'jenis_publikasi' => ($index % 2 == 0) ? 'Jurnal Nasional' : 'Prosiding Seminar',
                     'status_publikasi' => 'Terbit',
                     'keterangan_hasil_yudisium' => $predikatList[$index % count($predikatList)],
-                    'proses_yudisium' => 'Lulus',
+                    'status_lulus' => 'Lulus',
                 ]
             );
         }

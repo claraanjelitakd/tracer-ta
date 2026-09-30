@@ -95,6 +95,11 @@ const labelClass = "block text-sm font-semibold text-gray-700 mb-1.5";
                     <label :class="labelClass">Total Angka Kualitas</label>
                     <input type="text" :value="form.total_angka_kualitas" disabled :class="lockedInputClass" />
                 </div>
+
+                <div class="md:col-span-2">
+                    <label :class="labelClass">Email Mahasiswa (Students UKDW)</label>
+                    <input type="text" :value="form.email_students" disabled :class="lockedInputClass" />
+                </div>
             </div>
         </div>
 

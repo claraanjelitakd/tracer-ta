@@ -61,7 +61,6 @@ class ProfilController extends Controller
             'provinsi_id' => $biodata?->propinsi_id ?? ($dataAkademik?->propinsi_id ?? ''),
             'kode_pos' => $biodata?->kode_pos ?? ($dataAkademik?->kode_pos ?? ''),
             'nomor_telepon' => $biodata?->nomor_telepon ?? ($dataAkademik?->nomor_telepon ?? ''),
-            'email' => $biodata?->email ?? ($dataAkademik?->email_pribadi ?? $pengguna->email),
             'email_pribadi' => $biodata?->email_pribadi ?? ($dataAkademik?->email_pribadi ?? $pengguna->email),
             'email_students' => $dataAkademik?->email_students ?? '',
 
@@ -72,8 +71,8 @@ class ProfilController extends Controller
             'fakultas' => $biodata?->prodi?->fakultas?->nama_fakultas ?? ($dataAkademik?->fakultas ?? ''),
             'angkatan_masuk' => $dataAkademik?->angkatan_masuk ?? '',
             'status_mahasiswa' => $dataAkademik?->status_mahasiswa ?? 'AR',
-            'tahun_akademik_lulus' => $yudisium?->tahun_akademik_lulus ?? ($dataAkademik?->tahun_akademik_lulus ?? ''),
-            'tahun_lulus' => $biodata?->tahun_lulus ?? ($yudisium?->tahun_lulus ?? ($dataAkademik?->tahun_lulus ?? '')),
+            'tahun_akademik_lulus' => $dataAkademik?->tahun_akademik_lulus ?? '',
+            'tahun_lulus' => $dataAkademik?->tahun_lulus ? (string) $dataAkademik->tahun_lulus : '',
             'ipk' => $dataAkademik?->ip_kumulatif ?? '',
             'ip_kumulatif' => $dataAkademik?->ip_kumulatif ?? '',
             'strata' => $dataAkademik?->strata ?? 'S1',
@@ -92,9 +91,10 @@ class ProfilController extends Controller
             'url_publikasi' => $yudisium?->url_publikasi ?? '',
             'jenis_publikasi' => $yudisium?->jenis_publikasi ?? '',
             'status_publikasi' => $yudisium?->status_publikasi ?? '',
-            'status_yudisium' => $yudisium?->status_yudisium ?? ($yudisium?->proses_yudisium ?? 'Belum Yudisium'),
+            'status_lulus' => $yudisium?->status_lulus ?? 'Belum',
+            'status_yudisium' => $yudisium?->status_lulus ?? 'Belum',
             'keterangan_hasil_yudisium' => $yudisium?->keterangan_hasil_yudisium ?? '',
-            'proses_yudisium' => $yudisium?->proses_yudisium ?? '',
+            'proses_yudisium' => $yudisium?->status_lulus ?? 'Belum',
 
             // Data Orang Tua / Wali
             'nama_orang_tua' => $orangTua?->nama_orang_tua ?? '',

@@ -136,12 +136,14 @@ class AlumniSimulationSeeder extends Seeder
                 $isLaki = ($i % 2 === 0);
                 $nama = $isLaki ? $namaKoleksi[$i]['L'] : $namaKoleksi[$i]['P'];
 
+                $personalEmail = strtolower(str_replace(' ', '', explode(' ', $nama)[0])).($i + 1).'@gmail.com';
+
                 // A. Buat / Perbarui Akun User Alumni
                 $user = User::updateOrCreate(
                     ['username' => $nim],
                     [
                         'name' => $nama,
-                        'email' => strtolower(str_replace(' ', '.', explode(' ', $nama)[0])).'.'.$nim.'@students.ukdw.ac.id',
+                        'email' => $personalEmail,
                         'password' => Hash::make('15082001'), // Format default tanggal lahir DDMMYYYY
                         'role' => 'alumni',
                         'prodi_id' => $prodi->id,
@@ -211,8 +213,6 @@ class AlumniSimulationSeeder extends Seeder
                 $yudisium = Yudisium::updateOrCreate(
                     ['nim' => $nim],
                     [
-                        'tahun_akademik_lulus' => $cfg['semester'],
-                        'tahun_lulus' => $cfg['tahun'],
                         'dosen_pembimbing_1' => 'Dr. Budi Susanto, S.Kom., M.T.',
                         'dosen_pembimbing_2' => 'Gloria Virginia, S.Kom., MAI., Ph.D.',
                         'dosen_penguji_1' => 'Willy Sudiarto Raharjo, S.Kom., M.Cs.',
@@ -223,7 +223,7 @@ class AlumniSimulationSeeder extends Seeder
                         'jenis_publikasi' => ($i % 2 === 0) ? 'Jurnal Nasional Terakreditasi' : 'Prosiding Seminar Internasional',
                         'status_publikasi' => 'Terbit',
                         'keterangan_hasil_yudisium' => ($ipk >= 3.75 ? 'Lulus dengan Pujian (Cumlaude)' : 'Sangat Memuaskan'),
-                        'proses_yudisium' => 'Lulus', // WAJIB Lulus agar terdeteksi sebagai target tracer
+                        'status_lulus' => 'Lulus', // WAJIB Lulus agar terdeteksi sebagai target tracer
                     ]
                 );
 
@@ -468,21 +468,9 @@ class AlumniSimulationSeeder extends Seeder
                 'orang_tua_id' => $dataOrangTua->id,
                 'yudisium_id' => $yudisium->id,
                 'prodi_id' => $prodi->id,
-                'tahun_lulus' => (string) $cfg['tahun'],
-                'nama' => $nama,
-                'email' => $user->email,
                 'email_pribadi' => $dataAkademik->email_pribadi,
                 'nomor_telepon' => $dataAkademik->nomor_telepon,
-                'tempat_lahir' => $dataAkademik->tempat_lahir,
-                'tanggal_lahir' => $dataAkademik->tanggal_lahir,
-                'jenis_kelamin' => $dataAkademik->jenis_kelamin,
-                'golongan_darah' => $dataAkademik->golongan_darah,
-                'warga_negara' => $dataAkademik->warga_negara,
-                'agama' => $dataAkademik->agama,
                 'nik' => $dataAkademik->nik,
-                'no_kk' => $dataAkademik->no_kk,
-                'nisn' => $dataAkademik->nisn,
-                'no_bpjs' => $dataAkademik->no_bpjs,
                 'npwp' => '09.'.rand(100, 999).'.'.rand(100, 999).'.'.rand(1, 9).'-541.000',
                 'alamat' => $dataAkademik->alamat_saat_ini,
                 'kelurahan' => $dataAkademik->kelurahan,
@@ -663,21 +651,9 @@ class AlumniSimulationSeeder extends Seeder
                 'orang_tua_id' => $dataOrangTua->id,
                 'yudisium_id' => $yudisium->id,
                 'prodi_id' => $prodi->id,
-                'tahun_lulus' => (string) $cfg['tahun'],
-                'nama' => $nama,
-                'email' => $user->email,
                 'email_pribadi' => $dataAkademik->email_pribadi,
                 'nomor_telepon' => $dataAkademik->nomor_telepon,
-                'tempat_lahir' => $dataAkademik->tempat_lahir,
-                'tanggal_lahir' => $dataAkademik->tanggal_lahir,
-                'jenis_kelamin' => $dataAkademik->jenis_kelamin,
-                'golongan_darah' => $dataAkademik->golongan_darah,
-                'warga_negara' => 'WNI',
-                'agama' => $dataAkademik->agama,
                 'nik' => $dataAkademik->nik,
-                'no_kk' => $dataAkademik->no_kk,
-                'nisn' => $dataAkademik->nisn,
-                'no_bpjs' => $dataAkademik->no_bpjs,
                 'npwp' => '09.'.rand(100, 999).'.'.rand(100, 999).'.'.rand(1, 9).'-541.000',
                 'alamat' => $dataAkademik->alamat_saat_ini,
                 'kelurahan' => $dataAkademik->kelurahan,
@@ -754,14 +730,6 @@ class AlumniSimulationSeeder extends Seeder
                 'orang_tua_id' => $dataOrangTua->id,
                 'yudisium_id' => $yudisium->id,
                 'prodi_id' => $prodi->id,
-                'tahun_lulus' => (string) $cfg['tahun'],
-                'nama' => $nama,
-                'email' => $user->email,
-                'tempat_lahir' => null,
-                'tanggal_lahir' => null,
-                'jenis_kelamin' => null,
-                'golongan_darah' => null,
-                'warga_negara' => 'WNI',
                 'nomor_telepon' => null,
                 'email_pribadi' => null,
                 'alamat' => null,
@@ -770,11 +738,7 @@ class AlumniSimulationSeeder extends Seeder
                 'kelurahan' => null,
                 'kecamatan' => null,
                 'kode_pos' => null,
-                'agama' => null,
                 'nik' => null,
-                'no_kk' => null,
-                'nisn' => null,
-                'no_bpjs' => null,
                 'npwp' => null, // NPWP NULL menandakan profil mandiri belum lengkap
                 'instagram_url' => null,
                 'facebook_url' => null,

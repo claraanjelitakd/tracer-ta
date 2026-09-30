@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('perusahaan', function (Blueprint $table) {
             $table->id();
-            $table->string('nama_perusahaan');
+            $table->string('nama_perusahaan', 500);
             $table->foreignId('propinsi_id')->nullable()->constrained('propinsi')->nullOnDelete();
             $table->foreignId('kabupaten_id')->nullable()->constrained('kabupaten')->nullOnDelete();
             $table->text('alamat')->nullable();
@@ -24,7 +24,9 @@ return new class extends Migration
             $table->enum('jenis_lokasi', ['Dalam Negeri', 'Luar Negeri'])->default('Dalam Negeri');
             $table->string('negara')->default('Indonesia');
             $table->string('jenis_perusahaan')->nullable()->comment('Instansi pemerintah, BUMN, Swasta, dll');
-            $table->string('jenis_perusahaan_lainnya')->nullable();
+            $table->text('jenis_perusahaan_lainnya')->nullable();
+            $table->foreignId('created_by_user_id')->nullable()->constrained('users')->nullOnDelete()->comment('User pembuat record perusahaan');
+            $table->foreignId('created_by_prodi_id')->nullable()->index()->comment('Prodi pembuat record');
             $table->timestamps();
         });
     }

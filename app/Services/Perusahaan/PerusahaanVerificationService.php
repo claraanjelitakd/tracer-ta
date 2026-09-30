@@ -3,6 +3,7 @@
 namespace App\Services\Perusahaan;
 
 use App\Models\Biodata;
+use App\Models\LogActivity;
 use App\Models\Perusahaan;
 use App\Models\Prodi;
 use Illuminate\Database\Eloquent\Collection;
@@ -40,8 +41,8 @@ class PerusahaanVerificationService
                 'creator.biodata.prodi:id,nama_prodi',
                 'createdProdi:id,nama_prodi',
                 'biodata' => function ($q) {
-                    $q->select('id', 'user_id', 'nim', 'nama', 'prodi_id', 'tahun_lulus', 'posisi_jabatan', 'kategori_pekerjaan', 'perusahaan_id')
-                        ->with('prodi:id,nama_prodi');
+                    $q->select('id', 'user_id', 'nim', 'prodi_id', 'posisi_jabatan', 'kategori_pekerjaan', 'perusahaan_id')
+                        ->with(['dataAkademik:nim,nama,tahun_lulus', 'prodi:id,nama_prodi']);
                 },
             ])
             ->where('status_verifikasi', 'Menunggu Verifikasi');
@@ -63,7 +64,7 @@ class PerusahaanVerificationService
                     ->orWhere('alamat', 'like', "%{$search}%")
                     ->orWhereHas('propinsi', fn ($p) => $p->where('nama_provinsi', 'like', "%{$search}%"))
                     ->orWhereHas('kabupaten', fn ($k) => $k->where('nama_kabupaten', 'like', "%{$search}%"))
-                    ->orWhereHas('biodata', fn ($b) => $b->where('nama', 'like', "%{$search}%")->orWhere('nim', 'like', "%{$search}%"))
+                    ->orWhereHas('biodata', fn ($b) => $b->where('nim', 'like', "%{$search}%")->orWhereHas('dataAkademik', fn ($da) => $da->where('nama', 'like', "%{$search}%")))
                     ->orWhereHas('creator', fn ($u) => $u->where('name', 'like', "%{$search}%")->orWhere('username', 'like', "%{$search}%"));
             });
         }
@@ -89,8 +90,8 @@ class PerusahaanVerificationService
                 'creator.biodata.prodi:id,nama_prodi',
                 'createdProdi:id,nama_prodi',
                 'biodata' => function ($q) {
-                    $q->select('id', 'user_id', 'nim', 'nama', 'prodi_id', 'tahun_lulus', 'posisi_jabatan', 'kategori_pekerjaan', 'perusahaan_id')
-                        ->with('prodi:id,nama_prodi');
+                    $q->select('id', 'user_id', 'nim', 'prodi_id', 'posisi_jabatan', 'kategori_pekerjaan', 'perusahaan_id')
+                        ->with(['dataAkademik:nim,nama,tahun_lulus', 'prodi:id,nama_prodi']);
                 },
             ])
             ->where('status_verifikasi', 'Menunggu Verifikasi');
@@ -117,7 +118,7 @@ class PerusahaanVerificationService
                     ->orWhere('alamat', 'like', "%{$search}%")
                     ->orWhereHas('propinsi', fn ($p) => $p->where('nama_provinsi', 'like', "%{$search}%"))
                     ->orWhereHas('kabupaten', fn ($k) => $k->where('nama_kabupaten', 'like', "%{$search}%"))
-                    ->orWhereHas('biodata', fn ($b) => $b->where('nama', 'like', "%{$search}%")->orWhere('nim', 'like', "%{$search}%"))
+                    ->orWhereHas('biodata', fn ($b) => $b->where('nim', 'like', "%{$search}%")->orWhereHas('dataAkademik', fn ($da) => $da->where('nama', 'like', "%{$search}%")))
                     ->orWhereHas('creator', fn ($u) => $u->where('name', 'like', "%{$search}%")->orWhere('username', 'like', "%{$search}%"));
             });
         }
@@ -327,6 +328,8 @@ class PerusahaanVerificationService
         return DB::transaction(function () use ($pendingCompany, $verifiedCompany) {
             $alumnis = Biodata::where('perusahaan_id', $pendingCompany->id)->get();
             $affectedCount = $alumnis->count();
+            $pendingName = $pendingCompany->nama_perusahaan;
+            $verifiedName = $verifiedCompany->nama_perusahaan;
 
             // Alihkan relasi biodata alumni ke perusahaan terverifikasi
             Biodata::where('perusahaan_id', $pendingCompany->id)->update([
@@ -335,6 +338,15 @@ class PerusahaanVerificationService
 
             // Hapus record duplicate / pending yang sudah digantikan
             $pendingCompany->delete();
+
+            // Catat ke Audit Trail log_activities
+            LogActivity::record(
+                'GANTI_PERUSAHAAN_MASTER',
+                "Mengganti perusahaan pengajuan '{$pendingName}' ke master terverifikasi '{$verifiedName}' untuk {$affectedCount} alumni.",
+                $verifiedCompany,
+                ['pending_id' => $pendingCompany->id, 'pending_name' => $pendingName],
+                ['verified_id' => $verifiedCompany->id, 'verified_name' => $verifiedName, 'alumni_dialihkan' => $affectedCount]
+            );
 
             return [
                 'status' => 'success',
@@ -349,9 +361,18 @@ class PerusahaanVerificationService
      */
     public function verifyDirectly(Perusahaan $company): bool
     {
-        return $company->update([
+        $res = $company->update([
             'status_verifikasi' => 'Terverifikasi',
         ]);
+
+        // Catat ke Audit Trail log_activities
+        LogActivity::record(
+            'ACC_VERIFIKASI_PERUSAHAAN',
+            "Menyetujui (ACC) perusahaan '{$company->nama_perusahaan}' menjadi berstatus Terverifikasi.",
+            $company
+        );
+
+        return $res;
     }
 
     /**
@@ -361,11 +382,22 @@ class PerusahaanVerificationService
      */
     public function updateAndVerify(Perusahaan $company, array $validatedData, bool $verifyNow = true): Perusahaan
     {
+        $oldValues = $company->only(array_keys($validatedData));
+
         if ($verifyNow) {
             $validatedData['status_verifikasi'] = 'Terverifikasi';
         }
 
         $company->update($validatedData);
+
+        // Catat ke Audit Trail log_activities
+        LogActivity::record(
+            'UPDATE_VERIFIKASI_PERUSAHAAN',
+            "Memperbarui data dan memverifikasi perusahaan '{$company->nama_perusahaan}'.",
+            $company,
+            $oldValues,
+            $company->only(array_keys($validatedData))
+        );
 
         return $company->fresh();
     }
@@ -375,9 +407,18 @@ class PerusahaanVerificationService
      */
     public function rejectCompany(Perusahaan $company, ?string $alasan = null): bool
     {
-        return $company->update([
+        $res = $company->update([
             'status_verifikasi' => 'Ditolak',
         ]);
+
+        // Catat ke Audit Trail log_activities
+        LogActivity::record(
+            'REJECT_PERUSAHAAN',
+            "Menolak pengajuan perusahaan '{$company->nama_perusahaan}'.".($alasan ? " Alasan: {$alasan}" : ''),
+            $company
+        );
+
+        return $res;
     }
 
     /**

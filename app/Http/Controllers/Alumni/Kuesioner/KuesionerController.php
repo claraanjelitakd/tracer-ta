@@ -45,14 +45,23 @@ class KuesionerController extends Controller
         // 2. Sinkronisasi otomatis data profil (Identitas & Perusahaan/Atasan) ke tabel tracer
         KuesionerSyncService::syncProfileResponses($biodata);
 
-        // 3. Ambil data kuesioner aktif dengan menyaring butir pertanyaan yang diatur tampil di kuesioner (kuesioner / both)
+        // 3. Ambil data kuesioner aktif: Saring seksi kuesioner universitas (Seksi 1 Identitas & Biodata dikelola di Profil Alumni)
         $kuesioner = Kuesioner::where('is_active', true)
             ->with(['sections' => function ($query) {
-                $query->orderBy('order', 'asc')
+                $query->where(function ($secQ) {
+                    $secQ->whereNull('kode_kelompok')
+                        ->orWhere('kode_kelompok', '!=', '1');
+                })
+                    ->orderBy('order', 'asc')
                     ->with(['subpertanyaans' => function ($qQuery) {
                         $qQuery->where(function ($subQ) {
-                            $subQ->whereIn('tampil_di', ['kuesioner', 'both'])
-                                ->orWhereNull('tampil_di');
+                            $subQ->where(function ($w) {
+                                $w->whereNull('tampil_di')
+                                    ->orWhere('tampil_di', '!=', 'profil');
+                            })->where(function ($w) {
+                                $w->whereNull('kelompok')
+                                    ->orWhere('kelompok', '!=', 'BIO');
+                            });
                         })
                             ->orderBy('order', 'asc')
                             ->with('detils');

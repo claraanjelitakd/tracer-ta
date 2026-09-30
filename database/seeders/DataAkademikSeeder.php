@@ -75,10 +75,12 @@ class DataAkademikSeeder extends Seeder
             $lokasi = $lokasiList[$index % count($lokasiList)];
             $sekolah = $sekolahList[$index % count($sekolahList)];
 
-            // Update nama user agar sinkron di auth & navbar
+            $personalEmail = strtolower(str_replace(' ', '', explode(' ', $nama)[0])).($index + 1).'@gmail.com';
+
+            // Update nama user & email pribadi agar sinkron di auth, manajemen akun, dan notifikasi
             $user->update([
                 'name' => $nama,
-                'email' => strtolower(str_replace(' ', '.', explode(' ', $nama)[0].'.'.$nim)).'@students.ukdw.ac.id',
+                'email' => $personalEmail,
             ]);
 
             $ipk = $ipkList[$index % count($ipkList)];

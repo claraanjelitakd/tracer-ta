@@ -6,9 +6,14 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 /**
- * Model DataAkademik
+ * Model DataAkademik (tabel: data_akademik)
  *
  * Mengelola data master riwayat akademik mahasiswa/alumni UKDW.
+ * Merupakan Single Source of Truth untuk:
+ * - Identitas master (nama, tempat/tanggal lahir, jenis kelamin, agama, golongan darah, warga negara)
+ * - Dokumen kependudukan (nik, no_kk, nisn, no_bpjs)
+ * - Riwayat akademik (angkatan, IPK, total SKS, status kelulusan, tahun & periode kelulusan)
+ * - Email resmi mahasiswa (email_students)
  */
 class DataAkademik extends Model
 {
@@ -47,37 +52,54 @@ class DataAkademik extends Model
         'status_mahasiswa',
         'tahun_akademik_lulus',
         'tahun_lulus',
+        'tanggal_lulus',
         'ip_kumulatif',
         'total_sks',
         'total_angka_kualitas',
     ];
 
+    protected $casts = [
+        'tanggal_lahir' => 'date',
+        'tanggal_lulus' => 'date',
+        'tahun_lulus' => 'integer',
+        'ip_kumulatif' => 'float',
+    ];
+
     /**
-     * Relasi ke model Biodata
+     * Relasi ke model Biodata (profil aktif alumni & karier).
      */
     public function biodata()
     {
         return $this->hasOne(Biodata::class, 'nim', 'nim');
     }
 
+    /**
+     * Relasi ke model Yudisium (status lulus, skripsi, & pembimbing).
+     */
     public function yudisium()
     {
         return $this->hasOne(Yudisium::class, 'nim', 'nim');
     }
 
     /**
-     * Relasi ke model DataOrangTua
+     * Relasi ke model DataOrangTua.
      */
     public function orangTua()
     {
         return $this->hasOne(DataOrangTua::class, 'nim', 'nim');
     }
 
+    /**
+     * Relasi ke Propinsi asal/domisili akademik.
+     */
     public function propinsi()
     {
         return $this->belongsTo(Propinsi::class, 'propinsi_id');
     }
 
+    /**
+     * Relasi ke Kabupaten asal/domisili akademik.
+     */
     public function kabupaten()
     {
         return $this->belongsTo(Kabupaten::class, 'kabupaten_id');

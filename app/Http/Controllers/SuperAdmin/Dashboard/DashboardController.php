@@ -5,6 +5,7 @@ namespace App\Http\Controllers\SuperAdmin\Dashboard;
 use App\Http\Controllers\Controller;
 use App\Models\Biodata;
 use App\Models\KelompokPertanyaan;
+use App\Models\Perusahaan;
 use App\Models\Prodi;
 use App\Models\RefSubpertanyaan2021;
 use App\Models\Tracer;
@@ -40,6 +41,7 @@ class DashboardController extends Controller
         $totalAlumni = Biodata::count();
         $totalResponden = Tracer::distinct('biodata_id')->count('biodata_id');
         $totalProdi = Prodi::count();
+        $totalPendingPerusahaan = Perusahaan::where('status_verifikasi', 'Menunggu Verifikasi')->count();
 
         // 2. Mengembalikan view dasbor Superadmin
         return Inertia::render('SuperAdmin/Dashboard', [
@@ -50,6 +52,7 @@ class DashboardController extends Controller
                 'total_alumni' => $totalAlumni,
                 'total_responden' => $totalResponden,
                 'total_prodi' => $totalProdi,
+                'total_pending_perusahaan' => $totalPendingPerusahaan,
             ],
         ]);
     }

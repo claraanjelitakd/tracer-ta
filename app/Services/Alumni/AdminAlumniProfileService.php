@@ -4,7 +4,9 @@ namespace App\Services\Alumni;
 
 use App\Models\Atasan;
 use App\Models\Biodata;
+use App\Models\DataAkademik;
 use App\Models\DataOrangTua;
+use App\Models\LogActivity;
 use App\Models\Perusahaan;
 use App\Models\RefSubpertanyaanDetil;
 use App\Models\Yudisium;
@@ -79,8 +81,8 @@ class AdminAlumniProfileService
             'provinsi_id' => $alumni->propinsi_id ?? ($dataAkademik?->propinsi_id ?? ''),
             'kode_pos' => $alumni->kode_pos ?? ($dataAkademik?->kode_pos ?? ''),
             'nomor_telepon' => $alumni->nomor_telepon ?? ($dataAkademik?->nomor_telepon ?? ''),
-            'email_pribadi' => $alumni->email_pribadi ?? ($alumni->email ?? ($dataAkademik?->email_pribadi ?? '')),
-            'email' => $alumni->email ?? ($dataAkademik?->email_students ?? ''),
+            'email_pribadi' => $alumni->email_pribadi ?? ($dataAkademik?->email_pribadi ?? ''),
+            'email' => $alumni->email_pribadi ?? ($dataAkademik?->email_pribadi ?? ($user?->email ?? '')),
             'email_students' => $dataAkademik?->email_students ?? '',
 
             // 2. Data Akademik
@@ -90,8 +92,8 @@ class AdminAlumniProfileService
             'fakultas' => $alumni->prodi?->fakultas?->nama_fakultas ?? ($dataAkademik?->fakultas ?? ''),
             'angkatan_masuk' => $dataAkademik?->angkatan_masuk ?? '',
             'status_mahasiswa' => $dataAkademik?->status_mahasiswa ?? 'AR',
-            'tahun_akademik_lulus' => $yudisium?->tahun_akademik_lulus ?? ($dataAkademik?->tahun_akademik_lulus ?? ''),
-            'tahun_lulus' => $alumni->tahun_lulus ?? ($yudisium?->tahun_lulus ?? ($dataAkademik?->tahun_lulus ?? '')),
+            'tahun_akademik_lulus' => $dataAkademik?->tahun_akademik_lulus ?? '',
+            'tahun_lulus' => $dataAkademik?->tahun_lulus ? (string) $dataAkademik->tahun_lulus : '',
             'ipk' => $dataAkademik?->ip_kumulatif ?? '',
             'ip_kumulatif' => $dataAkademik?->ip_kumulatif ?? '',
             'strata' => $dataAkademik?->strata ?? 'S1',
@@ -110,9 +112,10 @@ class AdminAlumniProfileService
             'url_publikasi' => $yudisium?->url_publikasi ?? '',
             'jenis_publikasi' => $yudisium?->jenis_publikasi ?? '',
             'status_publikasi' => $yudisium?->status_publikasi ?? '',
-            'status_yudisium' => $yudisium?->status_yudisium ?? ($yudisium?->proses_yudisium ?? 'Lulus'),
+            'status_lulus' => $yudisium?->status_lulus ?? 'Belum',
+            'status_yudisium' => $yudisium?->status_lulus ?? 'Belum',
             'keterangan_hasil_yudisium' => $yudisium?->keterangan_hasil_yudisium ?? '',
-            'proses_yudisium' => $yudisium?->proses_yudisium ?? '',
+            'proses_yudisium' => $yudisium?->status_lulus ?? 'Belum',
 
             // 3. Data Orang Tua
             'nama_orang_tua' => $orangTua?->nama_orang_tua ?? '',
@@ -354,29 +357,30 @@ class AdminAlumniProfileService
             $gajiNominal = $gajiInt > 0 ? $gajiInt : null;
         }
 
-        // 6. Update Model Biodata
-        $biodata->update([
-            'nama' => ! empty($data['nama']) ? $data['nama'] : $biodata->nama,
-            'tempat_lahir' => ! empty($data['tempat_lahir']) ? $data['tempat_lahir'] : null,
-            'tanggal_lahir' => ! empty($data['tanggal_lahir']) ? $data['tanggal_lahir'] : null,
-            'jenis_kelamin' => ! empty($data['jenis_kelamin']) ? $data['jenis_kelamin'] : null,
-            'golongan_darah' => ! empty($data['golongan_darah']) ? $data['golongan_darah'] : null,
-            'warga_negara' => ! empty($data['warga_negara']) ? $data['warga_negara'] : ($biodata->warga_negara ?: 'WNI'),
+        // 6. Update Master Data Akademik (Hanya email_pribadi yang dapat diperbarui)
+        // Master akademik (nama, tempat/tgl lahir, jk, agama, gol darah, no_kk, nisn, no_bpjs, dll.)
+        // dikunci permanen sesuai pangkalan data akademik dan tidak boleh diubah dari form profil admin.
+        $dataAkademik = $biodata->dataAkademik;
+        if (! $dataAkademik && ! empty($biodata->nim)) {
+            $dataAkademik = DataAkademik::where('nim', $biodata->nim)->first();
+        }
+
+        if ($dataAkademik && ! empty($data['email_pribadi'])) {
+            $dataAkademik->update([
+                'email_pribadi' => $data['email_pribadi'],
+            ]);
+        }
+
+        // 7. Update Model Biodata (Hanya menyimpan kontak pribadi, alamat saat ini, karir & tracer study)
+        $biodataUpdates = [
             'nomor_telepon' => ! empty($data['nomor_telepon']) ? $data['nomor_telepon'] : null,
-            'email' => ! empty($data['email']) ? $data['email'] : (! empty($data['email_pribadi']) ? $data['email_pribadi'] : null),
-            'email_pribadi' => ! empty($data['email_pribadi']) ? $data['email_pribadi'] : null,
+            'email_pribadi' => ! empty($data['email_pribadi']) ? $data['email_pribadi'] : (! empty($data['email']) ? $data['email'] : $biodata->email_pribadi),
             'alamat' => ! empty($data['alamat_saat_ini']) ? $data['alamat_saat_ini'] : (! empty($data['alamat']) ? $data['alamat'] : null),
             'kelurahan' => ! empty($data['kelurahan']) ? $data['kelurahan'] : null,
             'kecamatan' => ! empty($data['kecamatan']) ? $data['kecamatan'] : null,
             'kabupaten_id' => ! empty($data['kabupaten_id']) ? $data['kabupaten_id'] : null,
             'propinsi_id' => ! empty($data['propinsi_id']) ? $data['propinsi_id'] : (! empty($data['provinsi_id']) ? $data['provinsi_id'] : null),
             'kode_pos' => ! empty($data['kode_pos']) ? $data['kode_pos'] : null,
-            'agama' => ! empty($data['agama']) ? $data['agama'] : null,
-            'nik' => ! empty($biodata->nik) ? $biodata->nik : (! empty($data['nik']) ? $data['nik'] : null),
-            'no_kk' => ! empty($data['no_kk']) ? $data['no_kk'] : null,
-            'no_bpjs' => ! empty($data['no_bpjs']) ? $data['no_bpjs'] : null,
-            'nisn' => ! empty($data['nisn']) ? $data['nisn'] : null,
-            'npwp' => ! empty($data['npwp']) ? $data['npwp'] : null,
             'instagram_url' => ! empty($data['instagram_url']) ? $data['instagram_url'] : null,
             'facebook_url' => ! empty($data['facebook_url']) ? $data['facebook_url'] : null,
             'linkedin_url' => ! empty($data['linkedin_url']) ? $data['linkedin_url'] : null,
@@ -396,11 +400,31 @@ class AdminAlumniProfileService
             'atasan_id' => $atasanId,
             'orang_tua_id' => $orangTua->id ?? $biodata->orang_tua_id,
             'yudisium_id' => $yudisium->id ?? $biodata->yudisium_id,
-        ]);
+        ];
+
+        $biodata->update($biodataUpdates);
+
+        // 8. Sinkronisasi email_pribadi ke users.email
+        if (! empty($biodataUpdates['email_pribadi']) && $biodata->user) {
+            $biodata->user->update(['email' => $biodataUpdates['email_pribadi']]);
+        }
+
+        // 9. Catat Log Activity Audit Trail
+        LogActivity::record(
+            action: 'update_profil_alumni_oleh_admin',
+            model: 'Biodata',
+            modelId: $biodata->id,
+            details: [
+                'nim' => $biodata->nim,
+                'diperbarui_oleh' => auth()->user()?->name ?? 'Admin',
+                'role_admin' => auth()->user()?->role ?? 'admin',
+            ],
+            description: "Admin memperbarui profil alumni NIM {$biodata->nim}"
+        );
 
         $biodata->refresh();
 
-        // 7. Sinkronisasi Otomatis ke Jawaban Kuesioner Tracer
+        // 10. Sinkronisasi Otomatis ke Jawaban Kuesioner Tracer
         KuesionerSyncService::syncProfileResponses($biodata);
     }
 }

@@ -17,7 +17,8 @@ use Illuminate\Database\Seeder;
 /**
  * Seeder Biodata
  *
- * Mengisi data profil biodata alumni untuk sistem Tracer Study UKDW.
+ * Mengisi data profil aktif alumni untuk sistem Tracer Study UKDW.
+ * Bersih dari duplikasi master akademik (nama, tanggal lahir, agama, dll berada di DataAkademik).
  */
 class BiodataSeeder extends Seeder
 {
@@ -86,8 +87,6 @@ class BiodataSeeder extends Seeder
             'Language Acquisition, EdTech, Translation',
         ];
 
-        $agamaList = ['Kristen Protestan', 'Katolik', 'Islam', 'Kristen Protestan', 'Katolik'];
-
         $atasanDataList = [
             ['nama' => 'Ir. Bambang Trihatmojo, M.Eng.', 'email' => 'bambang.t@perusahaan.co.id', 'telepon' => '081223344551'],
             ['nama' => 'Dra. Sri Wahyuni, M.Si.', 'email' => 'sri.wahyuni@perusahaan.co.id', 'telepon' => '081223344552'],
@@ -99,7 +98,6 @@ class BiodataSeeder extends Seeder
         foreach ($alumniUsers as $index => $user) {
             $nim = $user->username;
             $parsedInfo = Biodata::parseNim($nim);
-            $angkatan = $parsedInfo ? (int) $parsedInfo['angkatan'] : 2020;
             $kodeProdi = $parsedInfo ? $parsedInfo['kode_prodi'] : '71';
             $lokasi = $lokasiList[$index % count($lokasiList)];
 
@@ -135,6 +133,7 @@ class BiodataSeeder extends Seeder
             $yudisium = Yudisium::where('nim', $nim)->first();
 
             $gajiList = [5000000, 6500000, 8000000, 10000000, 12500000, 7500000, 9000000];
+            $personalEmail = strtolower(str_replace(' ', '', explode(' ', $user->name ?? 'alumni')[0])).($index + 1).'@gmail.com';
 
             Biodata::updateOrCreate(
                 ['user_id' => $user->id],
@@ -142,28 +141,16 @@ class BiodataSeeder extends Seeder
                     'nim' => $nim,
                     'orang_tua_id' => $dataOrangTua?->id,
                     'yudisium_id' => $yudisium?->id,
-                    'tahun_lulus' => $angkatan + 4,
                     'prodi_id' => $prodiId,
-                    'nama' => $user->name,
-                    'tempat_lahir' => $dataAkademik?->tempat_lahir ?? 'Sleman',
-                    'tanggal_lahir' => $dataAkademik?->tanggal_lahir ?? '2001-08-15',
-                    'jenis_kelamin' => $dataAkademik?->jenis_kelamin ?? ($index % 2 === 0 ? 'Laki-laki' : 'Perempuan'),
-                    'golongan_darah' => $dataAkademik?->golongan_darah ?? 'O',
-                    'warga_negara' => $dataAkademik?->warga_negara ?? 'WNI',
                     'nomor_telepon' => '0812'.rand(1000, 9999).str_pad((string) $index, 4, '0', STR_PAD_LEFT),
-                    'email' => $user->email,
-                    'email_pribadi' => strtolower(str_replace(' ', '', explode(' ', $user->name)[0])).($index + 1).'@gmail.com',
+                    'email_pribadi' => $personalEmail,
                     'alamat' => 'Jl. Kenanga No. '.($index + 12).', RT 03/RW 05',
                     'kabupaten_id' => $lokasi['kab'],
                     'propinsi_id' => $lokasi['prov'],
                     'kelurahan' => $lokasi['kel'],
                     'kecamatan' => $lokasi['kec'],
                     'kode_pos' => $lokasi['kodepos'],
-                    'agama' => $agamaList[$index % count($agamaList)],
                     'nik' => '3404'.str_pad((string) (100000000000 + $index * 1234), 12, '0', STR_PAD_LEFT),
-                    'no_kk' => '340411'.str_pad((string) (2000000000 + $index * 5678), 10, '0', STR_PAD_LEFT),
-                    'nisn' => '00312'.str_pad((string) (34567 + $index), 5, '0', STR_PAD_LEFT),
-                    'no_bpjs' => '000189'.str_pad((string) (7654321 + $index), 7, '0', STR_PAD_LEFT),
                     'npwp' => '09.'.rand(100, 999).'.'.rand(100, 999).'.'.rand(1, 9).'-541.000',
                     'instagram_url' => 'https://instagram.com/'.$cleanUsername,
                     'facebook_url' => 'https://facebook.com/'.$cleanUsername,
@@ -173,6 +160,7 @@ class BiodataSeeder extends Seeder
                     'minat' => $minatList[$index % count($minatList)],
                     'perusahaan_id' => $perusahaanId,
                     'atasan_id' => $atasan?->id,
+                    'kategori_pekerjaan' => 'Pekerja',
                     'posisi_jabatan' => $jabatanList[$index % count($jabatanList)],
                     'gaji' => $gajiList[$index % count($gajiList)],
                     'jenis_pekerjaan' => ($parsedInfo && $parsedInfo['kode_prodi'] === '31') ? 'Gerejawi' : null,

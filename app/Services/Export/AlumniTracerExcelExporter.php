@@ -106,8 +106,8 @@ class AlumniTracerExcelExporter
             $golDarah = $alumni->golongan_darah ?: ($dataAkademik?->golongan_darah ?: '-');
             $wargaNegara = $alumni->warga_negara ?: ($dataAkademik?->warga_negara ?: 'WNI');
             $telepon = $alumni->nomor_telepon ?: ($dataAkademik?->nomor_telepon ?: '-');
-            $emailPribadi = $alumni->email_pribadi ?: ($alumni->email ?: ($dataAkademik?->email_pribadi ?: ($alumni->user?->email ?: '-')));
-            $emailKampus = $dataAkademik?->email_students ?: ($alumni->email_students ?: '-');
+            $emailPribadi = $alumni->email_pribadi ?: ($dataAkademik?->email_pribadi ?: ($alumni->user?->email ?: '-'));
+            $emailKampus = $dataAkademik?->email_students ?: '-';
             $linkedin = $alumni->linkedin_url ?: ($alumni->linkedin_username ?: '-');
             $instagram = $alumni->instagram_url ?: '-';
             $facebook = $alumni->facebook_url ?: '-';

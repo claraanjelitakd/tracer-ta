@@ -40,8 +40,20 @@ const isSectionsActive = computed(() => {
     return page.url.startsWith('/superadmin/sections');
 });
 
+const isProdiKuesionerActive = computed(() => {
+    return page.url.startsWith('/superadmin/prodi-kuesioner');
+});
+
+const isPerusahaanActive = computed(() => {
+    return page.url.startsWith('/superadmin/perusahaan');
+});
+
 const isAlumniActive = computed(() => {
     return page.url.startsWith('/superadmin/alumni');
+});
+
+const isManajemenAkunActive = computed(() => {
+    return page.url.startsWith('/superadmin/manajemen-akun');
 });
 
 const toggleMobileMenu = () => {
@@ -128,7 +140,6 @@ const handleLogout = () => {
                                 Tracer Study UKDW
                             </span>
                             <div class="flex items-center gap-1.5 mt-0.5">
-                                <span class="inline-block w-1.5 h-1.5 rounded-full bg-[#0D542B] shrink-0"></span>
                                 <span class="text-[11px] font-semibold text-[#0D542B] uppercase tracking-wider block truncate">
                                     Super Administrator
                                 </span>
@@ -151,13 +162,14 @@ const handleLogout = () => {
 
             <!-- NAVIGASI MENU UTAMA SUPERADMIN (SLIM, FLAT, KOTAK) -->
             <div class="flex-1 overflow-y-auto min-h-0 px-3 py-3 space-y-1">
+                <!-- Kategori 1: Ringkasan & Analisis -->
                 <div class="px-2.5 pb-1 pt-1">
                     <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                        Menu Utama
+                        Ringkasan & Analisis
                     </span>
                 </div>
 
-                <!-- 1. Dashboard -->
+                <!-- 1. Dashboard Utama -->
                 <Link
                     href="/superadmin/dashboard"
                     @click="closeMobileMenu"
@@ -169,29 +181,19 @@ const handleLogout = () => {
                     ]"
                 >
                     <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 01-1 1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
                     </svg>
                     <span class="truncate">Dashboard Utama</span>
                 </Link>
 
-                <!-- 2. Kelola Kuesioner -->
-                <Link
-                    href="/superadmin/pertanyaan"
-                    @click="closeMobileMenu"
-                    class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-semibold transition-colors"
-                    :class="[
-                        isPertanyaanActive
-                            ? 'bg-[#0D542B] text-white shadow-2xs'
-                            : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
-                    ]"
-                >
-                    <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                    </svg>
-                    <span class="truncate">Kelola Butir Kuesioner</span>
-                </Link>
+                <!-- Kategori 2: Manajemen Kuesioner -->
+                <div class="px-2.5 pt-3 pb-1">
+                    <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                        Manajemen Kuesioner
+                    </span>
+                </div>
 
-                <!-- 3. Kelola Section -->
+                <!-- 2. Kelola Bagian / Seksi -->
                 <Link
                     href="/superadmin/sections"
                     @click="closeMobileMenu"
@@ -208,7 +210,65 @@ const handleLogout = () => {
                     <span class="truncate">Kelola Bagian / Seksi</span>
                 </Link>
 
-                <!-- 4. Data Alumni -->
+                <!-- 3. Kelola Butir Kuesioner -->
+                <Link
+                    href="/superadmin/pertanyaan"
+                    @click="closeMobileMenu"
+                    class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-semibold transition-colors"
+                    :class="[
+                        isPertanyaanActive
+                            ? 'bg-[#0D542B] text-white shadow-2xs'
+                            : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                    ]"
+                >
+                    <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    <span class="truncate">Kelola Butir Kuesioner</span>
+                </Link>
+
+                <!-- 4. Kuesioner Per Prodi -->
+                <Link
+                    href="/superadmin/prodi-kuesioner"
+                    @click="closeMobileMenu"
+                    class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-semibold transition-colors"
+                    :class="[
+                        isProdiKuesionerActive
+                            ? 'bg-[#0D542B] text-white shadow-2xs'
+                            : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                    ]"
+                >
+                    <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                    </svg>
+                    <span class="truncate">Kuesioner Per Prodi</span>
+                </Link>
+
+                <!-- Kategori 3: Master Data & Verifikasi -->
+                <div class="px-2.5 pt-3 pb-1">
+                    <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                        Master Data & Verifikasi
+                    </span>
+                </div>
+
+                <!-- 5. ACC Perusahaan -->
+                <Link
+                    href="/superadmin/perusahaan"
+                    @click="closeMobileMenu"
+                    class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-semibold transition-colors"
+                    :class="[
+                        isPerusahaanActive
+                            ? 'bg-[#0D542B] text-white shadow-2xs'
+                            : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                    ]"
+                >
+                    <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5m3 0h1m-1-4h.01M9 16h.01M9 12h.01M13 16h.01M13 12h.01M17 16h.01M17 12h.01" />
+                    </svg>
+                    <span class="truncate">Verifikasi Perusahaan</span>
+                </Link>
+
+                <!-- 6. Data Alumni -->
                 <Link
                     href="/superadmin/alumni"
                     @click="closeMobileMenu"
@@ -222,7 +282,24 @@ const handleLogout = () => {
                     <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
                     </svg>
-                    <span class="truncate">Direktori Data Alumni</span>
+                    <span class="truncate">Data Alumni</span>
+                </Link>
+
+                <!-- 7. Manajemen Akun -->
+                <Link
+                    href="/superadmin/manajemen-akun"
+                    @click="closeMobileMenu"
+                    class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-semibold transition-colors"
+                    :class="[
+                        isManajemenAkunActive
+                            ? 'bg-[#0D542B] text-white shadow-2xs'
+                            : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                    ]"
+                >
+                    <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 11-4 0 2 2 0 014 0zM4 19v-2a3 3 0 013-3h10a3 3 0 013 3v2" />
+                    </svg>
+                    <span class="truncate">Manajemen Akun</span>
                 </Link>
             </div>
 

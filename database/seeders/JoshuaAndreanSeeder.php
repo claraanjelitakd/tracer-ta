@@ -32,18 +32,19 @@ class JoshuaAndreanSeeder extends Seeder
         $angkatan = 2022;
         $tahunLulus = 2026;
         $tahunAkademikLulus = 'Genap 2025/2026';
+        $personalEmail = 'joshua.andrean@gmail.com';
 
         // 1. Ambil Data Referensi Prodi Sistem Informasi & Wilayah
         $prodi = Prodi::where('kode_prodi', '72')->orWhere('nama_prodi', 'LIKE', '%Sistem Informasi%')->first();
         $diy = Propinsi::where('kode_provinsi', '34')->orWhere('nama_provinsi', 'LIKE', '%Yogyakarta%')->first();
         $sleman = Kabupaten::where('kode_kabupaten', '34.04')->orWhere('nama_kabupaten', 'LIKE', '%Sleman%')->first();
 
-        // 2. Buat Akun User Alumni
+        // 2. Buat Akun User Alumni (Menggunakan Email Pribadi)
         $user = User::updateOrCreate(
             ['username' => $nim],
             [
                 'name' => $nama,
-                'email' => 'joshua.andrean@students.ukdw.ac.id',
+                'email' => $personalEmail,
                 'password' => Hash::make('password123'),
                 'role' => 'alumni',
                 'prodi_id' => $prodi?->id,
@@ -51,7 +52,7 @@ class JoshuaAndreanSeeder extends Seeder
             ]
         );
 
-        // 3. Buat Data Akademik Mahasiswa
+        // 3. Buat Data Akademik Mahasiswa (Master Identitas Akademik)
         $ipk = 3.85;
         $totalSks = 144;
         $angkaKualitas = round($ipk * $totalSks, 2);
@@ -62,9 +63,10 @@ class JoshuaAndreanSeeder extends Seeder
                 'nama' => $nama,
                 // Data Universitas
                 'angkatan_masuk' => (string) $angkatan,
-                'status_mahasiswa' => 'AR',
+                'status_mahasiswa' => 'L',
                 'tahun_akademik_lulus' => $tahunAkademikLulus,
                 'tahun_lulus' => $tahunLulus,
+                'tanggal_lulus' => '2026-07-25',
                 'ip_kumulatif' => $ipk,
                 'total_sks' => $totalSks,
                 'total_angka_kualitas' => $angkaKualitas,
@@ -85,7 +87,7 @@ class JoshuaAndreanSeeder extends Seeder
 
                 // Kontak & Domisili
                 'nomor_telepon' => '081234567890',
-                'email_pribadi' => 'joshua.andrean@gmail.com',
+                'email_pribadi' => $personalEmail,
                 'email_students' => $nim.'@students.ukdw.ac.id',
                 'alamat_saat_ini' => 'Jl. Timoho No. 45, RT 02/RW 08',
                 'kelurahan' => 'Caturtunggal',
@@ -118,12 +120,10 @@ class JoshuaAndreanSeeder extends Seeder
             ]
         );
 
-        // 5. Buat Data Yudisium (Kelulusan Akademik & Skripsi)
+        // 5. Buat Data Yudisium (Status Kelulusan & Skripsi)
         $yudisium = Yudisium::updateOrCreate(
             ['nim' => $nim],
             [
-                'tahun_akademik_lulus' => $tahunAkademikLulus,
-                'tahun_lulus' => $tahunLulus,
                 'dosen_pembimbing_1' => 'Dr. Budi Susanto, S.Kom., M.T.',
                 'dosen_pembimbing_2' => 'Gloria Virginia, S.Kom., MAI., Ph.D.',
                 'dosen_penguji_1' => 'Willy Sudiarto Raharjo, S.Kom., M.Cs.',
@@ -134,12 +134,11 @@ class JoshuaAndreanSeeder extends Seeder
                 'jenis_publikasi' => 'Jurnal Nasional',
                 'status_publikasi' => 'Terbit',
                 'keterangan_hasil_yudisium' => 'Lulus dengan Pujian',
-                'proses_yudisium' => 'Lulus',
+                'status_lulus' => 'Lulus',
             ]
         );
 
-        // 6. Buat Record Biodata Utama (HANYA menghubungkan referensi data akademik, orang tua, yudisium)
-        // Data tambahan (perusahaan, atasan, jabatan, gaji, media sosial, minat/expert) DIBIARKAN NULL agar diisi mandiri
+        // 6. Buat Record Biodata Utama (Bebas dari kolom duplikasi data_akademik)
         $biodata = Biodata::updateOrCreate(
             ['user_id' => $user->id],
             [
@@ -147,29 +146,15 @@ class JoshuaAndreanSeeder extends Seeder
                 'orang_tua_id' => $dataOrangTua->id,
                 'yudisium_id' => $yudisium->id,
                 'prodi_id' => $prodi?->id,
-                'tahun_lulus' => (string) $tahunLulus,
-                'nama' => $nama,
-                'email' => $user->email,
-
-                // Kosongkan data tambahan / karier / profil profesional
-                'tempat_lahir' => null,
-                'tanggal_lahir' => null,
-                'jenis_kelamin' => null,
-                'golongan_darah' => null,
-                'warga_negara' => 'WNI',
-                'nomor_telepon' => null,
-                'email_pribadi' => null,
-                'alamat' => null,
-                'kabupaten_id' => null,
-                'propinsi_id' => null,
-                'kelurahan' => null,
-                'kecamatan' => null,
-                'kode_pos' => null,
-                'agama' => null,
-                'nik' => null,
-                'no_kk' => null,
-                'nisn' => null,
-                'no_bpjs' => null,
+                'email_pribadi' => $personalEmail,
+                'nomor_telepon' => '081234567890',
+                'alamat' => 'Jl. Timoho No. 45, RT 02/RW 08',
+                'kabupaten_id' => $sleman?->id,
+                'propinsi_id' => $diy?->id,
+                'kelurahan' => 'Caturtunggal',
+                'kecamatan' => 'Depok',
+                'kode_pos' => '55281',
+                'nik' => '3404011508040001',
                 'npwp' => null,
                 'instagram_url' => null,
                 'facebook_url' => null,
@@ -191,7 +176,7 @@ class JoshuaAndreanSeeder extends Seeder
             ]
         );
 
-        // 7. Pastikan Kuesioner Bersih / Belum Terisi
+        // 7. Bersihkan respon tracer lama untuk Joshua agar fresh siap uji
         Tracer::where('biodata_id', $biodata->id)->delete();
         ProdiResponse::where('biodata_id', $biodata->id)->delete();
     }

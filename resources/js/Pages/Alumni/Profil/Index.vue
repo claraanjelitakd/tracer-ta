@@ -140,8 +140,7 @@ const tabCompleteness = computed(() => {
     if (!form.nisn || !String(form.nisn).trim()) missingPribadi.push('NISN');
     if (!form.no_bpjs || !String(form.no_bpjs).trim()) missingPribadi.push('Nomor BPJS');
     if (!form.nomor_telepon || !isValidPhone(form.nomor_telepon)) missingPribadi.push('Nomor Telepon / WhatsApp');
-    if ((!form.email_pribadi && !form.email) || !isValidEmail(form.email_pribadi || form.email)) missingPribadi.push('Email Pribadi');
-    if (!form.email_students || !isValidEmail(form.email_students)) missingPribadi.push('Email Mahasiswa (Students UKDW)');
+    if (!form.email_pribadi || !isValidEmail(form.email_pribadi)) missingPribadi.push('Email Pribadi');
     if ((!form.alamat_saat_ini || !String(form.alamat_saat_ini).trim()) && (!form.alamat || !String(form.alamat).trim())) missingPribadi.push('Alamat Domisili');
     if (!form.provinsi_id && !form.propinsi_id) missingPribadi.push('Provinsi Domisili');
     if (!form.kabupaten_id) missingPribadi.push('Kabupaten/Kota Domisili');

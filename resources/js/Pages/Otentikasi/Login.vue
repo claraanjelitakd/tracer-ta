@@ -28,7 +28,7 @@ const submit = () => {
     <div class="min-h-screen bg-[#002813] flex items-center justify-center p-3 sm:p-6 lg:p-8 font-sans selection:bg-[#FFC700] selection:text-slate-950">
         
         <!-- Master Card Split 2 Kolom (Bentuk Tegas & Elegan, Tidak Tumpul Berlebihan) -->
-        <div class="max-w-5xl w-full bg-[#004D25] rounded-xl p-3 sm:p-5 shadow-2xl border border-white/15 grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-6 items-stretch relative overflow-hidden">
+        <div class="max-w-5xl w-full bg-[#ffff] rounded-xl p-3 sm:p-5 shadow-2xl border border-white/15 grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-6 items-stretch relative overflow-hidden">
             
             <!-- Glow Latar Belakang Hijau Botol -->
             <div class="absolute -top-32 -left-32 w-80 h-80 bg-[#03542B] rounded-full blur-3xl pointer-events-none opacity-50"></div>
@@ -99,23 +99,6 @@ const submit = () => {
                         </div>
                     </div>
                 </div>
-
-                <!-- Footer Slogan & Kembali Link -->
-                <div class="pt-6 mt-6 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
-                    <p class="text-white/70 text-[11px] italic leading-relaxed text-center sm:text-left">
-                        Mari sukseskan Tracer Study UKDW untuk kemajuan bersama almamater.
-                    </p>
-                    <Link 
-                        href="/" 
-                        class="shrink-0 inline-flex items-center gap-1.5 text-white/90 hover:text-[#FFC700] font-bold transition-colors py-1"
-                    >
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-                        </svg>
-                        <span>Beranda</span>
-                    </Link>
-                </div>
-
             </div>
 
             <!-- 

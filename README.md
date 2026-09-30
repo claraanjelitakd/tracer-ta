@@ -75,9 +75,13 @@ tracerstudy/
 │   │   │   │   ├── KelolaPertanyaan/
 │   │   │   │   │   ├── DaftarPertanyaanController.php  # Kelola butir instrumen kuesioner universitas
 │   │   │   │   │   ├── KelolaOpsiController.php        # Kelola opsi jawaban & konfigurasi alur jump_to
+│   │   │   │   │   ├── KelolaKuesionerProdiSuperAdminController.php # Pengaturan kuesioner prodi (Pilih prodi -> section & pertanyaan)
 │   │   │   │   │   └── SimpanPertanyaanController.php  # Simpan & perbarui butir instrumen universitas
-│   │   │   │   └── KelolaSection/
-│   │   │   │       └── KelolaSectionController.php     # CRUD seksi/bagian kuesioner universitas
+│   │   │   │   ├── KelolaSection/
+│   │   │   │   │   └── KelolaSectionController.php     # CRUD seksi/bagian kuesioner universitas
+│   │   │   │   ├── Perusahaan/
+│   │   │   │   │   └── VerifikasiPerusahaanSuperAdminController.php # ACC/Verifikasi perusahaan alumni (All & Per Prodi)
+│   │   │   │   └── ManajemenAkunController.php     # Manajemen akun pengguna & pemulihan password email terdaftar (pribadi)
 │   │   │   ├── AdminBiroTiga/                      # Modul Admin Biro III (role: admin_biro3)
 │   │   │   │   ├── Dashboard/
 │   │   │   │   │   └── DashboardController.php     # Monitoring responden per semester/tahun kelulusan
@@ -186,19 +190,20 @@ tracerstudy/
 Dokumentasi lengkap diagram relasi antar tabel (ERD Mermaid), kamus data (*data dictionary*), dan spesifikasi kolom tersedia secara terdedikasi di:
 👉 **[`ERD.md`](file:///c:/study/tracerstudy/ERD.md)**
 
-Ringkasan relasi utama:
+Ringkasan relasi utama & prinsip anti-duplikasi data:
 - **`ref_fakultas` (1:N) $\rightarrow$ `prodi`**: Master data 7 fakultas UKDW terhubung ke program studi.
 - **`prodi` (1:N) $\rightarrow$ `biodata`**: Program studi alumni UKDW.
-- **`users` (1:1) $\rightarrow$ `biodata`**: Profil alumni (foto profil di `/uploads/profile`, identitas lengkap, kontak, kependudukan, karier, Take Home Pay).
-- **`data_akademik` (1:1) $\rightarrow$ `biodata`**: Pangkalan data akademik resmi terhubung via `nim`.
+- **`users` (1:1) $\rightarrow$ `biodata`**: Akun pengguna login. Alamat `users.email` tersinkronisasi langsung dengan `biodata.email_pribadi` dan `data_akademik.email_pribadi`.
+- **`data_akademik` (1:1) $\rightarrow$ `biodata`**: Pangkalan data master identitas dan akademik tunggal terhubung via `nim`. Seluruh identitas kependudukan (`nama`, `tempat_lahir`, `tanggal_lahir`, `jenis_kelamin`, `golongan_darah`, `agama`, `tahun_lulus`, `email_students`, `no_kk`, `nisn`, `no_bpjs`) hanya disimpan di `data_akademik`. Tabel `biodata` hanya menyimpan `email_pribadi`, kontak, domisili terkini, dan data karier.
 - **`data_orang_tua` (1:1) $\rightarrow$ `biodata`**: Data orang tua/wali alumni terhubung via `orang_tua_id` & `nim`.
-- **`yudisium` (1:1) $\rightarrow$ `biodata`**: Data kelulusan resmi, dosen pembimbing/penguji, judul tugas akhir (`judul_ta`), dan link publikasi repositori karya ilmiah (`url_publikasi`) terhubung via `yudisium_id` & `nim`.
+- **`yudisium` (1:1) $\rightarrow$ `biodata`**: Data kelulusan resmi (`status_lulus`: 'Belum', 'Proses', 'Lulus', 'Tidak Lulus'), judul tugas akhir (`judul_ta`), dan link publikasi karya ilmiah (`url_publikasi`). Saat status berubah menjadi 'Lulus', sistem secara otomatis memperbarui `status_mahasiswa = 'L'`, `tanggal_lulus`, dan `tahun_lulus` pada `data_akademik`.
+- **`log_activities`**: Rekam jejak audit trail transparan untuk setiap perubahan status verifikasi/ACC perusahaan, pergantian master (auto replace), penolakan pengajuan, reset password, dan pembaruan akun.
 - **`biodata` (1:N) $\rightarrow$ `tracer`**: Respon pengisian kuesioner tracer study tingkat universitas.
 - **`biodata` (1:N) $\rightarrow$ `prodi_response`**: Respon pengisian kuesioner evaluasi program studi.
 - **`prodi` (1:N) $\rightarrow$ `prodi_question_section` $\rightarrow$ `prodi_question`**: Manajemen kuesioner mandiri prodi.
 - **`propinsi` (1:N) $\rightarrow$ `kabupaten`**: Master data batas wilayah administratif Republik Indonesia.
 - **`propinsi` (1:1) $\rightarrow$ `ump`**: Standar Upah Minimum Provinsi tahun 2026.
-- **`perusahaan` (1:N) $\rightarrow$ `biodata`**: Master data instansi tempat bekerja alumni.
+- **`perusahaan` (1:N) $\rightarrow$ `biodata`**: Master data instansi tempat bekerja alumni terverifikasi.
 
 ---
 

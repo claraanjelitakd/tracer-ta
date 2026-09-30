@@ -69,22 +69,15 @@ class User extends Authenticatable
      */
     public function getNameAttribute($value)
     {
-        if ($this->role === 'alumni' && $this->biodata) {
-            return $this->biodata->nama ?? $this->biodata->dataAkademik?->nama ?? $value;
-        }
-
-        return $value;
+        return $value ?? $this->biodata?->dataAkademik?->nama;
     }
 
     /**
      * Accessor untuk email pengguna
+     * Menggunakan email pada tabel users atau fallback ke email_pribadi di biodata / data akademik
      */
     public function getEmailAttribute($value)
     {
-        if ($this->role === 'alumni' && $this->biodata) {
-            return $this->biodata->email_pribadi ?? $this->biodata->dataAkademik?->email_pribadi ?? $value;
-        }
-
-        return $value;
+        return $value ?? $this->biodata?->email_pribadi ?? $this->biodata?->dataAkademik?->email_pribadi;
     }
 }

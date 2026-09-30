@@ -25,28 +25,29 @@ return new class extends Migration
 
         // 2. VIEW 1: v_alumni_profile_summary
         // Menggabungkan seluruh data profil alumni lengkap 4 sub-tab (biodata pribadi, akademik, orang tua, karier/perusahaan/atasan)
+        // Data master identitas berasal tunggal dari data_akademik, sedangkan biodata mengelola kontak aktif dan karier
         DB::statement("
             CREATE VIEW v_alumni_profile_summary AS
             SELECT 
                 b.id AS biodata_id,
                 b.user_id,
                 b.nim,
-                COALESCE(da.nama, b.nama, u.name, 'Mahasiswa UKDW') AS nama,
+                COALESCE(da.nama, u.name, 'Mahasiswa UKDW') AS nama,
                 COALESCE(b.nik, da.nik) AS nik,
-                COALESCE(b.no_kk, da.no_kk) AS no_kk,
-                COALESCE(b.no_bpjs, da.no_bpjs) AS no_bpjs,
-                COALESCE(b.nisn, da.nisn) AS nisn,
+                da.no_kk,
+                da.no_bpjs,
+                da.nisn,
                 b.npwp,
-                COALESCE(b.email_pribadi, da.email_pribadi, b.email, u.email) AS email,
-                COALESCE(b.email_pribadi, da.email_pribadi) AS email_pribadi,
-                COALESCE(b.email_students, da.email_students) AS email_students,
+                COALESCE(b.email_pribadi, da.email_pribadi, u.email) AS email,
+                COALESCE(b.email_pribadi, da.email_pribadi, u.email) AS email_pribadi,
+                da.email_students AS email_students,
                 COALESCE(b.nomor_telepon, da.nomor_telepon) AS nomor_telepon,
-                COALESCE(b.tempat_lahir, da.tempat_lahir) AS tempat_lahir,
-                COALESCE(b.tanggal_lahir, da.tanggal_lahir) AS tanggal_lahir,
-                COALESCE(b.jenis_kelamin, da.jenis_kelamin) AS jenis_kelamin,
-                COALESCE(b.agama, da.agama) AS agama,
-                COALESCE(b.golongan_darah, da.golongan_darah) AS golongan_darah,
-                COALESCE(b.warga_negara, da.warga_negara) AS warga_negara,
+                da.tempat_lahir,
+                da.tanggal_lahir,
+                da.jenis_kelamin,
+                da.agama,
+                da.golongan_darah,
+                da.warga_negara,
                 COALESCE(b.alamat, da.alamat_saat_ini) AS alamat,
                 COALESCE(b.kelurahan, da.kelurahan) AS kelurahan,
                 COALESCE(b.kecamatan, da.kecamatan) AS kecamatan,
@@ -69,7 +70,7 @@ return new class extends Migration
                 f.nama_fakultas,
                 f.singkatan AS singkatan_fakultas,
                 da.angkatan_masuk,
-                COALESCE(b.tahun_lulus, da.tahun_lulus) AS tahun_lulus,
+                da.tahun_lulus,
                 da.tahun_akademik_lulus,
                 da.ip_kumulatif AS ipk,
                 da.total_sks,
@@ -106,7 +107,7 @@ return new class extends Migration
                 a.email AS email_atasan,
                 a.telepon AS telepon_atasan,
                 CASE 
-                    WHEN COALESCE(da.nama, b.nama) IS NOT NULL 
+                    WHEN COALESCE(da.nama, u.name) IS NOT NULL 
                          AND b.nim IS NOT NULL 
                          AND COALESCE(b.nik, da.nik) IS NOT NULL
                          AND b.npwp IS NOT NULL
@@ -128,41 +129,53 @@ return new class extends Migration
         ");
 
         // 3. VIEW 2: v_alumni_tracer_univ_status
-        // Mengagregasi status pengisian kuesioner universitas per alumni
+        // Mengagregasi status pengisian kuesioner universitas per alumni dengan logika percabangan (skip logic F8 & F502/F506)
         DB::statement("
             CREATE VIEW v_alumni_tracer_univ_status AS
             SELECT 
                 b.id AS biodata_id,
+                -- 1. Evaluasi Total Soal Wajib Berdasarkan Jalur Status F8
+                CASE 
+                    WHEN MAX(CASE WHEN q.kode_pertanyaan = 'F8' THEN LOWER(t.answer) ELSE '' END) LIKE '%melanjutkan pendidikan%' 
+                         OR MAX(CASE WHEN q.kode_pertanyaan = 'F8' THEN t.answer ELSE '' END) = '4'
+                         OR MAX(CASE WHEN q.kode_pertanyaan = 'F8' THEN LOWER(t.answer) ELSE '' END) LIKE '%belum memungkinkan%'
+                         OR MAX(CASE WHEN q.kode_pertanyaan = 'F8' THEN t.answer ELSE '' END) = '2'
+                    THEN 16
+                    ELSE 20
+                END AS total_mandatory_univ,
+
+                -- 2. Evaluasi Jawaban Soal Wajib (F502 dan F506 saling melengkapi, maks 1 poin)
                 (
-                    SELECT COUNT(*) 
-                    FROM ref_subpertanyaan2021 q 
-                    WHERE q.wajib = 1 
-                      AND q.type != 'header'
-                      AND UPPER(q.kode_pertanyaan) NOT IN (
-                          'F1', 'F2A', 'F2B', 'F2C', 'F2D',
-                          'BIO_TEMPAT_LAHIR', 'BIO_TANGGAL_LAHIR', 'BIO_JK', 'BIO_TGL_LULUS', 'BIO_JUDUL_TA', 'BIO_NIK', 'BIO_NPWP',
-                          'F5A1', 'F5A2', 'F510', 'F5B', 'F5C', 'F5D',
-                          'F2E', 'F2E1', 'F2E2', 'F2E3', 'F2F', 'F2G', 'F2H',
-                          'F11', 'F505'
-                      )
-                ) AS total_mandatory_univ,
-                COUNT(DISTINCT CASE 
-                    WHEN q.wajib = 1 
-                         AND q.type != 'header' 
-                         AND UPPER(q.kode_pertanyaan) NOT IN (
-                             'F1', 'F2A', 'F2B', 'F2C', 'F2D',
-                             'BIO_TEMPAT_LAHIR', 'BIO_TANGGAL_LAHIR', 'BIO_JK', 'BIO_TGL_LULUS', 'BIO_JUDUL_TA', 'BIO_NIK', 'BIO_NPWP',
-                             'F5A1', 'F5A2', 'F510', 'F5B', 'F5C', 'F5D',
-                             'F2E', 'F2E1', 'F2E2', 'F2E3', 'F2F', 'F2G', 'F2H',
-                             'F11', 'F505'
-                         )
-                         AND (
-                             (t.answer IS NOT NULL AND TRIM(t.answer) != '')
-                             OR (t.answer_json IS NOT NULL AND t.answer_json != '' AND t.answer_json != '[]' AND t.answer_json != '{}')
-                         )
-                    THEN q.id 
-                    ELSE NULL 
-                END) AS answered_mandatory_univ,
+                    COUNT(DISTINCT CASE 
+                        WHEN q.wajib = 1 
+                             AND q.type != 'header' 
+                             AND UPPER(q.kode_pertanyaan) NOT IN (
+                                 'F1', 'F2A', 'F2B', 'F2C', 'F2D',
+                                 'BIO_TEMPAT_LAHIR', 'BIO_TANGGAL_LAHIR', 'BIO_JK', 'BIO_TGL_LULUS', 'BIO_JUDUL_TA', 'BIO_NIK', 'BIO_NPWP',
+                                 'F5A1', 'F5A2', 'F510', 'F5B', 'F5C', 'F5D',
+                                 'F2E', 'F2E1', 'F2E2', 'F2E3', 'F2F', 'F2G', 'F2H',
+                                 'F11', 'F505', 'F502', 'F506'
+                             )
+                             AND (
+                                 (t.answer IS NOT NULL AND TRIM(t.answer) != '')
+                                 OR (t.answer_json IS NOT NULL AND t.answer_json != '' AND t.answer_json != '[]' AND t.answer_json != '{}')
+                             )
+                        THEN q.id 
+                        ELSE NULL 
+                    END)
+                    +
+                    MAX(CASE 
+                        WHEN UPPER(q.kode_pertanyaan) IN ('F502', 'F506') 
+                             AND (
+                                 (t.answer IS NOT NULL AND TRIM(t.answer) != '')
+                                 OR (t.answer_json IS NOT NULL AND t.answer_json != '' AND t.answer_json != '[]' AND t.answer_json != '{}')
+                             )
+                        THEN 1 
+                        ELSE 0 
+                    END)
+                ) AS answered_mandatory_univ,
+
+                -- 3. Total Keseluruhan Soal yang Dijawab
                 COUNT(DISTINCT CASE 
                     WHEN (
                         (t.answer IS NOT NULL AND TRIM(t.answer) != '')

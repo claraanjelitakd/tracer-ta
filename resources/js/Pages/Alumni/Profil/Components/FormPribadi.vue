@@ -68,16 +68,22 @@ const lockedInputClass = "block w-full border border-gray-200 bg-gray-100 text-g
     <div class="space-y-8">
         
         <!-- ================================================================= -->
-        <!-- BAGIAN 1: IDENTITAS DIRI                                         -->
+        <!-- BAGIAN 1: IDENTITAS DIRI RESMI (DARI DATA AKADEMIK)              -->
         <!-- ================================================================= -->
         <div class="bg-white rounded-2xl p-6 sm:p-8 shadow-xs border border-gray-100">
-            <div class="flex items-center justify-between mb-6 pb-3 border-b border-gray-100">
+            <div class="flex items-center justify-between mb-4 pb-3 border-b border-gray-100 flex-wrap gap-2">
                 <h2 class="text-lg sm:text-xl font-black text-gray-900 flex items-center gap-2">
                     <span class="w-2.5 h-6 bg-[#005B3C] rounded-full inline-block"></span>
                     Identitas Diri Resmi
                 </h2>
-                <span class="text-xs text-gray-400 font-medium">Kolom bertanda <span class="text-rose-500 font-bold">*</span> wajib diisi</span>
+                <span class="text-xs font-semibold px-2.5 py-1 bg-gray-100 text-gray-600 rounded-lg border border-gray-200">
+                    Data Induk Akademik (Terkunci Otomatis)
+                </span>
             </div>
+
+            <p class="text-xs text-gray-500 mb-5 leading-relaxed bg-slate-50 border border-slate-200/80 p-3.5 rounded-xl">
+                Identitas kependudukan dan akademik (Nama, Tempat/Tanggal Lahir, Jenis Kelamin, Agama, Golongan Darah, Dokumen) terhubung langsung dari Pangkalan Data Akademik resmi kampus dan dikunci secara permanen untuk menjamin validitas serta mencegah duplikasi data.
+            </p>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
                 <!-- NIM (Terkunci) -->
@@ -88,25 +94,26 @@ const lockedInputClass = "block w-full border border-gray-200 bg-gray-100 text-g
                     <input type="text" :value="form.nim" disabled :class="lockedInputClass" />
                 </div>
 
-                <!-- Nama Lengkap -->
+                <!-- Nama Lengkap (Terkunci dari Data Akademik) -->
                 <div>
-                    <label class="block text-xs sm:text-sm font-bold text-gray-700 mb-1.5">
-                        Nama Lengkap (Sesuai Ijazah) <span class="text-rose-500 font-bold">*</span>
+                    <label class="block text-xs sm:text-sm font-bold text-gray-700 mb-1.5 flex items-center justify-between">
+                        <span>Nama Lengkap (Sesuai Ijazah)</span>
+                        <span class="text-[11px] text-gray-400 font-normal">Data Akademik</span>
                     </label>
                     <input 
                         type="text" 
-                        v-model="form.nama" 
-                        autocomplete="off"
-                        class="block w-full border rounded-xl shadow-2xs px-4 py-3 text-sm font-medium transition-all focus:ring-2 focus:ring-[#005B3C]/20"
-                        :class="form.nama?.trim() ? 'border-emerald-300 bg-white text-gray-900 focus:border-[#005B3C]' : 'border-rose-300 bg-rose-50/20 text-gray-900 focus:border-rose-500'"
-                        placeholder="Nama Lengkap" 
+                        :value="form.nama" 
+                        disabled 
+                        :class="lockedInputClass" 
+                        title="Nama lengkap sesuai data akademik resmi kampus" 
                     />
                 </div>
 
-                <!-- NIK (Terkunci) -->
+                <!-- NIK (Terkunci dari Data Akademik) -->
                 <div>
-                    <label class="block text-xs sm:text-sm font-bold text-gray-700 mb-1.5">
-                        Nomor Induk Kependudukan (NIK) <span class="text-rose-500 font-bold">*</span>
+                    <label class="block text-xs sm:text-sm font-bold text-gray-700 mb-1.5 flex items-center justify-between">
+                        <span>Nomor Induk Kependudukan (NIK)</span>
+                        <span class="text-[11px] text-gray-400 font-normal">Data Akademik</span>
                     </label>
                     <input type="text" :value="form.nik" disabled :class="lockedInputClass" placeholder="16 Digit NIK" title="NIK bersifat permanen dan terdaftar resmi di pangkalan data kampus" />
                 </div>
@@ -141,161 +148,143 @@ const lockedInputClass = "block w-full border border-gray-200 bg-gray-100 text-g
                     </p>
                 </div>
                 
-                <!-- Tempat Lahir -->
+                <!-- Tempat Lahir (Terkunci dari Data Akademik) -->
                 <div>
-                    <label class="block text-xs sm:text-sm font-bold text-gray-700 mb-1.5">
-                        Tempat Lahir <span class="text-rose-500 font-bold">*</span>
+                    <label class="block text-xs sm:text-sm font-bold text-gray-700 mb-1.5 flex items-center justify-between">
+                        <span>Tempat Lahir</span>
+                        <span class="text-[11px] text-gray-400 font-normal">Data Akademik</span>
                     </label>
                     <input 
                         type="text" 
-                        v-model="form.tempat_lahir" 
-                        class="block w-full border rounded-xl shadow-2xs px-4 py-3 text-sm font-medium transition-all focus:ring-2 focus:ring-[#005B3C]/20"
-                        :class="form.tempat_lahir?.trim() ? 'border-emerald-300 bg-white text-gray-900 focus:border-[#005B3C]' : 'border-rose-300 bg-rose-50/20 text-gray-900 focus:border-rose-500'"
+                        :value="form.tempat_lahir" 
+                        disabled 
+                        :class="lockedInputClass" 
                         placeholder="Kota / Kabupaten Kelahiran" 
                     />
                 </div>
 
-                <!-- Tanggal Lahir -->
+                <!-- Tanggal Lahir (Terkunci dari Data Akademik) -->
                 <div>
-                    <label class="block text-xs sm:text-sm font-bold text-gray-700 mb-1.5">
-                        Tanggal Lahir <span class="text-rose-500 font-bold">*</span>
-                    </label>
-                    <input 
-                        type="date" 
-                        v-model="form.tanggal_lahir" 
-                        class="block w-full border rounded-xl shadow-2xs px-4 py-3 text-sm font-medium transition-all focus:ring-2 focus:ring-[#005B3C]/20"
-                        :class="form.tanggal_lahir ? 'border-emerald-300 bg-white text-gray-900 focus:border-[#005B3C]' : 'border-rose-300 bg-rose-50/20 text-gray-900 focus:border-rose-500'"
-                    />
-                </div>
-                
-                <!-- Jenis Kelamin -->
-                <div>
-                    <label class="block text-xs sm:text-sm font-bold text-gray-700 mb-1.5">
-                        Jenis Kelamin <span class="text-rose-500 font-bold">*</span>
-                    </label>
-                    <select 
-                        v-model="form.jenis_kelamin" 
-                        class="block w-full border rounded-xl shadow-2xs px-4 py-3 text-sm font-medium transition-all focus:ring-2 focus:ring-[#005B3C]/20"
-                        :class="form.jenis_kelamin ? 'border-emerald-300 bg-white text-gray-900 focus:border-[#005B3C]' : 'border-rose-300 bg-rose-50/20 text-gray-900 focus:border-rose-500'"
-                    >
-                        <option value="">-- Pilih Jenis Kelamin --</option>
-                        <option value="Laki-laki">Laki-laki</option>
-                        <option value="Perempuan">Perempuan</option>
-                    </select>
-                </div>
-
-                <!-- Agama -->
-                <div>
-                    <label class="block text-xs sm:text-sm font-bold text-gray-700 mb-1.5">
-                        Agama <span class="text-rose-500 font-bold">*</span>
-                    </label>
-                    <select 
-                        v-model="form.agama" 
-                        class="block w-full border rounded-xl shadow-2xs px-4 py-3 text-sm font-medium transition-all focus:ring-2 focus:ring-[#005B3C]/20"
-                        :class="form.agama ? 'border-emerald-300 bg-white text-gray-900 focus:border-[#005B3C]' : 'border-rose-300 bg-rose-50/20 text-gray-900 focus:border-rose-500'"
-                    >
-                        <option value="">-- Pilih Agama --</option>
-                        <option value="Islam">Islam</option>
-                        <option value="Kristen Protestan">Kristen Protestan</option>
-                        <option value="Katolik">Katolik</option>
-                        <option value="Hindu">Hindu</option>
-                        <option value="Buddha">Buddha</option>
-                        <option value="Konghucu">Konghucu</option>
-                        <option value="Lainnya">Lainnya</option>
-                    </select>
-                </div>
-
-                <!-- Golongan Darah -->
-                <div>
-                    <label class="block text-xs sm:text-sm font-bold text-gray-700 mb-1.5">
-                        Golongan Darah <span class="text-rose-500 font-bold">*</span>
-                    </label>
-                    <select 
-                        v-model="form.golongan_darah" 
-                        class="block w-full border rounded-xl shadow-2xs px-4 py-3 text-sm font-medium transition-all focus:ring-2 focus:ring-[#005B3C]/20"
-                        :class="form.golongan_darah ? 'border-emerald-300 bg-white text-gray-900 focus:border-[#005B3C]' : 'border-rose-300 bg-rose-50/20 text-gray-900 focus:border-rose-500'"
-                    >
-                        <option value="">-- Pilih Golongan Darah --</option>
-                        <option value="A">A</option>
-                        <option value="B">B</option>
-                        <option value="AB">AB</option>
-                        <option value="O">O</option>
-                    </select>
-                </div>
-
-                <!-- Kewarganegaraan -->
-                <div>
-                    <label class="block text-xs sm:text-sm font-bold text-gray-700 mb-1.5">
-                        Kewarganegaraan <span class="text-rose-500 font-bold">*</span>
+                    <label class="block text-xs sm:text-sm font-bold text-gray-700 mb-1.5 flex items-center justify-between">
+                        <span>Tanggal Lahir</span>
+                        <span class="text-[11px] text-gray-400 font-normal">Data Akademik</span>
                     </label>
                     <input 
                         type="text" 
-                        v-model="form.warga_negara" 
-                        list="daftar-kewarganegaraan" 
-                        autocomplete="off"
-                        class="block w-full border rounded-xl shadow-2xs px-4 py-3 text-sm font-medium transition-all focus:ring-2 focus:ring-[#005B3C]/20"
-                        :class="form.warga_negara?.trim() ? 'border-emerald-300 bg-white text-gray-900 focus:border-[#005B3C]' : 'border-rose-300 bg-rose-50/20 text-gray-900 focus:border-rose-500'"
-                        placeholder="WNI / WNA (Pilih/Ketik Negara)" 
+                        :value="form.tanggal_lahir" 
+                        disabled 
+                        :class="lockedInputClass" 
                     />
-                    <datalist id="daftar-kewarganegaraan">
-                        <option value="WNI (Indonesia)">WNI (Indonesia)</option>
-                        <option value="WNA">WNA</option>
-                        <option v-for="neg in negaras" :key="neg.id" :value="`WNA (${neg.nama_negara})`">
-                            {{ neg.nama_negara }} ({{ neg.benua || 'Dunia' }})
-                        </option>
-                    </datalist>
+                </div>
+                
+                <!-- Jenis Kelamin (Terkunci dari Data Akademik) -->
+                <div>
+                    <label class="block text-xs sm:text-sm font-bold text-gray-700 mb-1.5 flex items-center justify-between">
+                        <span>Jenis Kelamin</span>
+                        <span class="text-[11px] text-gray-400 font-normal">Data Akademik</span>
+                    </label>
+                    <input 
+                        type="text" 
+                        :value="form.jenis_kelamin" 
+                        disabled 
+                        :class="lockedInputClass" 
+                    />
+                </div>
+
+                <!-- Agama (Terkunci dari Data Akademik) -->
+                <div>
+                    <label class="block text-xs sm:text-sm font-bold text-gray-700 mb-1.5 flex items-center justify-between">
+                        <span>Agama</span>
+                        <span class="text-[11px] text-gray-400 font-normal">Data Akademik</span>
+                    </label>
+                    <input 
+                        type="text" 
+                        :value="form.agama" 
+                        disabled 
+                        :class="lockedInputClass" 
+                    />
+                </div>
+
+                <!-- Golongan Darah (Terkunci dari Data Akademik) -->
+                <div>
+                    <label class="block text-xs sm:text-sm font-bold text-gray-700 mb-1.5 flex items-center justify-between">
+                        <span>Golongan Darah</span>
+                        <span class="text-[11px] text-gray-400 font-normal">Data Akademik</span>
+                    </label>
+                    <input 
+                        type="text" 
+                        :value="form.golongan_darah || '-'" 
+                        disabled 
+                        :class="lockedInputClass" 
+                    />
+                </div>
+
+                <!-- Kewarganegaraan (Terkunci dari Data Akademik) -->
+                <div>
+                    <label class="block text-xs sm:text-sm font-bold text-gray-700 mb-1.5 flex items-center justify-between">
+                        <span>Kewarganegaraan</span>
+                        <span class="text-[11px] text-gray-400 font-normal">Data Akademik</span>
+                    </label>
+                    <input 
+                        type="text" 
+                        :value="form.warga_negara || 'WNI'" 
+                        disabled 
+                        :class="lockedInputClass" 
+                    />
                 </div>
             </div>
         </div>
 
         <!-- ================================================================= -->
-        <!-- BAGIAN 2: DOKUMEN PENDUKUNG                                       -->
+        <!-- BAGIAN 2: DOKUMEN PENDUKUNG (DARI DATA AKADEMIK)                  -->
         <!-- ================================================================= -->
         <div class="bg-white rounded-2xl p-6 sm:p-8 shadow-xs border border-gray-100">
-            <div class="flex items-center justify-between mb-6 pb-3 border-b border-gray-100">
+            <div class="flex items-center justify-between mb-4 pb-3 border-b border-gray-100 flex-wrap gap-2">
                 <h2 class="text-lg sm:text-xl font-black text-gray-900 flex items-center gap-2">
                     <span class="w-2.5 h-6 bg-[#005B3C] rounded-full inline-block"></span>
                     Dokumen Pendukung
                 </h2>
-                <span class="text-xs text-gray-400 font-medium">Kolom bertanda <span class="text-rose-500 font-bold">*</span> wajib diisi</span>
+                <span class="text-xs font-semibold px-2.5 py-1 bg-gray-100 text-gray-600 rounded-lg border border-gray-200">
+                    Data Induk Akademik (Terkunci Otomatis)
+                </span>
             </div>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
                 <div>
-                    <label class="block text-xs sm:text-sm font-bold text-gray-700 mb-1.5">
-                        Nomor Kartu Keluarga (KK) <span class="text-rose-500 font-bold">*</span>
+                    <label class="block text-xs sm:text-sm font-bold text-gray-700 mb-1.5 flex items-center justify-between">
+                        <span>Nomor Kartu Keluarga (KK)</span>
+                        <span class="text-[11px] text-gray-400 font-normal">Data Akademik</span>
                     </label>
                     <input 
                         type="text" 
-                        v-model="form.no_kk" 
-                        autocomplete="off"
-                        class="block w-full border rounded-xl shadow-2xs px-4 py-3 text-sm font-medium transition-all focus:ring-2 focus:ring-[#005B3C]/20"
-                        :class="form.no_kk?.trim() ? 'border-emerald-300 bg-white text-gray-900 focus:border-[#005B3C]' : 'border-rose-300 bg-rose-50/20 text-gray-900 focus:border-rose-500'"
+                        :value="form.no_kk || '-'" 
+                        disabled 
+                        :class="lockedInputClass" 
                         placeholder="Nomor KK (16 digit)" 
                     />
                 </div>
                 <div>
-                    <label class="block text-xs sm:text-sm font-bold text-gray-700 mb-1.5">
-                        NISN <span class="text-rose-500 font-bold">*</span>
+                    <label class="block text-xs sm:text-sm font-bold text-gray-700 mb-1.5 flex items-center justify-between">
+                        <span>NISN</span>
+                        <span class="text-[11px] text-gray-400 font-normal">Data Akademik</span>
                     </label>
                     <input 
                         type="text" 
-                        v-model="form.nisn" 
-                        autocomplete="off"
-                        class="block w-full border rounded-xl shadow-2xs px-4 py-3 text-sm font-medium transition-all focus:ring-2 focus:ring-[#005B3C]/20"
-                        :class="form.nisn?.trim() ? 'border-emerald-300 bg-white text-gray-900 focus:border-[#005B3C]' : 'border-rose-300 bg-rose-50/20 text-gray-900 focus:border-rose-500'"
+                        :value="form.nisn || '-'" 
+                        disabled 
+                        :class="lockedInputClass" 
                         placeholder="10 Digit NISN" 
                     />
                 </div>
                 <div>
-                    <label class="block text-xs sm:text-sm font-bold text-gray-700 mb-1.5">
-                        Nomor BPJS Kesehatan <span class="text-rose-500 font-bold">*</span>
+                    <label class="block text-xs sm:text-sm font-bold text-gray-700 mb-1.5 flex items-center justify-between">
+                        <span>Nomor BPJS Kesehatan</span>
+                        <span class="text-[11px] text-gray-400 font-normal">Data Akademik</span>
                     </label>
                     <input 
                         type="text" 
-                        v-model="form.no_bpjs" 
-                        autocomplete="off"
-                        class="block w-full border rounded-xl shadow-2xs px-4 py-3 text-sm font-medium transition-all focus:ring-2 focus:ring-[#005B3C]/20"
-                        :class="form.no_bpjs?.trim() ? 'border-emerald-300 bg-white text-gray-900 focus:border-[#005B3C]' : 'border-rose-300 bg-rose-50/20 text-gray-900 focus:border-rose-500'"
+                        :value="form.no_bpjs || '-'" 
+                        disabled 
+                        :class="lockedInputClass" 
                         placeholder="13 Digit Nomor BPJS" 
                     />
                 </div>
@@ -341,23 +330,8 @@ const lockedInputClass = "block w-full border border-gray-200 bg-gray-100 text-g
                         v-model="form.email_pribadi" 
                         autocomplete="off"
                         class="block w-full border rounded-xl shadow-2xs px-4 py-3 text-sm font-medium transition-all focus:ring-2 focus:ring-[#005B3C]/20"
-                        :class="isValidEmail(form.email_pribadi || form.email) ? 'border-emerald-300 bg-white text-gray-900 focus:border-[#005B3C]' : 'border-rose-300 bg-rose-50/20 text-gray-900 focus:border-rose-500'"
+                        :class="isValidEmail(form.email_pribadi) ? 'border-emerald-300 bg-white text-gray-900 focus:border-[#005B3C]' : 'border-rose-300 bg-rose-50/20 text-gray-900 focus:border-rose-500'"
                         placeholder="contoh: nama.alumni@gmail.com" 
-                    />
-                </div>
-                
-                <!-- Email Students -->
-                <div class="md:col-span-2">
-                    <label class="block text-xs sm:text-sm font-bold text-gray-700 mb-1.5">
-                        Email Mahasiswa (Students UKDW) <span class="text-rose-500 font-bold">*</span>
-                    </label>
-                    <input 
-                        type="email" 
-                        v-model="form.email_students" 
-                        autocomplete="off"
-                        class="block w-full border rounded-xl shadow-2xs px-4 py-3 text-sm font-medium transition-all focus:ring-2 focus:ring-[#005B3C]/20"
-                        :class="isValidEmail(form.email_students) ? 'border-emerald-300 bg-white text-gray-900 focus:border-[#005B3C]' : 'border-rose-300 bg-rose-50/20 text-gray-900 focus:border-rose-500'"
-                        placeholder="nim@students.ukdw.ac.id" 
                     />
                 </div>
 

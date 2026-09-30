@@ -48,9 +48,10 @@ return new class extends Migration
             $table->string('jurusan_asal_sekolah')->nullable();
 
             // Data Kelulusan Akademik
-            $table->char('status_mahasiswa', 2)->default('AR')->comment('AR, DO, CT, NA');
+            $table->char('status_mahasiswa', 2)->default('AR')->comment('AR, DO, CT, NA, L');
             $table->string('tahun_akademik_lulus')->nullable()->comment('Periode lulus, contoh: Gasal 2026/2027');
             $table->year('tahun_lulus')->nullable();
+            $table->date('tanggal_lulus')->nullable()->comment('Tanggal resmi dinyatakan lulus akademik');
             $table->decimal('ip_kumulatif', 3, 2)->nullable()->comment('Indeks Prestasi Kumulatif');
             $table->integer('total_sks')->nullable();
             $table->decimal('total_angka_kualitas', 8, 2)->nullable();

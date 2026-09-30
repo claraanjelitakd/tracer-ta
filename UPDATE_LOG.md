@@ -1,5 +1,133 @@
 # UPDATE LOG - SERU (Sistem Ekosistem Rekam Jejak Alumni)
 
+## [2026-09-30] Pemisahan Pertanyaan Profil dari Kuesioner Universitas & Penguncian Permanen Master Data Akademik di Seluruh Role
+
+### Ringkasan Pembaruan
+1. **Pemisahan Butir Pertanyaan Profil dari Alur Kuesioner Universitas**:
+   - Menghapus redundansi butir pertanyaan Identitas & Biodata Mahasiswa (Seksi 1 / Kelompok `'1'`, memuat 26 pertanyaan seperti NIM, Nama Lengkap, No HP, Email, Alamat, Tempat & Tanggal Lahir, JK, Tanggal Lulus, NIK, NPWP, Karier/Perusahaan, Atasan, dst.) dari alur Kuesioner Universitas.
+   - Kolom `tampil_di` pada tabel `ref_subpertanyaan2021` diset menjadi:
+     - `'profil'` untuk seluruh pertanyaan Seksi 1 / Identitas & Biodata.
+     - `'kuesioner'` untuk pertanyaan Seksi 2 sampai 9 (Status Pekerjaan, Transisi Dunia Kerja, Studi Lanjut, Kompetensi, Fasilitas Kampus, dll.).
+   - Controller Kuesioner ([`KuesionerController.php`](file:///c:/study/tracerstudy/app/Http/Controllers/Alumni/Kuesioner/KuesionerController.php)) dan Controller Detail Alumni pada seluruh role admin ([`DetailAlumniSuperAdminController.php`](file:///c:/study/tracerstudy/app/Http/Controllers/SuperAdmin/KelolaAlumni/DetailAlumniSuperAdminController.php), [`DaftarAlumniProdiController.php`](file:///c:/study/tracerstudy/app/Http/Controllers/AdminProdi/KelolaAlumni/DaftarAlumniProdiController.php), [`DetailAlumniFakultasController.php`](file:///c:/study/tracerstudy/app/Http/Controllers/AdminFakultas/KelolaAlumni/DetailAlumniFakultasController.php), [`DetailAlumniController.php`](file:///c:/study/tracerstudy/app/Http/Controllers/AdminBiroTiga/KelolaAlumni/DetailAlumniController.php)) secara otomatis mengabaikan Seksi 1 dan menyaring pertanyaan berlabel `tampil_di = 'profil'`.
+   - Alur Kuesioner Universitas kini langsung dimulai dari Seksi 2 ("Status Pekerjaan & Aktivitas Saat Ini"), menghindari pertanyaan dobel yang membingungkan alumni.
+
+2. **Penguncian Permanen (Read-Only / Disabled) Master Data Akademik di Seluruh Role**:
+   - Data identitas kependudukan dan histori perkuliahan yang bersumber murni dari Pangkalan Data Akademik ([`data_akademik`](file:///c:/study/tracerstudy/app/Models/DataAkademik.php)) dikunci default tidak dapat diedit (*read-only*):
+     - Kolom yang dikunci: **NIM**, **Nama Lengkap**, **Tempat Lahir**, **Tanggal Lahir**, **Jenis Kelamin**, **Agama**, **Golongan Darah**, **Kewarganegaraan**, **No. Kartu Keluarga (KK)**, **NISN**, **No. BPJS/Asuransi Kesehatan**, **NIK**, serta seluruh histori kelulusan & IPK.
+   - Diterapkan secara seragam di frontend komponen [`FormPribadi.vue`](file:///c:/study/tracerstudy/resources/js/Pages/Alumni/Profil/Components/FormPribadi.vue) dan [`FormAkademik.vue`](file:///c:/study/tracerstudy/resources/js/Pages/Alumni/Profil/Components/FormAkademik.vue) dengan tampilan visual `lockedInputClass` (latar abu-abu netral, ikon gembok amber/slate, kursor tidak diizinkan, dan helper text resmi).
+   - Penguncian berlaku menyeluruh di:
+     - **Profil Alumni** (`/alumni/profil`)
+     - **Detail Alumni SuperAdmin** (`/superadmin/alumni/{id}`)
+     - **Detail Alumni Admin Fakultas** (`/fakultas/alumni/{id}`)
+     - **Detail Alumni Admin Prodi** (`/prodi/alumni/{id}`)
+     - **Detail Alumni Biro 3** (`/biro3/alumni/{id}`)
+   - Proteksi ganda pada backend ([`SimpanProfilController.php`](file:///c:/study/tracerstudy/app/Http/Controllers/Alumni/Profil/SimpanProfilController.php) & [`AdminAlumniProfileService.php`](file:///c:/study/tracerstudy/app/Services/Alumni/AdminAlumniProfileService.php)): request perubahan dari form profil tidak akan memodifikasi kolom master identitas akademik, hanya `email_pribadi` yang disinkronisasikan.
+
+---
+
+## [2026-09-30] Refaktorisasi Skema Anti-Duplikasi Data, Migrasi Konsolidasi Bersih, Otomasi Kelulusan Yudisium, dan Sistem Audit Trail Log Activity
+
+### Ringkasan Pembaruan
+1. **Eliminasi Total Duplikasi Data antara Tabel `biodata` dan `data_akademik`**:
+   - Menghapus seluruh kolom duplikasi pada tabel `biodata`:
+     - Kolom identitas kependudukan & akademik (`nama`, `tempat_lahir`, `tanggal_lahir`, `jenis_kelamin`, `golongan_darah`, `agama`, `tahun_lulus`, `warga_negara`, `no_kk`, `nisn`, `no_bpjs`) kini tersimpan tunggal pada tabel master [`data_akademik`](file:///c:/study/tracerstudy/app/Models/DataAkademik.php).
+     - Kolom `data_akademik_id` dihapus dari tabel `biodata` karena relasi sudah terhubung secara kuat dan terindeks melalui nomor induk mahasiswa (`nim`).
+     - Kolom `email` dan `email_students` dihapus dari tabel `biodata`. `email_students` hanya tersimpan di `data_akademik` sebagai data resmi kampus, sedangkan `biodata` hanya menyimpan `email_pribadi` untuk korespondensi aktif alumni.
+   - Menyediakan getter accessor dinamis pada model [`Biodata.php`](file:///c:/study/tracerstudy/app/Models/Biodata.php) (`getNamaAttribute`, `getEmailAttribute`, `getTempatLahirAttribute`, `getTanggalLahirAttribute`, `getAgamaAttribute`, dll.) yang secara otomatis mendelegasikan nilai dari `dataAkademik`, sehingga kode legasi tetap berjalan mulus tanpa error.
+
+2. **Konsolidasi Migrasi Bersih (Direct Single Create, Tanpa Migrasi `add_`/`alter_`)**:
+   - Menyatukan seluruh definisi struktur tabel ke migrasi awal `create_`:
+     - [`create_data_akademiks_table.php`](file:///c:/study/tracerstudy/database/migrations/2026_09_01_171350_create_data_akademiks_table.php): Menyimpan identitas master, `email_students`, `email_pribadi`, dan `tanggal_lulus`.
+     - [`create_yudisiums_table.php`](file:///c:/study/tracerstudy/database/migrations/2026_09_01_171353_create_yudisiums_table.php): Menghapus `tahun_akademik_lulus` dan `tahun_lulus`, menyederhanakan status kelulusan dengan kolom `status_lulus` (`['Belum', 'Proses', 'Lulus', 'Tidak Lulus']`).
+     - [`create_biodatas_table.php`](file:///c:/study/tracerstudy/database/migrations/2026_09_01_171354_create_biodatas_table.php): Struktur bersih langsung memuat `foto`, `email_pribadi`, kontak, alamat terkini, dan data tracer karier tanpa satupun kolom duplikat.
+     - [`create_companies_table.php`](file:///c:/study/tracerstudy/database/migrations/2026_09_01_171342_create_companies_table.php): Langsung memuat `created_by_user_id`, `created_by_prodi_id`, dan kolom teks berukuran 500.
+     - [`create_alumni_audit_database_views.php`](file:///c:/study/tracerstudy/database/migrations/2026_09_20_234000_create_alumni_audit_database_views.php): Langsung memuat seluruh database views definitif (`v_alumni_profile_summary`, `v_alumni_tracer_univ_status`, `v_alumni_tracer_prodi_status`, `v_alumni_audit_rekap`).
+   - Menghapus 6 file migrasi `add_` / `alter_` yang usang.
+
+3. **Otomasi Keterkaitan Kelulusan Yudisium dengan Data Akademik**:
+   - Pada model [`Yudisium.php`](file:///c:/study/tracerstudy/app/Models/Yudisium.php), disematkan event listener Eloquent `saved`:
+     - Saat `status_lulus` diset menjadi `'Lulus'`, sistem secara otomatis memperbarui record [`data_akademik`](file:///c:/study/tracerstudy/app/Models/DataAkademik.php) yang berelasi:
+       - Mengubah `status_mahasiswa` menjadi `'L'` (Lulus).
+       - Mengisi `tanggal_lulus` (dari tanggal SK yudisium).
+       - Mengisi `tahun_lulus` (tahun dari tanggal SK yudisium).
+       - Menentukan `tahun_akademik_lulus` (semester Gasal/Genap sesuai periode tanggal SK yudisium).
+     - Mengeliminasi duplikasi penginputan tahun kelulusan secara manual.
+
+4. **Tabel & Sistem Audit Trail Log Activity ([`LogActivity.php`](file:///c:/study/tracerstudy/app/Models/LogActivity.php) & [`create_log_activities_table.php`](file:///c:/study/tracerstudy/database/migrations/2026_09_01_171355_create_log_activities_table.php))**:
+   - Dibuat tabel `log_activities` dan model [`LogActivity`](file:///c:/study/tracerstudy/app/Models/LogActivity.php) dengan helper `LogActivity::record()`.
+   - Mencatat seluruh jejak audit penting secara transparan:
+     - Verifikasi, ACC, penggantian master (auto replace), dan penolakan (reject) perusahaan.
+     - Pembaruan akun pengguna (perubahan email, username, nama).
+     - Reset password instan dan pengiriman konfirmasi ke email pribadi.
+     - Pembaruan profil biodata alumni baik oleh alumni mandiri maupun administrator.
+
+5. **Sinkronisasi Presisi Email Pribadi ke Akun Pengguna**:
+   - Seluruh perubahan email di Manajemen Akun (Superadmin, Prodi, Fakultas) maupun profil alumni secara otomatis memperbarui:
+     - `users.email`
+     - `biodata.email_pribadi`
+     - `data_akademik.email_pribadi`
+   - Memastikan saat pengguna mengubah email, email login dan email penerima reset password langsung tersinkronisasi tanpa ketergantungan pada email student kampus.
+
+---
+1. **Penyelarasan Widget Statistik Dual Box (Divider Vertikal Sesuai Foto)**:
+   - Menyelaraskan widget statistik verifikasi pada halaman SuperAdmin, Admin Prodi, dan Admin Fakultas mengikuti foto desain pengguna:
+     - Layout kotak bersih rounded-2xl dengan garis pemicu pemisah vertikal (`w-px h-10 bg-slate-300/80`).
+     - Tampilan dua angka besar: **Menunggu Verifikasi** (`#0D542B` Hijau UKDW) dan **Master Terverifikasi** (`#D97706` Oranye UKDW).
+
+2. **Modul Manajemen Akun Terpadu (`/superadmin/manajemen-akun`)**:
+   - Dibuat [`ManajemenAkunController.php`](file:///c:/study/tracerstudy/app/Http/Controllers/SuperAdmin/ManajemenAkunController.php) dan antarmuka Vue [`Pages/SuperAdmin/ManajemenAkun/Index.vue`](file:///c:/study/tracerstudy/resources/js/Pages/SuperAdmin/ManajemenAkun/Index.vue).
+   - Pengelompokan dan penyaringan akun terpadu untuk:
+     - **Admin Fakultas**
+     - **Admin Prodi**
+     - **Mahasiswa / Alumni per Prodi**
+
+3. **Fitur Pemulihan & Reset Password ke Email Pribadi Terdaftar**:
+   - **Kirim Email Pemulihan**: Mengirim instruksi dan link reset password ke alamat email terdaftar pengguna (`user.email`), yaitu email pribadi pengguna (bukan dipaksa email student).
+   - **Reset Password Direct**: Layanan reset password instan oleh SuperAdmin untuk penanganan darurat akun pengguna.
+
+4. **Pengelompokan (Categorization) Sidebar Navigasi**:
+   - Sidebar pada role SuperAdmin, Admin Prodi, dan Admin Fakultas dikelompokkan secara terstruktur:
+     - **`RINGKASAN & ANALISIS`**: Dashboard Utama
+     - **`MANAJEMEN KUESIONER`**: Kelola Seksi, Kelola Butir Pertanyaan, Kuesioner Per Prodi
+     - **`MASTER DATA & VERIFIKASI`**: Verifikasi Perusahaan, Data Alumni, dan Manajemen Akun
+
+5. **Eliminasi Total Emoticon & Diksi Formal Enterprise**:
+   - Menghapus seluruh titik indikator `rounded-full status dot` dan emoticon dari seluruh tampilan.
+   - Menggunakan diksi formal corporate Indonesia (`Sunting Data`, `Verifikasi Sesuai Inputan`, `Tutup`).
+
+---
+
+## [2026-09-30] Fitur ACC Perusahaan Superadmin (Scope All & Per Prodi) dan Pengaturan Kuesioner Program Studi oleh Superadmin
+
+### Ringkasan Pembaruan
+1. **Verifikasi & Approval Perusahaan Alumni untuk Superadmin ([`VerifikasiPerusahaanSuperAdminController.php`](file:///c:/study/tracerstudy/app/Http/Controllers/SuperAdmin/Perusahaan/VerifikasiPerusahaanSuperAdminController.php))**:
+   - **Superadmin ACC Perusahaan (`/superadmin/perusahaan`)**: Menyediakan modul khusus bagi Superadmin (Otoritas Tertinggi) untuk melakukan ACC/verifikasi pengajuan tempat kerja alumni secara menyeluruh (All) maupun terfilter berdasarkan Program Studi tertentu.
+   - **Fitur Lengkap Verification Service**: Mendukung Verifikasi Langsung (ACC Direct), Penggantian Master Perusahaan Otomatis (Auto Replace dengan deteksi rekomendasi kemiripan string), Sunting & Verifikasi Atribut Perusahaan, serta Penolakan (Reject) Pengajuan.
+   - **Interface Vue Superadmin ([`Index.vue`](file:///c:/study/tracerstudy/resources/js/Pages/SuperAdmin/Perusahaan/Index.vue))**: Halaman profesional dengan palet warna resmi hijau UKDW (`#0D542B`), filter dropdown Prodi, filter cakupan pengajuan, pencarian teks, dan dialog SweetAlert2 untuk konfirmasi dan modal penggantian master.
+
+2. **Pengaturan Kuesioner Program Studi oleh Superadmin ([`KelolaKuesionerProdiSuperAdminController.php`](file:///c:/study/tracerstudy/app/Http/Controllers/SuperAdmin/KelolaPertanyaan/KelolaKuesionerProdiSuperAdminController.php))**:
+   - **Pengaturan Kuesioner Prodi (`/superadmin/prodi-kuesioner`)**: Memungkinkan Superadmin memilih Program Studi target dari dropdown selector, lalu melihat dan mengelola daftar bagian (section), butir pertanyaan, dan opsi jawaban khusus untuk prodi tersebut.
+   - **Tampilan & UX Identik dengan Role Admin Prodi**: Menyajikan tabulasi *Daftar Bagian (Section)* dan *Daftar Pertanyaan (Kuesioner)* dengan layout, style, dan modal SweetAlert2 yang disamakan persis dengan role Admin Prodi ([`AdminProdi/Section/Index.vue`](file:///c:/study/tracerstudy/resources/js/Pages/AdminProdi/Section/Index.vue) dan [`AdminProdi/Pertanyaan/Index.vue`](file:///c:/study/tracerstudy/resources/js/Pages/AdminProdi/Pertanyaan/Index.vue)).
+   - **Eliminasi Total Emoticon & Diksi Profesional**: Menggantikan seluruh emoticon dengan ikon SVG resmi dan diksi bahasa formal korporat enterprise.
+   - **Fitur Manajerial Penuh**: Superadmin dapat membuat, mengedit, menghapus, dan mengatur urutan (reorder up/down) section prodi, pertanyaan prodi, serta opsi jawaban prodi lengkap dengan konfigurasi alur percabangan (*jump_to*).
+
+3. **Penyelarasan Tampilan Peninjauan Perusahaan Superadmin ([`SuperAdmin/Perusahaan/Index.vue`](file:///c:/study/tracerstudy/resources/js/Pages/SuperAdmin/Perusahaan/Index.vue))**:
+   - **Presisi Modal Peninjauan Pengajuan**: Menyelaraskan struktur modal *Peninjauan Pengajuan Perusahaan* (`openReviewModal`) dengan halaman [`http://localhost:8000/prodi/perusahaan`](file:///c:/study/tracerstudy/resources/js/Pages/AdminProdi/Perusahaan/Index.vue).
+   - **Komponen Peninjauan**: Menampilkan blok *1. DATA YANG DIINPUTKAN ALUMNI*, *2. REKOMENDASI MASTER TERVERIFIKASI (AUTO REPLACE)*, serta tombol aksi *Verifikasi Sesuai Inputan*, *Edit Dulu*, dan *Tutup* secara rapi tanpa emoticon.
+
+4. **Pemasangan Skill Web Design Engineer ([`.agents/skills/web-design-engineer/SKILL.md`](file:///c:/study/tracerstudy/.agents/skills/web-design-engineer/SKILL.md))**:
+   - Memasang dan mengonfigurasi skill [`web-design-engineer`](file:///c:/study/tracerstudy/.agents/skills/web-design-engineer/SKILL.md) dari repositori `garden-skills` untuk standar visual UI/UX web enterprise.
+
+5. **Pembaruan Navigasi & Dashboard Utama Superadmin ([`Sidebar.vue`](file:///c:/study/tracerstudy/resources/js/Pages/SuperAdmin/Components/Sidebar.vue) & [`Dashboard.vue`](file:///c:/study/tracerstudy/resources/js/Pages/SuperAdmin/Dashboard.vue))**:
+   - Menambahkan menu **Kuesioner Per Prodi** (`/superadmin/prodi-kuesioner`) dan **ACC Perusahaan** (`/superadmin/perusahaan`) pada Sidebar Navigasi Superadmin.
+   - Menyematkan kartu metrik KPI dan quick access card untuk *Pengaturan Kuesioner Per Prodi* dan *Verifikasi Perusahaan* pada Dashboard Utama Superadmin (`/superadmin/dashboard`).
+
+6. **Relasi Model & Pengujian Otomatis**:
+   - Menambahkan metode relasi `prodiQuestions()` dan `prodiQuestionSections()` pada model [`Prodi.php`](file:///c:/study/tracerstudy/app/Models/Prodi.php).
+   - Menulis pengujian otomatis komprehensif pada [`SuperAdminPerusahaanDanKuesionerProdiTest.php`](file:///c:/study/tracerstudy/tests/Feature/SuperAdminPerusahaanDanKuesionerProdiTest.php) (100% PASS: 4 tes, 9 assertions).
+
+---
+
 ## [2026-09-28] Migrasi Foto Profil Biodata, Integrasi Eager Loading Yudisium & Link Publikasi, Agregasi Spasial Beranda, Modularisasi Komponen Landing Page, Navbar iOS Glossy, dan Presisi Desain Login
 
 ### Ringkasan Pembaruan

@@ -226,9 +226,20 @@ class DaftarAlumniProdiController extends Controller
 
         $kuesionerUniv = Kuesioner::where('is_active', true)
             ->with(['sections' => function ($secQuery) {
-                $secQuery->orderBy('order', 'asc')
+                $secQuery->where(function ($sq) {
+                    $sq->whereNull('kode_kelompok')
+                        ->orWhere('kode_kelompok', '!=', '1');
+                })
+                    ->orderBy('order', 'asc')
                     ->with(['subpertanyaans' => function ($qQuery) {
-                        $qQuery->orderBy('order', 'asc')
+                        $qQuery->where(function ($w) {
+                            $w->whereNull('tampil_di')
+                                ->orWhere('tampil_di', '!=', 'profil');
+                        })->where(function ($w) {
+                            $w->whereNull('kelompok')
+                                ->orWhere('kelompok', '!=', 'BIO');
+                        })
+                            ->orderBy('order', 'asc')
                             ->with('detils');
                     }]);
             }])

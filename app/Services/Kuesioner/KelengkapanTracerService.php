@@ -77,11 +77,11 @@ class KelengkapanTracerService
 
         $fields = [
             // Data Pribadi & Kontak
-            'Nama Lengkap' => $biodata->nama ?? $dataAkademik?->nama,
+            'Nama Lengkap' => $dataAkademik?->nama ?? $biodata->user?->name,
             'NIM' => $biodata->nim,
             'Tempat Lahir' => $dataAkademik?->tempat_lahir,
             'Tanggal Lahir' => $dataAkademik?->tanggal_lahir,
-            'Agama' => $biodata->agama ?? $dataAkademik?->agama,
+            'Agama' => $dataAkademik?->agama,
             'Jenis Kelamin' => $dataAkademik?->jenis_kelamin,
             'Nomor Telepon/HP' => $biodata->nomor_telepon ?? $dataAkademik?->nomor_telepon,
             'Email Pribadi' => $biodata->email_pribadi ?? $dataAkademik?->email_pribadi,
@@ -91,7 +91,7 @@ class KelengkapanTracerService
 
             // Data Akademik
             'IPK Kelulusan' => $dataAkademik?->ip_kumulatif,
-            'Tahun Kelulusan' => $biodata->tahun_lulus ?? ($dataAkademik?->tahun_akademik_lulus ?? $dataAkademik?->tahun_lulus),
+            'Tahun Kelulusan' => $dataAkademik?->tahun_lulus ? (string) $dataAkademik->tahun_lulus : $dataAkademik?->tahun_akademik_lulus,
 
             // Data Orang Tua
             'Nama Orang Tua' => $orangTua?->nama_orang_tua,

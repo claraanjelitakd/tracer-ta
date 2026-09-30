@@ -22,6 +22,7 @@ class UserSeeder extends Seeder
             ['username' => 'superadmin'],
             [
                 'name' => 'Super Administrator',
+                'email' => 'superadmin@ukdw.ac.id',
                 'password' => $adminPassword,
                 'role' => 'superadmin',
                 'must_change_password' => false,
@@ -33,6 +34,7 @@ class UserSeeder extends Seeder
             ['username' => 'admin_biro3'],
             [
                 'name' => 'Admin Biro 3 UKDW',
+                'email' => 'biro3@ukdw.ac.id',
                 'password' => $adminPassword,
                 'role' => 'admin_biro3',
                 'must_change_password' => false,
@@ -62,6 +64,7 @@ class UserSeeder extends Seeder
                     ['username' => $userData['username']],
                     [
                         'name' => $userData['name'],
+                        'email' => $userData['username'].'@ukdw.ac.id',
                         'password' => $adminPassword,
                         'role' => 'admin_prodi',
                         'prodi_id' => $prodi->id,
@@ -89,6 +92,7 @@ class UserSeeder extends Seeder
                     ['username' => $userData['username']],
                     [
                         'name' => $userData['name'],
+                        'email' => $userData['username'].'@ukdw.ac.id',
                         'password' => $adminPassword,
                         'role' => 'admin_fakultas',
                         'fakultas_id' => $fakultas->id,

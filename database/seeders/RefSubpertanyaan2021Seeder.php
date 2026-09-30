@@ -760,6 +760,9 @@ class RefSubpertanyaan2021Seeder extends Seeder
 
         foreach ($questionsData as $item) {
             $section = $sections[$item['section_kode']] ?? null;
+            // Tentukan target penampil: Seksi 1 (Identitas & Biodata Mahasiswa) ditampilkan di profil alumni, seksi lainnya di kuesioner universitas
+            $tampilDi = ($item['section_kode'] === '1' || $item['kelompok'] === 'BIO') ? 'profil' : 'kuesioner';
+
             RefSubpertanyaan2021::updateOrCreate(
                 ['kode_pertanyaan' => $item['kode_pertanyaan']],
                 [
@@ -769,6 +772,7 @@ class RefSubpertanyaan2021Seeder extends Seeder
                     'type' => $item['type'],
                     'keterangan' => $item['keterangan'],
                     'wajib' => $item['wajib'],
+                    'tampil_di' => $tampilDi,
                     'order' => $item['order'],
                 ]
             );

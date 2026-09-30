@@ -220,9 +220,13 @@ class SuperAdminDaftarAlumniTest extends TestCase
         $response->assertRedirect();
         $this->assertDatabaseHas('biodata', [
             'id' => $this->alumni->id,
-            'nama' => 'Budi Santoso Diperbarui',
             'nomor_telepon' => '081234567890',
             'posisi_jabatan' => 'Lead Engineer',
+        ]);
+        // Data akademik bersifat default / terkunci (tidak dapat diedit dari form profil oleh role manapun)
+        $this->assertDatabaseHas('data_akademik', [
+            'nim' => $this->alumni->nim,
+            'nama' => 'Budi Santoso',
         ]);
         $this->assertDatabaseHas('perusahaan', [
             'nama_perusahaan' => 'PT Teknologi Unggul',

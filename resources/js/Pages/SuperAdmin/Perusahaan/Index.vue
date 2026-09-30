@@ -1,16 +1,21 @@
 <!--
-  Halaman: Verifikasi & Rekomendasi Approval Perusahaan (Admin Program Studi)
-  File: resources/js/Pages/AdminProdi/Perusahaan/Index.vue
+  Halaman: Verifikasi & Approval Perusahaan Super Admin
+  File: resources/js/Pages/SuperAdmin/Perusahaan/Index.vue
+
+  Desain Identik dengan Admin Prodi (Bebas Emoticon & Menggunakan Diksi Formal)
 -->
 <script setup>
 import { Head, Link, router } from '@inertiajs/vue3';
-import { ref, computed, watch } from 'vue';
+import { ref, computed } from 'vue';
 import Swal from 'sweetalert2';
 import Sidebar from '../Components/Sidebar.vue';
 
 const props = defineProps({
     user: Object,
-    prodi: Object,
+    prodis: {
+        type: Array,
+        default: () => [],
+    },
     companies: Object,
     propinsis: {
         type: Array,
@@ -27,7 +32,6 @@ const props = defineProps({
     stats: {
         type: Object,
         default: () => ({
-            total_pending_prodi: 0,
             total_pending_all: 0,
             total_verified: 0,
         }),
@@ -36,7 +40,8 @@ const props = defineProps({
 
 // State Filter & Pencarian
 const search = ref(props.filters.search || '');
-const scope = ref(props.filters.scope || 'prodi');
+const selectedProdiId = ref(props.filters.prodi_id || '');
+const scope = ref(props.filters.scope || 'all');
 const perPage = ref(props.filters.per_page || 10);
 
 let searchTimeout = null;
@@ -48,9 +53,10 @@ const handleSearch = () => {
 };
 
 const applyFilters = () => {
-    router.get('/prodi/perusahaan', {
+    router.get('/superadmin/perusahaan', {
         search: search.value || undefined,
-        scope: scope.value !== 'prodi' ? scope.value : undefined,
+        prodi_id: selectedProdiId.value || undefined,
+        scope: scope.value !== 'all' ? scope.value : undefined,
         per_page: perPage.value != 10 ? perPage.value : undefined,
     }, {
         preserveState: true,
@@ -60,9 +66,10 @@ const applyFilters = () => {
 
 const resetFilters = () => {
     search.value = '';
-    scope.value = 'prodi';
+    selectedProdiId.value = '';
+    scope.value = 'all';
     perPage.value = 10;
-    router.get('/prodi/perusahaan', {}, { preserveState: true });
+    router.get('/superadmin/perusahaan', {}, { preserveState: true });
 };
 
 // ========================================================
@@ -92,7 +99,7 @@ const openRecDetail = (parentCompany, rec) => {
             </div>
         `,
         showCancelButton: true,
-        confirmButtonText: 'Gantikan ke Master Ini (⇄)',
+        confirmButtonText: 'Gantikan ke Master Ini',
         cancelButtonText: 'Tutup',
         confirmButtonColor: '#0D542B',
         cancelButtonColor: '#6B7280',
@@ -160,7 +167,7 @@ const openReviewModal = (company) => {
                 <!-- 1. Data Inputan Alumni -->
                 <div class="border border-gray-300 rounded p-3 bg-gray-50/70 space-y-1.5">
                     <div class="flex items-center justify-between border-b border-gray-200 pb-1.5">
-                        <span class="font-bold text-gray-700 uppercase text-[10px] tracking-wider">1. Data Yang Diinputkan Alumni</span>
+                        <span class="font-bold text-gray-700 uppercase text-[10px] tracking-wider">1. DATA YANG DIINPUTKAN ALUMNI</span>
                         <span class="text-amber-800 font-semibold text-[11px]">${company.status_verifikasi || 'Menunggu Verifikasi'}</span>
                     </div>
                     <div>
@@ -185,7 +192,7 @@ const openReviewModal = (company) => {
 
                 <!-- 2. Rekomendasi Master Mirip -->
                 <div>
-                    <span class="font-bold text-gray-700 uppercase text-[10px] tracking-wider block mb-1">2. Rekomendasi Master Terverifikasi (Auto Replace)</span>
+                    <span class="font-bold text-gray-700 uppercase text-[10px] tracking-wider block mb-1">2. REKOMENDASI MASTER TERVERIFIKASI (AUTO REPLACE)</span>
                     ${recListHtml}
                 </div>
             </div>
@@ -234,14 +241,10 @@ const handleVerifyDirect = (company) => {
         cancelButtonColor: '#6B7280',
     }).then((result) => {
         if (result.isConfirmed) {
-            router.post(`/prodi/perusahaan/${company.id}/verify`, {}, {
+            router.post(`/superadmin/perusahaan/${company.id}/verify`, {}, {
                 preserveScroll: true,
                 onSuccess: () => {
-                    closeReviewModal();
                     Swal.fire('Berhasil!', `Perusahaan "${company.nama_perusahaan}" telah diverifikasi.`, 'success');
-                },
-                onError: () => {
-                    Swal.fire('Gagal!', 'Terjadi kesalahan saat memverifikasi perusahaan.', 'error');
                 },
             });
         }
@@ -257,29 +260,25 @@ const handleAutoReplace = (pendingCompany, targetVerifiedCompany) => {
                 <p>Data inputan alumni: <strong class="text-rose-700">${pendingCompany.nama_perusahaan}</strong></p>
                 <p>Akan digantikan dengan master resmi: <strong class="text-emerald-800">${targetVerifiedCompany.nama_perusahaan}</strong></p>
                 <div class="p-2.5 bg-amber-50 border border-amber-200 rounded text-amber-900 mt-2">
-                    ● Semua relasi alumni yang bekerja di perusahaan ini akan otomatis dialihkan ke master resmi.<br>
-                    ● Record pengajuan duplikat akan dibersihkan agar database tetap rapi.
+                    - Semua relasi alumni yang memilih perusahaan ini akan dialihkan ke master resmi.<br>
+                    - Record pengajuan duplikat akan dibersihkan dari antrean verifikasi.
                 </div>
             </div>
         `,
         icon: 'warning',
         showCancelButton: true,
-        confirmButtonText: 'Ya, Gantikan (Auto Replace)',
+        confirmButtonText: 'Ya, Gantikan Perusahaan',
         cancelButtonText: 'Batal',
         confirmButtonColor: '#0D542B',
         cancelButtonColor: '#6B7280',
     }).then((result) => {
         if (result.isConfirmed) {
-            router.post(`/prodi/perusahaan/${pendingCompany.id}/replace`, {
+            router.post(`/superadmin/perusahaan/${pendingCompany.id}/replace`, {
                 target_company_id: targetVerifiedCompany.id,
             }, {
                 preserveScroll: true,
                 onSuccess: () => {
-                    closeReviewModal();
                     Swal.fire('Berhasil Digantikan!', `Perusahaan berhasil digantikan dengan master "${targetVerifiedCompany.nama_perusahaan}".`, 'success');
-                },
-                onError: (errors) => {
-                    Swal.fire('Gagal!', Object.values(errors).join('<br>'), 'error');
                 },
             });
         }
@@ -290,19 +289,18 @@ const handleAutoReplace = (pendingCompany, targetVerifiedCompany) => {
 const handleReject = (company) => {
     Swal.fire({
         title: 'Tolak Pengajuan Perusahaan?',
-        text: `Tolak pengajuan "${company.nama_perusahaan}"? Status akan diubah menjadi Ditolak.`,
+        text: `Apakah Anda yakin ingin menolak pengajuan "${company.nama_perusahaan}"? Status akan diubah menjadi Ditolak.`,
         icon: 'warning',
         showCancelButton: true,
         confirmButtonText: 'Ya, Tolak',
         cancelButtonText: 'Batal',
-        confirmButtonColor: '#d33',
+        confirmButtonColor: '#DC2626',
         cancelButtonColor: '#6B7280',
     }).then((result) => {
         if (result.isConfirmed) {
-            router.post(`/prodi/perusahaan/${company.id}/reject`, {}, {
+            router.post(`/superadmin/perusahaan/${company.id}/reject`, {}, {
                 preserveScroll: true,
                 onSuccess: () => {
-                    closeReviewModal();
                     Swal.fire('Ditolak!', `Pengajuan perusahaan "${company.nama_perusahaan}" telah ditolak.`, 'success');
                 },
             });
@@ -311,15 +309,13 @@ const handleReject = (company) => {
 };
 
 // ========================================================
-// SWEETALERT2: EDIT & VERIFIKASI DATA PERUSAHAAN OLEH ADMIN
+// SWEETALERT2: SUNTING DATA PERUSAHAAN OLEH SUPERADMIN
 // ========================================================
 const openEditModal = (company) => {
-    // Bangun daftar opsi provinsi
     const propOptions = (props.propinsis || []).map(p => 
         `<option value="${p.id}" ${p.id == company.propinsi_id ? 'selected' : ''}>${p.nama_provinsi}</option>`
     ).join('');
 
-    // Fungsi bantu untuk memfilter opsi kabupaten/kota
     const getKabOptions = (selectedPropId, currentKabId) => {
         if (!selectedPropId) return '<option value="">-- Pilih Provinsi Dahulu --</option>';
         const kabs = (props.kabupatens || []).filter(k => k.propinsi_id == selectedPropId);
@@ -385,7 +381,7 @@ const openEditModal = (company) => {
         `,
         width: '600px',
         showCancelButton: true,
-        confirmButtonText: '✓ Simpan & Verifikasi',
+        confirmButtonText: 'Simpan & Verifikasi',
         cancelButtonText: 'Batal',
         confirmButtonColor: '#0D542B',
         cancelButtonColor: '#6B7280',
@@ -419,13 +415,10 @@ const openEditModal = (company) => {
         }
     }).then((result) => {
         if (result.isConfirmed && result.value) {
-            router.put(`/prodi/perusahaan/${result.value.id}`, result.value, {
+            router.put(`/superadmin/perusahaan/${result.value.id}`, result.value, {
                 preserveScroll: true,
                 onSuccess: () => {
                     Swal.fire('Berhasil Disimpan!', 'Data perusahaan telah diperbarui dan diverifikasi.', 'success');
-                },
-                onError: (errs) => {
-                    Swal.fire('Gagal Menyimpan', Object.values(errs).join('<br>'), 'error');
                 },
             });
         }
@@ -434,11 +427,11 @@ const openEditModal = (company) => {
 </script>
 
 <template>
-    <Head :title="`Verifikasi Perusahaan - ${prodi?.nama_prodi || 'Admin Prodi'}`" />
+    <Head title="Verifikasi Perusahaan - Super Admin Tracer Study UKDW" />
 
     <div class="min-h-screen bg-slate-50 flex font-sans">
-        <!-- Sidebar Terpadu Admin Program Studi -->
-        <Sidebar :user="user" :prodi="prodi" />
+        <!-- Sidebar Terpadu Super Admin -->
+        <Sidebar :user="user" />
 
         <!-- Area Konten Utama -->
         <div class="flex-1 flex flex-col min-w-0 lg:pl-72">
@@ -447,22 +440,24 @@ const openEditModal = (company) => {
                 <div class="w-full flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div>
                         <div class="flex items-center gap-2 text-xs text-gray-500 font-medium mb-1">
-                            <Link href="/prodi/dashboard" class="hover:underline hover:text-[#0D542B]">Dashboard</Link>
+                            <Link href="/superadmin/dashboard" class="hover:underline hover:text-[#0D542B]">Dashboard</Link>
                             <span>/</span>
-                            <span class="text-gray-800 font-semibold">Verifikasi Perusahaan</span>
+                            <span class="text-gray-800 font-semibold">Super Admin</span>
+                            <span>/</span>
+                            <span class="text-[#0D542B] font-bold">Verifikasi Perusahaan</span>
                         </div>
                         <h1 class="text-xl font-bold text-gray-900">
                             Verifikasi & Approval Perusahaan Alumni
                         </h1>
                         <p class="text-xs text-gray-500 mt-0.5">
-                            Pusat verifikasi, pencocokan kemiripan nama & kota, serta auto-replace perusahaan yang diinputkan oleh alumni {{ prodi?.nama_prodi }}.
+                            Pusat verifikasi, pencocokan kemiripan nama & kota, serta auto-replace perusahaan pengajuan alumni.
                         </p>
                     </div>
 
                     <!-- Widget Statistik Dual Sesuai Foto Pengguna -->
                     <div class="bg-slate-50/80 border border-slate-200/80 rounded-2xl px-8 py-3.5 flex items-center gap-8 text-center shadow-2xs">
                         <div>
-                            <div class="text-2xl font-black text-[#0D542B] leading-none mb-1.5">{{ stats.total_pending_prodi }}</div>
+                            <div class="text-2xl font-black text-[#0D542B] leading-none mb-1.5">{{ stats.total_pending_all }}</div>
                             <div class="text-[11px] font-bold text-slate-600 tracking-wide uppercase">MENUNGGU VERIFIKASI</div>
                         </div>
                         <div class="w-px h-10 bg-slate-300/80"></div>
@@ -479,7 +474,22 @@ const openEditModal = (company) => {
                 <!-- Bilah Filter & Pencarian (DataTables Top Bar) -->
                 <div class="bg-white p-3.5 rounded-lg border border-gray-200 flex flex-col md:flex-row md:items-center justify-between gap-3 text-xs shadow-2xs">
                     <div class="flex items-center gap-3 flex-wrap">
-                        <!-- Filter Lingkup Pengajuan -->
+                        <!-- Filter Lingkup / Prodi -->
+                        <div class="flex items-center gap-1.5">
+                            <span class="font-bold text-gray-700">Filter Prodi:</span>
+                            <select
+                                v-model="selectedProdiId"
+                                @change="applyFilters"
+                                class="px-2.5 py-1.5 border border-gray-300 rounded-lg text-xs bg-white focus:outline-none focus:ring-1 focus:ring-emerald-700 font-medium cursor-pointer"
+                            >
+                                <option value="">Semua Program Studi (All)</option>
+                                <option v-for="p in prodis" :key="p.id" :value="p.id">
+                                    {{ p.kode_prodi ? `[${p.kode_prodi}] ` : '' }}{{ p.nama_prodi }}
+                                </option>
+                            </select>
+                        </div>
+
+                        <!-- Filter Scope Pengajuan -->
                         <div class="flex items-center gap-1.5">
                             <span class="font-bold text-gray-700">Lingkup:</span>
                             <select
@@ -487,12 +497,12 @@ const openEditModal = (company) => {
                                 @change="applyFilters"
                                 class="px-2.5 py-1.5 border border-gray-300 rounded-lg text-xs bg-white focus:outline-none focus:ring-1 focus:ring-emerald-700 font-medium cursor-pointer"
                             >
-                                <option value="prodi">Pengajuan Alumni {{ prodi?.nama_prodi }} ({{ stats.total_pending_prodi }})</option>
                                 <option value="all">Semua Pengajuan Pending ({{ stats.total_pending_all }})</option>
+                                <option value="prodi">Pengajuan Khusus Prodi Terkait</option>
                             </select>
                         </div>
 
-                        <!-- Per Page Dropdown (DataTables Length) -->
+                        <!-- Per Page Dropdown -->
                         <div class="flex items-center gap-1.5">
                             <span class="text-gray-500 font-medium">Tampilkan:</span>
                             <select
@@ -530,7 +540,7 @@ const openEditModal = (company) => {
                         Menampilkan <strong>{{ companies.data?.length || 0 }}</strong> dari total <strong>{{ companies.total || 0 }}</strong> perusahaan menunggu verifikasi
                     </span>
                     <button
-                        v-if="search || scope !== 'prodi' || perPage != 10"
+                        v-if="search || selectedProdiId || scope !== 'all' || perPage != 10"
                         @click="resetFilters"
                         class="text-emerald-800 font-semibold hover:underline cursor-pointer"
                     >
@@ -538,7 +548,7 @@ const openEditModal = (company) => {
                     </button>
                 </div>
 
-                <!-- Tabel Data Pengajuan Perusahaan (Traditional Grid / DataTables Style) -->
+                <!-- Tabel Data Pengajuan Perusahaan (Identik dengan Admin Prodi) -->
                 <div class="bg-white border border-gray-300 overflow-x-auto">
                     <table class="w-full text-left border-collapse border border-gray-300 text-xs bg-white">
                         <thead>
@@ -553,6 +563,11 @@ const openEditModal = (company) => {
                             </tr>
                         </thead>
                         <tbody>
+                            <tr v-if="!companies.data || companies.data.length === 0">
+                                <td colspan="7" class="border border-gray-300 p-8 text-center text-gray-400 italic">
+                                    Tidak ada data pengajuan perusahaan yang menunggu verifikasi.
+                                </td>
+                            </tr>
                             <tr
                                 v-for="(company, index) in companies.data"
                                 :key="company.id"
@@ -568,7 +583,7 @@ const openEditModal = (company) => {
                                     {{ company.nama_perusahaan }}
                                 </td>
 
-                                <!-- Lokasi Lengkap (Negara, Prov, Kab, Alamat, Kode Pos) -->
+                                <!-- Lokasi Lengkap -->
                                 <td class="border border-gray-300 px-3 py-2 text-gray-700">
                                     <div v-if="company.alamat" class="font-medium text-gray-900 mb-0.5">
                                         {{ company.alamat }}
@@ -602,7 +617,7 @@ const openEditModal = (company) => {
                                     <span v-else class="text-gray-400 italic">-</span>
                                 </td>
 
-                                <!-- Rekomendasi (Baris Rekomendasi Bersih Mirip Excel) -->
+                                <!-- Rekomendasi -->
                                 <td class="border border-gray-300 px-3 py-2">
                                     <div v-if="company.recommendations && company.recommendations.length > 0">
                                         <div
@@ -622,7 +637,7 @@ const openEditModal = (company) => {
                                                     i
                                                 </button>
 
-                                                <!-- Icon Switch / Swap (Auto Replace) -->
+                                                <!-- Icon Swap (Auto Replace) -->
                                                 <button
                                                     type="button"
                                                     @click="handleAutoReplace(company, rec)"
@@ -642,12 +657,12 @@ const openEditModal = (company) => {
                                 <!-- Aksi (Icon-only Toolbar) -->
                                 <td class="border border-gray-300 px-2.5 py-2 text-center">
                                     <div class="flex items-center justify-center gap-1">
-                                        <!-- Detail Mata -->
+                                        <!-- Detail Mata (Review Modal) -->
                                         <button
                                             type="button"
                                             @click="openReviewModal(company)"
                                             class="p-1 text-blue-600 hover:bg-blue-50 rounded cursor-pointer transition-colors"
-                                            title="Tinjau Detail"
+                                            title="Tinjau Detail Pengajuan"
                                         >
                                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -655,36 +670,36 @@ const openEditModal = (company) => {
                                             </svg>
                                         </button>
 
-                                        <!-- Verifikasi Langsung -->
+                                        <!-- Verifikasi Langsung (Checkmark) -->
                                         <button
                                             type="button"
                                             @click="handleVerifyDirect(company)"
-                                            class="p-1 text-[#0D542B] hover:bg-emerald-50 rounded cursor-pointer transition-colors"
-                                            title="Verifikasi"
+                                            class="p-1 text-emerald-700 hover:bg-emerald-50 rounded cursor-pointer transition-colors"
+                                            title="Verifikasi Langsung Sesuai Inputan"
                                         >
                                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" />
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
                                             </svg>
                                         </button>
 
-                                        <!-- Edit Data -->
+                                        <!-- Sunting & Verifikasi (Pencil) -->
                                         <button
                                             type="button"
                                             @click="openEditModal(company)"
                                             class="p-1 text-amber-600 hover:bg-amber-50 rounded cursor-pointer transition-colors"
-                                            title="Edit"
+                                            title="Sunting & Verifikasi"
                                         >
                                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                                             </svg>
                                         </button>
 
-                                        <!-- Delete / Hapus -->
+                                        <!-- Tolak (Trash) -->
                                         <button
                                             type="button"
                                             @click="handleReject(company)"
-                                            class="p-1 text-red-600 hover:bg-red-50 rounded cursor-pointer transition-colors"
-                                            title="Hapus / Tolak"
+                                            class="p-1 text-rose-600 hover:bg-rose-50 rounded cursor-pointer transition-colors"
+                                            title="Tolak Pengajuan"
                                         >
                                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -693,35 +708,14 @@ const openEditModal = (company) => {
                                     </div>
                                 </td>
                             </tr>
-
-                            <!-- Empty State -->
-                            <tr v-if="!companies.data || companies.data.length === 0">
-                                <td colspan="7" class="py-8 text-center text-gray-500 border border-gray-300">
-                                    Tidak ada pengajuan perusahaan yang menunggu verifikasi.
-                                </td>
-                            </tr>
                         </tbody>
                     </table>
                 </div>
-
-                <!-- Pagination -->
-                <div v-if="companies.links && companies.links.length > 3" class="flex items-center justify-between text-xs text-gray-600 pt-2">
-                    <span>Halaman {{ companies.current_page }} dari {{ companies.last_page }}</span>
-                    <div class="flex items-center gap-1">
-                        <Link
-                            v-for="(link, i) in companies.links"
-                            :key="i"
-                            :href="link.url || '#'"
-                            class="px-2.5 py-1.5 rounded-lg border text-xs font-semibold transition-colors"
-                            :class="[
-                                link.active ? 'bg-[#0D542B] text-white border-[#0D542B]' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50',
-                                !link.url ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'
-                            ]"
-                            v-html="link.label"
-                        />
-                    </div>
-                </div>
             </main>
+
+            <footer class="text-gray-400 text-xs text-center mt-12 py-6 border-t border-gray-100">
+                &copy; {{ new Date().getFullYear() }} Universitas Kristen Duta Wacana. Hak Cipta Dilindungi.
+            </footer>
         </div>
     </div>
 </template>

@@ -184,7 +184,7 @@ class BerandaController extends Controller
             'kabupaten:id,nama_kabupaten',
             'yudisium:id,judul_ta,url_publikasi,jenis_publikasi',
         ])
-            ->whereNotNull('nama')
+            // ->whereNotNull('nama')
             ->orderBy('id', 'desc')
             ->get()
             ->map(function ($b) {

@@ -20,6 +20,7 @@ return new class extends Migration
             $table->string('type', 50); // text, radio, radio_input, multiple_choice, number, matrix, matrix_dual, multiple_textbox, header
             $table->string('keterangan', 100)->nullable(); // Keterangan tambahan / sub-detail pertanyaan
             $table->tinyInteger('wajib')->default(1); // 1 = wajib, 0 = opsional
+            $table->string('tampil_di', 100)->nullable()->comment('Kondisi penampil pertanyaan');
             $table->integer('order')->default(0);
             $table->timestamps();
         });

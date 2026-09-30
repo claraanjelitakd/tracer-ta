@@ -45,8 +45,18 @@ class Prodi extends Model
         return $this->hasMany(ProdiQuestionSection::class, 'prodi_id')->orderBy('order');
     }
 
+    public function prodiQuestionSections()
+    {
+        return $this->questionSections();
+    }
+
     public function questions()
     {
         return $this->hasMany(ProdiQuestion::class, 'prodi_id')->orderBy('order');
+    }
+
+    public function prodiQuestions()
+    {
+        return $this->questions();
     }
 }

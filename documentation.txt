@@ -120,6 +120,16 @@ c:/study/tracerstudy/app/Http/Controllers/SuperAdmin/KelolaPertanyaan/SimpanPert
 c:/study/tracerstudy/app/Http/Controllers/SuperAdmin/KelolaPertanyaan/KelolaOpsiController.php
 - Kelola opsi pilihan jawaban dan konfigurasi alur percabangan (*branching jump_to*).
 
+c:/study/tracerstudy/app/Http/Controllers/SuperAdmin/KelolaPertanyaan/KelolaKuesionerProdiSuperAdminController.php
+- Pengaturan Kuesioner Program Studi khusus Superadmin (pilih prodi, lalu tampilkan & kelola section, pertanyaan, dan opsi prodi dengan UI/UX identik prodi).
+
+c:/study/tracerstudy/app/Http/Controllers/SuperAdmin/Perusahaan/VerifikasiPerusahaanSuperAdminController.php
+- ACC & Verifikasi perusahaan/institusi pengajuan alumni oleh Superadmin secara menyeluruh (All) maupun per Program Studi (ACC Direct, Auto Replace, Edit & Verify, Reject).
+
+c:/study/tracerstudy/app/Http/Controllers/SuperAdmin/ManajemenAkunController.php
+- Menangani manajemen akun pengguna terpadu untuk Admin Fakultas, Admin Prodi, dan Mahasiswa/Alumni per Prodi.
+- Menyediakan fitur pengiriman pemulihan password ke email pribadi terdaftar pengguna (`user.email`) dan reset password langsung.
+
 F. MODUL ADMIN BIRO 3 (Role: admin_biro3)
 ----------------------------------------------------------------------------------------------------
 c:/study/tracerstudy/app/Http/Controllers/AdminBiroTiga/Dashboard/DashboardController.php
@@ -143,19 +153,23 @@ c:/study/tracerstudy/app/Http/Controllers/AdminBiroTiga/KelolaPertanyaan/KelolaP
 Seluruh nama model menggunakan PascalCase tunggal dan terhubung ke tabel singular di basis data:
 
 c:/study/tracerstudy/app/Models/User.php
-- Akun pengguna login, hash password, flag ganti sandi, relasi `biodata()`, `prodi()`, dan `fakultas()`.
+- Akun pengguna login, hash password, flag ganti sandi, relasi `biodata()`, `prodi()`, dan `fakultas()`. Email terhubung ke email pribadi aktif alumni.
 
 c:/study/tracerstudy/app/Models/Biodata.php (Tabel: `biodata`)
-- Master entitas profil biodata alumni (29 kolom: identitas pribadi, foto profil `foto` di `/uploads/profile`, kontak, kependudukan, karier, dan relasi eksplisit `yudisium_id` untuk judul skripsi & link repositori publikasi).
+- Entitas profil biodata alumni tanpa duplikasi data master akademik. Menyimpan foto profil (`foto` di `/uploads/profile`), kontak aktif (`email_pribadi`, `nomor_telepon`), domisili saat ini, karier/perusahaan, dan relasi `yudisium_id`. Memiliki accessor dinamis untuk `nama`, `email`, `tempat_lahir`, `tanggal_lahir`, `agama`, dll. yang langsung mendelegasikan ke `DataAkademik`.
 
 c:/study/tracerstudy/app/Models/DataAkademik.php (Tabel: `data_akademik`)
-- Pangkalan data akademik resmi (NIM, NIRM, Nama, IPK, tahun kelulusan, asal sekolah).
+- Pangkalan data master resmi identitas mahasiswa dan akademik (NIM, NIRM, Nama, NIK, No KK, NISN, No BPJS, Tempat/Tanggal Lahir, Jenis Kelamin, Agama, Golongan Darah, Warga Negara, IPK, tahun kelulusan, tanggal_lulus, status_mahasiswa, email_students resmi kampus, email_pribadi, asal sekolah).
 
 c:/study/tracerstudy/app/Models/DataOrangTua.php (Tabel: `data_orang_tua`)
 - Data kontak dan profil orang tua / wali alumni (NIM, Nama, Telepon, Pekerjaan, Alamat).
 
 c:/study/tracerstudy/app/Models/Yudisium.php (Tabel: `yudisium`)
-- Status kelulusan resmi yudisium ('Lulus'/'Belum Lulus'), dosen pembimbing & penguji, judul tugas akhir/skripsi (`judul_ta`, `judul_ta_inggris`), link publikasi karya ilmiah (`url_publikasi`), jenis publikasi, status publikasi, dan tahun lulus.
+- Catatan kelulusan yudisium dengan `status_lulus` ('Belum', 'Proses', 'Lulus', 'Tidak Lulus'), judul TA/skripsi, dan link repositori publikasi. Saat `status_lulus` bernilai 'Lulus', event listener model secara otomatis memperbarui `status_mahasiswa = 'L'`, `tanggal_lulus`, dan `tahun_lulus` pada `DataAkademik`.
+
+c:/study/tracerstudy/app/Models/LogActivity.php (Tabel: `log_activities`)
+- Rekam jejak (audit trail) seluruh aktivitas penting sistem: verifikasi/ACC perusahaan, pergantian master perusahaan (auto replace), penolakan pengajuan, reset password, dan perubahan akun. Menggunakan helper statis `LogActivity::record()`.
+
 
 c:/study/tracerstudy/app/Models/Perusahaan.php (Tabel: `perusahaan`)
 - Master data instansi/perusahaan tempat alumni bekerja, status verifikasi (`status_verifikasi`), pengaju (`created_by`, `created_prodi_id`), alamat, skala industri, propinsi, kabupaten.

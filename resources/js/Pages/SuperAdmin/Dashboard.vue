@@ -135,8 +135,8 @@ const props = defineProps({
 
             </div>
 
-            <!-- Grid 2 Modul Navigasi Utama -->
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- Grid Modul Navigasi Utama -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 
                 <!-- Modul 1: Direktori Mahasiswa & Hasil Tracer -->
                 <div class="bg-white rounded-lg p-6 border border-slate-200 shadow-2xs flex flex-col justify-between">
@@ -171,22 +171,22 @@ const props = defineProps({
                     </div>
                 </div>
 
-                <!-- Modul 2: Kelola Instrumen Kuesioner -->
+                <!-- Modul 2: Kelola Instrumen Kuesioner Master -->
                 <div class="bg-white rounded-lg p-6 border border-slate-200 shadow-2xs flex flex-col justify-between">
                     <div>
                         <div class="flex items-center justify-between mb-3">
                             <span class="px-3 py-1 bg-[#FDC700] text-black text-xs font-bold rounded-lg uppercase tracking-wider">
-                                Instrumen Kuesioner
+                                Kuesioner Master
                             </span>
                             <span class="text-xs font-semibold text-gray-400">
-                                Butir Pertanyaan & Section
+                                Pertanyaan Utama
                             </span>
                         </div>
                         <h2 class="text-xl font-bold text-gray-900 tracking-tight mb-2">
-                            Pengelolaan Butir Pertanyaan & Bagian
+                            Pengelolaan Kuesioner Inti / Master
                         </h2>
                         <p class="text-sm text-gray-600 leading-relaxed">
-                            Kelola butir pertanyaan Tracer Study, opsi jawaban, atur alur lompatan (*jump logic*), susun urutan pertanyaan, dan tentukan kuesioner khusus program studi.
+                            Kelola butir pertanyaan Tracer Study utama, opsi jawaban, atur alur lompatan (*jump logic*), susun urutan pertanyaan, dan tentukan section induk.
                         </p>
                     </div>
 
@@ -204,6 +204,70 @@ const props = defineProps({
                             <span>Kelola Pertanyaan</span>
                             <span class="ml-1.5">&rarr;</span>
                         </Link>
+                    </div>
+                </div>
+
+                <!-- Modul 3: Pengaturan Kuesioner Per Prodi -->
+                <div class="bg-white rounded-lg p-6 border border-slate-200 shadow-2xs flex flex-col justify-between">
+                    <div>
+                        <div class="flex items-center justify-between mb-3">
+                            <span class="px-3 py-1 bg-emerald-100 text-[#0D542B] border border-emerald-300 text-xs font-bold rounded-lg uppercase tracking-wider">
+                                Kuesioner Prodi
+                            </span>
+                            <span class="text-xs font-semibold text-emerald-800 font-bold">
+                                Superadmin Control
+                            </span>
+                        </div>
+                        <h2 class="text-xl font-bold text-gray-900 tracking-tight mb-2">
+                            Pengaturan Kuesioner Per Prodi
+                        </h2>
+                        <p class="text-sm text-gray-600 leading-relaxed">
+                            Pilih program studi spesifik lalu kelola daftar bagian (section), butir pertanyaan, dan opsi jawaban khusus untuk prodi tersebut.
+                        </p>
+                    </div>
+
+                    <div class="mt-8 pt-4 border-t border-gray-100 flex items-center justify-between">
+                        <span class="text-xs text-slate-500 font-medium">
+                            Kelola Section & Pertanyaan Prodi
+                        </span>
+                        <Link 
+                            href="/superadmin/prodi-kuesioner" 
+                            class="inline-flex items-center px-6 py-3 bg-[#0D542B] hover:bg-[#08381c] text-white text-xs font-bold rounded-lg shadow-xs transition-all cursor-pointer"
+                        >
+                            <span>Buka Kuesioner Prodi</span>
+                            <span class="ml-1.5">&rarr;</span>
+                        </Link>
+                    </div>
+                </div>
+
+                <!-- Modul 4: ACC Perusahaan Pengajuan Alumni (All / Per Prodi) -->
+                <div class="bg-white rounded-lg p-6 border border-slate-200 shadow-2xs flex flex-col justify-between md:col-span-2 lg:col-span-3">
+                    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                        <div>
+                            <div class="flex items-center gap-2 mb-2">
+                                <span class="px-3 py-1 bg-amber-500 text-white text-xs font-bold rounded-lg uppercase tracking-wider">
+                                    ACC Perusahaan
+                                </span>
+                                <span v-if="stats?.total_pending_perusahaan > 0" class="px-2.5 py-0.5 bg-amber-100 text-amber-900 font-bold text-xs rounded-full border border-amber-300">
+                                    {{ stats.total_pending_perusahaan }} Perusahaan Menunggu ACC
+                                </span>
+                            </div>
+                            <h2 class="text-xl font-bold text-gray-900 tracking-tight">
+                                Verifikasi & Approval Perusahaan Pengajuan Alumni
+                            </h2>
+                            <p class="text-sm text-gray-600 leading-relaxed mt-1">
+                                Otoritas Superadmin untuk melakukan verifikasi langsung, penggantian master perusahaan (auto replace), penyuntingan atribut, atau penolakan pengajuan tempat kerja alumni secara menyeluruh (All) maupun terfilter per Program Studi.
+                            </p>
+                        </div>
+                        <div class="shrink-0">
+                            <Link 
+                                href="/superadmin/perusahaan" 
+                                class="inline-flex items-center px-6 py-3 bg-[#0D542B] hover:bg-[#08381c] text-white text-xs font-bold rounded-lg shadow-xs transition-all cursor-pointer whitespace-nowrap"
+                            >
+                                <span>Kelola ACC Perusahaan</span>
+                                <span class="ml-1.5">&rarr;</span>
+                            </Link>
+                        </div>
                     </div>
                 </div>
 
