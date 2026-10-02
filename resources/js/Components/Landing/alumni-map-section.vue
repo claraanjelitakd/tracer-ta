@@ -27,7 +27,18 @@ const props = defineProps({
     allKabupaten: {
         type: Array,
         default: () => []
+    },
+    // Background class yang dapat diatur dari Beranda.vue
+    bgClass: {
+        type: String,
+        default: 'bg-[#FFC700]'
     }
+});
+
+// Deteksi apakah background bertipe terang (kuning, putih, dll.) agar kontras teks & kartu menyesuaikan otomatis
+const isLightBg = computed(() => {
+    const bg = (props.bgClass || '').toLowerCase();
+    return bg.includes('white') || bg.includes('ffc700') || bg.includes('yellow') || bg.includes('amber') || bg.includes('slate-50') || bg.includes('slate-100') || bg.includes('gray-50') || bg.includes('gray-100');
 });
 
 // State Filter & Pencarian
@@ -640,10 +651,12 @@ defineExpose({
 </script>
 
 <template>
-    <section id="peta-alumni" class="py-20 lg:py-24 bg-[#03542B] text-white border-b border-white/10 relative overflow-hidden">
-        <!-- Glossy Glow Accents -->
-        <div class="absolute -top-32 -left-32 w-96 h-96 bg-[#004D25]/80 rounded-full blur-3xl pointer-events-none"></div>
-        <div class="absolute -bottom-32 -right-32 w-96 h-96 bg-[#FFC700]/10 rounded-full blur-3xl pointer-events-none"></div>
+    <section id="peta-alumni" :class="[bgClass, 'py-20 lg:py-24 relative overflow-hidden transition-colors duration-300', isLightBg ? 'text-slate-950 border-b border-amber-300/70' : 'text-white border-b border-white/10']">
+        <!-- Glow Accents -->
+        <div v-if="!isLightBg" class="absolute -top-32 -left-32 w-96 h-96 bg-[#004D25]/80 rounded-full blur-3xl pointer-events-none"></div>
+        <div v-if="!isLightBg" class="absolute -bottom-32 -right-32 w-96 h-96 bg-[#FFC700]/10 rounded-full blur-3xl pointer-events-none"></div>
+        <div v-else class="absolute -top-32 -left-32 w-96 h-96 bg-white/40 rounded-full blur-3xl pointer-events-none"></div>
+        <div v-if="isLightBg" class="absolute -bottom-32 -right-32 w-96 h-96 bg-amber-600/15 rounded-full blur-3xl pointer-events-none"></div>
 
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full relative z-10">
             
@@ -655,22 +668,22 @@ defineExpose({
             <div class="mb-7 flex flex-col md:flex-row md:items-end md:justify-between gap-4">
                 <div>
                     <!-- Badge Cakupan Peta Indonesia -->
-                    <div class="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-[#FFC700] shadow-md text-slate-950 font-black text-xs mb-2.5">
-                        <svg class="w-3.5 h-3.5 text-slate-950" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+                    <div :class="isLightBg ? 'bg-[#004D25] text-[#FFC700]' : 'bg-[#FFC700] text-slate-950'" class="inline-flex items-center gap-2 px-3.5 py-1 rounded-full shadow-md font-black text-xs mb-2.5">
+                        <svg :class="isLightBg ? 'text-[#FFC700]' : 'text-slate-950'" class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
                         <span>Cakupan Peta: Seluruh Wilayah Indonesia (Nasional)</span>
                     </div>
 
-                    <h2 class="text-2xl sm:text-3xl font-black text-white tracking-tight">
-                        PETA SEBARAN &amp; DIREKTORI ALUMNI <span class="text-[#FFC700]">UKDW</span>
+                    <h2 :class="isLightBg ? 'text-slate-950' : 'text-white'" class="text-2xl sm:text-3xl font-black tracking-tight">
+                        PETA SEBARAN &amp; DIREKTORI ALUMNI <span :class="isLightBg ? 'text-[#004D25]' : 'text-[#FFC700]'">UKDW</span>
                     </h2>
-                    <p class="text-white/80 text-xs sm:text-sm mt-1 max-w-2xl leading-relaxed">
+                    <p :class="isLightBg ? 'text-slate-900/85 font-medium' : 'text-white/80'" class="text-xs sm:text-sm mt-1 max-w-2xl leading-relaxed">
                         Visualisasi sebaran alumni di seluruh provinsi Indonesia. Gunakan filter aktivitas dan wilayah di bawah untuk menelusuri karier dalam maupun luar negeri.
                     </p>
                 </div>
 
                 <!-- Info pill -->
-                <div class="hidden sm:flex items-center gap-2 text-xs font-semibold text-white bg-white/10 backdrop-blur-md px-4 py-2 rounded-full border border-white/20 shadow-lg">
-                    <span class="w-2.5 h-2.5 rounded-full bg-[#FFC700] animate-pulse"></span>
+                <div :class="isLightBg ? 'text-slate-900 bg-white/90 border-amber-300/80 shadow-md' : 'text-white bg-white/10 border-white/20 shadow-lg'" class="hidden sm:flex items-center gap-2 text-xs font-semibold backdrop-blur-md px-4 py-2 rounded-full border">
+                    <span :class="isLightBg ? 'bg-[#004D25]' : 'bg-[#FFC700]'" class="w-2.5 h-2.5 rounded-full animate-pulse"></span>
                     <span>{{ filteredAlumni.length }} Alumni Tersaring</span>
                 </div>
             </div>
@@ -682,7 +695,7 @@ defineExpose({
               Wilayah (Dalam Negeri, Luar Negeri), Provinsi & Kab/Kota
               ========================================================================
             -->
-            <div class="bg-white/10 backdrop-blur-2xl rounded-3xl p-4 sm:p-5 border border-white/20 shadow-2xl mb-6">
+            <div :class="isLightBg ? 'bg-white/90 border-amber-300/80 shadow-xl' : 'bg-white/10 border-white/20 shadow-2xl'" class="backdrop-blur-2xl rounded-3xl p-4 sm:p-5 border mb-6">
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-3 items-center">
                     
                     <!-- 1. Search Input (Col 4) -->
@@ -691,21 +704,23 @@ defineExpose({
                             type="text"
                             v-model="searchQuery"
                             placeholder="Cari nama, jabatan, perusahaan, prodi..."
-                            class="w-full pl-9 pr-4 py-2.5 rounded-2xl border border-white/20 bg-black/40 text-xs sm:text-sm text-white placeholder-white/50 font-medium focus:outline-none focus:border-[#FFC700] focus:ring-2 focus:ring-[#FFC700]/20 transition-all shadow-inner"
+                            :class="isLightBg ? 'border-amber-300/80 bg-white text-slate-900 placeholder-slate-400 focus:border-[#004D25] focus:ring-[#004D25]/20' : 'border-white/20 bg-black/40 text-white placeholder-white/50 focus:border-[#FFC700] focus:ring-[#FFC700]/20'"
+                            class="w-full pl-9 pr-4 py-2.5 rounded-2xl border text-xs sm:text-sm font-medium focus:outline-none focus:ring-2 transition-all shadow-inner"
                         />
-                        <svg class="w-4 h-4 text-white/50 absolute left-3 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                        <svg :class="isLightBg ? 'text-slate-400' : 'text-white/50'" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
                     </div>
 
                     <!-- 2. Dropdown Kategori Aktivitas Karier (Col 2) -->
                     <div class="lg:col-span-2">
                         <select 
                             v-model="selectedAktivitasFilter"
-                            class="w-full px-3 py-2.5 rounded-2xl border border-white/20 text-xs sm:text-sm text-white font-medium focus:outline-none focus:border-[#FFC700] bg-slate-900/90 transition-all cursor-pointer shadow-inner"
+                            :class="isLightBg ? 'border-amber-300/80 text-slate-900 bg-white focus:border-[#004D25]' : 'border-white/20 text-white bg-slate-900/90 focus:border-[#FFC700]'"
+                            class="w-full px-3 py-2.5 rounded-2xl border text-xs sm:text-sm font-medium focus:outline-none transition-all cursor-pointer shadow-inner"
                         >
-                            <option value="ALL" class="bg-slate-900 text-white">Semua Aktivitas</option>
-                            <option value="Perusahaan" class="bg-slate-900 text-white">Perusahaan</option>
-                            <option value="Wirausaha" class="bg-slate-900 text-white">Wirausaha</option>
-                            <option value="Lanjut Pendidikan" class="bg-slate-900 text-white">Lanjut Pendidikan</option>
+                            <option value="ALL" :class="isLightBg ? 'bg-white text-slate-900' : 'bg-slate-900 text-white'">Semua Aktivitas</option>
+                            <option value="Perusahaan" :class="isLightBg ? 'bg-white text-slate-900' : 'bg-slate-900 text-white'">Perusahaan</option>
+                            <option value="Wirausaha" :class="isLightBg ? 'bg-white text-slate-900' : 'bg-slate-900 text-white'">Wirausaha</option>
+                            <option value="Lanjut Pendidikan" :class="isLightBg ? 'bg-white text-slate-900' : 'bg-slate-900 text-white'">Lanjut Pendidikan</option>
                         </select>
                     </div>
 
@@ -713,11 +728,12 @@ defineExpose({
                     <div class="lg:col-span-2">
                         <select 
                             v-model="selectedLokasiFilter"
-                            class="w-full px-3 py-2.5 rounded-2xl border border-white/20 text-xs sm:text-sm text-white font-medium focus:outline-none focus:border-[#FFC700] bg-slate-900/90 transition-all cursor-pointer shadow-inner"
+                            :class="isLightBg ? 'border-amber-300/80 text-slate-900 bg-white focus:border-[#004D25]' : 'border-white/20 text-white bg-slate-900/90 focus:border-[#FFC700]'"
+                            class="w-full px-3 py-2.5 rounded-2xl border text-xs sm:text-sm font-medium focus:outline-none transition-all cursor-pointer shadow-inner"
                         >
-                            <option value="ALL" class="bg-slate-900 text-white">Semua Wilayah</option>
-                            <option value="Dalam Negeri" class="bg-slate-900 text-white">Dalam Negeri</option>
-                            <option value="Luar Negeri" class="bg-slate-900 text-white">Luar Negeri</option>
+                            <option value="ALL" :class="isLightBg ? 'bg-white text-slate-900' : 'bg-slate-900 text-white'">Semua Wilayah</option>
+                            <option value="Dalam Negeri" :class="isLightBg ? 'bg-white text-slate-900' : 'bg-slate-900 text-white'">Dalam Negeri</option>
+                            <option value="Luar Negeri" :class="isLightBg ? 'bg-white text-slate-900' : 'bg-slate-900 text-white'">Luar Negeri</option>
                         </select>
                     </div>
 
@@ -726,10 +742,11 @@ defineExpose({
                         <select 
                             v-model="selectedProvFilter"
                             :disabled="selectedLokasiFilter === 'Luar Negeri'"
-                            class="w-full px-3 py-2.5 rounded-2xl border border-white/20 text-xs sm:text-sm text-white font-medium focus:outline-none focus:border-[#FFC700] bg-slate-900/90 transition-all cursor-pointer shadow-inner disabled:opacity-40 disabled:cursor-not-allowed"
+                            :class="isLightBg ? 'border-amber-300/80 text-slate-900 bg-white focus:border-[#004D25]' : 'border-white/20 text-white bg-slate-900/90 focus:border-[#FFC700]'"
+                            class="w-full px-3 py-2.5 rounded-2xl border text-xs sm:text-sm font-medium focus:outline-none transition-all cursor-pointer shadow-inner disabled:opacity-40 disabled:cursor-not-allowed"
                         >
-                            <option value="ALL" class="bg-slate-900 text-white">Semua Provinsi</option>
-                            <option v-for="prov in availableProvinsi" :key="prov" :value="prov" class="bg-slate-900 text-white">
+                            <option value="ALL" :class="isLightBg ? 'bg-white text-slate-900' : 'bg-slate-900 text-white'">Semua Provinsi</option>
+                            <option v-for="prov in availableProvinsi" :key="prov" :value="prov" :class="isLightBg ? 'bg-white text-slate-900' : 'bg-slate-900 text-white'">
                                 {{ prov }}
                             </option>
                         </select>
@@ -740,7 +757,8 @@ defineExpose({
                         <button
                             type="button"
                             @click="resetMapToIndonesia"
-                            class="w-full py-2.5 px-3 bg-[#FFC700] hover:bg-[#FBBF24] text-slate-950 font-black text-xs sm:text-sm rounded-full transition-all text-center cursor-pointer shadow-md hover:shadow-lg active:scale-95"
+                            :class="isLightBg ? 'bg-[#004D25] hover:bg-[#03542B] text-[#FFC700]' : 'bg-[#FFC700] hover:bg-[#FBBF24] text-slate-950'"
+                            class="w-full py-2.5 px-3 font-black text-xs sm:text-sm rounded-full transition-all text-center cursor-pointer shadow-md hover:shadow-lg active:scale-95"
                         >
                             Reset Filter
                         </button>
@@ -759,14 +777,14 @@ defineExpose({
             <div id="alumni-map-container" class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
                 
                 <!-- KOLOM KIRI (7 Kolom): PETA INTERAKTIF OPENSTREETMAP -->
-                <div class="lg:col-span-7 bg-white/10 backdrop-blur-2xl rounded-3xl border border-white/20 overflow-hidden shadow-2xl flex flex-col min-h-[540px]">
+                <div :class="isLightBg ? 'bg-white/95 border-amber-300/80 shadow-xl' : 'bg-white/10 border-white/20 shadow-2xl'" class="lg:col-span-7 backdrop-blur-2xl rounded-3xl border overflow-hidden flex flex-col min-h-[540px]">
                     <!-- Header Bar Peta Glossy Style -->
-                    <div class="px-5 py-3.5 bg-black/40 border-b border-white/15 flex items-center justify-between gap-2 shrink-0">
+                    <div :class="isLightBg ? 'bg-amber-100/70 border-b border-amber-200/80' : 'bg-black/40 border-b border-white/15'" class="px-5 py-3.5 flex items-center justify-between gap-2 shrink-0">
                         <div class="flex items-center gap-2">
-                            <span class="text-xs font-black text-white uppercase tracking-wider">
+                            <span :class="isLightBg ? 'text-slate-950' : 'text-white'" class="text-xs font-black uppercase tracking-wider">
                                 PETA NASIONAL INDONESIA
                             </span>
-                            <span v-if="selectedProvince" class="text-xs text-[#FFC700] font-bold">
+                            <span v-if="selectedProvince" :class="isLightBg ? 'text-[#004D25]' : 'text-[#FFC700]'" class="text-xs font-bold">
                                 / {{ selectedProvince }}
                             </span>
                         </div>
@@ -774,7 +792,8 @@ defineExpose({
                         <button
                             v-if="isZoomedIn || selectedProvince"
                             @click="resetMapToIndonesia"
-                            class="px-3.5 py-1 bg-[#FFC700] hover:bg-[#FBBF24] text-slate-950 font-bold text-xs rounded-full transition-all inline-flex items-center gap-1 shadow-sm cursor-pointer active:scale-95"
+                            :class="isLightBg ? 'bg-[#004D25] hover:bg-[#03542B] text-[#FFC700]' : 'bg-[#FFC700] hover:bg-[#FBBF24] text-slate-950'"
+                            class="px-3.5 py-1 font-bold text-xs rounded-full transition-all inline-flex items-center gap-1 shadow-sm cursor-pointer active:scale-95"
                         >
                             <span>Tampilan Nasional</span>
                         </button>
@@ -793,8 +812,8 @@ defineExpose({
                         <div id="alumni-leaflet-map" class="w-full h-full z-10 min-h-[480px]"></div>
 
                         <!-- Legenda Peta Glossy Rounded Pill -->
-                        <div class="absolute bottom-3 left-3 z-20 bg-black/60 backdrop-blur-md px-3.5 py-1.5 rounded-full border border-white/20 shadow-md">
-                            <div class="flex items-center gap-3 text-[10px] font-bold text-white">
+                        <div :class="isLightBg ? 'bg-white/90 border-amber-300/80 text-slate-900' : 'bg-black/60 border-white/20 text-white'" class="absolute bottom-3 left-3 z-20 backdrop-blur-md px-3.5 py-1.5 rounded-full border shadow-md">
+                            <div class="flex items-center gap-3 text-[10px] font-bold">
                                 <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-[#004D25] border border-white/30"></span> &gt;50</span>
                                 <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-[#03542B] border border-white/30"></span> 21–50</span>
                                 <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-[#FFC700]"></span> 1–20</span>
@@ -818,33 +837,35 @@ defineExpose({
                     <!-- Header Kolom Kanan -->
                     <div class="mb-3 flex items-center justify-between gap-2 px-1">
                         <div>
-                            <span class="text-xs font-black text-white uppercase tracking-wider block">
+                            <span :class="isLightBg ? 'text-slate-950' : 'text-white'" class="text-xs font-black uppercase tracking-wider block">
                                 <span v-if="selectedProvFilter !== 'ALL'">{{ selectedProvFilter }}</span>
                                 <span v-else>Direktori Alumni Terdaftar</span>
                             </span>
-                            <span class="text-[11px] text-white/70 font-semibold">
+                            <span :class="isLightBg ? 'text-slate-800' : 'text-white/70'" class="text-[11px] font-semibold">
                                 Menampilkan {{ filteredAlumni.length }} data lulusan
                             </span>
                         </div>
 
                         <!-- Pagination Glossy Pill -->
-                        <div v-if="totalPages > 1" class="flex items-center gap-1 bg-white/10 backdrop-blur-md p-1 rounded-full border border-white/20 shadow-md">
+                        <div v-if="totalPages > 1" :class="isLightBg ? 'bg-white/90 border-amber-300/80 shadow-md' : 'bg-white/10 border-white/20 shadow-md'" class="flex items-center gap-1 backdrop-blur-md p-1 rounded-full border">
                             <button
                                 type="button"
                                 @click="currentPage = Math.max(1, currentPage - 1)"
                                 :disabled="currentPage === 1"
-                                class="px-2.5 py-1 rounded-full text-xs font-bold text-white disabled:opacity-30 disabled:cursor-not-allowed hover:bg-white/20 transition-colors cursor-pointer"
+                                :class="isLightBg ? 'text-slate-900 hover:bg-amber-100' : 'text-white hover:bg-white/20'"
+                                class="px-2.5 py-1 rounded-full text-xs font-bold disabled:opacity-30 disabled:cursor-not-allowed transition-colors cursor-pointer"
                             >
                                 ‹
                             </button>
-                            <span class="text-xs font-bold text-[#FFC700] px-1">
+                            <span :class="isLightBg ? 'text-[#004D25]' : 'text-[#FFC700]'" class="text-xs font-black px-1">
                                 {{ currentPage }}/{{ totalPages }}
                             </span>
                             <button
                                 type="button"
                                 @click="currentPage = Math.min(totalPages, currentPage + 1)"
                                 :disabled="currentPage === totalPages"
-                                class="px-2.5 py-1 rounded-full text-xs font-bold text-white disabled:opacity-30 disabled:cursor-not-allowed hover:bg-white/20 transition-colors cursor-pointer"
+                                :class="isLightBg ? 'text-slate-900 hover:bg-amber-100' : 'text-white hover:bg-white/20'"
+                                class="px-2.5 py-1 rounded-full text-xs font-bold disabled:opacity-30 disabled:cursor-not-allowed transition-colors cursor-pointer"
                             >
                                 ›
                             </button>
@@ -864,11 +885,12 @@ defineExpose({
                             v-for="alumni in paginatedAlumni"
                             :key="alumni.id"
                             @click="openDetailSweetAlert(alumni)"
-                            class="bg-white/10 backdrop-blur-2xl rounded-3xl border border-white/20 p-3.5 shadow-2xl hover:shadow-2xl hover:border-[#FFC700]/70 hover:bg-white/15 transition-all flex flex-col justify-between group cursor-pointer text-white"
+                            :class="isLightBg ? 'bg-white/95 border-amber-200/90 hover:border-[#004D25]/50 hover:bg-white text-slate-900 shadow-md hover:shadow-xl' : 'bg-white/10 border-white/20 hover:border-[#FFC700]/70 hover:bg-white/15 text-white shadow-2xl hover:shadow-2xl'"
+                            class="backdrop-blur-2xl rounded-3xl border p-3.5 transition-all flex flex-col justify-between group cursor-pointer"
                         >
                             <div>
                                 <!-- Top Area: Foto Portrait dengan Rounded Squircle & Floating Badges -->
-                                <div class="relative w-full h-32 rounded-2xl overflow-hidden bg-slate-900 border border-white/15 shadow-inner mb-2.5">
+                                <div class="relative w-full h-32 rounded-2xl overflow-hidden bg-slate-900 border border-black/10 shadow-inner mb-2.5">
                                     <img
                                         :src="alumni.foto || `https://ui-avatars.com/api/?name=${encodeURIComponent(alumni.nama)}&background=004D25&color=FFC700&bold=true&size=160`"
                                         :alt="alumni.nama"
@@ -890,25 +912,25 @@ defineExpose({
                                     </span>
                                 </div>
 
-                                <!-- Nama Alumni + Verified Icon Biru -->
+                                <!-- Nama Alumni + Verified Icon -->
                                 <div class="flex items-center gap-1 min-w-0">
-                                    <h4 class="text-sm font-extrabold text-white group-hover:text-[#FFC700] transition-colors leading-snug truncate">
+                                    <h4 :class="isLightBg ? 'text-slate-950 group-hover:text-[#004D25]' : 'text-white group-hover:text-[#FFC700]'" class="text-sm font-extrabold transition-colors leading-snug truncate">
                                         {{ alumni.nama }}
                                     </h4>
                                     <!-- Verified Checkmark Badge UKDW Amber Gold -->
-                                    <svg class="w-3.5 h-3.5 text-[#FFC700] fill-current shrink-0" viewBox="0 0 24 24">
+                                    <svg :class="isLightBg ? 'text-[#004D25]' : 'text-[#FFC700]'" class="w-3.5 h-3.5 fill-current shrink-0" viewBox="0 0 24 24">
                                         <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
                                     </svg>
                                 </div>
 
                                 <!-- Jabatan & Tempat Kerja / Perguruan Tinggi -->
-                                <p class="text-[11px] text-white/80 font-semibold truncate mt-0.5">
+                                <p :class="isLightBg ? 'text-slate-700' : 'text-white/80'" class="text-[11px] font-semibold truncate mt-0.5">
                                     {{ alumni.posisi_jabatan || 'Alumni' }} • {{ alumni.perusahaan_nama || alumni.perguruan_tinggi || 'UKDW' }}
                                 </p>
 
                                 <!-- Mini Stats/Chips Row (Glossy Style) -->
-                                <div class="flex items-center gap-2 mt-2 pt-2 border-t border-white/15 text-[10px] text-white/70 font-medium">
-                                    <span class="font-black text-slate-950 bg-[#FFC700] px-1.5 py-0.5 rounded-md">
+                                <div :class="isLightBg ? 'border-slate-200 text-slate-600' : 'border-white/15 text-white/70'" class="flex items-center gap-2 mt-2 pt-2 border-t text-[10px] font-medium">
+                                    <span :class="isLightBg ? 'bg-[#004D25] text-[#FFC700]' : 'bg-[#FFC700] text-slate-950'" class="font-black px-1.5 py-0.5 rounded-md">
                                         '{{ (alumni.tahun_lulus || '').slice(-2) }}
                                     </span>
                                     <span class="truncate flex-1">
@@ -922,7 +944,8 @@ defineExpose({
                                 <button
                                     type="button"
                                     @click.stop="openDetailSweetAlert(alumni)"
-                                    class="flex-1 py-2 px-3 rounded-full bg-[#FFC700] hover:bg-[#FBBF24] text-slate-950 font-black text-xs shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-1.5 cursor-pointer active:scale-95"
+                                    :class="isLightBg ? 'bg-[#004D25] hover:bg-[#03542B] text-[#FFC700]' : 'bg-[#FFC700] hover:bg-[#FBBF24] text-slate-950'"
+                                    class="flex-1 py-2 px-3 rounded-full font-black text-xs shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-1.5 cursor-pointer active:scale-95"
                                 >
                                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
                                     <span>Detail Profil</span>
@@ -933,7 +956,8 @@ defineExpose({
                                     :href="alumni.linkedin_url"
                                     target="_blank"
                                     @click.stop
-                                    class="w-8 h-8 rounded-full bg-white/15 hover:bg-[#0077b5] text-white flex items-center justify-center shrink-0 transition-all shadow-md"
+                                    :class="isLightBg ? 'bg-slate-100 hover:bg-[#0077b5] text-slate-700 hover:text-white border border-slate-200' : 'bg-white/15 hover:bg-[#0077b5] text-white'"
+                                    class="w-8 h-8 rounded-full flex items-center justify-center shrink-0 transition-all shadow-md"
                                     title="LinkedIn Profil"
                                 >
                                     <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24"><path d="M19 3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14m-.5 15.5v-5.3a3.26 3.26 0 0 0-3.26-3.26c-.85 0-1.84.52-2.28 1.3v-1.11h-2.79v8.37h2.79v-4.93c0-.77.62-1.4 1.39-1.4a1.4 1.4 0 0 1 1.4 1.4v4.93h2.75M6.46 8.76a1.45 1.45 0 0 0 1.45-1.45A1.45 1.45 0 0 0 6.46 5.86 1.45 1.45 0 0 0 5 7.31a1.45 1.45 0 0 0 1.46 1.45m1.39 9.97v-8.37H5.07v8.37z"/></svg>
@@ -944,15 +968,17 @@ defineExpose({
                         <!-- Empty State -->
                         <div
                             v-if="filteredAlumni.length === 0"
-                            class="col-span-1 sm:col-span-2 text-center py-16 bg-white/10 backdrop-blur-2xl rounded-3xl border border-white/20 p-6 shadow-2xl text-white"
+                            :class="isLightBg ? 'bg-white/95 border-amber-300/80 text-slate-900 shadow-md' : 'bg-white/10 border-white/20 text-white shadow-2xl'"
+                            class="col-span-1 sm:col-span-2 text-center py-16 backdrop-blur-2xl rounded-3xl border p-6"
                         >
-                            <svg class="w-10 h-10 text-white/40 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                            <h4 class="text-sm font-bold text-white">Tidak ada alumni yang sesuai kriteria</h4>
-                            <p class="text-xs text-white/70 mt-1">Coba sesuaikan filter aktivitas, wilayah, atau kata kunci pencarian.</p>
+                            <svg :class="isLightBg ? 'text-slate-400' : 'text-white/40'" class="w-10 h-10 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                            <h4 :class="isLightBg ? 'text-slate-950 font-bold' : 'text-white font-bold'" class="text-sm">Tidak ada alumni yang sesuai kriteria</h4>
+                            <p :class="isLightBg ? 'text-slate-600' : 'text-white/70'" class="text-xs mt-1">Coba sesuaikan filter aktivitas, wilayah, atau kata kunci pencarian.</p>
                             <button
                                 type="button"
                                 @click="resetMapToIndonesia"
-                                class="mt-4 px-5 py-2 bg-[#FFC700] hover:bg-[#FBBF24] text-slate-950 font-black text-xs rounded-full shadow-md transition-all active:scale-95 cursor-pointer"
+                                :class="isLightBg ? 'bg-[#004D25] hover:bg-[#03542B] text-[#FFC700]' : 'bg-[#FFC700] hover:bg-[#FBBF24] text-slate-950'"
+                                class="mt-4 px-5 py-2 font-black text-xs rounded-full shadow-md transition-all active:scale-95 cursor-pointer"
                             >
                                 Reset Filter
                             </button>
@@ -960,7 +986,7 @@ defineExpose({
                     </div>
 
                     <!-- Bottom Status Text -->
-                    <div class="mt-3 flex items-center justify-between text-[11px] text-white/70 font-medium px-1">
+                    <div :class="isLightBg ? 'text-slate-800 font-medium' : 'text-white/70 font-medium'" class="mt-3 flex items-center justify-between text-[11px] px-1">
                         <span>Pilih kartu untuk melihat detail profil atau zoom lokasi</span>
                         <span v-if="totalPages > 1" class="text-[#FFC700] font-bold">Halaman {{ currentPage }} dari {{ totalPages }}</span>
                     </div>

@@ -19,7 +19,14 @@ class WilayahSeeder extends Seeder
     public function run(): void
     {
         // 1. Impor Data Propinsi
-        $provinsiCsvFile = base_path('provinsi.csv');
+        $provinsiCsvFile = base_path('data/provinsi.csv');
+        if (! file_exists($provinsiCsvFile)) {
+            $provinsiCsvFile = database_path('data/provinsi.csv');
+        }
+        if (! file_exists($provinsiCsvFile)) {
+            $provinsiCsvFile = base_path('provinsi.csv');
+        }
+
         if (file_exists($provinsiCsvFile)) {
             $provinsiData = array_map('str_getcsv', file($provinsiCsvFile));
             // Hapus header
@@ -38,7 +45,7 @@ class WilayahSeeder extends Seeder
             }
             $this->command->info("Selesai! $provInserted propinsi diproses.");
         } else {
-            $this->command->error('File provinsi.csv tidak ditemukan di direktori root!');
+            $this->command->error('File provinsi.csv tidak ditemukan di direktori /data!');
         }
 
         // 2. Load semua propinsi ke memory agar tidak query berulang-ulang
@@ -46,7 +53,13 @@ class WilayahSeeder extends Seeder
         $this->command->info('Berhasil memuat '.$propinsis->count().' propinsi dari database.');
 
         // 3. Impor Data Kabupaten/Kota
-        $kabupatenCsvFile = base_path('kabupaten_kota.csv');
+        $kabupatenCsvFile = base_path('data/kabupaten_kota.csv');
+        if (! file_exists($kabupatenCsvFile)) {
+            $kabupatenCsvFile = database_path('data/kabupaten_kota.csv');
+        }
+        if (! file_exists($kabupatenCsvFile)) {
+            $kabupatenCsvFile = base_path('kabupaten_kota.csv');
+        }
         if (file_exists($kabupatenCsvFile)) {
             $kabupatenData = array_map('str_getcsv', file($kabupatenCsvFile));
             // Hapus header

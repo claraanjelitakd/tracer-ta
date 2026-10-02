@@ -11,6 +11,10 @@ return new class extends Migration
      */
     public function up(): void
     {
+        if (Schema::hasColumn('perusahaan', 'created_by_user_id') && Schema::hasColumn('perusahaan', 'created_by_prodi_id')) {
+            return;
+        }
+
         Schema::table('perusahaan', function (Blueprint $table) {
             if (! Schema::hasColumn('perusahaan', 'created_by_user_id')) {
                 $table->foreignId('created_by_user_id')->nullable()->after('jenis_perusahaan_lainnya')->constrained('users')->nullOnDelete();

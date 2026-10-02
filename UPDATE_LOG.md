@@ -1,5 +1,88 @@
 # UPDATE LOG - SERU (Sistem Ekosistem Rekam Jejak Alumni)
 
+## [2026-10-03] Fleksibilitas Verifikasi Master Perusahaan, Penggantian Terverifikasi, dan Pre-select Fakultas pada Manajemen Akun
+
+### Ringkasan Pembaruan
+1. **Fleksibilitas Pengelolaan Master Perusahaan (Aksi & Auto Replace)**:
+   - **Perbaikan Controller**: Menghapus batasan strict `->where('status_verifikasi', 'Menunggu Verifikasi')` pada method `verify()`, `replace()`, `updateAndVerify()`, dan `reject()` di:
+     - [`VerifikasiPerusahaanSuperAdminController.php`](file:///c:/study/tracerstudy/app/Http/Controllers/SuperAdmin/Perusahaan/VerifikasiPerusahaanSuperAdminController.php)
+     - [`VerifikasiPerusahaanProdiController.php`](file:///c:/study/tracerstudy/app/Http/Controllers/AdminProdi/VerifikasiPerusahaan/VerifikasiPerusahaanProdiController.php)
+     - [`VerifikasiPerusahaanFakultasController.php`](file:///c:/study/tracerstudy/app/Http/Controllers/AdminFakultas/VerifikasiPerusahaan/VerifikasiPerusahaanFakultasController.php)
+     Hal ini mengatasi error 404 ketika administrator melakukan *Auto Replace*, *Edit*, atau verifikasi ulang pada data perusahaan yang berstatus *Terverifikasi*.
+   - **Penyempurnaan Frontend Vue**: Menghapus blokade tampilan pada `SuperAdmin/Perusahaan/Index.vue`, `AdminProdi/Perusahaan/Index.vue`, dan `AdminFakultas/Perusahaan/Index.vue` sehingga aksi (*Detail*, *Sunting*, *Auto Replace*, *Tolak/Hapus*) tetap tersedia dan aktif untuk seluruh perusahaan baik pending maupun terverifikasi.
+
+2. **Perbaikan Tampilan & Pre-select Fakultas pada Manajemen Akun SuperAdmin**:
+   - **Penyesuaian Controller (`ManajemenAkunController.php`)**: Menambahkan eager loading `prodi.fakultas` pada query pengguna dan memperbaiki filter pencarian fakultas alumni berbasis `prodi.fakultas_id`.
+   - **Penyempurnaan Modal Edit User (`SuperAdmin/ManajemenAkun/Index.vue`)**:
+     - Memperbaiki komputasi `currentFakultasId = u.fakultas_id || u.prodi?.fakultas_id || u.prodi?.fakultas?.id` agar dropdown Fakultas terisi (*pre-selected*) secara akurat saat modal **Sunting Data Akun Pengguna** dibuka.
+     - Menambahkan event listener `didOpen` yang secara otomatis menyesuaikan pilihan dropdown Fakultas ketika pilihan Program Studi diubah.
+
+---
+
+## [2026-10-03] Sentralisasi Data CSV (/data), Robust Seeder Negara & Wilayah, Pembersihan File Usang, dan Otomasi Lulusan 2026
+
+### Ringkasan Pembaruan
+1. **Sentralisasi Berkas Master Data CSV ke Direktori `/data`**:
+   - Seluruh berkas CSV referensi yang sebelumnya tercecer di root repositori kini dipusatkan ke direktori [`data/`](file:///c:/study/tracerstudy/data):
+     - [`data/daftar_negara_dunia.csv`](file:///c:/study/tracerstudy/data/daftar_negara_dunia.csv): Master 194 negara dunia, ibu kota, kode ISO 2, dan benua.
+     - [`data/provinsi.csv`](file:///c:/study/tracerstudy/data/provinsi.csv): Master 38 provinsi di Indonesia.
+     - [`data/kabupaten_kota.csv`](file:///c:/study/tracerstudy/data/kabupaten_kota.csv): Master 514 kabupaten/kota di Indonesia.
+   - Memperbarui path resolusi pada [`WilayahSeeder.php`](file:///c:/study/tracerstudy/database/seeders/WilayahSeeder.php) dan [`RefNegaraSeeder.php`](file:///c:/study/tracerstudy/database/seeders/RefNegaraSeeder.php) menggunakan prioritas `base_path('data/*.csv')` dengan graceful fallback bertingkat.
+
+2. **Perbaikan & Peningkatan Robustness [`RefNegaraSeeder.php`](file:///c:/study/tracerstudy/database/seeders/RefNegaraSeeder.php)**:
+   - **Perbaikan Format Baris 147 CSV**: Memperbaiki tanda kutip berlebih pada baris Amerika Serikat (`"Amerika Serikat,""Washington, D.C."",US,Amerika Utara"`) menjadi `Amerika Serikat,"Washington, D.C.",US,Amerika Utara`. Sebelumnya, kesalahan format ini menyebabkan baris diparsing sebagai satu kolom tunggal sehingga `kode_iso2` bernilai null dan gagal disimpan karena constraint `NOT NULL` & `UNIQUE`.
+   - **Pencegahan Konflik Kunci Unik (*Unique Constraint Conflict*)**: Menghindari SQLSTATE Duplicate Entry pada `kode_iso2` atau `nama_negara` dengan melakukan lookup ganda `RefNegara::where('kode_iso2', $kodeIso2)->orWhere('nama_negara', $namaNegara)->first()` sebelum operasi create/update.
+   - **Stream Parsing `fgetcsv` & Proteksi Skema**: Mengganti pemanggilan `file()` dengan stream `fopen()` / `fgetcsv()` yang lebih hemat memori dan tahan terhadap variasi newline. Dilengkapi proteksi `Schema::hasTable('ref_negara')` agar seeder tidak *crash* jika tabel belum dimigrasi.
+
+3. **Pembersihan File Usang (*Dead Code Removal*)**:
+   - Menghapus service scraper lama `app/Services/LinkedIn/LinkedInService.php` dan skrip python client `scripts/linkedin_mcp_client.py` yang sebelumnya mengandalkan scraping browser lokal.
+   - Menyelaraskan seluruh pemanggilan controller di Biro 3 ([`SinkronisasiLinkedinController.php`](file:///c:/study/tracerstudy/app/Http/Controllers/AdminBiroTiga/KelolaAlumni/SinkronisasiLinkedinController.php)) dan SuperAdmin ([`LinkedInSyncController.php`](file:///c:/study/tracerstudy/app/Http/Controllers/SuperAdmin/LinkedIn/LinkedInSyncController.php)) agar menggunakan service produksi resmi [`LinkedInProfileService.php`](file:///c:/study/tracerstudy/app/Services/LinkedIn/LinkedInProfileService.php).
+   - Menegaskan kebijakan **Zero File Deletion** untuk modul arsitektur LinkedIn: DTOs, Contracts, Exceptions, Mappers, dan Providers tidak perlu dihapus saat integrasi API resmi LinkedIn diaktifkan.
+
+4. **Perbaikan Migrasi Basis Data & Kompatibilitas SQLite Test Suite**:
+   - Menambahkan guard *early return* pada migrasi [`2026_09_30_125458_add_created_by_user_id_to_perusahaan_table.php`](file:///c:/study/tracerstudy/database/migrations/2026_09_30_125458_add_created_by_user_id_to_perusahaan_table.php) saat kolom `created_by_user_id` dan `created_by_prodi_id` sudah ada, mencegah SQLite melakukan table rebuilding (`alter table __temp__perusahaan rename to perusahaan`) yang bentrok dengan *database view* `v_alumni_kuesioner_autofill`.
+   - Mengalihkan trait `DatabaseMigrations` menjadi `RefreshDatabase` pada [`BiroTigaDashboardTest.php`](file:///c:/study/tracerstudy/tests/Feature/BiroTigaDashboardTest.php) dan [`BiroTigaKelolaPertanyaanTest.php`](file:///c:/study/tracerstudy/tests/Feature/BiroTigaKelolaPertanyaanTest.php).
+   - Seluruh 94 skenario pengujian PHPUnit (`vendor/bin/phpunit`) lulus 100% (628 assertions).
+
+5. **Penyempurnaan Seeder & Otomasi Alumni Lulusan 2026**:
+   - Memperbaiki sintaks array pada [`BiodataSeeder.php`](file:///c:/study/tracerstudy/database/seeders/BiodataSeeder.php).
+   - Mendaftarkan [`Lulusan2026Seeder.php`](file:///c:/study/tracerstudy/database/seeders/Lulusan2026Seeder.php) ke dalam master seeder [`DatabaseSeeder.php`](file:///c:/study/tracerstudy/database/seeders/DatabaseSeeder.php).
+   - Seluruh 19 seeder database sukses dieksekusi secara berurutan tanpa error (`php artisan db:seed` exit code 0).
+
+---
+
+## [2026-10-03] Fitur Sinkronisasi Profil LinkedIn SuperAdmin & Refaktorisasi Arsitektur Driver-Based Resolution via .ENV
+
+### Ringkasan Pembaruan
+1. **Fitur Sinkronisasi LinkedIn SuperAdmin**:
+   - Dibuat halaman Superadmin khusus **Sinkronisasi LinkedIn** di [`Index.vue`](file:///c:/study/tracerstudy/resources/js/Pages/SuperAdmin/LinkedIn/Index.vue) dengan filter Tahun Kelulusan resmi (tanpa membuat field/tabel baru, bersumber dari relasi `Yudisium` dan `DataAkademik`).
+   - Menyediakan 5 kartu ringkasan metrik analitik: *Total Alumni*, *Dengan LinkedIn*, *Berhasil Sinkron*, *Gagal*, dan *Dilewati*.
+   - Aksi sinkronisasi individual asinkron tanpa full page reload dengan visual state reaktif (*Belum Disinkronkan* -> *Menyinkronkan...* -> *Berhasil* / *Gagal*).
+   - Aksi sinkronisasi massal (*Bulk Sync*) per angkatan tahun kelulusan dengan bilah progres live dan dialog modal ringkasan akhir.
+   - Dibuat Controller [`LinkedInSyncController.php`](file:///c:/study/tracerstudy/app/Http/Controllers/SuperAdmin/LinkedIn/LinkedInSyncController.php) dan rute `/superadmin/linkedin-sync` di [`web.php`](file:///c:/study/tracerstudy/routes/web.php).
+   - Ditambahkan menu navigasi *Sinkronisasi LinkedIn* di Sidebar Superadmin ([`Sidebar.vue`](file:///c:/study/tracerstudy/resources/js/Pages/SuperAdmin/Components/Sidebar.vue)).
+
+2. **Arsitektur Driver-Based Resolution (Switch via .ENV)**:
+   - Merefaktor penyedia data sinkronisasi LinkedIn dari penunjukan langsung ke pola abstraksi Driver-Based Resolution terpusat di [`AppServiceProvider.php`](file:///c:/study/tracerstudy/app/Providers/AppServiceProvider.php).
+   - Menghubungkan interface tunggal [`LinkedInProfileProvider.php`](file:///c:/study/tracerstudy/app/Services/LinkedIn/Contracts/LinkedInProfileProvider.php) ke driver aktif berdasarkan variabel lingkungan `LINKEDIN_DRIVER`:
+     - `LINKEDIN_DRIVER=mock` -> [`MockLinkedInProvider.php`](file:///c:/study/tracerstudy/app/Services/LinkedIn/Providers/MockLinkedInProvider.php) (membaca berkas JSON lokal di [`storage/app/mock/linkedin/johndoe.json`](file:///c:/study/tracerstudy/storage/app/mock/linkedin/johndoe.json) atau fallback dinamis berbasis biodata lokal).
+     - `LINKEDIN_DRIVER=api` -> [`ApiLinkedInProvider.php`](file:///c:/study/tracerstudy/app/Services/LinkedIn/Providers/ApiLinkedInProvider.php) (disiapkan untuk future server-to-server official API menggunakan API Key).
+   - Didaftarkan konfigurasi environment di [`config/linkedin.php`](file:///c:/study/tracerstudy/config/linkedin.php), [`config/services.php`](file:///c:/study/tracerstudy/config/services.php), [`.env`](file:///c:/study/tracerstudy/.env), dan [`.env.example`](file:///c:/study/tracerstudy/.env.example).
+   - Business logic ([`LinkedInProfileService.php`](file:///c:/study/tracerstudy/app/Services/LinkedIn/LinkedInProfileService.php), [`LinkedInProfileMapper.php`](file:///c:/study/tracerstudy/app/Services/LinkedIn/Mappers/LinkedInProfileMapper.php), controller, DTO, mapper, database, dan frontend) murni agnostik dan **TIDAK PERLU DIUBAH** saat beralih provider.
+
+3. **Integritas Data, Kebijakan Verifikasi Perusahaan, & Audit Trail**:
+   - Menerapkan 4 aturan penentuan posisi aktif (*Current Position*): prioritas posisi dengan `endMonthYear == null`, start date terbaru, dan riwayat historis terbaru.
+   - **Kebijakan Verifikasi Mutlak**: Setiap institusi perusahaan baru yang dibuat dari sinkronisasi LinkedIn SELALU disetel berstatus `status_verifikasi = 'Menunggu Verifikasi'` meskipun seluruh data terisi lengkap.
+   - Menjaga data otoritatif: NIM, NIK, NPWP, nomor telepon, email pribadi, alamat rumah, dan data akademik tidak pernah ditimpa.
+   - Isolasi transaksi basis data per-alumni: kegagalan satu alumni tidak menggagalkan alumni lain dalam satu batch.
+   - Jejak audit trail dicatat otomatis via [`LogActivity::record()`](file:///c:/study/tracerstudy/app/Models/LogActivity.php) dengan action `'linkedin_sync'` tanpa membocorkan kredensial.
+   - Ditambahkan relasi `latestLinkedinSyncLog()` pada model [`Biodata.php`](file:///c:/study/tracerstudy/app/Models/Biodata.php) menggunakan `latestOfMany()`.
+
+4. **Pengujian Komprehensif (17 Test Skenario)**:
+   - Dibuat suite pengujian fitur [`SuperAdminLinkedInSyncTest.php`](file:///c:/study/tracerstudy/tests/Feature/SuperAdminLinkedInSyncTest.php) mencakup skenario Mock JSON, 404 Profil Tidak Ditemukan, Empty Username SKIPPED, Driver API Switch, Proteksi API Key, dan Bulk Sync.
+
+---
+
 ## [2026-09-30] Fitur Otomatis Reset Password via Email, Master Data Perusahaan Terpadu, & Tabel Audit Trail Log Aktivitas SuperAdmin
 
 ### Ringkasan Pembaruan

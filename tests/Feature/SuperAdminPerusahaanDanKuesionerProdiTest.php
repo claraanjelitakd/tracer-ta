@@ -88,6 +88,32 @@ class SuperAdminPerusahaanDanKuesionerProdiTest extends TestCase
     }
 
     /**
+     * Test superadmin dapat mengganti (auto replace) perusahaan dengan master terverifikasi.
+     */
+    public function test_superadmin_dapat_mengganti_perusahaan_auto_replace(): void
+    {
+        $verifiedCompany = Perusahaan::create([
+            'nama_perusahaan' => 'PT Tokopedia Resmi',
+            'status_verifikasi' => 'Terverifikasi',
+        ]);
+
+        $pendingCompany = Perusahaan::create([
+            'nama_perusahaan' => 'Tokopedia',
+            'status_verifikasi' => 'Menunggu Verifikasi',
+        ]);
+
+        $response = $this->actingAs($this->superadmin)
+            ->post(route('superadmin.perusahaan.replace', $pendingCompany->id), [
+                'target_company_id' => $verifiedCompany->id,
+            ]);
+
+        $response->assertRedirect();
+        $this->assertDatabaseMissing('perusahaan', [
+            'id' => $pendingCompany->id,
+        ]);
+    }
+
+    /**
      * Test superadmin dapat mengelola section kuesioner prodi (Pengaturan Kuesioner Prodi).
      */
     public function test_superadmin_dapat_mengelola_section_kuesioner_prodi(): void

@@ -638,7 +638,7 @@ const openEditModal = (company) => {
                                     <span v-else class="text-gray-400 italic">-</span>
                                 </td>
 
-                                <!-- Rekomendasi (Baris Rekomendasi Bersih Mirip Excel) -->
+                                <!-- Rekomendasi -->
                                 <td class="border border-gray-300 px-3 py-2">
                                     <div v-if="company.recommendations && company.recommendations.length > 0">
                                         <div
@@ -672,7 +672,7 @@ const openEditModal = (company) => {
                                             </div>
                                         </div>
                                     </div>
-                                    <span v-else class="text-gray-400 italic">-</span>
+                                    <span v-else class="text-gray-400 italic text-[11px]">-</span>
                                 </td>
 
                                 <!-- Aksi (Icon-only Toolbar) -->
@@ -693,6 +693,7 @@ const openEditModal = (company) => {
 
                                         <!-- Verifikasi Langsung -->
                                         <button
+                                            v-if="company.status_verifikasi !== 'Terverifikasi'"
                                             type="button"
                                             @click="handleVerifyDirect(company)"
                                             class="p-1 text-[#0D542B] hover:bg-emerald-50 rounded cursor-pointer transition-colors"
@@ -708,7 +709,7 @@ const openEditModal = (company) => {
                                             type="button"
                                             @click="openEditModal(company)"
                                             class="p-1 text-amber-600 hover:bg-amber-50 rounded cursor-pointer transition-colors"
-                                            title="Edit"
+                                            :title="company.status_verifikasi === 'Terverifikasi' ? 'Edit Data Perusahaan' : 'Edit & Verifikasi'"
                                         >
                                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
@@ -720,7 +721,7 @@ const openEditModal = (company) => {
                                             type="button"
                                             @click="handleReject(company)"
                                             class="p-1 text-red-600 hover:bg-red-50 rounded cursor-pointer transition-colors"
-                                            title="Hapus / Tolak"
+                                            :title="company.status_verifikasi === 'Terverifikasi' ? 'Hapus / Batalkan Verifikasi' : 'Hapus / Tolak'"
                                         >
                                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />

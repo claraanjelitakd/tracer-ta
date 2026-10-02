@@ -12,9 +12,10 @@ Sistem Informasi Tracer Study Alumni Universitas Kristen Duta Wacana (UKDW). Dib
    - [A. Kuesioner Utama Universitas](#a-kuesioner-utama-universitas)
    - [B. Kuesioner Khusus Program Studi](#b-kuesioner-khusus-program-studi)
    - [C. Entitas Biodata & Sinkronisasi Otomatis Data Profil](#c-entitas-biodata--sinkronisasi-otomatis-data-profil)
-5. [Modularisasi Komponen Vue Alumni](#modularisasi-komponen-vue-alumni)
-6. [Manajemen Modul & Peran Pengguna (Roles)](#manajemen-modul--peran-pengguna-roles)
-7. [Panduan Pencarian Cepat Kode (Quick Navigation)](#panduan-pencarian-cepat-kode-quick-navigation)
+5. [Fitur Sinkronisasi LinkedIn (Driver-Based Switch via .ENV)](#fitur-sinkronisasi-linkedin-driver-based-switch-via-env)
+6. [Modularisasi Komponen Vue Alumni](#modularisasi-komponen-vue-alumni)
+7. [Manajemen Modul & Peran Pengguna (Roles)](#manajemen-modul--peran-pengguna-roles)
+8. [Panduan Pencarian Cepat Kode (Quick Navigation)](#panduan-pencarian-cepat-kode-quick-navigation)
 
 ---
 
@@ -81,6 +82,10 @@ tracerstudy/
 │   │   │   │   │   └── KelolaSectionController.php     # CRUD seksi/bagian kuesioner universitas
 │   │   │   │   ├── Perusahaan/
 │   │   │   │   │   └── VerifikasiPerusahaanSuperAdminController.php # ACC/Verifikasi perusahaan alumni (All & Per Prodi)
+│   │   │   │   ├── LinkedIn/
+│   │   │   │   │   └── LinkedInSyncController.php      # Orkestrasi sinkronisasi LinkedIn single & batch superadmin
+│   │   │   │   ├── Logs/
+│   │   │   │   │   └── LogAktivitasController.php      # Audit log aktivitas sistem
 │   │   │   │   └── ManajemenAkunController.php     # Manajemen akun pengguna & pemulihan password email terdaftar (pribadi)
 │   │   │   ├── AdminBiroTiga/                      # Modul Admin Biro III (role: admin_biro3)
 │   │   │   │   ├── Dashboard/
@@ -88,7 +93,7 @@ tracerstudy/
 │   │   │   │   └── KelolaAlumni/
 │   │   │   │       ├── DaftarAlumniController.php  # Direktori alumni tersaring yudisium 'Lulus'
 │   │   │   │       ├── DetailAlumniController.php  # Detail profil alumni & rekam jejak karier
-│   │   │   │       └── SinkronisasiLinkedinController.php # Scraping & sinkronisasi data LinkedIn
+│   │   │   │       └── SinkronisasiLinkedinController.php # Sinkronisasi profil LinkedIn via LinkedInProfileService resmi
 │   │   │   ├── Otentikasi/                         # Modul Autentikasi Pengguna
 │   │   │   │   ├── LoginController.php             # Login multi-role (Superadmin, Biro 3, Admin Prodi, Alumni)
 │   │   │   │   └── UbahKataSandiController.php     # Wajib ganti sandi awal bagi alumni baru
@@ -105,6 +110,8 @@ tracerstudy/
 │   │   ├── DataOrangTua.php                        # Data kontak & profil orang tua / wali alumni (tabel `data_orang_tua`)
 │   │   ├── Yudisium.php                            # Data kelulusan, skripsi/TA, & publikasi ilmiah (tabel `yudisium`: judul_ta, url_publikasi, jenis_publikasi)
 │   │   ├── Prodi.php                               # Data master program studi UKDW (tabel `prodi`)
+│   │   ├── RefFakultas.php                         # Data master fakultas UKDW (tabel `ref_fakultas`)
+│   │   ├── RefNegara.php                           # Data master 194 negara dunia & kode ISO 2 (tabel `ref_negara`)
 │   │   ├── Perusahaan.php                          # Profil perusahaan tempat alumni bekerja (tabel `perusahaan`, status_verifikasi, created_by)
 │   │   ├── Atasan.php                              # Data atasan langsung alumni di perusahaan (tabel `atasan`)
 │   │   ├── Propinsi.php                            # Master data wilayah provinsi Indonesia (tabel `propinsi`)
@@ -126,27 +133,46 @@ tracerstudy/
 │   │   ├── ProdiQuestionOption.php                 # Opsi jawaban kuesioner khusus program studi (tabel `prodi_question_option`)
 │   │   └── ProdiResponse.php                       # Jawaban alumni untuk kuesioner khusus program studi (tabel `prodi_response`)
 │   ├── Providers/
-│   │   └── AppServiceProvider.php                  # Konfigurasi layanan global aplikasi
+│   │   └── AppServiceProvider.php                  # Konfigurasi layanan global & Driver Resolver LinkedIn via .ENV
 │   └── Services/                                   # Domain Services & Logika Bisnis Terpusat
 │       ├── Alumni/
-│       │   └── AdminAlumniProfileService.php       # Service terpusat penyimpanan & pembacaan profil alumni oleh admin (Super Admin, Biro 3, Fakultas, Prodi)
+│       │   └── AdminAlumniProfileService.php       # Service terpusat penyimpanan & pembacaan profil alumni oleh admin
 │       ├── Export/
-│       │   └── AlumniTracerExcelExporter.php       # Generator ekspor Excel (.xls) per alumni dengan 4 blok identitas lengkap & tabel kuesioner
+│       │   └── AlumniTracerExcelExporter.php       # Generator ekspor Excel (.xls) per alumni
 │       ├── Kuesioner/
 │       │   ├── KelengkapanTracerService.php        # Audit skor kelengkapan kuesioner universitas & profil
 │       │   └── KuesionerSyncService.php            # Auto-sync data profil ke tracer & prodi_response
-│       └── LinkedIn/
-│           └── LinkedInService.php                 # Integrasi data profil profesional LinkedIn
+│       └── LinkedIn/                               # Modul Sinkronisasi LinkedIn (Driver-Based Resolution)
+│           ├── Contracts/
+│           │   └── LinkedInProfileProvider.php     # Interface kontrak provider profil LinkedIn
+│           ├── DTOs/
+│           │   ├── LinkedInEducation.php           # Data Transfer Object riwayat pendidikan
+│           │   ├── LinkedInExperience.php          # Data Transfer Object riwayat pengalaman kerja
+│           │   └── LinkedInProfile.php             # DTO agregat profil profesional LinkedIn
+│           ├── Exceptions/
+│           │   └── LinkedInProfileNotFoundException.php # Exception saat profil tidak ditemukan
+│           ├── Mappers/
+│           │   └── LinkedInProfileMapper.php       # Mapping DTO ke model Biodata & Perusahaan
+│           ├── Providers/
+│           │   ├── ApiLinkedInProvider.php         # Driver API resmi LinkedIn (Future-ready)
+│           │   └── MockLinkedInProvider.php        # Driver Mock data lokal untuk testing & dev
+│           └── LinkedInProfileService.php          # Service orkestrasi sinkronisasi, transaksi DB, & audit trail
+├── data/                                           # Berkas Referensi Master Data CSV
+│   ├── daftar_negara_dunia.csv                     # Master 194 negara dunia & kode ISO 2
+│   ├── provinsi.csv                                # Master 38 provinsi di Indonesia
+│   └── kabupaten_kota.csv                          # Master 514 kabupaten/kota di Indonesia
 ├── database/                                       # Skema & Data Awal Database
-│   ├── migrations/                                 # Seluruh riwayat migrasi struktur tabel DDL (termasuk migrasi add_foto_to_biodata)
-│   └── seeders/                                    # Data benih (Seeder)
+│   ├── migrations/                                 # Seluruh riwayat migrasi struktur tabel DDL
+│   └── seeders/                                    # Data benih (Seeder - 19 kelas berurutan)
 │       ├── DatabaseSeeder.php                      # Seeder master yang memanggil seluruh seeder
-│       ├── UserSeeder.php                          # Akun demo (superadmin, biro3, admin prodi SI/Filsafat, alumni)
-│       ├── WilayahSeeder.php                       # Seeder 38 Provinsi & Kabupaten/Kota
+│       ├── RefFakultasSeeder.php                   # Seeder 7 fakultas UKDW
+│       ├── RefNegaraSeeder.php                     # Seeder master 194 negara dunia dari data/daftar_negara_dunia.csv
+│       ├── WilayahSeeder.php                       # Seeder 38 Provinsi & 514 Kabupaten/Kota dari data/*.csv
 │       ├── UmpSeeder.php                           # Seeder data standar UMP 38 provinsi 2026
+│       ├── UserSeeder.php                          # Akun demo (superadmin, biro3, admin prodi, alumni)
 │       ├── PerusahaanSeeder.php                    # Seeder master instansi/perusahaan
-│       ├── BiodataSeeder.php                       # Seeder 28 field profil biodata & karier
 │       ├── DataAkademikSeeder.php                  # Seeder data akademik & asal sekolah
+│       ├── BiodataSeeder.php                       # Seeder 28 field profil biodata & karier
 │       ├── DataOrangTuaSeeder.php                  # Seeder kontak orang tua/wali
 │       ├── YudisiumSeeder.php                      # Seeder data kelulusan & tugas akhir
 │       ├── KuesionerSeeder.php                     # Seeder kuesioner 2021
@@ -154,10 +180,13 @@ tracerstudy/
 │       ├── RefSubpertanyaan2021Seeder.php          # Seeder 68 butir subpertanyaan 2021
 │       ├── RefSubpertanyaanDetilSeeder.php         # Seeder 185 opsi jawaban & jump logic
 │       ├── QuestionMappingSeeder.php               # Seeder sinkronisasi data profil
-│       └── ProdiQuestionnaireSeeder.php            # Seeder instrumen Prodi SI & Filsafat
+│       ├── ProdiQuestionnaireSeeder.php            # Seeder instrumen Prodi SI & Filsafat
+│       ├── JoshuaAndreanSeeder.php                 # Seeder alumni uji coba khusus
+│       ├── AlumniSimulationSeeder.php              # Simulasi alumni lintas 12 prodi
+│       └── Lulusan2026Seeder.php                   # 10 alumni lulusan 2026 (profil karier kosong / skeleton)
 ├── public/                                         # Public Assets Root
 │   ├── uploads/
-│   │   ├── pigo/                                   # Aset resmi varian maskot Pigo (loading-pigo, pigo-laptop, pigo-dokter, dll)
+│   │   ├── pigo/                                   # Aset resmi varian maskot Pigo
 │   │   ├── profile/                                # Direktori penyimpanan berkas foto profil alumni
 │   │   └── logo/                                   # Logo resmi Universitas Kristen Duta Wacana
 │   └── geojson/                                    # Data batas poligon GeoJSON 38 provinsi dan kabupaten/kota Indonesia
@@ -259,7 +288,59 @@ Ringkasan relasi utama & prinsip anti-duplikasi data:
 
 ---
 
-## Modularisasi Komponen Vue Alumni
+## 5. Fitur Sinkronisasi LinkedIn (Driver-Based Switch via .ENV)
+
+Fitur ini memungkinkan Superadmin menyinkronkan data profil profesional alumni (jabatan dan institusi perusahaan tempat bekerja) berbasis abstraksi driver yang dapat diganti murni melalui variabel environment (`.env`) tanpa mengubah logika bisnis controller, mapper, database, maupun UI.
+
+### A. Alur Arsitektur Driver-Based
+```text
+Controller (LinkedInSyncController)
+    │
+    ▼
+LinkedInProfileService
+    │
+    ▼
+LinkedInProfileProvider (Interface)
+    │
+    ▼
+Driver Resolver (AppServiceProvider match statement)
+    │
+    ├── LINKEDIN_DRIVER=mock ──▶ MockLinkedInProvider ──▶ Baca JSON (storage/app/mock/linkedin) / Fallback Dinamis
+    │
+    └── LINKEDIN_DRIVER=api  ──▶ ApiLinkedInProvider  ──▶ Official Server-to-Server API (Bearer Token)
+                                        │
+                                        ▼ (Normalisasi Respons ke DTO yang sama)
+                               LinkedInProfile & LinkedInPosition
+                                        │
+                                        ▼
+                               LinkedInProfileMapper
+                                        ├── Update biodata (posisi_jabatan)
+                                        └── Match/Create perusahaan (status_verifikasi: 'Menunggu Verifikasi')
+```
+
+### B. Konfigurasi Environment (`.env`)
+```env
+# Mode Mock (Default)
+LINKEDIN_DRIVER=mock
+LINKEDIN_MOCK_PATH=storage/app/mock/linkedin
+LINKEDIN_API_BASE_URL=
+LINKEDIN_API_KEY=
+
+# Mode API Masa Depan (Cukup ganti baris berikut di server)
+# LINKEDIN_DRIVER=api
+# LINKEDIN_API_BASE_URL=https://api.linkedin.com/v2
+# LINKEDIN_API_KEY=rahasia_api_key_server_to_server
+```
+
+### C. Integritas Data & Kebijakan Verifikasi Perusahaan
+- **Posisi Aktif (Current Position)**: Dipilih dengan prioritas posisi `endMonthYear == null`, kemudian tanggal mulai (`startMonthYear`) terbaru.
+- **Kebijakan Verifikasi Mutlak**: Setiap institusi perusahaan baru yang dibuat dari sinkronisasi LinkedIn SELALU disetel ke `status_verifikasi = 'Menunggu Verifikasi'`, meskipun data alamat, provinsi, dan negara terisi lengkap.
+- **Proteksi Data Otoritatif**: Field otoritatif alumni (NIM, NIK, NPWP, email pribadi, nomor telepon, alamat domisili, dan riwayat akademik) tidak pernah ditimpa oleh data LinkedIn.
+- **Audit Trail**: Seluruh aktivitas sinkronisasi dicatat ke tabel `log_activities` melalui `LogActivity::record()` dengan aksi `'linkedin_sync'`.
+
+---
+
+## 6. Modularisasi Komponen Vue Alumni
 
 Komponen pengisian kuesioner dipecah secara modular untuk memudahkan pemeliharaan kode:
 
@@ -277,7 +358,15 @@ Komponen pengisian kuesioner dipecah secara modular untuk memudahkan pemeliharaa
 
 ## Log Pembaruan (Changelog)
 
-- **v2.5 (28 September 2026 - Terbaru)**:
+- **v2.6 (03 Oktober 2026 - Fitur Sinkronisasi LinkedIn SuperAdmin & Refaktor Driver-Based via .ENV)**:
+  - **Superadmin Sinkronisasi LinkedIn**: Memfilter alumni berdasarkan Tahun Kelulusan, 5 metrik KPI analitik (Total, Dengan LinkedIn, Berhasil, Gagal, Dilewati), sinkronisasi individual asinkron, dan sinkronisasi massal per angkatan.
+  - **Arsitektur Driver-Based Provider**: Penyedia data dipisahkan menggunakan interface `LinkedInProfileProvider` dengan switch terpusat di `.env` (`LINKEDIN_DRIVER=mock` atau `LINKEDIN_DRIVER=api`).
+  - **Kesiapan Server-to-Server API**: Dibuat `ApiLinkedInProvider` yang menginjeksi API Key dan Base URL dari konfigurasi server, menormalisasi respon HTTP ke `LinkedInProfile` DTO, dan menangani error status tanpa membocorkan kredensial.
+  - **Dukungan Mock JSON Terstruktur**: `MockLinkedInProvider` membaca `storage/app/mock/linkedin/{username}.json` dengan fallback dinamis berbasis biodata lokal.
+  - **Kebijakan Verifikasi Mutlak**: Setiap perusahaan baru yang dibuat melalui sinkronisasi LinkedIn selalu berstatus `status_verifikasi = 'Menunggu Verifikasi'` meskipun data lengkap.
+  - **Perlindungan Data Otoritatif & Audit Trail**: NIM, NIK, NPWP, telepon, email pribadi, dan data akademik tidak pernah ditimpa. Jejak sinkronisasi dicatat ke tabel `log_activities`.
+
+- **v2.5 (28 September 2026)**:
   - **Migrasi Kolom Foto Profil**: Menambahkan kolom `foto` (nullable string) pada tabel `biodata` (`2026_09_28_054830_add_foto_to_biodata_table.php`) yang terhubung ke direktori `public/uploads/profile/`.
   - **Refaktor Relasi Yudisium & Skripsi**: Menghubungkan relasi `yudisium()` pada model `Biodata.php` secara eksplisit untuk membaca judul tugas akhir (`judul_ta`), link publikasi karya ilmiah (`url_publikasi`), dan jenis publikasi.
   - **Agregasi Spasial Beranda (`BerandaController.php`)**: Menghitung sebaran wilayah domisili dan karier alumni serta ringkasan per provinsi berisi daftar nama alumni dan daftar nama instansi/perusahaan untuk hover tooltip peta interaktif.

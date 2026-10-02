@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\LogActivity;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Inertia\Inertia;
 
 class LogAktivitasController extends Controller
 {
@@ -51,7 +52,7 @@ class LogAktivitasController extends Controller
             ->orderBy('action')
             ->pluck('action');
 
-        return \Inertia\Inertia::render('SuperAdmin/Logs/Index', [
+        return Inertia::render('SuperAdmin/Logs/Index', [
             'user' => $user,
             'logs' => $logs,
             'filters' => $filters,

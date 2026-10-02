@@ -27,7 +27,8 @@ DAFTAR ISI
 ====================================================================================================
 c:/study/tracerstudy/app/                   -> Inti kode logika aplikasi Laravel (Controller, Model, Service, Middleware)
 c:/study/tracerstudy/bootstrap/             -> Inisialisasi awal aplikasi Laravel 11 (app.php, providers.php)
-c:/study/tracerstudy/config/                -> File konfigurasi (app, database, auth, cors, session, dll)
+c:/study/tracerstudy/config/                -> File konfigurasi (app, database, auth, cors, session, linkedin, dll)
+c:/study/tracerstudy/data/                  -> Berkas master referensi CSV (daftar_negara_dunia.csv, provinsi.csv, kabupaten_kota.csv)
 c:/study/tracerstudy/database/              -> Struktur skema (migrations), data awal (seeders), dan factories
 c:/study/tracerstudy/public/                -> Public document root web server & compiled assets (build/)
 c:/study/tracerstudy/public/uploads/pigo/   -> Aset resmi varian maskot Pigo (loading-pigo, pigo-laptop, pigo-dokter, dll)
@@ -136,6 +137,9 @@ c:/study/tracerstudy/app/Http/Controllers/SuperAdmin/ManajemenAkunController.php
 c:/study/tracerstudy/app/Http/Controllers/SuperAdmin/LogAktivitasController.php
 - Menampilkan tabel audit trail log aktivitas sistem (`/superadmin/logs`), pencarian realtime, filter jenis aksi, dan modal detail JSON old/new values.
 
+c:/study/tracerstudy/app/Http/Controllers/SuperAdmin/LinkedIn/LinkedInSyncController.php
+- Mengelola sinkronisasi profil LinkedIn alumni untuk Superadmin (`/superadmin/linkedin-sync`), metrik analitik kelulusan, aksi single sync asinkron, dan bulk sync batch per angkatan.
+
 F. MODUL ADMIN BIRO 3 (Role: admin_biro3)
 ----------------------------------------------------------------------------------------------------
 c:/study/tracerstudy/app/Http/Controllers/AdminBiroTiga/Dashboard/DashboardController.php
@@ -148,7 +152,7 @@ c:/study/tracerstudy/app/Http/Controllers/AdminBiroTiga/KelolaAlumni/DetailAlumn
 - Tampilan detail profil alumni untuk kebutuhan audit rekam jejak karier Biro Kemahasiswaan & Alumni.
 
 c:/study/tracerstudy/app/Http/Controllers/AdminBiroTiga/KelolaAlumni/SinkronisasiLinkedinController.php
-- Menangani integrasi scraping dan penyimpanan data profil karier profesional LinkedIn alumni.
+- Menangani sinkronisasi profil profesional LinkedIn alumni menggunakan `LinkedInProfileService` resmi.
 
 c:/study/tracerstudy/app/Http/Controllers/AdminBiroTiga/KelolaPertanyaan/KelolaPertanyaanController.php
 - Menampilkan bank soal kuesioner universitas untuk monitoring tim Biro 3.
@@ -240,8 +244,35 @@ c:/study/tracerstudy/app/Services/Kuesioner/KuesionerSyncService.php
 c:/study/tracerstudy/app/Services/Kuesioner/KelengkapanTracerService.php
 - Menghitung persentase skor kelengkapan pengisian kuesioner universitas, kuesioner prodi, dan profil alumni.
 
-c:/study/tracerstudy/app/Services/LinkedIn/LinkedInService.php
-- Logika integrasi pengambilan dan parsing profil publik LinkedIn alumni.
+c:/study/tracerstudy/app/Services/LinkedIn/Contracts/LinkedInProfileProvider.php
+- Interface kontrak penyedia profil LinkedIn (`fetchProfileByUsername`, `fetchProfileByUrl`).
+
+c:/study/tracerstudy/app/Services/LinkedIn/DTOs/LinkedInProfile.php
+- Data Transfer Object terstruktur yang menampung data profil, headline, lokasi, dan koleksi riwayat pekerjaan/pendidikan.
+
+c:/study/tracerstudy/app/Services/LinkedIn/DTOs/LinkedInExperience.php
+- Data Transfer Object pengalaman karier (`title`, `companyName`, `startMonthYear`, `endMonthYear`, `isCurrent`).
+
+c:/study/tracerstudy/app/Services/LinkedIn/DTOs/LinkedInEducation.php
+- Data Transfer Object riwayat pendidikan (`schoolName`, `degree`, `fieldOfStudy`, `startYear`, `endYear`).
+
+c:/study/tracerstudy/app/Services/LinkedIn/Exceptions/LinkedInProfileNotFoundException.php
+- Exception khusus saat profil LinkedIn target tidak ditemukan (404).
+
+c:/study/tracerstudy/app/Services/LinkedIn/Exceptions/LinkedInApiException.php
+- Exception saat terjadi kegagalan jaringan atau pembatasan kuota API provider LinkedIn.
+
+c:/study/tracerstudy/app/Services/LinkedIn/Mappers/LinkedInProfileMapper.php
+- Logika penentuan posisi aktif (Current Position) berbasis 4 aturan prioritas dan pemetaan ke model `Biodata` & `Perusahaan` (status: `Menunggu Verifikasi`).
+
+c:/study/tracerstudy/app/Services/LinkedIn/Providers/MockLinkedInProvider.php
+- Driver mock lokal untuk development & testing, membaca data JSON di `storage/app/mock/linkedin/` dengan fallback biodata lokal dinamis.
+
+c:/study/tracerstudy/app/Services/LinkedIn/Providers/ApiLinkedInProvider.php
+- Driver API resmi LinkedIn server-to-server menggunakan Bearer Token / API Key (siap produksi).
+
+c:/study/tracerstudy/app/Services/LinkedIn/LinkedInProfileService.php
+- Service orkestrator terpusat: resolusi driver via IoC Container, eksekusi transaksi database terisolasi per alumni, dan pencatatan jejak audit trail `log_activities`.
 
 ====================================================================================================
 5. BACKEND: MIDDLEWARE (app/Http/Middleware)
@@ -300,9 +331,11 @@ c:/study/tracerstudy/database/migrations/2026_09_28_054830_add_foto_to_biodata_t
 8. DATABASE: SEEDERS (database/seeders)
 ====================================================================================================
 c:/study/tracerstudy/database/seeders/DatabaseSeeder.php                -> Seeder master utama
-c:/study/tracerstudy/database/seeders/UserSeeder.php                    -> Seeder akun demo per role
-c:/study/tracerstudy/database/seeders/WilayahSeeder.php                 -> Seeder 38 Provinsi & Kabupaten/Kota
+c:/study/tracerstudy/database/seeders/RefFakultasSeeder.php             -> Seeder 7 fakultas UKDW
+c:/study/tracerstudy/database/seeders/RefNegaraSeeder.php               -> Seeder master 194 negara dunia dari data/daftar_negara_dunia.csv
+c:/study/tracerstudy/database/seeders/WilayahSeeder.php                 -> Seeder 38 Provinsi & 514 Kabupaten/Kota dari data/*.csv
 c:/study/tracerstudy/database/seeders/UmpSeeder.php                     -> Seeder Upah Minimum Provinsi 2026
+c:/study/tracerstudy/database/seeders/UserSeeder.php                    -> Seeder akun demo per role
 c:/study/tracerstudy/database/seeders/PerusahaanSeeder.php              -> Seeder master perusahaan
 c:/study/tracerstudy/database/seeders/DataAkademikSeeder.php            -> Seeder data akademik mahasiswa
 c:/study/tracerstudy/database/seeders/BiodataSeeder.php                 -> Seeder 28 field biodata profil alumni
@@ -314,6 +347,9 @@ c:/study/tracerstudy/database/seeders/RefSubpertanyaan2021Seeder.php    -> Seede
 c:/study/tracerstudy/database/seeders/RefSubpertanyaanDetilSeeder.php   -> Seeder 185 opsi pilihan & jump logic
 c:/study/tracerstudy/database/seeders/QuestionMappingSeeder.php         -> Seeder konfigurasi mapping profil
 c:/study/tracerstudy/database/seeders/ProdiQuestionnaireSeeder.php      -> Seeder kuesioner prodi SI & Filsafat
+c:/study/tracerstudy/database/seeders/JoshuaAndreanSeeder.php           -> Seeder alumni uji coba khusus
+c:/study/tracerstudy/database/seeders/AlumniSimulationSeeder.php        -> Simulasi komprehensif alumni lintas 12 prodi
+c:/study/tracerstudy/database/seeders/Lulusan2026Seeder.php             -> 10 alumni lulusan 2026 (profil karier kosong / skeleton)
 
 ====================================================================================================
 9. FRONTEND: VUE PAGES & COMPONENTS (resources/js/Pages)

@@ -26,7 +26,7 @@ class ManajemenAkunController extends Controller
         $fakultasFilter = $request->input('fakultas_id');
         $search = $request->input('search');
 
-        $query = User::with(['prodi', 'fakultas', 'biodata.dataAkademik']);
+        $query = User::with(['prodi.fakultas', 'fakultas', 'biodata.dataAkademik']);
 
         if ($roleFilter !== 'all') {
             $query->where('role', $roleFilter);
@@ -37,7 +37,14 @@ class ManajemenAkunController extends Controller
         }
 
         if ($fakultasFilter) {
-            $query->where('fakultas_id', $fakultasFilter);
+            // Admin Fakultas: memiliki fakultas_id langsung
+            // Alumni / Admin Prodi: memiliki prodi_id yang berelasi ke fakultas_id
+            $query->where(function ($q) use ($fakultasFilter) {
+                $q->where('fakultas_id', $fakultasFilter)
+                    ->orWhereHas('prodi', function ($pq) use ($fakultasFilter) {
+                        $pq->where('fakultas_id', $fakultasFilter);
+                    });
+            });
         }
 
         if ($search) {

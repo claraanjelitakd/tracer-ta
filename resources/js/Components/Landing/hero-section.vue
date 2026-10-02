@@ -2,6 +2,18 @@
 import { ref } from 'vue';
 import { Link } from '@inertiajs/vue3';
 
+const props = defineProps({
+    stats: {
+        type: Object,
+        default: () => ({})
+    },
+    // Background class yang dapat diatur dari Beranda.vue
+    bgClass: {
+        type: String,
+        default: 'bg-slate-950'
+    }
+});
+
 const searchQuery = ref('');
 
 const emit = defineEmits(['searchAlumni']);
@@ -17,7 +29,7 @@ const handleSearch = () => {
 </script>
 
 <template>
-    <section class="relative bg-slate-950 pt-24 pb-28 lg:pt-32 lg:pb-40 overflow-visible">
+    <section :class="[bgClass, 'relative pt-24 pb-28 lg:pt-32 lg:pb-40 overflow-visible transition-colors duration-300']">
         
         <!--
           ========================================================================

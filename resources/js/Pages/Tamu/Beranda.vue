@@ -51,6 +51,42 @@ const props = defineProps({
     }
 });
 
+// ============================================================================
+// PENGATURAN WARNA BACKGROUND SETIAP SECTION (HOMEPAGE / LANDING PAGE)
+// ============================================================================
+// Anda dapat dengan mudah mengatur / mengubah warna background masing-masing section di sini.
+// Contoh pilihan kelas warna Tailwind yang dapat digunakan:
+// - 'bg-[#FFC700]'  : Kuning Khas UKDW
+// - 'bg-white'      : Putih Bersih
+// - 'bg-[#004D25]'  : Hijau Tua Utama UKDW
+// - 'bg-[#03542B]'  : Hijau UKDW Sekunder
+// - 'bg-slate-950'  : Hitam Elegan
+// - Gradasi contoh : 'bg-gradient-to-b from-[#00381A] via-[#004D25] to-[#003318]'
+// ============================================================================
+const sectionBackgrounds = ref({
+    // 1. Hero Section (Banner Video Profil Kampus UKDW)
+    hero: 'bg-slate-950',
+
+    // 2. Tentang Tracer Study & Sambutan WR III UKDW (Permintaan: PUTIH)
+    tentang: 'bg-white',
+
+    // 3. Alur Partisipasi / Panduan Langkah Kuesioner (Kuning UKDW)
+    panduan: 'bg-gradient-to-b from-[#FFC700] via-[#FBBF24] to-[#F59E0B]',
+
+    // 4. Metrik Kunci & Transformasi Kurikulum (Hijau UKDW)
+    statistik: 'bg-[#004D25]',
+
+    // 5. PETA SEBARAN & DIREKTORI ALUMNI UKDW (Permintaan: KUNING)
+    //    Cakupan Peta: Seluruh Wilayah Indonesia (Nasional)
+    peta: 'bg-[#FFC700]',
+
+    // 6. BLOG & AGENDA TERKINI / WARTA KAMPUS (Permintaan: PUTIH)
+    blog: 'bg-white',
+
+    // 7. UNDUH BERKAS & DOKUMEN TRACER STUDY (Permintaan: KUNING)
+    berkas: 'bg-[#FFC700]',
+});
+
 const mapSectionRef = ref(null);
 
 const onHeroSearch = (query) => {
@@ -106,37 +142,92 @@ onMounted(() => {
 <template>
     <Head title="Portal Tracer Study - Universitas Kristen Duta Wacana" />
 
-    <div class="min-h-screen bg-[#004D25] font-sans text-white antialiased selection:bg-[#FFC700] selection:text-slate-950">
-        <!-- 1. Header & Navigation -->
+    <div class="min-h-screen bg-[#004D25] font-sans antialiased selection:bg-[#FFC700] selection:text-slate-950">
+        <!-- Header & Navigasi -->
         <Navbar />
         
         <main>
-            <!-- 1. Hero Section dengan YouTube Autoplay Video Kampus & 3 Card Akses One UI Glossy -->
-            <HeroSection :stats="stats" @search-alumni="onHeroSearch" />
+            <!-- 
+              ========================================================================
+              1. HERO SECTION (Video Autoplay Kampus & Akses Cepat One UI)
+              Pengaturan Background: sectionBackgrounds.hero
+              ========================================================================
+            -->
+            <HeroSection 
+                :bg-class="sectionBackgrounds.hero"
+                :stats="stats" 
+                @search-alumni="onHeroSearch" 
+            />
             
-            <!-- 2. Tentang Tracer Study & Sambutan WR III UKDW -->
-            <TentangSection />
+            <!-- 
+              ========================================================================
+              2. TENTANG TRACER STUDY & SAMBUTAN WR III UKDW
+              Pengaturan Background: sectionBackgrounds.tentang (Saat ini: PUTIH)
+              ========================================================================
+            -->
+            <TentangSection 
+                :bg-class="sectionBackgrounds.tentang"
+            />
 
-            <!-- 3. Alur Kuesioner (One UI Glossy Cards) -->
-            <UserGuideSection />
+            <!-- 
+              ========================================================================
+              3. ALUR PARTISIPASI / PANDUAN LANGKAH BAGI ALUMNI BARU
+              Pengaturan Background: sectionBackgrounds.panduan (Default: Kuning UKDW)
+              ========================================================================
+            -->
+            <UserGuideSection 
+                :bg-class="sectionBackgrounds.panduan"
+            />
 
-            <!-- 4. Metrik Kunci & Transformasi Kurikulum -->
-            <StatsTransformationSection :stats="stats" />
+            <!-- 
+              ========================================================================
+              4. METRIK KUNCI & TRANSFORMASI KURIKULUM
+              Pengaturan Background: sectionBackgrounds.statistik (Default: Hijau UKDW)
+              ========================================================================
+            -->
+            <StatsTransformationSection 
+                :bg-class="sectionBackgrounds.statistik"
+                :stats="stats" 
+            />
 
-            <!-- 5. Peta Sebaran & Direktori Alumni Interaktif (Sebelum Blog) -->
+            <!-- 
+              ========================================================================
+              5. PETA SEBARAN & DIREKTORI ALUMNI UKDW
+              - Cakupan Peta: Seluruh Wilayah Indonesia (Nasional)
+              - Direktori Karier Dalam & Luar Negeri
+              Pengaturan Background: sectionBackgrounds.peta (Saat ini: KUNING UKDW)
+              ========================================================================
+            -->
             <AlumniMapSection 
                 ref="mapSectionRef"
+                :bg-class="sectionBackgrounds.peta"
                 :alumni-wilayah="alumniWilayah" 
                 :alumni-list="alumniList" 
                 :all-provinsi="allProvinsi"
                 :all-kabupaten="allKabupaten"
             />
 
-            <!-- 6. Warta Kampus & Berita Terkini -->
-            <BlogSection />
+            <!-- 
+              ========================================================================
+              6. BLOG & AGENDA TERKINI (WARTA KAMPUS)
+              - Informasi perkembangan almamater, panduan karier & temu alumni
+              Pengaturan Background: sectionBackgrounds.blog (Saat ini: PUTIH)
+              ========================================================================
+            -->
+            <BlogSection 
+                :bg-class="sectionBackgrounds.blog"
+            />
 
-            <!-- 7. Unduh Berkas & Informasi Akun Login -->
-            <BerkasSection />
+            <!-- 
+              ========================================================================
+              7. UNDUH BERKAS & DOKUMEN TRACER
+              - Surat edaran resmi WR III & instrumen evaluasi kepuasan pengguna
+              Pengaturan Background: sectionBackgrounds.berkas (Saat ini: KUNING UKDW)
+              ========================================================================
+            -->
+            <BerkasSection 
+                :bg-class="sectionBackgrounds.berkas"
+            />
         </main>
 
         <!-- 8. Footer Resmi Biro 3 UKDW -->

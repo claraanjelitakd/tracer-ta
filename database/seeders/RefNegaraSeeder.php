@@ -5,58 +5,97 @@ namespace Database\Seeders;
 use App\Models\RefNegara;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Schema;
 
 /**
  * Seeder Master Referensi Negara Seluruh Dunia
  *
- * Membaca data dari berkas CSV daftar_negara_dunia.csv
- * dan melakukan seed ke tabel `ref_negara`.
+ * Mengimpor 194 data negara dunia dari berkas CSV terpusat di `data/daftar_negara_dunia.csv`
+ * ke tabel basis data `ref_negara`. Dilengkapi mekanisme:
+ * - Pengecekan skema tabel untuk mencegah error saat proses migrasi bertahap.
+ * - Resolusi jalur berkas CSV bertingkat (data/ -> database/data/ -> root).
+ * - Stream reading via fgetcsv untuk efisiensi memori dan akurasi karakter enclosure/delimiter.
+ * - Pencegahan konflik Integrity Constraint Violation (Unique Key) pada kolom `kode_iso2` dan `nama_negara`.
  */
 class RefNegaraSeeder extends Seeder
 {
     /**
-     * Jalankan seed master negara.
+     * Jalankan proses seeding master referensi negara.
      */
     public function run(): void
     {
-        $csvPath = database_path('data/daftar_negara_dunia.csv');
-        if (! File::exists($csvPath)) {
-            $csvPath = base_path('daftar_negara_dunia.csv');
-        }
+        // 1. Verifikasi ketersediaan tabel pada basis data
+        if (! Schema::hasTable('ref_negara')) {
+            $this->command?->warn('Tabel ref_negara belum tersedia. Lewati seeding negara.');
 
-        if (! File::exists($csvPath)) {
             return;
         }
 
-        $lines = file($csvPath, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
-        if (empty($lines)) {
+        // 2. Tentukan lokasi berkas CSV terpusat di folder /data/ dengan fallback
+        $csvPaths = [
+            base_path('data/daftar_negara_dunia.csv'),
+            database_path('data/daftar_negara_dunia.csv'),
+            base_path('daftar_negara_dunia.csv'),
+        ];
+
+        $csvPath = null;
+        foreach ($csvPaths as $path) {
+            if (File::exists($path)) {
+                $csvPath = $path;
+                break;
+            }
+        }
+
+        if (! $csvPath) {
+            $this->command?->warn('Berkas CSV daftar_negara_dunia.csv tidak ditemukan di direktori /data.');
+
             return;
         }
 
-        // Ambil header dan parse baris data
-        $header = str_getcsv(array_shift($lines));
+        // 3. Buka stream berkas CSV
+        $handle = fopen($csvPath, 'r');
+        if ($handle === false) {
+            $this->command?->error('Gagal membuka berkas CSV: '.$csvPath);
 
-        foreach ($lines as $line) {
-            $row = str_getcsv($line);
-            if (count($row) < 4) {
+            return;
+        }
+
+        // Lewati baris header
+        fgetcsv($handle);
+
+        while (($row = fgetcsv($handle)) !== false) {
+            if (empty($row) || count($row) < 3) {
                 continue;
             }
 
             $namaNegara = trim($row[0] ?? '');
             $ibuKota = trim($row[1] ?? '');
-            $kodeIso2 = trim($row[2] ?? '');
-            $benua = trim($row[3] ?? '');
+            $kodeIso2 = strtoupper(substr(trim($row[2] ?? ''), 0, 2));
+            $benua = isset($row[3]) ? trim($row[3]) : null;
 
-            if (! empty($namaNegara)) {
-                RefNegara::updateOrCreate(
-                    ['nama_negara' => $namaNegara],
-                    [
-                        'ibu_kota' => $ibuKota ?: null,
-                        'kode_iso2' => $kodeIso2 ?: null,
-                        'benua' => $benua ?: null,
-                    ]
-                );
+            if (empty($namaNegara) || empty($kodeIso2)) {
+                continue;
+            }
+
+            // Cari berdasarkan kode_iso2 atau nama_negara untuk mencegah konflik unique constraint
+            $negara = RefNegara::where('kode_iso2', $kodeIso2)
+                ->orWhere('nama_negara', $namaNegara)
+                ->first();
+
+            $attributes = [
+                'nama_negara' => $namaNegara,
+                'ibu_kota' => $ibuKota ?: null,
+                'kode_iso2' => $kodeIso2,
+                'benua' => $benua ?: null,
+            ];
+
+            if ($negara) {
+                $negara->update($attributes);
+            } else {
+                RefNegara::create($attributes);
             }
         }
+
+        fclose($handle);
     }
 }

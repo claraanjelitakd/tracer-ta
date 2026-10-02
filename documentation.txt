@@ -21,6 +21,8 @@ DAFTAR ISI
 9. FRONTEND: VUE PAGES & COMPONENTS (resources/js/Pages)
 10. AUTOMATED TESTS (tests/Feature & tests/Unit)
 11. PANDUAN 17 TIPE INPUT KUESIONER & ALUR DATA
+12. ARSITEKTUR & IMPLEMENTASI SINKRONISASI LINKEDIN (DRIVER-BASED & ERD)
+13. LOG PEMBARUAN SISTEM (UPDATE LOG)
 
 ====================================================================================================
 1. PETA STRUKTUR FOLDER UTAMA
@@ -485,4 +487,570 @@ c:/study/tracerstudy/tests/Feature/UmpTest.php
 15. `date`              -> Pemilih tanggal kalender.
 16. `time`              -> Pemilih format jam dan menit.
 17. `file`              -> Dropzone upload berkas dokumen (PDF, PNG, JPG).
+====================================================================================================
+
+====================================================================================================
+12. ARSITEKTUR & IMPLEMENTASI SINKRONISASI LINKEDIN (DRIVER-BASED & ERD)
+====================================================================================================
+
+Fitur ini memungkinkan Superadmin memfilter alumni berdasarkan Tahun Kelulusan, melihat alumni yang
+memiliki `biodata.linkedin_username`, dan melakukan sinkronisasi profil karier (jabatan dan institusi
+perusahaan) melalui arsitektur modular yang dapat diganti driver penyedianya hanya melalui berkas `.env`.
+
+----------------------------------------------------------------------------------------------------
+A. STRUKTUR FOLDER & FILE AKTUAL LINKEDIN
+----------------------------------------------------------------------------------------------------
+Berikut adalah struktur folder dan berkas yang benar-benar dibuat dan aktif dalam sistem:
+
+c:/study/tracerstudy/
+├── app/
+│   ├── Http/
+│   │   └── Controllers/
+│   │       └── SuperAdmin/
+│   │           └── LinkedIn/
+│   │               └── LinkedInSyncController.php      -> Controller UI, sync individual & bulk batch
+│   ├── Providers/
+│   │   └── AppServiceProvider.php                      -> Pusat Driver Resolver (Container Binding)
+│   └── Services/
+│       └── LinkedIn/
+│           ├── Contracts/
+│           │   └── LinkedInProfileProvider.php         -> Interface tunggal abstraksi penyedia data
+│           ├── DTOs/
+│           │   ├── LinkedInProfile.php                 -> DTO profil (Basic Profile Fields resmi)
+│           │   └── LinkedInPosition.php                -> DTO posisi kerja (Position Fields resmi)
+│           ├── Exceptions/
+│           │   ├── LinkedInProfileNotFoundException.php-> Exception untuk simulasi / respons 404
+│           │   └── LinkedInSyncException.php           -> Exception umum kegagalan sinkronisasi
+│           ├── Mappers/
+│           │   └── LinkedInProfileMapper.php           -> Evaluasi posisi aktif & mapping perusahaan
+│           ├── Providers/
+│           │   ├── MockLinkedInProvider.php            -> Driver Mock (baca JSON lokal / fallback dinamis)
+│           │   └── ApiLinkedInProvider.php             -> Driver API (disiapkan untuk future server-to-server)
+│           └── LinkedInProfileService.php              -> Orkestrator bisnis, transaksi & audit log
+├── config/
+│   ├── linkedin.php                                    -> Konfigurasi spesifik modul LinkedIn
+│   └── services.php                                    -> Mapping 'services.linkedin.*' konvensi Laravel
+├── resources/
+│   └── js/
+│       └── Pages/
+│           └── SuperAdmin/
+│               ├── Components/
+│               │   └── Sidebar.vue                     -> Navigasi menu 'Sinkronisasi LinkedIn'
+│               └── LinkedIn/
+│                   └── Index.vue                       -> Tampilan UI Reaktif Superadmin
+├── storage/
+│   └── app/
+│       └── mock/
+│           └── linkedin/
+│               └── johndoe.json                        -> Berkas sampel Mock JSON terstruktur
+└── tests/
+    └── Feature/
+        └── SuperAdminLinkedInSyncTest.php              -> 17 Feature test komprehensif
+
+----------------------------------------------------------------------------------------------------
+B. TANGGUNG JAWAB SETIAP KOMPONEN
+----------------------------------------------------------------------------------------------------
+1. `LinkedInSyncController`:
+   - Menangani request HTTP dari UI Superadmin.
+   - Mengambil data tahun kelulusan unik dari `data_akademik` / `yudisium`.
+   - Mengirim data alumni dan metrik KPI awal ke frontend Inertia.
+   - Endpoint JSON asinkron untuk `syncSingle($id)` dan `syncBatch(Request)`.
+   - Tidak mengetahui driver provider apa yang sedang aktif.
+
+2. `LinkedInProfileService`:
+   - Orkestrator proses bisnis sinkronisasi data alumni.
+   - Mengisolasi transaksi basis data per-alumni (`DB::transaction`). Kegagalan satu alumni tidak membatalkan batch lainnya.
+   - Mencatat jejak audit trail ke `LogActivity::record()` dengan aksi `linkedin_sync`.
+   - Menangani skenario status: SUCCESS, NOT_FOUND, SKIPPED, dan ERROR.
+   - Bergantung pada interface `LinkedInProfileProvider`, bukan class konkret.
+
+3. `LinkedInProfileProvider` (Interface / Contract):
+   - Mendefinisikan kontrak tunggal: `findByUsername(string $username): ?LinkedInProfile`.
+   - Menjamin bahwa baik Mock maupun API eksternal wajib mengembalikan DTO `LinkedInProfile`.
+
+4. `MockLinkedInProvider`:
+   - Driver default untuk development dan pengujian lokal.
+   - Memeriksa ketersediaan berkas Mock JSON di `storage/app/mock/linkedin/{username}.json`.
+   - Jika berkas tidak ditemukan, menggunakan generator dinamis kontekstual dari data alumni lokal.
+   - Mendukung skenario pengujian: 404 (diawali `notfound_`), empty username (`SKIPPED`), dan valid profile.
+
+5. `ApiLinkedInProvider`:
+   - Driver masa depan untuk integrasi API resmi server-to-server menggunakan API Key.
+   - Menginjeksi `api_key` dan `api_base_url` dari Laravel config (`services.linkedin.*`).
+   - Menggunakan HTTP Client Laravel (`Illuminate\Support\Facades\Http`).
+   - Bertanggung jawab menormalisasi respons HTTP eksternal ke DTO `LinkedInProfile`.
+   - Menormalisasi status HTTP error (401, 403, 404, 429, 500, timeout) ke internal exception tanpa membocorkan API key.
+
+6. `LinkedInProfile` & `LinkedInPosition` (DTOs):
+   - Objek transfer data yang memegang informasi profil resmi LinkedIn.
+   - Agnostik database: tidak bergantung pada model Eloquent maupun tabel database.
+
+7. `LinkedInProfileMapper`:
+   - Menerapkan 4 aturan penentuan posisi kerja saat ini (Current Position).
+   - Menjalankan pencocokan perusahaan eksak dan membuat record baru jika belum terdaftar.
+   - Menjaga data otoritatif alumni agar tidak tertimpa.
+
+8. Company Matching (`findOrCreateCompany`):
+   - Melakukan exact matching nama perusahaan (case-insensitive & trimmed).
+   - Jika perusahaan baru dibuat, status verifikasinya SELALU `Menunggu Verifikasi`.
+   - Tidak melakukan fuzzy matching agresif atau menebak kabupaten/skala secara liar.
+
+9. Activity Logging (`LogActivity::record`):
+   - Mencatat seluruh aksi sinkronisasi (berhasil/gagal) dengan action `'linkedin_sync'`.
+   - Menyimpan `old_values`, `new_values`, ringkasan perubahan, IP address, dan User Agent.
+   - Dilarang keras menyimpan API key, token, atau kredensial rahasia di database log.
+
+10. Driver Resolver (`AppServiceProvider`):
+    - Satu-satunya titik pemutus provider dalam aplikasi berdasarkan nilai `LINKEDIN_DRIVER`.
+    - Menggunakan statement `match(config('services.linkedin.driver', 'mock'))`.
+
+----------------------------------------------------------------------------------------------------
+C. ALUR DATA SINKRONISASI (DATA FLOW)
+----------------------------------------------------------------------------------------------------
+Alur eksekusi aktual saat Superadmin mengklik sinkronisasi pada UI:
+
+1. [UI Superadmin] (Index.vue)
+   Pengguna memilih Tahun Kelulusan -> Klik tombol [Sinkronkan] (Single) atau [Sinkronkan Tahun 2024] (Bulk).
+   Frontend mengirim HTTP POST asinkron (fetch dengan header X-CSRF-TOKEN) tanpa full page reload.
+
+2. [Controller] (LinkedInSyncController)
+   Menerima request -> Mencari record Biodata -> Memanggil `LinkedInProfileService::syncBiodata()`.
+
+3. [Service] (LinkedInProfileService)
+   - Cek username: Jika kosong -> Langsung kembalikan status `SKIPPED`.
+   - Memulai transaksi database per-alumni: `DB::beginTransaction()`.
+   - Memanggil `LinkedInProfileProvider::findByUsername($username)`.
+
+4. [Driver Resolver & Provider] (AppServiceProvider -> MockLinkedInProvider / ApiLinkedInProvider)
+   - Jika `LINKEDIN_DRIVER=mock` -> `MockLinkedInProvider` membaca berkas JSON / generator dinamis.
+   - Jika `LINKEDIN_DRIVER=api`  -> `ApiLinkedInProvider` memanggil HTTP client ke external API resmi.
+   - Provider mengubah payload menjadi DTO `LinkedInProfile`.
+
+5. [Mapper] (LinkedInProfileMapper)
+   - Memilih posisi aktif (`endMonthYear == null`, start date terbaru).
+   - Mencocokkan nama perusahaan di tabel `perusahaan` (jika baru: `status_verifikasi = Menunggu Verifikasi`).
+   - Menyiapkan array pembaruan `posisi_jabatan` dan `perusahaan_id`.
+
+6. [Database & Audit Trail]
+   - Model `Biodata` diperbarui (`$biodata->update(...)`).
+   - `LogActivity::record()` mencatat aksi sinkronisasi ke tabel `log_activities`.
+   - `DB::commit()` mengunci perubahan. Jika terjadi error, `DB::rollBack()` dijalankan.
+
+7. [UI Feedback]
+   Controller mengembalikan JSON -> Baris tabel di frontend berubah status secara instan (Berhasil/Gagal)
+   beserta data perusahaan/jabatan baru tanpa memuat ulang halaman browser.
+
+----------------------------------------------------------------------------------------------------
+D. ALUR PEMILIHAN PROVIDER (ENV SWITCH)
+----------------------------------------------------------------------------------------------------
+Pemilihan provider dikendalikan sepenuhnya melalui variabel `LINKEDIN_DRIVER` pada berkas `.env`:
+
+1. Mode Mock (Default):
+   ```env
+   LINKEDIN_DRIVER=mock
+   LINKEDIN_MOCK_PATH=storage/app/mock/linkedin
+   ```
+   -> Container me-resolve `MockLinkedInProvider`.
+   -> Membaca berkas `storage/app/mock/linkedin/{username}.json` atau generator dinamis lokal.
+   -> Tidak ada koneksi jaringan internet yang dilakukan.
+
+2. Mode API (Masa Depan):
+   ```env
+   LINKEDIN_DRIVER=api
+   LINKEDIN_API_BASE_URL=https://api.linkedin.com/v2
+   LINKEDIN_API_KEY=rahasia_api_key_server_to_server
+   ```
+   -> Container me-resolve `ApiLinkedInProvider`.
+   -> Menghubungi endpoint resmi server-to-server dengan otorisasi Bearer token.
+   -> Membaca data riil LinkedIn.
+
+----------------------------------------------------------------------------------------------------
+E. BATAS TANGGUNG JAWAB MOCK DAN API
+----------------------------------------------------------------------------------------------------
+- Kedua provider mengimplementasikan interface yang sama: `LinkedInProfileProvider`.
+- Keduanya wajib mengembalikan objek DTO yang sama: `LinkedInProfile` (berisi koleksi `LinkedInPosition`).
+- Lapisan service (`LinkedInProfileService`) dan mapper (`LinkedInProfileMapper`) bersifat murni agnostik
+  dan tidak pernah mengetahui apakah data berasal dari berkas JSON lokal atau HTTP response API.
+- Format eksternal diselesaikan di level provider masing-masing melalui normalisasi DTO.
+
+----------------------------------------------------------------------------------------------------
+F. DATA YANG BOLEH DAN TIDAK BOLEH DIUBAH
+----------------------------------------------------------------------------------------------------
+1. DATA YANG BOLEH DIPERBARUI DARI LINKEDIN:
+   - `biodata.posisi_jabatan` (diambil dari `localizedTitle` posisi aktif saat ini).
+   - `biodata.perusahaan_id` (dikaitkan ke record tabel `perusahaan` yang cocok/dibuat).
+   - `biodata.linkedin_url` (diisi URL publik profil jika sebelumnya kosong).
+
+2. DATA OTORITATIF YANG DILARANG KERAS DIUBAH:
+   - `biodata.nim` (Kunci data akademik).
+   - `biodata.nik` & `biodata.npwp` (Dokumen resmi kependudukan).
+   - `biodata.nomor_telepon` & `biodata.email_pribadi` (Kontak pribadi alumni).
+   - `biodata.alamat`, `kabupaten_id`, `propinsi_id` domisili alumni.
+   - Seluruh data kelulusan akademik pada tabel `data_akademik` dan `yudisium`.
+
+----------------------------------------------------------------------------------------------------
+G. ATURAN PENCOCOKAN PERUSAHAAN (COMPANY MATCHING)
+----------------------------------------------------------------------------------------------------
+1. Pemilihan Posisi Aktif (Current Position):
+   - Prioritas 1: Posisi dengan `endMonthYear == null` (posisi yang sedang berlangsung).
+   - Prioritas 2: Jika >1 posisi aktif, pilih posisi dengan `startMonthYear` paling baru.
+   - Prioritas 3: Jika tidak ada posisi aktif, pilih riwayat posisi dengan `endMonthYear` paling baru.
+   - Prioritas 4: Jika tidak ada riwayat posisi, kembalikan null (posisi dan perusahaan alumni tidak diubah).
+
+2. Aturan Pencarian & Pembuatan Perusahaan:
+   - Pencarian awal: Exact match nama perusahaan case-insensitive & trimmed:
+     `SELECT id FROM perusahaan WHERE LOWER(TRIM(nama_perusahaan)) = ?`
+   - Jika belum ada: Sistem otomatis membuat record baru di tabel `perusahaan`.
+   - **Kebijakan Verifikasi Mutlak**: Meskipun seluruh data terisi lengkap (provinsi, negara, alamat,
+     sektor, skala), kolom `status_verifikasi` perusahaan baru WAJIB bernilai `'Menunggu Verifikasi'`.
+   - Jangan melakukan fuzzy matching agresif yang berisiko menggabungkan dua institusi berbeda.
+   - Jangan mengasumsikan jumlah karyawan LinkedIn sebagai nilai `skala` perusahaan (Lokal/Nasional/Internasional).
+
+----------------------------------------------------------------------------------------------------
+H. PENANGANAN KESALAHAN (ERROR HANDLING)
+----------------------------------------------------------------------------------------------------
+Sistem menangani seluruh kondisi kegagalan secara terisolasi tanpa merusak data eksisting dan tanpa
+menampilkan stack trace teknis kepada pengguna:
+
+1. `Username Kosong`:
+   - Status: `SKIPPED`.
+   - Pesan: *"LinkedIn username belum tersedia."*
+   - Tidak melakukan pemanggilan ke provider.
+
+2. `Profil Tidak Ditemukan` (HTTP 404):
+   - Melempar `LinkedInProfileNotFoundException`.
+   - Transaksi alumni di-rollback.
+   - Status UI: `Gagal` dengan pesan *"Profil tidak ditemukan."*
+   - LogActivity mencatat kegagalan audit trail.
+
+3. `Otorisasi Ditolak / Forbidden` (HTTP 401 / 403):
+   - ApiLinkedInProvider mencatat pesan error ke log internal server.
+   - Melempar `LinkedInSyncException` ("Otorisasi LinkedIn API ditolak oleh server eksternal.").
+   - API key TIDAK PERNAH dibocorkan ke pesan antarmuka pengguna.
+
+4. `Batas Kuota Terlampaui` (HTTP 429 - Rate Limit):
+   - Melempar `LinkedInSyncException` ("Batas kuota request LinkedIn API terlampaui.").
+
+5. `Server Error & Timeout` (HTTP 500 / Connection Timeout):
+   - Melempar `LinkedInSyncException` dengan pesan ramah pengguna ("Koneksi terputus atau timeout.").
+
+6. `Respons Tidak Valid / Bukan JSON`:
+   - Melempar `LinkedInSyncException` ("Format respons dari LinkedIn API tidak valid.").
+
+----------------------------------------------------------------------------------------------------
+I. ENTITY RELATIONSHIP DIAGRAM (ERD) TERKAIT SINKRONISASI LINKEDIN
+----------------------------------------------------------------------------------------------------
+Berikut adalah relasi antar tabel basis data yang terlibat dalam fitur Sinkronisasi LinkedIn:
+
++-----------------------------------------------------------------------------------------------+
+|                                      DATA AKADEMIK                                            |
+|                                  (Tabel: data_akademik)                                       |
++-----------------------------------------------------------------------------------------------+
+| PK  nim                  VARCHAR(20)   [Kunci utama mahasiswa/alumni]                         |
+|     nama                 VARCHAR(255)  [Nama lengkap resmi kampus]                            |
+|     tahun_lulus          INT           [Sumber filter Tahun Kelulusan resmi]                  |
+|     tahun_akademik_lulus VARCHAR(50)   [Periode gasal/genap kelulusan]                        |
++-----------------------------------------------------------------------------------------------+
+        | 1
+        |
+        | 1
++-------v---------------------------------------------------------------------------------------+
+|                                        BIODATA                                                |
+|                                    (Tabel: biodata)                                           |
++-----------------------------------------------------------------------------------------------+
+| PK  id                   BIGINT UNSIGNED AUTO_INCREMENT                                       |
+| FK  user_id              BIGINT UNSIGNED -> users.id                                          |
+| FK  nim                  VARCHAR(20)     -> data_akademik.nim                                 |
+|     linkedin_username    VARCHAR(255)    [Input pencarian profil eksternal]                   |
+|     linkedin_url         TEXT            [URL publik profil LinkedIn]                         |
+|     posisi_jabatan       VARCHAR(500)    [<- Diperbarui dari localizedTitle LinkedIn]         |
+| FK  perusahaan_id        BIGINT UNSIGNED -> perusahaan.id [<- Dikaitkan hasil sinkronisasi]   |
++-----------------------------------------------------------------------------------------------+
+        |                                                       |
+        | N                                                     | 1
+        |                                                       |
+        | 1 (Model: 'App\Models\Biodata', Action: 'linkedin_sync') 1
++-------v-----------------------------------------+   +---------v-------------------------------+
+|                LOG ACTIVITIES                   |   |                  PERUSAHAAN             |
+|            (Tabel: log_activities)              |   |              (Tabel: perusahaan)        |
++-------------------------------------------------+   +-----------------------------------------+
+| PK  id           BIGINT UNSIGNED AUTO_INCREMENT |   | PK  id            BIGINT UNSIGNED       |
+| FK  user_id      BIGINT UNSIGNED (Superadmin)   |   |     nama_perusahaan VARCHAR(255) [Exact]|
+|     action       VARCHAR(100) = 'linkedin_sync' |   |     propinsi_id   BIGINT UNSIGNED       |
+|     model_type   VARCHAR(255) = 'Biodata'       |   |     negara        VARCHAR(100)          |
+|     model_id     BIGINT UNSIGNED = biodata.id   |   |     status_verifikasi ENUM:             |
+|     old_values   JSON (jabatan, perusahaan lama)|   |     -> 'Menunggu Verifikasi' (MUTLAK)   |
+|     new_values   JSON (jabatan, perusahaan baru)|   |     -> 'Terverifikasi'                  |
+|     ip_address   VARCHAR(45)                    |   |     -> 'Ditolak'                        |
+|     user_agent   TEXT                           |   +-----------------------------------------+
++-------------------------------------------------+
+
+----------------------------------------------------------------------------------------------------
+J. KONFIGURASI ENVIRONMENT (.ENV)
+----------------------------------------------------------------------------------------------------
+Variabel lingkungan yang digunakan oleh sistem:
+
+1. `LINKEDIN_DRIVER`:
+   - Menentukan driver aktif: `'mock'` atau `'api'`.
+   - Default: `mock`.
+
+2. `LINKEDIN_MOCK_PATH`:
+   - Lokasi folder penyimpanan berkas Mock JSON.
+   - Default: `storage/app/mock/linkedin`.
+
+3. `LINKEDIN_API_BASE_URL`:
+   - Alamat URL dasar gateway API resmi LinkedIn (misal: `https://api.linkedin.com/v2`).
+   - Hanya digunakan saat `LINKEDIN_DRIVER=api`.
+
+4. `LINKEDIN_API_KEY`:
+   - Kunci autentikasi server-to-server API resmi (Bearer token).
+   - Hanya digunakan di level backend server, tidak boleh diekspos ke frontend atau log.
+
+----------------------------------------------------------------------------------------------------
+K. PANDUAN MENGGANTI DRIVER (MOCK -> API -> MOCK)
+----------------------------------------------------------------------------------------------------
+1. Langkah Berpindah dari MOCK ke API Resmi:
+   - Buka berkas `.env` pada server aplikasi.
+   - Ubah baris konfigurasi menjadi:
+     ```env
+     LINKEDIN_DRIVER=api
+     LINKEDIN_API_BASE_URL=https://api.linkedin.com/v2
+     LINKEDIN_API_KEY=kunci_rahasia_resmi_dari_linkedin_partner
+     ```
+   - Bersihkan cache konfigurasi jika aktif:
+     ```bash
+     php artisan config:clear
+     ```
+   - Selesai! Seluruh alur sinkronisasi langsung menggunakan `ApiLinkedInProvider`.
+   - Tidak memerlukan perubahan pada Controller, Service, Mapper, Database, maupun UI Vue.
+
+2. Langkah Berpindah Kembali ke MOCK:
+   - Buka berkas `.env`.
+   - Ubah kembali menjadi:
+     ```env
+     LINKEDIN_DRIVER=mock
+     ```
+   - Jalankan perintah:
+     ```bash
+     php artisan config:clear
+     ```
+   - Sistem seketika kembali membaca Mock JSON lokal.
+
+----------------------------------------------------------------------------------------------------
+L. CATATAN KETENTUAN PENTING IMPLEMENTASI
+----------------------------------------------------------------------------------------------------
+1. Implementasi saat ini secara default menggunakan **Mock LinkedIn Provider**.
+2. Class `ApiLinkedInProvider` dibuat sebagai arsitektur kesiapan masa depan, dan **TIDAK** memanggil
+   server eksternal selama konfigurasi driver bernilai `'mock'`.
+3. Dilarang keras mengarang endpoint LinkedIn atau mengasumsikan endpoint lookup username publik
+   tersedia bebas jika belum ada dalam dokumen resmi LinkedIn Partner Program.
+4. Sistem tidak melakukan teknik web scraping, automasi browser, login OAuth alumni, maupun third-party scraper.
+
+----------------------------------------------------------------------------------------------------
+M. STATUS ARTEFAK KODE KETIKA BERALIH KE API RESMI (ZERO FILE DELETION)
+----------------------------------------------------------------------------------------------------
+Pertanyaan Umum Arsitektur: "Ketika aplikasi diganti menggunakan API resmi di kemudian hari, file mana
+yang harus dihapus? Apakah folder DTOs, Contracts, Exceptions, Mappers, dan Providers harus dihapus?"
+
+JAWABAN: TIDAK ADA FILE YANG PERLU DIHAPUS SAMA SEKALI (ZERO FILE DELETION POLICY).
+
+Seluruh komponen dirancang modular sebagai kode inti produksi, dengan pembagian peran berikut:
+
+1. `Contracts/` (Interface):
+   - `LinkedInProfileProvider.php`: WAJIB DIPERTAHANKAN & TETAP DIGUNAKAN.
+   - Merupakan kontrak abstraksi tunggal yang dipanggil oleh `LinkedInProfileService` dan diimplementasikan
+     oleh `ApiLinkedInProvider`. Menjamin sistem tidak terikat langsung pada vendor atau pustaka konkret.
+
+2. `DTOs/` (Data Transfer Objects):
+   - `LinkedInProfile.php` & `LinkedInPosition.php`: WAJIB DIPERTAHANKAN & TETAP DIGUNAKAN.
+   - Bertindak sebagai representasi data resmi standar LinkedIn. Ketika `ApiLinkedInProvider` menerima
+     respons HTTP JSON dari server resmi LinkedIn, payload dinormalisasi ke dalam objek DTO ini sebelum
+     diproses ke database.
+
+3. `Exceptions/` (Custom Error Handling):
+   - `LinkedInProfileNotFoundException.php` & `LinkedInSyncException.php`: WAJIB DIPERTAHANKAN.
+   - Digunakan oleh `ApiLinkedInProvider` saat menerima respons 404 Not Found, token expired, atau
+     koneksi HTTP gateway LinkedIn bermasalah.
+
+4. `Mappers/` (Business Rules Mapping):
+   - `LinkedInProfileMapper.php`: WAJIB DIPERTAHANKAN & TETAP DIGUNAKAN.
+   - Bertanggung jawab mengevaluasi posisi pekerjaan yang aktif (`isCurrent`), mencocokkan nama instansi
+     ke tabel `perusahaan`, serta otomatis mendaftarkan perusahaan baru dengan status `Menunggu Verifikasi`.
+
+5. `Providers/` (Driver Implementations):
+   - `ApiLinkedInProvider.php`: MENJADI AKTIF PENUH.
+     Class inilah yang dipanggil secara live oleh Service Container untuk melakukan panggilan HTTP
+     server-to-server ke LinkedIn Gateway saat `LINKEDIN_DRIVER=api`.
+   - `MockLinkedInProvider.php`: TETAP DISIMPAN (STATUS IDLE).
+     TIDAK PERLU DIHAPUS. Sengaja dipertahankan sebagai sarana:
+     a) Automated Unit & Feature Testing (`phpunit`) agar pengujian CI/CD tidak memakan kuota/biaya API resmi.
+     b) Lingkungan pengembangan lokal (*localhost*) bagi programmer tanpa perlu memegang API Key berbayar.
+     c) Fallback darurat jika sewaktu-waktu kredensial API resmi expired atau server LinkedIn mengalami gangguan.
+
+6. `storage/app/mock/linkedin/` (Berkas JSON Sampel):
+   - Tetap disimpan di lingkungan pengembangan lokal sebagai fixture data pengujian.
+   - Di server produksi, folder ini diabaikan karena sistem sudah mengarah ke `ApiLinkedInProvider`.
+====================================================================================================
+
+====================================================================================================
+13. LOG PEMBARUAN SISTEM (UPDATE LOG)
+====================================================================================================
+
+[2026-10-03] REFACTOR ARSITEKTUR SINKRONISASI LINKEDIN MENJADI DRIVER-BASED SWITCH VIA .ENV
+----------------------------------------------------------------------------------------------------
+1. Ringkasan Perubahan:
+   - Merefaktor penyedia data sinkronisasi LinkedIn dari penunjukan langsung ke arsitektur Driver-Based Resolution.
+   - Penambahan implementasi provider baru: `ApiLinkedInProvider` (disiapkan untuk future official server-to-server API).
+   - Penambahan dukungan berkas Mock JSON lokal terstruktur (`storage/app/mock/linkedin/{username}.json`) pada `MockLinkedInProvider` dengan fallback dinamis ke biodata alumni lokal.
+   - Pendaftaran konfigurasi terpusat pada `.env`, `config/linkedin.php`, dan `config/services.php` (`LINKEDIN_DRIVER`, `LINKEDIN_MOCK_PATH`, `LINKEDIN_API_BASE_URL`, `LINKEDIN_API_KEY`).
+   - Mock Provider (`LINKEDIN_DRIVER=mock`) tetap beroperasi sebagai driver default untuk keperluan development & testing.
+   
+2. Tujuan Arsitektur:
+   - Memungkinkan penggantian provider eksternal di masa depan cukup melalui variabel environment (`.env`) tanpa mengubah satu baris pun kode pada Controller, LinkedInProfileService, LinkedInProfileMapper, DTO, Frontend Vue, Skema Database, Logika Pencocokan Perusahaan, Transaksi, maupun Audit Trail.
+   - Memastikan kredensial rahasia (API Key) hanya dibaca di level server melalui `config('services.linkedin.api_key')`, dan tidak pernah diekspos ke frontend, database, response browser, maupun pesan audit log.
+
+3. File yang Dibuat & Diperbarui:
+   - Dibuat: `app/Services/LinkedIn/Providers/ApiLinkedInProvider.php`
+   - Dibuat: `storage/app/mock/linkedin/johndoe.json`
+   - Diperbarui: `config/linkedin.php` & `config/services.php`
+   - Diperbarui: `.env` & `.env.example`
+   - Diperbarui: `app/Providers/AppServiceProvider.php` (Driver Resolver Match Statement)
+   - Diperbarui: `app/Services/LinkedIn/Providers/MockLinkedInProvider.php` (Dukungan pembacaan Mock JSON)
+   - Diperbarui: `tests/Feature/SuperAdminLinkedInSyncTest.php` (Penambahan pengujian driver switch & mock JSON)
+
+4. Pengujian yang Telah Dilakukan:
+   - TEST 1 (MOCK MODE): Memverifikasi `LINKEDIN_DRIVER=mock` berhasil me-resolve `MockLinkedInProvider` dan membaca berkas `johndoe.json`.
+   - TEST 2 (NOT FOUND): Memverifikasi penanganan profil yang tidak ada menghasilkan `PROFILE_NOT_FOUND` / 404 tanpa merusak data eksisting.
+   - TEST 3 (EMPTY USERNAME): Memverifikasi username kosong dilewati (`SKIPPED`) tanpa memanggil provider eksternal.
+   - TEST 4 (DRIVER API): Memverifikasi saat `LINKEDIN_DRIVER=api`, container me-resolve `ApiLinkedInProvider`, mendeteksi proteksi kredensial kosong, dan berhasil menormalisasi respons HTTP eksternal ke `LinkedInProfile` DTO.
+   - TEST 5 (KEMBALI KE MOCK): Memverifikasi sistem kembali ke `MockLinkedInProvider` seketika saat driver disetel ke `mock`.
+
+5. Panduan Pembersihan Cache Konfigurasi:
+   - Jika aplikasi dijalankan dengan cache konfigurasi aktif di lingkungan staging/produksi, jalankan perintah berikut setelah mengubah `.env`:
+     `php artisan config:clear`
+====================================================================================================
+14. ARSITEKTUR INTEGRASI DATA AKADEMIK, YUDISIUM, & BIODATA (ZERO DUPLICATION)
+====================================================================================================
+
+Bagian ini menjelaskan arsitektur keterhubungan antara tabel `data_akademik`, `yudisium`, `data_orang_tua`,
+dan `biodata` pada sistem Tracer Study UKDW:
+
+----------------------------------------------------------------------------------------------------
+A. PRINSIP ZERO DUPLICATION & SINGLE SOURCE OF TRUTH
+----------------------------------------------------------------------------------------------------
+1. `data_akademik` adalah Single Source of Truth untuk seluruh data identitas master mahasiswa/alumni:
+   - Nama lengkap, tempat lahir, tanggal lahir, jenis kelamin, agama, golongan darah, kewarganegaraan.
+   - Dokumen kependudukan: NIK, No KK, NISN, No BPJS.
+   - Riwayat akademik: Angkatan masuk, status mahasiswa, tahun kelulusan, tahun akademik lulus,
+     tanggal lulus, IPK, total SKS, total angka kualitas, asal sekolah.
+   - Email resmi kampus (`email_students`).
+
+2. `biodata` bertindak sebagai entitas jangkar (anchor domain) khusus Tracer Study:
+   - TIDAK MENYIMPAN fisik kolom `nama`, `tahun_lulus`, `tanggal_lahir`, `jenis_kelamin`, `agama`,
+     `golongan_darah`, dsb. Kolom-kolom tersebut telah diaudit bersih untuk mencegah inkonsistensi data.
+   - Hanya mengelola data profil aktif alumni pasca-kampus: `email_pribadi`, `nomor_telepon`, domisili,
+     tautan media sosial (`linkedin_username`), karier/pekerjaan (`posisi_jabatan`, `kategori_pekerjaan`,
+     `gaji`), dan relasi ke `perusahaan_id` serta `atasan_id`.
+
+----------------------------------------------------------------------------------------------------
+B. BAGAIMANA DATA OTOMATIS KETARIK? (3 LAPISAN OTOMASI)
+----------------------------------------------------------------------------------------------------
+1. Lapis 1: Dynamic Eloquent Accessors (`app/Models/Biodata.php`)
+   - Ketika kode aplikasi memanggil `$biodata->nama`, `$biodata->tahun_lulus`, atau `$biodata->tanggal_lahir`,
+     Model `Biodata` secara transparan dan dinamis mengambil nilainya langsung dari relasi:
+     `$this->dataAkademik?->nama`, `$this->dataAkademik?->tahun_lulus`, dsb.
+
+2. Lapis 2: Database Views SQL Berkinerja Tinggi (`v_alumni_profile_summary` & `v_alumni_audit_rekap`)
+   - Dibuat melalui migrasi database terpusat:
+     `SELECT b.id AS biodata_id, b.user_id, b.nim, COALESCE(da.nama, u.name) AS nama, da.tahun_lulus, ...`
+     `FROM biodata b LEFT JOIN data_akademik da ON da.nim = b.nim ...`
+   - Menggabungkan data identitas master, data orang tua, dan status yudisium secara live dan otomatis.
+
+3. Lapis 3: Self-Assembling Model `Biodata` & Event Trigger `Yudisium`
+   - Model `Biodata` (`app/Models/Biodata.php`):
+     Memiliki event `static::creating()` sehingga entitas Biodata bersifat mandiri (*self-assembling*).
+     Ketika baris `Biodata` dibuat hanya dengan berbekal `NIM`, Model `Biodata` secara otomatis:
+     a) Menghubungkan `yudisium_id` dari tabel `yudisium`.
+     b) Menghubungkan `orang_tua_id` dari tabel `data_orang_tua`.
+     c) Menghubungkan `prodi_id` berdasarkan kode program studi pada NIM.
+     d) Memastikan akun login `User` tercipta (username = NIM, default password format ddmmyyyy dari tanggal lahir).
+   - Model `Yudisium` (`app/Models/Yudisium.php`):
+     Berperan murni sebagai pemicu peristiwa (*Domain Event Trigger*). Mahasiswa aktif belum masuk ke tabel
+     biodata sampai sidang skripsi & yudisium disahkan. Begitu `status_lulus = 'Lulus'`, Model `Yudisium`
+     secara otomatis menyinkronkan kelulusan ke `data_akademik` lalu memanggil:
+     `Biodata::firstOrCreate(['nim' => $yudisium->nim]);`
+   - Dengan arsitektur ini, tanggung jawab perakitan data berada tepat di Model `Biodata`, sedangkan `Yudisium`
+     hanya menjadi saklar pemicu bahwa seorang mahasiswa resmi bertransformasi menjadi alumni.
+
+----------------------------------------------------------------------------------------------------
+C. ALUR DETAIL: APA YANG TERJADI JIKA HANYA MENGISI DATA AKADEMIK & YUDISIUM?
+----------------------------------------------------------------------------------------------------
+Skenario Operasional Riil:
+Staf BAAK / Tata Usaha mengimpor atau menambahkan data kelulusan tanpa menyentuh tabel `biodata`.
+
+1. Tahap 1: Mahasiswa Masih Aktif Kuliah (Belum Lulus)
+   - Data hanya tersimpan di `data_akademik` dengan `status_mahasiswa = 'AR'` (Aktif Reguler).
+   - Pada tahap ini, mahasiswa TIDAK masuk ke tabel `biodata` dan akun Tracer Study belum aktif.
+   - Hal ini mencegah mahasiswa yang belum lulus ikut mengisi kuesioner tracer study.
+
+2. Tahap 2: Mahasiswa Menyelesaikan Skripsi & Dinyatakan Lulus di Yudisium
+   - Operator memasukkan catatan kelulusan di tabel `yudisium` dengan:
+     `status_lulus = 'Lulus'` (atau disetujui melalui sistem yudisium).
+   - Saat record `yudisium` disimpan, event `Yudisium::saved` otomatis memicu:
+     a) Update status kelulusan di `data_akademik`: `status_mahasiswa = 'L'`, tanggal lulus resmi,
+        tahun lulus resmi (misal: 2026), dan semester akademik kelulusan.
+     b) Pemanggilan `Biodata::firstOrCreate(['nim' => $yudisium->nim])`.
+
+3. Tahap 3: Perakitan Mandiri (*Self-Assembling*) di Model `Biodata`
+   - Event `Biodata::creating` mendeteksi pembuatan baris baru dengan NIM tersebut.
+   - Secara otomatis:
+     * Mengambil `user_id` dari tabel `users`, atau membuatnya secara otomatis jika akun belum ada
+       (username = NIM, password = tanggal lahir format `ddmmyyyy` contoh: `12032002`).
+     * Menghubungkan `yudisium_id` dari record yudisium yang baru dibuat.
+     * Menghubungkan `orang_tua_id` dari tabel `data_orang_tua`.
+     * Menghubungkan `prodi_id` berdasarkan parsing 2 digit pertama NIM (misal: 71 -> Informatika).
+
+4. Tahap 4: Penarikan Data Dinamis Saat Halaman Profil / Audit Dibuka
+   - Ketika alumni login atau admin membuka direktori alumni:
+     * Data master (Nama, Tanggal Lahir, Jenis Kelamin, Agama, NIK, IPK, Tahun Lulus) langsung ditarik
+       otomatis dari `data_akademik` via Dynamic Accessor & View SQL `v_alumni_profile_summary`.
+     * Data skripsi & pembimbing langsung ditarik dari `yudisium`.
+     * Data orang tua langsung ditarik dari `data_orang_tua`.
+
+----------------------------------------------------------------------------------------------------
+D. MATRIKS DISTRIBUSI KOLOM: DATA OTOMATIS vs DATA KOSONG (NULL)
+----------------------------------------------------------------------------------------------------
+Berikut adalah status keterisian kolom pada saat profil alumni pertama kali otomatis terbentuk:
+
+1. KELOMPOK DATA OTOMATIS TERISI (Ditarik Otomatis dari Master):
+   - Identitas Diri : Nama Lengkap, Tempat & Tanggal Lahir, Jenis Kelamin, Agama, Golongan Darah,
+                      Warga Negara, Dokumen (NIK, No KK, NISN, No BPJS).
+   - Data Akademik  : NIM, Program Studi, Fakultas, Angkatan Masuk, Tahun Lulus, Tanggal Lulus,
+                      Tahun Akademik Lulus, IPK Kumulatif, Total SKS, Asal Sekolah.
+   - Data Orang Tua : Nama Orang Tua/Wali, Pekerjaan, Alamat & Telepon Orang Tua.
+   - Data Yudisium  : Judul Skripsi / Tugas Akhir, Dosen Pembimbing, Dosen Penguji, Status Lulus.
+   - Kredensial     : Akun `users` (Username: NIM, Password Default: Tanggal Lahir ddmmyyyy).
+
+2. KELOMPOK DATA KOSONG (NULL) DI TABEL BIODATA:
+   - Karier & Pekerjaan : `posisi_jabatan` = NULL, `kategori_pekerjaan` = NULL, `gaji` = NULL.
+   - Instansi Tempat Bekerja : `perusahaan_id` = NULL, `atasan_id` = NULL.
+   - Kontak & Domisili Baru: `alamat` = NULL, `nomor_telepon` = NULL, `email_pribadi` = NULL, `npwp` = NULL.
+   - Media Sosial       : `linkedin_username` = NULL (atau terisi opsional), `instagram_url` = NULL.
+
+   *Catatan Desain: Kolom-kolom di atas sengaja bernilai NULL karena merupakan data pasca-kampus yang
+   menjadi target pengisian kuesioner profil Tracer Study oleh alumni atau melalui Sinkronisasi LinkedIn.*
+
+----------------------------------------------------------------------------------------------------
+E. SEEDER LULUSAN 2026 DENGAN PROFIL KOSONG (`Lulusan2026Seeder.php`)
+----------------------------------------------------------------------------------------------------
+Telah dibuat seeder khusus `database/seeders/Lulusan2026Seeder.php` yang menambahkan 10 alumni baru
+lulusan tahun 2026:
+- 5 Alumni Prodi Informatika (NIM 71220011 s/d 71220015)
+- 5 Alumni Prodi Sistem Informasi (NIM 72220011 s/d 72220015)
+- Karakteristik Data:
+  * Seluruh data identitas, IPK, tahun lulus (2026), tanggal lahir, nama ortu, dan skripsi terisi lengkap.
+  * Profil karier (`posisi_jabatan`, `perusahaan_id`, `atasan_id`, `gaji`, `npwp`, `alamat`) bernilai NULL.
+  * 5 alumni memiliki `linkedin_username` untuk keperluan pengujian Sinkronisasi LinkedIn Super Admin.
+  * Menjalankan seeder:
+    `php artisan db:seed --class=Lulusan2026Seeder`
 ====================================================================================================

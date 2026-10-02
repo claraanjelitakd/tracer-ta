@@ -1,10 +1,18 @@
 <script setup>
 import { Link } from '@inertiajs/vue3';
+
+const props = defineProps({
+    // Background class yang dapat diatur dari Beranda.vue
+    bgClass: {
+        type: String,
+        default: 'bg-gradient-to-b from-[#FFC700] via-[#FBBF24] to-[#F59E0B]'
+    }
+});
 </script>
 
 <template>
     <!-- Section Alur Partisipasi (Kuning UKDW Sesuai Arahan Pengguna) -->
-    <section id="panduan" class="py-20 lg:py-24 bg-gradient-to-b from-[#FFC700] via-[#FBBF24] to-[#F59E0B] text-slate-950 border-y border-amber-300 relative overflow-hidden">
+    <section id="panduan" :class="[bgClass, 'py-20 lg:py-24 text-slate-950 border-y border-amber-300 relative overflow-hidden transition-colors duration-300']">
         <!-- Glossy Glow Accents (Warm & Subtle White Highlights) -->
         <div class="absolute -top-32 -right-32 w-96 h-96 bg-white/30 rounded-full blur-3xl pointer-events-none"></div>
         <div class="absolute -bottom-32 -left-32 w-96 h-96 bg-amber-600/15 rounded-full blur-3xl pointer-events-none"></div>
@@ -114,54 +122,59 @@ import { Link } from '@inertiajs/vue3';
             <!-- 
               ========================================================================
               PETUNJUK AKUN PENGISIAN (Username & Password) 
+              Pengaturan Warna: Putih Bersih (bg-white)
               ========================================================================
             -->
-            <div class="bg-[#00381A]  border border-white/20 p-6 sm:p-8 shadow-2xl text-white">
+            <div class="bg-white rounded-3xl border border-slate-200/90 p-6 sm:p-8 shadow-xl text-slate-900">
                 <div class="flex items-center gap-2.5 mb-5">
-                    <span class="w-3 h-3 rounded-full bg-[#FFC700] shadow-sm"></span>
-                    <h3 class="text-base sm:text-lg font-black text-white uppercase tracking-wider">
+                    <span class="w-3 h-3 rounded-full bg-[#004D25] shadow-sm"></span>
+                    <h3 class="text-base sm:text-lg font-black text-[#004D25] uppercase tracking-wider">
                         Petunjuk Akun Pengisian (Username &amp; Password)
                     </h3>
                 </div>
 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
                     <!-- Akun Alumni UKDW -->
-                    <div class="p-5 rounded-xl bg-black/35 backdrop-blur-md border border-white/15 space-y-2.5 shadow-xl">
+                    <div class="p-5 rounded-2xl bg-slate-50/90 border border-slate-200/90 space-y-2.5 shadow-sm text-slate-900">
                         <div class="flex items-center justify-between">
-                            <span class="px-3.5 py-1 rounded-full bg-[#FFC700] text-slate-950 text-xs font-black shadow-sm">
+                            <span class="px-3.5 py-1 rounded-full bg-[#004D25] text-[#FFC700] text-xs font-black shadow-sm">
                                 Alumni UKDW
                             </span>
-                            <span class="text-[11px] font-bold text-[#FFC700]">Akun Terdaftar</span>
+                            <span class="text-[11px] font-bold text-[#004D25] bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200/60">
+                                Akun Terdaftar
+                            </span>
                         </div>
-                        <div class="text-xs sm:text-sm text-white/85 space-y-1.5 pt-1">
+                        <div class="text-xs sm:text-sm text-slate-700 space-y-1.5 pt-1">
                             <p>
-                                <strong class="text-white">Username:</strong> Menggunakan <span class="font-bold text-[#FFC700]">NIM</span> saat kuliah.
+                                <strong class="text-slate-950">Username:</strong> Menggunakan <span class="font-bold text-[#004D25]">NIM</span> saat kuliah.
                             </p>
                             <p>
-                                <strong class="text-white">Password:</strong> Tanggal lahir format <code class="bg-white/15 px-2 py-0.5 rounded-md font-bold text-[#FFC700] border border-[#FFC700]/30">ddmmyyyy</code>.
+                                <strong class="text-slate-950">Password:</strong> Tanggal lahir format <code class="bg-amber-100/80 text-slate-900 px-2 py-0.5 rounded-md font-bold border border-amber-300/80">ddmmyyyy</code>.
                             </p>
-                            <p class="text-xs text-white/80 italic bg-white/5 p-2.5 rounded-lg border border-white/10 mt-2">
-                                Contoh: <strong class="text-[#FFC700]">01011990</strong> (untuk kelahiran 1 Januari 1990).
+                            <p class="text-xs text-slate-600 italic bg-white p-3 rounded-xl border border-slate-200/80 mt-2 shadow-xs">
+                                Contoh: <strong class="text-[#004D25] font-black not-italic">01011990</strong> (untuk kelahiran 1 Januari 1990).
                             </p>
                         </div>
                     </div>
 
                     <!-- Akun Pengguna Lulusan / Perusahaan -->
-                    <div class="p-5 rounded-xl bg-black/35 backdrop-blur-md border border-white/15 space-y-2.5 shadow-xl">
+                    <div class="p-5 rounded-2xl bg-slate-50/90 border border-slate-200/90 space-y-2.5 shadow-sm text-slate-900">
                         <div class="flex items-center justify-between">
-                            <span class="px-3.5 py-1 rounded-full bg-[#FFC700] text-slate-950 text-xs font-black shadow-sm">
+                            <span class="px-3.5 py-1 rounded-full bg-[#004D25] text-[#FFC700] text-xs font-black shadow-sm">
                                 Pengguna Lulusan / Perusahaan
                             </span>
-                            <span class="text-[11px] font-bold text-[#FFC700]">Akses Kuesioner Mitra</span>
+                            <span class="text-[11px] font-bold text-[#004D25] bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200/60">
+                                Akses Kuesioner Mitra
+                            </span>
                         </div>
-                        <div class="text-xs sm:text-sm text-white/85 space-y-1.5 pt-1">
+                        <div class="text-xs sm:text-sm text-slate-700 space-y-1.5 pt-1">
                             <p class="leading-relaxed">
-                                <strong class="text-white">Akses Kuesioner Mitra:</strong>
+                                <strong class="text-slate-950">Akses Kuesioner Mitra:</strong>
                             </p>
-                            <p class="leading-relaxed text-white/80">
+                            <p class="leading-relaxed text-slate-600">
                                 Menggunakan kredensial khusus yang telah dikirimkan secara resmi melalui email penanggung jawab instansi/perusahaan.
                             </p>
-                            <p class="text-xs text-white/80 italic bg-white/5 p-2.5 rounded-lg border border-white/10 mt-2">
+                            <p class="text-xs text-slate-600 italic bg-white p-3 rounded-xl border border-slate-200/80 mt-2 shadow-xs">
                                 Cek kotak masuk atau folder spam email PIC perusahaan Anda.
                             </p>
                         </div>

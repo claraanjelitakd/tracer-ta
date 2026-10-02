@@ -35,4 +35,11 @@ return [
         ],
     ],
 
+    'linkedin' => [
+        'driver' => env('LINKEDIN_DRIVER', 'mock'),
+        'mock_path' => env('LINKEDIN_MOCK_PATH', storage_path('app/mock/linkedin')),
+        'api_base_url' => env('LINKEDIN_API_BASE_URL'),
+        'api_key' => env('LINKEDIN_API_KEY'),
+    ],
+
 ];

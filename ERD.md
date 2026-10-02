@@ -74,7 +74,9 @@ erDiagram
         bigint id PK
         string nama_negara UK
         string ibu_kota "nullable"
-        string kode_iso2 "nullable, char(2)"
+        string kode_iso2 UK "char(2)"
+        string kode_iso3 "nullable, char(3)"
+        string nama_resmi "nullable"
         string benua "nullable"
         timestamp created_at
         timestamp updated_at
@@ -412,8 +414,8 @@ erDiagram
 ### B. Modul Wilayah & Master Institusi
 1. **`prodi`**: Master program studi di lingkungan UKDW (Sistem Informasi, Informatika, Arsitektur, Desain Produk, Manajemen, Akuntansi, Biologi, Kedokteran, Teologi, dll.).
 2. **`ref_fakultas`**: Master fakultas di UKDW yang menaungi program studi terkait.
-3. **`ref_negara`**: Master data 193 negara resmi dunia (kode ISO 2, nama negara, ibu kota, benua) untuk lokasi perusahaan internasional dan kewarganegaraan alumni.
-4. **`propinsi`** & **`kabupaten`**: Master data wilayah administratif Republik Indonesia (38 Provinsi dan ratusan Kabupaten/Kota).
+3. **`ref_negara`**: Master data 194 negara resmi dunia (kode ISO 2 unik, nama negara unik, ibu kota, benua) untuk lokasi perusahaan internasional dan kewarganegaraan alumni. Disinkronkan dari berkas [`data/daftar_negara_dunia.csv`](file:///c:/study/tracerstudy/data/daftar_negara_dunia.csv).
+4. **`propinsi`** & **`kabupaten`**: Master data wilayah administratif Republik Indonesia (38 Provinsi dan 514 Kabupaten/Kota). Disinkronkan dari berkas [`data/provinsi.csv`](file:///c:/study/tracerstudy/data/provinsi.csv) dan [`data/kabupaten_kota.csv`](file:///c:/study/tracerstudy/data/kabupaten_kota.csv).
 5. **`ump`**: Data Upah Minimum Provinsi (UMP) tahun 2026 terhubung via `kode_provinsi` untuk evaluasi kesesuaian gaji standar kelayakan hidup.
 
 ---
@@ -434,7 +436,11 @@ erDiagram
      - Judul Tugas Akhir (`judul_ta`, `judul_ta_inggris`).
      - Publikasi Ilmiah (`url_publikasi`, `jenis_publikasi`, `status_publikasi`).
      - Hasil & Status Yudisium: `keterangan_hasil_yudisium`, `status_lulus` (`Belum`, `Proses`, `Lulus`, `Tidak Lulus`).
-   - **Otomasi**: Ketika `status_lulus` diset `'Lulus'`, model event secara otomatis memperbarui record `data_akademik` terkait (`status_mahasiswa = 'L'`, tanggal lulus, tahun lulus, dan periode semester kelulusan).
+   - **Otomasi Siklus Kelulusan**: Ketika `status_lulus` bernilai `'Lulus'`, sistem (via Model Event `Yudisium::saved`) otomatis:
+     - Mengubah status mahasiswa di `data_akademik` menjadi `'L'` (Lulus).
+     - Mengisi tanggal, tahun, dan periode kelulusan di `data_akademik`.
+     - Membuatkan akun `users` baru (username: NIM, role: alumni, password awal: tgl lahir `DDMMYYYY`) jika belum ada.
+     - Menginisialisasi kerangka record `biodata` (skeleton profile) dengan data identitas, prodi, dan ortu terisi otomatis dari data akademik, sementara kolom karier (`perusahaan_id`, `posisi_jabatan`, `gaji`, dll.) dibiarkan kosong/null untuk diisi alumni atau disinkronkan melalui LinkedIn.
 3. **`biodata`** (Profil Dinamis & Pelacak Tracer Karier):
    - Menyimpan profil aktif alumni, kontak pribadi, domisili terkini, media sosial, dan data karier tanpa duplikasi data master akademik:
      - Relasi: `user_id` (1:1 ke `users`), `nim` (1:1 ke `data_akademik`), `prodi_id`, `orang_tua_id`, `yudisium_id`, `perusahaan_id`, `atasan_id`.
@@ -447,6 +453,7 @@ erDiagram
 5. **`perusahaan`** & **`atasan`**:
    - Master data entitas institusi/perusahaan dan atasan alumni.
    - Kolom verifikasi: `status_verifikasi` (`Menunggu Verifikasi`, `Terverifikasi`, `Ditolak`), `created_by_user_id` (FK ke `users.id` pengaju), `created_by_prodi_id` (FK ke `prodi.id` pengaju).
+   - Setiap pendaftaran baru perusahaan (baik manual maupun hasil sinkronisasi LinkedIn) selalu berstatus default `'Menunggu Verifikasi'`.
 
 ---
 

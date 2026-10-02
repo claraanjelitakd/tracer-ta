@@ -1,5 +1,11 @@
 # Update Log Tracer Study
 
+## 03 Oktober 2026
+- **Verifikasi & Approval Perusahaan**: Membuka akses aksi verifikasi (*Verify*, *Edit*, *Auto Replace*, *Reject*) pada data perusahaan berstatus **Terverifikasi** di SuperAdmin, Admin Prodi, dan Admin Fakultas, serta menghapus `->where('status_verifikasi', 'Menunggu Verifikasi')` di controller untuk menghilangkan error 404 saat melakukan *Auto Replace*.
+- **SuperAdmin Manajemen Akun**: Memperbaiki komputasi `currentFakultasId` pada modal **Sunting Data Akun Pengguna** (`SuperAdmin/ManajemenAkun/Index.vue`) agar Fakultas alumni/admin terisi otomatis secara akurat, serta menambahkan listener penyesuaian otomatis saat Program Studi diubah.
+- **Fitur LinkedIn Sync**: Halaman Sinkronisasi LinkedIn SuperAdmin dengan 5 kartu metrik analitik, aksi sinkronisasi individual & massal per angkatan, dan abstraksi `LINKEDIN_DRIVER` (`mock` / `api`) via `AppServiceProvider`.
+- **Master Data CSV**: Memindahkan berkas master CSV ke `/data`, menyempurnakan `RefNegaraSeeder.php` dan `WilayahSeeder.php` dengan stream `fgetcsv` & proteksi *unique constraint*.
+
 ## 28 September 2026
 - **Database (Kolom Foto Alumni)**: Menambahkan kolom `foto` (nullable string) pada tabel `biodata` (`2026_09_28_054830_add_foto_to_biodata_table.php`) untuk direktori `/uploads/profile`.
 - **Backend & Model**: Memperbarui `$fillable` pada `Biodata.php` dan memperjelas relasi `yudisium()` ke `belongsTo(Yudisium::class, 'yudisium_id')` untuk mengakses judul TA, URL publikasi, dan jenis publikasi.

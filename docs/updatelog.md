@@ -2,6 +2,12 @@
 
 Semua perubahan besar pada sistem dicatat dalam dokumen ini.
 
+## [2026-10-03]
+- **Fleksibilitas Aksi & Auto Replace Master Perusahaan**: Membuka akses aksi verifikasi (*Verify*, *Edit*, *Auto Replace*, *Reject*) pada data perusahaan berstatus **Terverifikasi** di SuperAdmin, Admin Prodi, dan Admin Fakultas, serta menghapus batasan `->where('status_verifikasi', 'Menunggu Verifikasi')` di controller untuk mencegah error 404.
+- **Penyempurnaan Modal Edit Akun & Pre-select Fakultas**: Memperbaiki komputasi `currentFakultasId` pada modal **Sunting Data Akun Pengguna** (`SuperAdmin/ManajemenAkun/Index.vue`) agar Fakultas alumni/admin terisi otomatis secara akurat, serta menambahkan listener penyesuaian otomatis saat Program Studi diubah.
+- **Fitur Sinkronisasi LinkedIn (Driver-Based Switch via .ENV)**: Halaman Sinkronisasi LinkedIn SuperAdmin dengan 5 kartu metrik analitik, aksi sinkronisasi individual & massal per angkatan, dan abstraksi `LINKEDIN_DRIVER` (`mock` / `api`) via `AppServiceProvider`.
+- **Sentralisasi Data CSV (/data) & Seeder Wilayah/Negara**: Memindahkan berkas master CSV ke `/data`, menyempurnakan `RefNegaraSeeder.php` dan `WilayahSeeder.php` dengan stream `fgetcsv` & proteksi *unique constraint*.
+
 ## [2026-09-30]
 - **Fitur Otomatis Reset Password via Gmail / SMTP**: Integrasi pengiriman email pemulihan kata sandi berbasis SMTP Google App Passwords dengan Mailable `ResetPasswordMail.php`, template HTML Blade `reset_password.blade.php`, Controller `LupaKataSandiController.php`, form modal interaktif di `Login.vue`, dan halaman Inertia Vue `ResetPassword.vue`.
 - **Pengutamaan Prioritas Email Pribadi Biodata**: Mengubah logika accessor `getEmailAttribute()` pada model `User.php` dan `Biodata.php` agar mengutamakan `email_pribadi` pada tabel `biodata` (email aktif alumni terkini).

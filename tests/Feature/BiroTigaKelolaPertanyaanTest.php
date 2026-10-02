@@ -6,13 +6,13 @@ use App\Models\KelompokPertanyaan;
 use App\Models\Kuesioner;
 use App\Models\RefSubpertanyaan2021;
 use App\Models\User;
-use Illuminate\Foundation\Testing\DatabaseMigrations;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
 use Tests\TestCase;
 
 class BiroTigaKelolaPertanyaanTest extends TestCase
 {
-    use DatabaseMigrations;
+    use RefreshDatabase;
 
     protected User $admin;
 

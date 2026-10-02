@@ -11,12 +11,17 @@ const props = defineProps({
             total_responden: 88,
             persentase_karier: 94
         })
+    },
+    // Background class yang dapat diatur dari Beranda.vue
+    bgClass: {
+        type: String,
+        default: 'bg-[#004D25]'
     }
 });
 </script>
 
 <template>
-    <section id="statistik" class="py-20 lg:py-24 bg-[#004D25] text-white border-b border-white/10 relative overflow-hidden">
+    <section id="statistik" :class="[bgClass, 'py-20 lg:py-24 text-white border-b border-white/10 relative overflow-hidden transition-colors duration-300']">
         <!-- Glossy Glow Accents -->
         <div class="absolute -top-32 -left-32 w-96 h-96 bg-[#03542B]/80 rounded-full blur-3xl pointer-events-none"></div>
         <div class="absolute -bottom-32 -right-32 w-96 h-96 bg-[#FFC700]/10 rounded-full blur-3xl pointer-events-none"></div>

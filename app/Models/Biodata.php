@@ -2,8 +2,10 @@
 
 namespace App\Models;
 
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Hash;
 
 /**
  * Model Biodata (tabel: biodata)
@@ -23,6 +25,54 @@ class Biodata extends Model
     use HasFactory;
 
     protected $table = 'biodata';
+
+    /**
+     * Bootstrap model events.
+     * Otomatisasi: Menghubungkan relasi yudisium, orang tua, prodi, dan akun user
+     * saat biodata baru dibuat hanya berbekal NIM.
+     */
+    protected static function booted()
+    {
+        static::creating(function (Biodata $biodata) {
+            if ($biodata->nim) {
+                // 1. Hubungkan ke data yudisium jika belum terisi
+                if (empty($biodata->yudisium_id)) {
+                    $biodata->yudisium_id = Yudisium::where('nim', $biodata->nim)->value('id');
+                }
+
+                // 2. Hubungkan ke data orang tua jika belum terisi
+                if (empty($biodata->orang_tua_id)) {
+                    $biodata->orang_tua_id = DataOrangTua::where('nim', $biodata->nim)->value('id');
+                }
+
+                // 3. Hubungkan ke prodi dari parsing NIM jika belum terisi
+                if (empty($biodata->prodi_id)) {
+                    $parsed = self::parseNim($biodata->nim);
+                    if ($parsed) {
+                        $biodata->prodi_id = Prodi::where('kode_prodi', $parsed['kode_prodi'])->value('id');
+                    }
+                }
+
+                // 4. Pastikan Akun Pengguna (User) tersedia jika belum terisi
+                if (empty($biodata->user_id)) {
+                    $dataAkad = DataAkademik::where('nim', $biodata->nim)->first();
+                    $user = User::firstOrCreate(
+                        ['username' => $biodata->nim],
+                        [
+                            'name' => $dataAkad?->nama ?? 'Alumni UKDW',
+                            'email' => $dataAkad?->email_pribadi ?? ($biodata->nim.'@alumni.ukdw.ac.id'),
+                            'password' => Hash::make(
+                                $dataAkad?->tanggal_lahir ? Carbon::parse($dataAkad->tanggal_lahir)->format('dmY') : '15082001'
+                            ),
+                            'role' => 'alumni',
+                            'must_change_password' => true,
+                        ]
+                    );
+                    $biodata->user_id = $user->id;
+                }
+            }
+        });
+    }
 
     /**
      * Kolom yang dapat diisi secara massal (Mass Assignable).
@@ -168,6 +218,17 @@ class Biodata extends Model
     public function prodiResponses()
     {
         return $this->prodiResponse();
+    }
+
+    /**
+     * Relasi ke Log Aktivitas Sinkronisasi LinkedIn Terakhir (Audit Trail).
+     */
+    public function latestLinkedinSyncLog()
+    {
+        return $this->hasOne(LogActivity::class, 'model_id')
+            ->where('model_type', self::class)
+            ->where('action', 'linkedin_sync')
+            ->latestOfMany();
     }
 
     // =========================================================================

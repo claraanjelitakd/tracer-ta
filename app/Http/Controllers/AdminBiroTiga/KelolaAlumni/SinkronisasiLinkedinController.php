@@ -5,14 +5,14 @@ namespace App\Http\Controllers\AdminBiroTiga\KelolaAlumni;
 use App\Http\Controllers\Controller;
 use App\Models\Biodata;
 use App\Models\Perusahaan;
-use App\Services\LinkedIn\LinkedInService;
+use App\Services\LinkedIn\LinkedInProfileService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 /**
  * SinkronisasiLinkedinController
  *
- * Fungsi: Menangani penarikan data dari LinkedIn (via agen MCP) dan menyimpannya ke database.
+ * Fungsi: Menangani penarikan data dari LinkedIn melalui LinkedInProfileService resmi.
  * Tujuan: Mengotomatiskan pelacakan karier alumni.
  */
 class SinkronisasiLinkedinController extends Controller
@@ -20,7 +20,7 @@ class SinkronisasiLinkedinController extends Controller
     /**
      * Melakukan Sinkronisasi Data LinkedIn
      */
-    public function sinkronisasiDataLinkedin($id, LinkedInService $linkedinService)
+    public function sinkronisasiDataLinkedin($id, LinkedInProfileService $linkedinService)
     {
         $alumni = Biodata::findOrFail($id);
 
@@ -30,19 +30,12 @@ class SinkronisasiLinkedinController extends Controller
             return back()->withErrors(['message' => 'Alumni tidak memiliki username atau URL LinkedIn.']);
         }
 
-        try {
-            $data = $linkedinService->fetchProfileData($identitas);
+        $result = $linkedinService->syncAlumniProfile($alumni);
 
-            return response()->json([
-                'success' => true,
-                'data' => $data,
-            ]);
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Gagal sinkronisasi: '.$e->getMessage(),
-            ], 500);
-        }
+        return response()->json([
+            'success' => $result['status'] === 'SUCCESS',
+            'data' => $result,
+        ]);
     }
 
     /**

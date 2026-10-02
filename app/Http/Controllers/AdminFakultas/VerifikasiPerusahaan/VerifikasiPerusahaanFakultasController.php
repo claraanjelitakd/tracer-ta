@@ -86,9 +86,7 @@ class VerifikasiPerusahaanFakultasController extends Controller
      */
     public function verify(int $id): RedirectResponse
     {
-        $company = Perusahaan::where('id', $id)
-            ->where('status_verifikasi', 'Menunggu Verifikasi')
-            ->firstOrFail();
+        $company = Perusahaan::findOrFail($id);
 
         $this->verificationService->verifyDirectly($company);
 
@@ -100,9 +98,7 @@ class VerifikasiPerusahaanFakultasController extends Controller
      */
     public function replace(Request $request, int $id): RedirectResponse
     {
-        $pendingCompany = Perusahaan::where('id', $id)
-            ->where('status_verifikasi', 'Menunggu Verifikasi')
-            ->firstOrFail();
+        $pendingCompany = Perusahaan::findOrFail($id);
 
         $validated = $request->validate([
             'target_company_id' => 'required|exists:perusahaan,id',
@@ -122,9 +118,7 @@ class VerifikasiPerusahaanFakultasController extends Controller
      */
     public function updateAndVerify(Request $request, int $id): RedirectResponse
     {
-        $company = Perusahaan::where('id', $id)
-            ->where('status_verifikasi', 'Menunggu Verifikasi')
-            ->firstOrFail();
+        $company = Perusahaan::findOrFail($id);
 
         $validated = $request->validate([
             'nama_perusahaan' => 'required|string|max:255',
@@ -150,9 +144,7 @@ class VerifikasiPerusahaanFakultasController extends Controller
      */
     public function reject(Request $request, int $id): RedirectResponse
     {
-        $company = Perusahaan::where('id', $id)
-            ->where('status_verifikasi', 'Menunggu Verifikasi')
-            ->firstOrFail();
+        $company = Perusahaan::findOrFail($id);
 
         $this->verificationService->rejectCompany($company);
 

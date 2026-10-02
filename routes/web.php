@@ -32,6 +32,8 @@ use App\Http\Controllers\SuperAdmin\KelolaPertanyaan\KelolaOpsiController;
 use App\Http\Controllers\SuperAdmin\KelolaPertanyaan\SimpanPertanyaanController;
 use App\Http\Controllers\SuperAdmin\KelolaSection\KelolaKuesionerController;
 use App\Http\Controllers\SuperAdmin\KelolaSection\KelolaSectionController;
+use App\Http\Controllers\SuperAdmin\LinkedIn\LinkedInSyncController;
+use App\Http\Controllers\SuperAdmin\LogAktivitasController;
 use App\Http\Controllers\SuperAdmin\ManajemenAkunController;
 use App\Http\Controllers\SuperAdmin\Perusahaan\VerifikasiPerusahaanSuperAdminController;
 use App\Http\Controllers\Tamu\BerandaController;
@@ -252,7 +254,12 @@ Route::middleware('auth')->group(function () {
             Route::delete('/superadmin/prodi-kuesioner/opsi/{id}', [KelolaKuesionerProdiSuperAdminController::class, 'destroyOption'])->name('superadmin.prodi-kuesioner.opsi.destroy');
 
             // Log Aktivitas / Audit Trail Sistem
-            Route::get('/superadmin/logs', [\App\Http\Controllers\SuperAdmin\LogAktivitasController::class, 'index'])->name('superadmin.logs.index');
+            Route::get('/superadmin/logs', [LogAktivitasController::class, 'index'])->name('superadmin.logs.index');
+
+            // Sinkronisasi LinkedIn Super Admin
+            Route::get('/superadmin/linkedin-sync', [LinkedInSyncController::class, 'index'])->name('superadmin.linkedin-sync.index');
+            Route::post('/superadmin/linkedin-sync/batch', [LinkedInSyncController::class, 'syncBatch'])->name('superadmin.linkedin-sync.batch');
+            Route::post('/superadmin/linkedin-sync/{id}', [LinkedInSyncController::class, 'syncSingle'])->name('superadmin.linkedin-sync.single');
         });
 
     });

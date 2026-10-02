@@ -80,5 +80,10 @@ class DatabaseSeeder extends Seeder
         $this->call([
             AlumniSimulationSeeder::class,
         ]);
+
+        // 7. Seed Tambahan 10 Alumni Lulusan 2026 (Profil Karier Kosong / Skeleton)
+        $this->call([
+            Lulusan2026Seeder::class,
+        ]);
     }
 }

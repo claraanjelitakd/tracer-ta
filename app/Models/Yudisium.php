@@ -59,6 +59,11 @@ class Yudisium extends Model
 
                     $dataAkademik->update($updates);
                 }
+
+                // Jika lulus di Yudisium, otomatis masukkan ke Biodata alumni!
+                // Seluruh relasi yudisium_id, orang_tua_id, prodi_id, dan akun user
+                // otomatis dirakit langsung oleh Model Biodata::booted (creating hook).
+                Biodata::firstOrCreate(['nim' => $yudisium->nim]);
             }
         });
     }

@@ -38,12 +38,14 @@ const applyFilters = () => {
 
 // Modal Edit User Data
 const openEditUserModal = (u) => {
+    const currentFakultasId = u.fakultas_id || u.prodi?.fakultas_id || u.prodi?.fakultas?.id || '';
+
     const prodiOptions = props.prodis.map(p => 
         `<option value="${p.id}" ${p.id == u.prodi_id ? 'selected' : ''}>${p.nama_prodi}</option>`
     ).join('');
 
     const fakultasOptions = props.fakultas.map(f => 
-        `<option value="${f.id}" ${f.id == u.fakultas_id ? 'selected' : ''}>${f.nama_fakultas}</option>`
+        `<option value="${f.id}" ${f.id == currentFakultasId ? 'selected' : ''}>${f.nama_fakultas}</option>`
     ).join('');
 
     Swal.fire({
@@ -98,6 +100,19 @@ const openEditUserModal = (u) => {
         cancelButtonText: 'Batal',
         confirmButtonColor: '#0D542B',
         cancelButtonColor: '#6B7280',
+        didOpen: () => {
+            const prodiSelect = document.getElementById('swal-edit-prodi');
+            const fakultasSelect = document.getElementById('swal-edit-fakultas');
+            if (prodiSelect && fakultasSelect) {
+                prodiSelect.addEventListener('change', (e) => {
+                    const selectedProdiId = e.target.value;
+                    const foundProdi = props.prodis.find(p => p.id == selectedProdiId);
+                    if (foundProdi && foundProdi.fakultas_id) {
+                        fakultasSelect.value = foundProdi.fakultas_id;
+                    }
+                });
+            }
+        },
         preConfirm: () => {
             const name = document.getElementById('swal-edit-name')?.value?.trim();
             const email = document.getElementById('swal-edit-email')?.value?.trim();
@@ -260,7 +275,13 @@ const handleResetToDefaultAndNotify = (userData) => {
                                     <span v-else class="px-2.5 py-1 rounded font-bold text-[11px] text-slate-700">{{ u.role }}</span>
                                 </td>
                                 <td class="py-3 px-4 text-slate-700">
-                                    {{ u.prodi?.nama_prodi || u.fakultas?.nama_fakultas || '-' }}
+                                    <template v-if="u.role === 'alumni' || u.role === 'admin_prodi'">
+                                        <div class="font-medium">{{ u.prodi?.nama_prodi || '-' }}</div>
+                                        <div v-if="u.prodi?.fakultas" class="text-[11px] text-slate-500 mt-0.5">{{ u.prodi.fakultas.nama_fakultas }}</div>
+                                    </template>
+                                    <template v-else>
+                                        {{ u.fakultas?.nama_fakultas || u.prodi?.nama_prodi || '-' }}
+                                    </template>
                                 </td>
                                 <td class="py-3 px-4 text-center">
                                     <div class="flex items-center justify-center gap-2">
