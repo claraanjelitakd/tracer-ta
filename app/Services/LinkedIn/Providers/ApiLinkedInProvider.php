@@ -210,4 +210,17 @@ class ApiLinkedInProvider implements LinkedInProfileProvider
             positions: $positions,
         );
     }
+
+    /**
+     * Mengambil profil LinkedIn dari API server-to-server berdasarkan URL.
+     */
+    public function findByUrl(string $url): ?LinkedInProfile
+    {
+        $trimmed = trim($url);
+        if (preg_match('#linkedin\.com/in/([^/?#]+)#i', $trimmed, $matches)) {
+            return $this->findByUsername($matches[1]);
+        }
+
+        return $this->findByUsername(basename(rtrim($trimmed, '/')));
+    }
 }

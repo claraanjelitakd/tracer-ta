@@ -272,8 +272,13 @@ Route::middleware('auth')->group(function () {
 
             // Sinkronisasi LinkedIn Super Admin
             Route::get('/superadmin/linkedin-sync', [LinkedInSyncController::class, 'index'])->name('superadmin.linkedin-sync.index');
+            Route::get('/superadmin/linkedin', [LinkedInSyncController::class, 'index'])->name('superadmin.linkedin.index');
             Route::post('/superadmin/linkedin-sync/batch', [LinkedInSyncController::class, 'syncBatch'])->name('superadmin.linkedin-sync.batch');
             Route::post('/superadmin/linkedin-sync/{id}', [LinkedInSyncController::class, 'syncSingle'])->name('superadmin.linkedin-sync.single');
+            Route::get('/superadmin/linkedin-sync/results/{id}', [LinkedInSyncController::class, 'showResult'])->name('superadmin.linkedin-sync.result.show');
+            Route::post('/superadmin/linkedin-sync/results/{id}/approve', [LinkedInSyncController::class, 'approveResult'])->name('superadmin.linkedin-sync.result.approve');
+            Route::post('/superadmin/linkedin-sync/results/{id}/reject', [LinkedInSyncController::class, 'rejectResult'])->name('superadmin.linkedin-sync.result.reject');
+            Route::get('/superadmin/linkedin-sync/alumni/{id}/history', [LinkedInSyncController::class, 'history'])->name('superadmin.linkedin-sync.alumni.history');
         });
 
     });

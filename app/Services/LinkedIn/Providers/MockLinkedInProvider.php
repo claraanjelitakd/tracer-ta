@@ -290,4 +290,17 @@ class MockLinkedInProvider implements LinkedInProfileProvider
 
         return ucwords($clean ?: 'Alumni Duta Wacana');
     }
+
+    /**
+     * Mengambil profil mock berdasarkan URL profil LinkedIn.
+     */
+    public function findByUrl(string $url): ?LinkedInProfile
+    {
+        $trimmed = trim($url);
+        if (preg_match('#linkedin\.com/in/([^/?#]+)#i', $trimmed, $matches)) {
+            return $this->findByUsername($matches[1]);
+        }
+
+        return $this->findByUsername(basename(rtrim($trimmed, '/')));
+    }
 }

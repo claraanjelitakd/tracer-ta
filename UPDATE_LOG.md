@@ -1,5 +1,44 @@
 # UPDATE LOG - SERU (Sistem Ekosistem Rekam Jejak Alumni)
 
+## [2026-10-06] Integrasi Provider Pihak Ketiga Apify LinkedIn, Tabel Staging Audit, Pemetaan Trace Database, dan Sinkronisasi Foto Profil Fisik
+
+### Ringkasan Pembaruan
+1. **Penyediaan Provider Pihak Ketiga LinkedIn (Apify Scraper Engine)**:
+   - **Multi-Provider Architecture**: Menambahkan [`ApifyLinkedInProvider.php`](file:///c:/study/tracerstudy/app/Services/LinkedIn/Providers/ApifyLinkedInProvider.php) yang mengimplementasikan `LinkedInProfileProvider` tanpa mengganggu Provider Resmi LinkedIn API Server-to-Server (`ApiLinkedInProvider`) maupun Mock Provider (`MockLinkedInProvider`).
+   - **Actor Support**: Terintegrasi dengan Actor Apify `data_forge_org~linkedin-scraper` dan `apify/linkedin-profile-scraper` menggunakan Bearer token authentication (`APIFY_API_TOKEN`) dan pemantauan status run otomatis via polling dataset API.
+   - **Cost Safety & Rate Limiting**: Sinkronisasi dibatasi 1 profil per request (menonaktifkan bulk sync massal untuk provider pihak ketiga) guna menjaga kuota Apify.
+
+2. **Tabel Staging & Histori Audit Trail (`linkedin_sync_results`)**:
+   - **Migrasi**: [`2026_10_05_130000_create_linkedin_sync_results_table.php`](file:///c:/study/tracerstudy/database/migrations/2026_10_05_130000_create_linkedin_sync_results_table.php) menyematkan kolom `biodata_id`, `linkedin_url`, `linkedin_username`, `scraped_data` (JSON mentah lengkap), `status` (*pending*, *approved*, *rejected*), `reviewed_by`, `reviewed_at`, dan `scraped_at`.
+   - **Model Eloquent**: [`LinkedinSyncResult.php`](file:///c:/study/tracerstudy/app/Models/LinkedinSyncResult.php) dengan relasi `belongsTo(Biodata::class)` dan `belongsTo(User::class, 'reviewed_by')`.
+   - **Relasi Biodata**: Menambahkan relasi `linkedinSyncResults()` dan `latestLinkedinSyncResult()` pada [`Biodata.php`](file:///c:/study/tracerstudy/app/Models/Biodata.php).
+   - **Proteksi Data Utama**: Hasil scraping tidak langsung menimpa tabel `biodata` dan `perusahaan`, melainkan melalui alur review dan persetujuan (approval) oleh Super Admin.
+
+3. **Sinkronisasi Fisik Foto Profil Alumni (`public/uploads/profile/`)**:
+   - **Download Permanen**: Sistem secara otomatis mengunduh file gambar profil dari CDN LinkedIn dan menyimpannya secara fisik ke `public/uploads/profile/profile_{NIM}_{timestamp}.jpg`. Hal ini mencegah foto menjadi *broken image* akibat token URL LinkedIn yang kedaluwarsa (*expired*) atau terblokir kebijakan CORS/hotlinking.
+   - **Pemberian Akses Data Form**: Menambahkan kolom `'foto' => $biodata?->foto ?? ''` pada [`ProfilController.php`](file:///c:/study/tracerstudy/app/Http/Controllers/Alumni/Profil/ProfilController.php) dan [`AdminAlumniProfileService.php`](file:///c:/study/tracerstudy/app/Services/Alumni/AdminAlumniProfileService.php) agar foto profil dapat diakses seragam oleh Alumni, Super Admin, Admin Prodi, Admin Fakultas, dan Biro 3.
+   - **Avatar & Upload UI**: Menambahkan kartu foto profil di [`FormPribadi.vue`](file:///c:/study/tracerstudy/resources/js/Pages/Alumni/Profil/Components/FormPribadi.vue) dengan status verifikasi, pratinjau instan, tautan resolusi penuh, dan opsi unggah file mandiri (JPG/PNG max 2MB).
+   - **Header Avatar**: Menampilkan avatar foto profil alumni pada header halaman detail mahasiswa ([`SuperAdmin/Alumni/Show.vue`](file:///c:/study/tracerstudy/resources/js/Pages/SuperAdmin/Alumni/Show.vue)).
+
+4. **Penyesuaian Status Pekerjaan & Fleksibilitas Jabatan Kustom**:
+   - **Normalisasi Status Pekerjaan**: Menyimpan status pekerjaan sebagai `'Pekerja'` (bukan `'Bekerja (Full Time)'`) saat approve LinkedIn, sehingga kartu radio **Pekerja / Karyawan** di [`FormKarier.vue`](file:///c:/study/tracerstudy/resources/js/Pages/Alumni/Profil/Components/FormKarier.vue) otomatis aktif dan terpilih.
+   - **Dukungan Jabatan Non-Standar**: Jabatan profesional dari LinkedIn (seperti *"Wakil Dekan I"*) otomatis disisipkan ke dropdown jabatan struktural (F2G), dan ditambahkan tombol toggle **`+ Tulis Jabatan Kustom`** untuk fleksibilitas pengetikan posisi jabatan di luar pilihan baku Dikti.
+   - **Integritas Perusahaan**: Perusahaan baru yang dibuat dari LinkedIn selalu disetel berstatus `'Menunggu Verifikasi'` untuk mematuhi regulasi validasi universitas.
+
+5. **Tab Audit Trace Pemetaan Data LinkedIn (Detail Alumni Super Admin)**:
+   - **Tab 4 Show.vue**: Menambahkan **Tab 4: Hasil Scraping & Trace LinkedIn** pada [`SuperAdmin/Alumni/Show.vue`](file:///c:/study/tracerstudy/resources/js/Pages/SuperAdmin/Alumni/Show.vue).
+   - **Audit Trace Table**: Tabel komprehensif yang memetakan seluruh atribut scraping mentah Apify (No, Key, Deskripsi, Nilai Scraping, Target Tabel & Kolom Database, Nilai Aktual di Database Saat Ini, dan Status Audit).
+   - **Fitur Pendukung**: Kotak pencarian filter teks real-time, syntax viewer JSON mentah dengan tombol salin (*Copy Raw JSON*), serta tabel histori staging sinkronisasi sebelumnya.
+   - **Route Alias**: Menambahkan rute alias `/superadmin/linkedin` dan `/superadmin/linkedin-sync` pada [`routes/web.php`](file:///c:/study/tracerstudy/routes/web.php) untuk mencegah 404.
+
+6. **Quality Assurance & Pengujian Otomatis**:
+   - ✅ **40 Feature Tests LinkedIn** lulus (`tests/Feature/SuperAdminLinkedInSyncTest.php` & `tests/Feature/ApifyLinkedInProviderTest.php`).
+   - ✅ **35 Feature Tests Alumni** lulus (`php artisan test --filter=Alumni`).
+   - ✅ **Laravel Pint**: Passed (0 linting issues).
+   - ✅ **Vite Frontend Build**: `npm run build` sukses tanpa error.
+
+---
+
 ## [2026-10-05] Normalisasi Basis Data Evaluasi Atasan, Migrasi Create Murni, Kuesioner Dinamis Kesiapan Kerja, dan Full-Page Form Sticky Header
 
 ### Ringkasan Pembaruan

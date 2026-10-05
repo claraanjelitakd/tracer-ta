@@ -180,6 +180,9 @@ c:/study/tracerstudy/app/Models/Yudisium.php (Tabel: `yudisium`)
 c:/study/tracerstudy/app/Models/LogActivity.php (Tabel: `log_activities`)
 - Rekam jejak (audit trail) seluruh aktivitas penting sistem: verifikasi/ACC perusahaan, pergantian master perusahaan (auto replace), penolakan pengajuan, reset password, dan perubahan akun. Menggunakan helper statis `LogActivity::record()`.
 
+c:/study/tracerstudy/app/Models/LinkedinSyncResult.php (Tabel: `linkedin_sync_results`)
+- Tabel staging dan histori audit hasil scraping LinkedIn per alumni (`biodata_id`, `linkedin_url`, `linkedin_username`, `scraped_data`, `status`: pending/approved/rejected, `reviewed_by`, `reviewed_at`, `scraped_at`). Menyediakan relasi `biodata()` dan `reviewer()` serta isolasi aman data master sebelum disetujui Super Admin.
+
 
 c:/study/tracerstudy/app/Models/Perusahaan.php (Tabel: `perusahaan`)
 - Master data instansi/perusahaan tempat alumni bekerja, status verifikasi (`status_verifikasi`), pengaju (`created_by`, `created_prodi_id`), alamat, skala industri, propinsi, kabupaten.
@@ -271,6 +274,9 @@ c:/study/tracerstudy/app/Services/LinkedIn/Providers/MockLinkedInProvider.php
 c:/study/tracerstudy/app/Services/LinkedIn/Providers/ApiLinkedInProvider.php
 - Driver API resmi LinkedIn server-to-server menggunakan Bearer Token / API Key (siap produksi).
 
+c:/study/tracerstudy/app/Services/LinkedIn/Providers/ApifyLinkedInProvider.php
+- Driver pihak ketiga scraper LinkedIn menggunakan Actor Apify `data_forge_org~linkedin-scraper` via HTTP Client Bearer token autentikasi (`APIFY_API_TOKEN`) dan polling status eksekusi asinkron dataset.
+
 c:/study/tracerstudy/app/Services/LinkedIn/LinkedInProfileService.php
 - Service orkestrator terpusat: resolusi driver via IoC Container, eksekusi transaksi database terisolasi per alumni, dan pencatatan jejak audit trail `log_activities`.
 
@@ -326,6 +332,7 @@ c:/study/tracerstudy/database/migrations/2026_09_21_020000_add_tampil_di_to_ref_
 c:/study/tracerstudy/database/migrations/2026_09_21_152810_update_alumni_tracer_univ_status_views.php
 c:/study/tracerstudy/database/migrations/2026_09_25_163300_add_created_by_to_perusahaan_table.php
 c:/study/tracerstudy/database/migrations/2026_09_28_054830_add_foto_to_biodata_table.php
+c:/study/tracerstudy/database/migrations/2026_10_05_130000_create_linkedin_sync_results_table.php
 
 ====================================================================================================
 8. DATABASE: SEEDERS (database/seeders)
@@ -416,6 +423,9 @@ C. HALAMAN SUPER ADMIN (SuperAdmin)
 c:/study/tracerstudy/resources/js/Pages/SuperAdmin/Dashboard.vue
 c:/study/tracerstudy/resources/js/Pages/SuperAdmin/Alumni/Index.vue
 c:/study/tracerstudy/resources/js/Pages/SuperAdmin/Alumni/Show.vue
+- Halaman detail komprehensif profil alumni, audit kuesioner universitas, kuesioner prodi, dan Tab 4: Hasil Scraping & Trace LinkedIn (tabel audit pemetaan database mentah Apify, status sinkronisasi, syntax JSON viewer, dan histori staging).
+c:/study/tracerstudy/resources/js/Pages/SuperAdmin/LinkedIn/Index.vue
+- Halaman dashboard kendali Sinkronisasi LinkedIn SuperAdmin dengan kartu KPI, filter tahun kelulusan, aksi single sync asinkron, review perbandingan staging (Approve / Reject), dan bulk batch sync.
 c:/study/tracerstudy/resources/js/Pages/SuperAdmin/Pertanyaan/Index.vue
 c:/study/tracerstudy/resources/js/Pages/SuperAdmin/Pertanyaan/Components/QuestionModal.vue
 c:/study/tracerstudy/resources/js/Pages/SuperAdmin/Pertanyaan/Components/QuestionDetailModal.vue
@@ -496,6 +506,12 @@ c:/study/tracerstudy/tests/Feature/SuperAdminDaftarAlumniTest.php
 
 c:/study/tracerstudy/tests/Feature/SuperAdminKelolaSectionTest.php
 - Pengujian CRUD seksi kuesioner universitas dan pengurutan seksi up/down/bulk.
+
+c:/study/tracerstudy/tests/Feature/SuperAdminLinkedInSyncTest.php
+- Pengujian komprehensif alur sinkronisasi LinkedIn SuperAdmin (17 skenario: mock provider, fallback profil dinamis, DTO parsing, isolasi transaksi, skip username kosong, dan audit log).
+
+c:/study/tracerstudy/tests/Feature/ApifyLinkedInProviderTest.php
+- Pengujian provider Apify LinkedIn (23 skenario: Bearer token auth tanpa query string, penanganan HTTP status, normalisasi payload actor data_forge_org, isolasi error, dan mapping posisi).
 
 c:/study/tracerstudy/tests/Feature/UmpTest.php
 - Pengujian relasi foreign key UMP ke propinsi dan kelengkapan 38 provinsi.

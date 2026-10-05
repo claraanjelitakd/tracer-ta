@@ -231,6 +231,22 @@ class Biodata extends Model
             ->latestOfMany();
     }
 
+    /**
+     * Relasi ke Seluruh Hasil Staging Sinkronisasi LinkedIn (Apify).
+     */
+    public function linkedinSyncResults()
+    {
+        return $this->hasMany(LinkedinSyncResult::class, 'biodata_id')->orderByDesc('id');
+    }
+
+    /**
+     * Relasi ke Hasil Staging Sinkronisasi LinkedIn Terakhir.
+     */
+    public function latestLinkedinSyncResult()
+    {
+        return $this->hasOne(LinkedinSyncResult::class, 'biodata_id')->latestOfMany();
+    }
+
     // =========================================================================
     // ACCESSOR (DELEGASI DATA MASTER AKADEMIK TANPA DUPLIKASI TABEL)
     // =========================================================================

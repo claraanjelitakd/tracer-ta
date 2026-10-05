@@ -26,4 +26,15 @@ interface LinkedInProfileProvider
      * @throws LinkedInSyncException
      */
     public function findByUsername(string $username): ?LinkedInProfile;
+
+    /**
+     * Mengambil data profil LinkedIn berdasarkan URL profil publik.
+     *
+     * @param  string  $url  URL lengkap profil LinkedIn (misal: https://www.linkedin.com/in/username).
+     * @return LinkedInProfile|null Mengembalikan DTO profil jika ditemukan, atau null jika tidak ada.
+     *
+     * @throws LinkedInProfileNotFoundException
+     * @throws LinkedInSyncException
+     */
+    public function findByUrl(string $url): ?LinkedInProfile;
 }

@@ -1,124 +1,226 @@
-# Arsitektur & Panduan Sinkronisasi LinkedIn (Driver-Based Resolution)
+# Arsitektur & Panduan Integrasi LinkedIn (Official API & Apify Provider)
 
-Dokumen ini menjelaskan arsitektur resmi, konfigurasi driver, alur kerja, dan penanganan data untuk fitur **Sinkronisasi Profil LinkedIn** pada aplikasi Tracer Study Alumni UKDW (SERU).
-
----
-
-## 1. Ringkasan & Filosofi Desain
-
-Sistem SERU mengadopsi pola **Driver-Based Resolution Pattern** (mirip dengan driver Mail, Cache, atau Session di Laravel).
-- **Zero-Scraping Policy**: Tidak lagi menggunakan scraping browser lokal, headless Chrome, patchright, maupun script wrapper Python yang tidak stabil dan melanggar ToS LinkedIn.
-- **Environment Driven**: Sumber data LinkedIn ditentukan sepenuhnya oleh variabel lingkungan `LINKEDIN_DRIVER` di `.env` tanpa mengubah satu baris pun kode logika bisnis controller, DTO, mapper, basis data, atau UI Vue.
-- **Zero File Deletion Policy**: Ketika berpindah dari driver `mock` ke driver API resmi (`api`), struktur file DTOs, Contracts, Exceptions, dan Mappers **TETAP UTUH** dan tidak perlu dihapus.
+Dokumen ini menjelaskan arsitektur resmi, konfigurasi provider, alur kerja staging, dan penanganan data untuk fitur **Sinkronisasi Profil LinkedIn** pada aplikasi Tracer Study Alumni UKDW (SERU).
 
 ---
 
-## 2. Peta Struktur File & Arsitektur
+## 1. Arsitektur Multi-Provider
+
+Aplikasi mendukung dua kategori provider sinkronisasi LinkedIn melalui satu kontrak antarmuka yang terpadu: [`LinkedInProfileProvider`](file:///c:/study/tracerstudy/app/Services/LinkedIn/Contracts/LinkedInProfileProvider.php).
 
 ```text
-app/Services/LinkedIn/
-├── Contracts/
-│   └── LinkedInProfileProvider.php         # Interface penyedia data profil (fetchProfileByUsername, fetchProfileByUrl)
-├── DTOs/
-│   ├── LinkedInEducation.php               # DTO riwayat pendidikan
-│   ├── LinkedInExperience.php              # DTO riwayat pekerjaan/posisi
-│   └── LinkedInProfile.php                 # DTO agregat lengkap data profil
-├── Exceptions/
-│   ├── LinkedInApiException.php            # Exception saat error komunikasi API
-│   └── LinkedInProfileNotFoundException.php# Exception saat profil tidak ditemukan (404)
-├── Mappers/
-│   └── LinkedInProfileMapper.php           # Pemetaan DTO ke model Biodata & Perusahaan (4 aturan posisi aktif)
-├── Providers/
-│   ├── ApiLinkedInProvider.php             # Provider API resmi LinkedIn (Server-to-Server)
-│   └── MockLinkedInProvider.php            # Provider Mock data lokal (Development & Testing)
-└── LinkedInProfileService.php              # Service utama orkestrasi, transaksi database, & audit trail
+                  LinkedInProfileProvider (Interface)
+                               │
+            ┌──────────────────┴──────────────────┐
+            ▼                                     ▼
+Provider 1: Official LinkedIn API       Provider 2: Apify Provider
+(Server-to-Server / Mock)              (Third-Party Public Profile Scraper)
+  - Driver: mock | api                   - Driver: apify
+  - Input: username / url                - Input: biodata.linkedin_url murni
+  - Direct update data alumni            - Staging: linkedin_sync_results (Pending)
+                                         - SuperAdmin Review (Approve / Reject)
+                                         - Cost Safety: 1 alumni per request
 ```
+
+Pemilihan provider ditentukan secara dinamis melalui file `.env`:
+- `LINKEDIN_PROVIDER=official` (Default, tidak mengubah perilaku existing)
+- `LINKEDIN_PROVIDER=apify` (Third-party scraper publik)
 
 ---
 
-## 3. Konfigurasi Driver (`.env`)
+## 2. Provider 1 — Official LinkedIn API (Server-to-Server / Mock)
 
-Konfigurasi diatur dalam file `.env` dan dibaca melalui `config/linkedin.php`:
+### Karakteristik & Filosofi
+- **Status**: Implementasi resmi server-to-server.
+- **Driver Bawaan**: Dikelola oleh `LINKEDIN_DRIVER` di `.env` (`mock` untuk pengujian lokal, `api` untuk API resmi LinkedIn v2).
+- **Alur Kerja**: Langsung memperbarui data jabatan/karier dan entitas perusahaan (dengan status *Menunggu Verifikasi*) melalui [`LinkedInProfileService.php`](file:///c:/study/tracerstudy/app/Services/LinkedIn/LinkedInProfileService.php).
+- **Mendukung**: Single Sync dan Bulk Batch Sync per angkatan.
 
+### Konfigurasi `.env`
 ```env
-# Mode Mock (Pengembangan & Pengujian)
+# Pemilihan Provider Utama
+LINKEDIN_PROVIDER=official
+
+# Sub-driver Official (mock atau api)
 LINKEDIN_DRIVER=mock
 LINKEDIN_MOCK_PATH=storage/app/mock/linkedin
-LINKEDIN_API_BASE_URL=
+LINKEDIN_API_BASE_URL=https://api.linkedin.com/v2
 LINKEDIN_API_KEY=
-
-# Mode API Resmi (Produksi Mendatang)
-# LINKEDIN_DRIVER=api
-# LINKEDIN_API_BASE_URL=https://api.linkedin.com/v2
-# LINKEDIN_API_KEY=rahasia_bearer_token_resmi
-```
-
-### Resolusi Driver di `AppServiceProvider`
-Binding interface [`LinkedInProfileProvider`](file:///c:/study/tracerstudy/app/Services/LinkedIn/Contracts/LinkedInProfileProvider.php) dilakukan secara otomatis di [`AppServiceProvider.php`](file:///c:/study/tracerstudy/app/Providers/AppServiceProvider.php):
-
-```php
-$this->app->bind(LinkedInProfileProvider::class, function () {
-    $driver = config('linkedin.driver', 'mock');
-
-    return match ($driver) {
-        'mock' => new MockLinkedInProvider(
-            config('linkedin.mock_path', storage_path('app/mock/linkedin'))
-        ),
-        'api' => new ApiLinkedInProvider(
-            config('linkedin.api_base_url'),
-            config('linkedin.api_key')
-        ),
-        default => throw new \InvalidArgumentException("Driver LinkedIn tidak didukung: {$driver}"),
-    };
-});
 ```
 
 ---
 
-## 4. Alur Kerja Sinkronisasi
+## 3. Provider 2 — Apify (Third-Party Public Profile Scraper)
 
-### A. Alur SuperAdmin (Single & Bulk Sync)
-1. **Navigasi**: Superadmin membuka menu **Sinkronisasi LinkedIn** (`/superadmin/linkedin-sync`).
-2. **Filter & Analitik**: Memilih tahun kelulusan resmi alumni (berasal dari relasi `Yudisium` dan `DataAkademik`).
-3. **Aksi Single Sync**: Menekan tombol petir pada alumni tertentu. Permintaan dieksekusi secara asinkron (AJAX POST) tanpa full page reload.
-4. **Aksi Bulk Sync**: Menekan tombol **Sinkronkan Massal** per angkatan. Progress bar live menampilkan progres bertahap, dan popup SweetAlert2 merangkum hasil sinkronisasi (*Berhasil*, *Gagal*, *Dilewati*).
+> [!WARNING]
+> **Pemberitahuan Lisensi & Keterbatasan**:
+> Apify adalah penyedia layanan pihak ketiga (*third-party scraper*) untuk mengekstrak data profil LinkedIn publik dan **BUKAN** Official LinkedIn API. Scraping profil LinkedIn publik bergantung pada Actor pihak ketiga dan ketersediaan data publik yang tidak diprivatisasi oleh pengguna.
 
-### B. Alur Admin Biro 3 (Single Preview Sync)
-1. Biro 3 membuka detail alumni pada menu **Kelola Alumni**.
-2. Tombol **Sinkronkan LinkedIn** memanggil [`SinkronisasiLinkedinController.php`](file:///c:/study/tracerstudy/app/Http/Controllers/AdminBiroTiga/KelolaAlumni/SinkronisasiLinkedinController.php) yang kini murni menggunakan [`LinkedInProfileService.php`](file:///c:/study/tracerstudy/app/Services/LinkedIn/LinkedInProfileService.php).
+### Karakteristik & Spesifikasi
+- **Actor ID**: `data_forge_org~linkedin-scraper`
+- **Endpoint**: `POST https://api.apify.com/v2/actors/{actorId}/run-sync-get-dataset-items`
+- **Autentikasi**: `Authorization: Bearer {APIFY_API_TOKEN}` pada HTTP header (tidak pernah menggunakan query parameter `?token=...`).
+- **Input Profil**: HANYA berasal dari kolom `biodata.linkedin_url`. Sistem menolak lookup berdasarkan nama, email, username, atau nomor telepon. Jika URL kosong atau format tidak valid, request dibatalkan sebelum memanggil Apify.
+
+### Konfigurasi `.env`
+```env
+# Aktifkan Provider Apify
+LINKEDIN_PROVIDER=apify
+
+# Konfigurasi Token & Actor Apify (Hanya tersimpan di backend)
+APIFY_API_TOKEN=apify_api_token_anda_di_sini
+APIFY_LINKEDIN_ACTOR_ID=data_forge_org~linkedin-scraper
+```
+
+### Format Request Payload
+Request sinkron dikirim dengan parameter minimal yang berfokus hanya pada data profil (menonaktifkan pos, komentar, dan lowongan untuk efisiensi waktu dan kuota):
+```json
+{
+    "profileUrls": [
+        "https://www.linkedin.com/in/contoh-alumni"
+    ],
+    "includeProfilePosts": false,
+    "includeComments": false,
+    "includeCompanyPosts": false,
+    "includeCompanyJobs": false,
+    "includeJobDetails": false
+}
+```
 
 ---
 
-## 5. Integritas Data & Kebijakan Verifikasi Mutlak
+## 4. Alur Kerja Staging & Review SuperAdmin (Prinsip Zero Direct Mutation)
 
-1. **Aturan Penentuan Posisi Aktif (*Current Position*)**:
-   [`LinkedInProfileMapper`](file:///c:/study/tracerstudy/app/Services/LinkedIn/Mappers/LinkedInProfileMapper.php) menerapkan 4 aturan prioritas berurutan:
-   - Posisi dengan `endMonthYear == null` (sedang menjabat).
-   - Jika terdapat lebih dari 1 posisi aktif, ambil posisi dengan `startMonthYear` paling baru.
-   - Jika semua posisi telah berakhir, ambil riwayat pengalaman paling pertama dalam daftar.
-   - Jika tidak ada riwayat pengalaman, gunakan headline profil.
+Ketika tombol **Sinkronisasi LinkedIn** ditekan untuk satu alumni pada provider Apify:
 
-2. **Kebijakan Verifikasi Perusahaan**:
-   - Jika institusi perusahaan belum ada di basis data master, sistem secara otomatis mendaftarkan entitas perusahaan baru.
-   - **MUTLAK**: Status perusahaan baru SELALU disetel ke:
-     ```php
-     'status_verifikasi' => 'Menunggu Verifikasi'
-     ```
-     Hal ini mewajibkan admin memverifikasi institusi tersebut sebelum diakui sebagai Master Perusahaan resmi UKDW.
+```text
+SuperAdmin Klik "Sinkronkan" (1 Alumni)
+                 ↓
+Validasi: biodata.linkedin_url valid
+                 ↓
+Kirim 1 Request POST ke Apify Actor via Bearer Token
+                 ↓
+Terima Raw JSON Dataset dari Apify
+                 ↓
+Simpan snapshot ke tabel: linkedin_sync_results (status: pending)
+[Data utama biodata alumni TIDAK BERUBAH SAMA SEKALI]
+                 ↓
+SuperAdmin membuka Review Hasil Sinkronisasi
+                 ↓
+       ┌─────────┴─────────┐
+       ▼                   ▼
+    Approve              Reject
+       ↓                   ↓
+- Terapkan mapping data  - Data utama TIDAK berubah
+  ke biodata/perusahaan  - status: rejected
+- status: approved       - reviewed_by & reviewed_at terisi
+- reviewed_by terisi
+- reviewed_at terisi
+```
 
-3. **Perlindungan Data Otoritatif**:
-   Data primer kependudukan dan akademik (`NIM`, `NIK`, `NPWP`, `email_pribadi`, `nomor_telepon`, `alamat_saat_ini`, `tanggal_lulus`, IPK) **TIDAK PERNAH DITIMPA** oleh data LinkedIn. Hanya kolom karier (`posisi_jabatan`, `perusahaan_id`) yang diperbarui.
-
-4. **Audit Trail Otomatis**:
-   Setiap sinkronisasi dicatat ke tabel `log_activities` melalui `LogActivity::record()` dengan aksi `'linkedin_sync'`, merekam pelaku, biodata target, dan ringkasan data baru tanpa mengekspos kredensial API.
-
----
-
-## 6. Riwayat Perubahan & Migrasi dari Script MCP Lama
-
-| Komponen Lama | Komponen Baru (SERU Production) | Keuntungan |
+### Struktur Tabel Staging `linkedin_sync_results`
+| Kolom | Tipe | Keterangan |
 | :--- | :--- | :--- |
-| `scripts/linkedin_mcp_client.py` (Python scraper) | **Dihapus** | Tidak ada dependensi Python / browser di server |
-| `LinkedInService.php` (Subprocess shell caller) | [`LinkedInProfileService.php`](file:///c:/study/tracerstudy/app/Services/LinkedIn/LinkedInProfileService.php) | Menggunakan PHP native, dependency injection, DTO, dan arsitektur bersih |
-| Single Sync Only | Single Sync & Bulk Batch Sync | Produktivitas pengelolaan data alumni meningkat drastis |
-| Scraping manual rentan blokir | Mock Driver + Official API Driver Ready | 100% patuh aturan keamanan dan reliabilitas produksi |
+| `id` | BigIncrements | Primary Key |
+| `biodata_id` | Foreign Key | Terhubung ke `biodata.id` |
+| `linkedin_url` | String | URL LinkedIn alumni yang discrape |
+| `linkedin_username`| String (Nullable) | Username yang diekstrak dari URL |
+| `scraped_data` | JSON | Response JSON mentah (*raw*) aktual dari Apify Actor |
+| `status` | Enum | `pending`, `approved`, `rejected` |
+| `reviewed_by` | Foreign Key (Nullable) | User ID admin yang melakukan review |
+| `reviewed_at` | Timestamp (Nullable) | Waktu persetujuan / penolakan |
+| `scraped_at` | Timestamp | Waktu data berhasil di-scrape |
+| `created_at` / `updated_at` | Timestamp | Pencatatan riwayat |
+
+### Kebijakan Sync Ulang (Preservasi Histori)
+Jika alumni yang sama disinkronkan kembali di lain waktu:
+- Record staging yang lama **TIDAK DITIMPA / TIDAK DIHAPUS**.
+- Sistem selalu membuat record baru dengan `status = pending`.
+- Riwayat lengkap setiap eksekusi scraping dapat dipantau melalui fitur **Riwayat Sinkronisasi**.
+
+---
+
+## 5. Pemetaan Data (*Data Mapping*) Saat Disetujui (Approve)
+
+Pemetaan hanya dijalankan setelah SuperAdmin menekan tombol **Setujui (Approve)** pada hasil staging yang berstatus `pending`:
+1. **Posisi / Jabatan**:
+   - Jika tersedia entri pada array `experience`: entri posisi aktif terbaru diambil sebagai jabatan.
+   - Jika tidak tersedia array pengalaman, gunakan `headline`.
+   - Data disimpan ke kolom `posisi_jabatan` pada tabel `biodata`.
+2. **Perusahaan / Institusi**:
+   - Nama perusahaan dari entri pengalaman dicari pada master `perusahaan`.
+   - Jika belum ada, sistem mendaftarkan institusi baru dengan `status_verifikasi = 'Menunggu Verifikasi'` (tidak langsung otomatis terverifikasi).
+   - Foreign key `perusahaan_id` pada `biodata` diperbarui.
+3. **Data Otoritatif Tetap Terlindungi**:
+   - Kolom `NIM`, `NIK`, `NPWP`, `email_pribadi`, `nomor_telepon`, `tanggal_lulus`, dan IPK **TIDAK PERNAH DIUBAH** oleh sinkronisasi LinkedIn.
+4. **Data Tanpa Mapping Jelas**:
+   - Field seperti daftar `skills` atau `about` tetap aman tersimpan di dalam `scraped_data` (JSON) pada `linkedin_sync_results` untuk referensi tanpa memaksakan modifikasi skema tabel utama.
+
+---
+
+## 6. Prinsip Cost Safety & Keamanan Token
+
+1. **Aturan 1 Klik = 1 Request**:
+   - Sinkronisasi Apify **hanya** dapat dilakukan per individu alumni (*single sync*).
+   - Fitur **Sinkronisasi Massal (Bulk Sync)** otomatis dinonaktifkan (`HTTP 400`) saat `LINKEDIN_PROVIDER=apify` untuk mencegah pemborosan kredit aktor Apify.
+   - Tidak ada scraping otomatis saat halaman dimuat (*page load*), loop tanpa batas, atau infinite retry.
+2. **Keamanan Token Tanpa Bocor**:
+   - `APIFY_API_TOKEN` hanya dibaca di backend melalui `config('services.apify.api_token')`.
+   - Token dikirimkan lewat header `Authorization: Bearer ...` (bukan query string).
+   - Token **TIDAK PERNAH** dikirimkan ke frontend Vue, tidak pernah dicetak di log aplikasi, terminal, SweetAlert2, maupun response JSON controller.
+
+---
+
+## 7. Penanganan Kesalahan (Error Handling)
+
+Provider Apify menangani berbagai skenario kegagalan secara anggun (*graceful*):
+- **Token Kosong**: Menolak request dan memberi instruksi admin untuk mengisi konfigurasi server.
+- **URL Tidak Valid / Kosong**: Menolak request sebelum HTTP call dilakukan.
+- **HTTP 400**: Input URL atau payload ditolak oleh Actor.
+- **HTTP 401**: Token Apify tidak valid atau kedaluwarsa.
+- **HTTP 402**: Kredit / kuota komputasi Apify habis.
+- **HTTP 404**: Actor ID atau profil LinkedIn tidak ditemukan.
+- **HTTP 429**: Terkena rate limiting Apify.
+- **HTTP 500 / 502 / 504**: Masalah internal server Apify / timeout gateway.
+- **Network Error / Timeout**: Koneksi internet terputus atau timeout melebihi ambang batas.
+- **Empty Dataset / Malformed JSON**: Data profil kosong atau format respons rusak.
+
+Pada seluruh kondisi error di atas:
+- **TIDAK ADA** record berstatus `approved` yang dibuat.
+- Data utama `biodata` alumni dijamin **TIDAK BERUBAH**.
+- SuperAdmin menerima pesan notifikasi yang aman tanpa membocorkan kredensial.
+
+---
+
+## 8. Panduan Pengujian
+
+### A. Pengujian Otomatis (Automated Tests)
+Pengujian otomatis menggunakan HTTP Mock (`Http::fake()`) sehingga dapat berjalan 100% tanpa token riil dan tidak memakan kuota:
+```bash
+# Menjalankan seluruh test Apify Provider (23 skenario)
+php artisan test --filter=ApifyLinkedInProviderTest
+
+# Menjalankan pengujian integrasi SuperAdmin LinkedIn
+php artisan test --filter=SuperAdminLinkedInSyncTest
+
+# Menjalankan seluruh suite pengujian LinkedIn
+php artisan test --filter=LinkedIn
+```
+
+### B. Pengujian Integrasi Manual (Live Apify Test)
+1. Atur `.env` lokal:
+   ```env
+   LINKEDIN_PROVIDER=apify
+   APIFY_API_TOKEN=token_asli_apify_anda
+   APIFY_LINKEDIN_ACTOR_ID=data_forge_org~linkedin-scraper
+   ```
+2. Bersihkan cache konfigurasi:
+   ```bash
+   php artisan optimize:clear
+   ```
+3. Buka halaman SuperAdmin: **Sinkronisasi LinkedIn** (`/superadmin/linkedin-sync`).
+4. Pilih 1 alumni yang memiliki `linkedin_url` publik valid.
+5. Klik ikon petir **Sinkronkan**.
+6. Amati status berubah menjadi badge kuning **Pending Review**.
+7. Klik tombol review untuk memeriksa perbandingan data mentah hasil scraping dengan data utama saat ini.
+8. Klik **Setujui Data (Approve)** atau **Tolak (Reject)** untuk menguji pembaruan data utama.

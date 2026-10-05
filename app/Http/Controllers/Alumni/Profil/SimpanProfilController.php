@@ -271,6 +271,23 @@ class SimpanProfilController extends Controller
             'yudisium_id' => $yudisiumModel?->id ?? $biodata->yudisium_id,
         ]);
 
+        // Tangani unggah foto profil mandiri (jika ada file diunggah)
+        if ($request->hasFile('foto')) {
+            $fotoFile = $request->file('foto');
+            if ($fotoFile->isValid()) {
+                $dir = public_path('uploads/profile');
+                if (! file_exists($dir)) {
+                    mkdir($dir, 0755, true);
+                }
+                $safeNim = preg_replace('/[^a-zA-Z0-9_-]/', '', $biodata->nim ?: 'alumni');
+                $filename = "profile_{$safeNim}_".time().'.'.$fotoFile->getClientOriginalExtension();
+                $fotoFile->move($dir, $filename);
+                $biodata->update(['foto' => "/uploads/profile/{$filename}"]);
+            }
+        } elseif (! empty($dataTervalidasi['foto']) && is_string($dataTervalidasi['foto'])) {
+            $biodata->update(['foto' => $dataTervalidasi['foto']]);
+        }
+
         $biodata->refresh();
 
         // Rekam rekam jejak aktivitas (Audit Trail)

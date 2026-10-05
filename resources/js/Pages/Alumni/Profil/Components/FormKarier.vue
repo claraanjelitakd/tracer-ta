@@ -36,20 +36,31 @@ const companyContainerRef = ref(null);
 
 // Pilihan Posisi Jabatan Struktural (F2G)
 const posisiJabatanOptions = computed(() => {
+    let opts = [];
     if (props.refOptions?.F2G && props.refOptions.F2G.length > 0) {
-        return props.refOptions.F2G.map(opt => ({
+        opts = props.refOptions.F2G.map(opt => ({
             value: opt.option_text,
             label: `${opt.kode_opsi} - ${opt.option_text}`
         }));
+    } else {
+        opts = [
+            { value: 'Direksi', label: '1 - Direksi' },
+            { value: 'Top Manager', label: '2 - Top Manager' },
+            { value: 'Middle Manager', label: '3 - Middle Manager' },
+            { value: 'Low Manager', label: '4 - Low Manager' },
+            { value: 'Supervisor', label: '5 - Supervisor' },
+            { value: 'Staff', label: '6 - Staff' },
+        ];
     }
-    return [
-        { value: 'Direksi', label: '1 - Direksi' },
-        { value: 'Top Manager', label: '2 - Top Manager' },
-        { value: 'Middle Manager', label: '3 - Middle Manager' },
-        { value: 'Low Manager', label: '4 - Low Manager' },
-        { value: 'Supervisor', label: '5 - Supervisor' },
-        { value: 'Staff', label: '6 - Staff' },
-    ];
+
+    if (props.form?.posisi_jabatan && !opts.some(o => o.value.toLowerCase() === props.form.posisi_jabatan.toLowerCase())) {
+        opts.unshift({
+            value: props.form.posisi_jabatan,
+            label: `${props.form.posisi_jabatan} (LinkedIn / Kustom)`
+        });
+    }
+
+    return opts;
 });
 
 // Pilihan Jenis Instansi / Perusahaan (F11)
@@ -104,11 +115,22 @@ const isMelanjutkanStudi = ref(
     )
 );
 
-// Jika sebelumnya kategori_pekerjaan tersimpan sebagai 'Melanjutkan Pendidikan', sesuaikan
-if (props.form.kategori_pekerjaan === 'Melanjutkan Pendidikan') {
-    isMelanjutkanStudi.value = true;
-    props.form.kategori_pekerjaan = '';
+// Normalisasi kategori_pekerjaan agar kompatibel dengan data LinkedIn ('Pekerja', 'Bekerja (Full Time)', 'Karyawan', dll.)
+if (props.form.kategori_pekerjaan) {
+    const rawKat = String(props.form.kategori_pekerjaan).trim();
+    if (rawKat === 'Melanjutkan Pendidikan') {
+        isMelanjutkanStudi.value = true;
+        props.form.kategori_pekerjaan = '';
+    } else if (rawKat === 'Pekerja' || rawKat.toLowerCase().includes('bekerja') || rawKat.toLowerCase().includes('pekerja') || rawKat.toLowerCase().includes('karyawan')) {
+        props.form.kategori_pekerjaan = 'Pekerja';
+    } else if (rawKat === 'Wiraswasta' || rawKat.toLowerCase().includes('wira') || rawKat.toLowerCase().includes('founder') || rawKat.toLowerCase().includes('owner')) {
+        props.form.kategori_pekerjaan = 'Wiraswasta';
+    } else if (['Tidak Bekerja', 'Mencari Kerja', 'Belum Bekerja', 'Belum Memungkinkan Bekerja'].some(s => rawKat.toLowerCase().includes(s.toLowerCase()))) {
+        props.form.kategori_pekerjaan = 'Tidak Bekerja';
+    }
 }
+
+const isCustomJabatan = ref(false);
 
 const toggleMelanjutkanStudi = () => {
     isMelanjutkanStudi.value = !isMelanjutkanStudi.value;
@@ -964,20 +986,45 @@ onUnmounted(() => {
                 </div>
 
                 <!-- Jika Karyawan/Pekerja: Posisi Jabatan Struktural (F2G) Dinamis dari Database -->
-                <div v-if="form.kategori_pekerjaan === 'Pekerja'" class="md:col-span-2">
-                    <label class="block text-xs sm:text-sm font-bold text-gray-700 mb-1.5">
-                        Posisi Jabatan Struktural (F2G) <span class="text-rose-500 font-bold">*</span>
-                    </label>
-                    <select 
-                        v-model="form.posisi_jabatan" 
-                        class="block w-full border rounded-xl shadow-2xs px-4 py-3 text-sm font-medium transition-all focus:ring-2 focus:ring-[#005B3C]/20"
-                        :class="form.posisi_jabatan ? 'border-emerald-300 bg-white text-gray-900 focus:border-[#005B3C]' : 'border-rose-300 bg-rose-50/20 text-gray-900 focus:border-rose-500'"
-                    >
-                        <option value="">-- Pilih Posisi Jabatan --</option>
-                        <option v-for="opt in posisiJabatanOptions" :key="opt.value" :value="opt.value">
-                            {{ opt.label }}
-                        </option>
-                    </select>
+                <div v-if="form.kategori_pekerjaan === 'Pekerja'" class="md:col-span-2 space-y-2">
+                    <div class="flex items-center justify-between">
+                        <label class="block text-xs sm:text-sm font-bold text-gray-700">
+                            Posisi Jabatan Struktural (F2G) <span class="text-rose-500 font-bold">*</span>
+                        </label>
+                        <button 
+                            type="button" 
+                            @click="isCustomJabatan = !isCustomJabatan" 
+                            class="text-xs font-bold text-[#005B3C] hover:underline cursor-pointer"
+                        >
+                            {{ isCustomJabatan ? '&larr; Pilih dari Dropdown Standar' : '+ Tulis Jabatan Kustom' }}
+                        </button>
+                    </div>
+
+                    <!-- Input Bebas jika jabatan spesifik/kustom -->
+                    <div v-if="isCustomJabatan">
+                        <input 
+                            type="text" 
+                            v-model="form.posisi_jabatan" 
+                            placeholder="Contoh: Wakil Dekan I, Lead Software Engineer, Konsultan..."
+                            class="block w-full border rounded-xl shadow-2xs px-4 py-3 text-sm font-medium transition-all focus:ring-2 focus:ring-[#005B3C]/20"
+                            :class="form.posisi_jabatan ? 'border-emerald-300 bg-white text-gray-900 focus:border-[#005B3C]' : 'border-rose-300 bg-rose-50/20 text-gray-900 focus:border-rose-500'"
+                        />
+                        <p class="text-[11px] text-gray-400 mt-1">Jabatan kustom otomatis tersimpan ke profil alumni.</p>
+                    </div>
+
+                    <!-- Dropdown Standar F2G (jika tidak memilih input kustom) -->
+                    <div v-else>
+                        <select 
+                            v-model="form.posisi_jabatan" 
+                            class="block w-full border rounded-xl shadow-2xs px-4 py-3 text-sm font-medium transition-all focus:ring-2 focus:ring-[#005B3C]/20"
+                            :class="form.posisi_jabatan ? 'border-emerald-300 bg-white text-gray-900 focus:border-[#005B3C]' : 'border-rose-300 bg-rose-50/20 text-gray-900 focus:border-rose-500'"
+                        >
+                            <option value="">-- Pilih Posisi Jabatan --</option>
+                            <option v-for="opt in posisiJabatanOptions" :key="opt.value" :value="opt.value">
+                                {{ opt.label }}
+                            </option>
+                        </select>
+                    </div>
                 </div>
 
                 <!-- Jika Wiraswasta: Posisi / Jabatan Wiraswasta (F5C) -->

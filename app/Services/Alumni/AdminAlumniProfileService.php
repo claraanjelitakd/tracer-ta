@@ -70,6 +70,7 @@ class AdminAlumniProfileService
             'nisn' => $alumni->nisn ?? ($dataAkademik?->nisn ?? ''),
             'no_bpjs' => $alumni->no_bpjs ?? ($dataAkademik?->no_bpjs ?? ''),
             'npwp' => $alumni->npwp ?? '',
+            'foto' => $alumni->foto ?? '',
 
             // Kontak & Alamat Pribadi
             'alamat_saat_ini' => $alumni->alamat ?? ($dataAkademik?->alamat_saat_ini ?? ''),
@@ -401,6 +402,10 @@ class AdminAlumniProfileService
             'orang_tua_id' => $orangTua->id ?? $biodata->orang_tua_id,
             'yudisium_id' => $yudisium->id ?? $biodata->yudisium_id,
         ];
+
+        if (! empty($data['foto'])) {
+            $biodataUpdates['foto'] = $data['foto'];
+        }
 
         $biodata->update($biodataUpdates);
 

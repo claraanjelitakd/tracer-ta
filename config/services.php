@@ -36,10 +36,19 @@ return [
     ],
 
     'linkedin' => [
+        'provider' => env('LINKEDIN_PROVIDER', 'official'),
         'driver' => env('LINKEDIN_DRIVER', 'mock'),
         'mock_path' => env('LINKEDIN_MOCK_PATH', storage_path('app/mock/linkedin')),
         'api_base_url' => env('LINKEDIN_API_BASE_URL'),
         'api_key' => env('LINKEDIN_API_KEY'),
+    ],
+
+    'apify' => [
+        'api_token' => env('APIFY_API_TOKEN'),
+        'linkedin_actor_id' => env(
+            'APIFY_LINKEDIN_ACTOR_ID',
+            'data_forge_org~linkedin-scraper'
+        ),
     ],
 
 ];

@@ -2,6 +2,17 @@
 
 Semua perubahan besar pada sistem dicatat dalam dokumen ini.
 
+## [2026-10-06]
+- **Integrasi Apify LinkedIn Provider & Multi-Provider Architecture**: Menambahkan driver `ApifyLinkedInProvider` untuk integrasi web scraping pihak ketiga menggunakan Actor `data_forge_org~linkedin-scraper` via autentikasi aman Bearer token (`APIFY_API_TOKEN`). Mendukung pemilihan driver via `LINKEDIN_PROVIDER=official`, `LINKEDIN_PROVIDER=apify`, atau `LINKEDIN_DRIVER=mock` di `.env`.
+- **Tabel Staging & Histori Audit (`linkedin_sync_results`)**: Hasil scraping diisolasi ke tabel staging `linkedin_sync_results` berstatus `pending` lengkap dengan payload mentah JSON (`raw_response`), parameter input (`input_params`), perbandingan data (`mapped_data`), serta jejak auditor (`reviewed_by`, `reviewed_at`).
+- **Alur Review & Persetujuan SuperAdmin (Approval Workflow)**: Antarmuka review di SuperAdmin untuk membandingkan data scraping vs data existing dengan aksi Approve (menerapkan jabatan dan mendaftarkan perusahaan dengan status `Menunggu Verifikasi`) dan Reject (menolak hasil tanpa mengubah data utama).
+- **Download Permanen Foto Profil LinkedIn ke Disk Lokal**: Mengunduh foto profil LinkedIn secara fisik ke `public/uploads/profile/profile_{nim}_{timestamp}.jpg` agar tidak bergantung pada CDN LinkedIn sementara yang memiliki expiry token (`?e=...`).
+- **Form Foto Profil & Unggah Mandiri di Biodata Alumni**: Menambahkan kartu preview avatar foto profil interaktif pada `FormPribadi.vue` dan handler upload pada `SimpanProfilController.php` dengan badge sumber data (*LinkedIn Sync* / *Unggah Mandiri*).
+- **Tab 4 Detail Alumni: Tabel Audit & Trace Pemetaan Scraping (`Show.vue`)**: Menyediakan tab khusus *"Hasil Scraping & Trace LinkedIn"* pada halaman Detail Alumni SuperAdmin (`/superadmin/alumni/{id}`) yang memuat pencarian instan, JSON viewer interaktif, riwayat sinkronisasi, dan tabel perbandingan atribut scraping vs target kolom database vs nilai riil terkini.
+- **Sinkronisasi Otomatis Status Karier & Opsi Jabatan Kustom (`FormKarier.vue`)**: Normalisasi `kategori_pekerjaan` menjadi `'Pekerja'` agar kartu status kerja langsung terpilih otomatis, serta menambahkan penanganan dinamis jabatan kustom yang belum ada di referensi baku kampus dengan toggle switch `+ Tulis Jabatan Kustom`.
+- **Perbaikan Rute URL Aliasing `/superadmin/linkedin`**: Menambahkan alias rute `/superadmin/linkedin` ke `LinkedInSyncController@index` guna mengatasi error 404 ketika pengguna mengakses tautan pendek menu LinkedIn.
+- **Automated Testing**: Menambahkan 23 skenario feature test di `tests/Feature/ApifyLinkedInProviderTest.php` dan 17 skenario di `tests/Feature/SuperAdminLinkedInSyncTest.php` (100% passed).
+
 ## [2026-10-03]
 - **Fleksibilitas Aksi & Auto Replace Master Perusahaan**: Membuka akses aksi verifikasi (*Verify*, *Edit*, *Auto Replace*, *Reject*) pada data perusahaan berstatus **Terverifikasi** di SuperAdmin, Admin Prodi, dan Admin Fakultas, serta menghapus batasan `->where('status_verifikasi', 'Menunggu Verifikasi')` di controller untuk mencegah error 404.
 - **Penyempurnaan Modal Edit Akun & Pre-select Fakultas**: Memperbaiki komputasi `currentFakultasId` pada modal **Sunting Data Akun Pengguna** (`SuperAdmin/ManajemenAkun/Index.vue`) agar Fakultas alumni/admin terisi otomatis secara akurat, serta menambahkan listener penyesuaian otomatis saat Program Studi diubah.

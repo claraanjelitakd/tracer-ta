@@ -288,11 +288,11 @@ Ringkasan relasi utama & prinsip anti-duplikasi data:
 
 ---
 
-## 5. Fitur Sinkronisasi LinkedIn (Driver-Based Switch via .ENV)
+## 5. Fitur Sinkronisasi LinkedIn (Multi-Provider: Mock, Official, & Apify)
 
-Fitur ini memungkinkan Superadmin menyinkronkan data profil profesional alumni (jabatan dan institusi perusahaan tempat bekerja) berbasis abstraksi driver yang dapat diganti murni melalui variabel environment (`.env`) tanpa mengubah logika bisnis controller, mapper, database, maupun UI.
+Fitur ini memungkinkan Superadmin menyinkronkan data profil profesional alumni (jabatan, institusi perusahaan tempat bekerja, dan foto profil fisik) berbasis abstraksi driver yang dapat dipilih murni melalui konfigurasi `.env` tanpa mengubah kode controller, service bisnis, maupun UI.
 
-### A. Alur Arsitektur Driver-Based
+### A. Alur Arsitektur Multi-Provider
 ```text
 Controller (LinkedInSyncController)
     │
@@ -305,34 +305,69 @@ LinkedInProfileProvider (Interface)
     ▼
 Driver Resolver (AppServiceProvider match statement)
     │
-    ├── LINKEDIN_DRIVER=mock ──▶ MockLinkedInProvider ──▶ Baca JSON (storage/app/mock/linkedin) / Fallback Dinamis
+    ├── LINKEDIN_DRIVER=mock     ──▶ MockLinkedInProvider   ──▶ Baca JSON (storage/app/mock/linkedin) / Fallback Dinamis
     │
-    └── LINKEDIN_DRIVER=api  ──▶ ApiLinkedInProvider  ──▶ Official Server-to-Server API (Bearer Token)
-                                        │
-                                        ▼ (Normalisasi Respons ke DTO yang sama)
-                               LinkedInProfile & LinkedInPosition
-                                        │
-                                        ▼
-                               LinkedInProfileMapper
-                                        ├── Update biodata (posisi_jabatan)
-                                        └── Match/Create perusahaan (status_verifikasi: 'Menunggu Verifikasi')
+    ├── LINKEDIN_PROVIDER=apify  ──▶ ApifyLinkedInProvider  ──▶ Actor Apify (Bearer Token APIFY_API_TOKEN)
+    │                                                            + Download Foto Fisik (public/uploads/profile/)
+    │
+    └── LINKEDIN_PROVIDER=official ──▶ ApiLinkedInProvider  ──▶ Official Server-to-Server API (Bearer Token)
+                                         │
+                                         ▼ (Normalisasi Respons ke DTO yang sama)
+                                LinkedInProfile & LinkedInPosition
+                                         │
+                                         ▼
+                            Tabel Staging: linkedin_sync_results (Status: 'pending')
+                                         │
+                         [SuperAdmin Review & Approval]
+                                ┌────────┴────────┐
+                             Approve            Reject
+                                │                 │
+                                ▼                 ▼
+                      LinkedInProfileMapper    Hanya ubah status staging
+                      ├── Update biodata       (Master alumni tidak berubah)
+                      │   (posisi_jabatan,
+                      │    kategori_pekerjaan: 'Pekerja',
+                      │    foto)
+                      └── Match/Create perusahaan (status_verifikasi: 'Menunggu Verifikasi')
 ```
 
 ### B. Konfigurasi Environment (`.env`)
 ```env
-# Mode Mock (Default)
+# 1. Mode Mock (Default Pengujian Lokal Tanpa Jaringan)
 LINKEDIN_DRIVER=mock
 LINKEDIN_MOCK_PATH=storage/app/mock/linkedin
-LINKEDIN_API_BASE_URL=
-LINKEDIN_API_KEY=
 
-# Mode API Masa Depan (Cukup ganti baris berikut di server)
-# LINKEDIN_DRIVER=api
+# 2. Mode Apify Scraper (Scraping Profil LinkedIn Live via Actor Apify)
+# LINKEDIN_PROVIDER=apify
+# APIFY_API_TOKEN=apify_api_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+# APIFY_ACTOR_ID=data_forge_org~linkedin-scraper
+
+# 3. Mode Official LinkedIn API (Server-to-Server Kemitraan Resmi)
+# LINKEDIN_PROVIDER=official
 # LINKEDIN_API_BASE_URL=https://api.linkedin.com/v2
 # LINKEDIN_API_KEY=rahasia_api_key_server_to_server
 ```
 
-### C. Integritas Data & Kebijakan Verifikasi Perusahaan
+### C. Alur Staging & Review Persetujuan (Approval Workflow)
+1. **Isolasi Staging (`linkedin_sync_results`)**: Data hasil scraping pihak ketiga tidak langsung mengubah master data alumni. Hasil scraping disimpan ke tabel staging dengan status `pending` beserta payload mentah JSON.
+2. **Review Perbandingan**: SuperAdmin dapat meninjau perbandingan data scraping vs data existing di halaman `/superadmin/linkedin-sync` sebelum memutuskan untuk menyetujui (*Approve*) atau menolak (*Reject*).
+3. **Persetujuan (*Approve*)**:
+   - Memperbarui `posisi_jabatan`, `kategori_pekerjaan = 'Pekerja'`, dan `foto`.
+   - Mendaftarkan perusahaan ke tabel `perusahaan` jika belum ada dengan `status_verifikasi = 'Menunggu Verifikasi'`.
+   - Mengubah status staging menjadi `approved` beserta user reviewer dan waktu review.
+4. **Penolakan (*Reject*)**: Menandai hasil staging sebagai `rejected` tanpa menyentuh data profil master alumni.
+
+### D. Download Foto Profil Permanen ke Server
+- URL foto profil dari CDN LinkedIn memiliki token kedaluwarsa (`?e=...`) dan pembatasan hotlinking.
+- Sistem mengunduh file foto secara fisik dan menyimpannya secara permanen ke direktori `public/uploads/profile/profile_{nim}_{timestamp}.jpg`.
+- Alumni juga dapat mengunggah file foto mandiri (JPG/PNG max 2MB) melalui halaman Biodata Pribadi.
+
+### E. Tab 4 Detail Alumni: Tabel Audit & Trace Pemetaan
+- Pada halaman Detail Alumni SuperAdmin (`/superadmin/alumni/{id}`), tersedia **Tab 4: Hasil Scraping & Trace LinkedIn**.
+- Menampilkan tabel komparasi detail per atribut: *Key Atribut Scraping*, *Deskripsi Field*, *Nilai Mentah Apify*, *Target Kolom Database*, *Nilai Aktual di Database*, dan *Status Audit*.
+- Dilengkapi pencarian teks real-time dan JSON Viewer interaktif dengan tombol *Copy Raw JSON*.
+
+### F. Integritas Data & Kebijakan Verifikasi Perusahaan
 - **Posisi Aktif (Current Position)**: Dipilih dengan prioritas posisi `endMonthYear == null`, kemudian tanggal mulai (`startMonthYear`) terbaru.
 - **Kebijakan Verifikasi Mutlak**: Setiap institusi perusahaan baru yang dibuat dari sinkronisasi LinkedIn SELALU disetel ke `status_verifikasi = 'Menunggu Verifikasi'`, meskipun data alamat, provinsi, dan negara terisi lengkap.
 - **Proteksi Data Otoritatif**: Field otoritatif alumni (NIM, NIK, NPWP, email pribadi, nomor telepon, alamat domisili, dan riwayat akademik) tidak pernah ditimpa oleh data LinkedIn.

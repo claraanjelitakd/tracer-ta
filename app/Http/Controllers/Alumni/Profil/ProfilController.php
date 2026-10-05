@@ -50,6 +50,7 @@ class ProfilController extends Controller
             'nisn' => $biodata?->nisn ?? ($dataAkademik?->nisn ?? ''),
             'no_bpjs' => $biodata?->no_bpjs ?? ($dataAkademik?->no_bpjs ?? ''),
             'npwp' => $biodata?->npwp ?? '',
+            'foto' => $biodata?->foto ?? '',
 
             // Kontak & Alamat Pribadi
             'alamat_saat_ini' => $biodata?->alamat ?? ($dataAkademik?->alamat_saat_ini ?? ''),

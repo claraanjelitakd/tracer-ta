@@ -17,6 +17,7 @@ use App\Services\LinkedIn\Mappers\LinkedInProfileMapper;
 use App\Services\LinkedIn\Providers\ApiLinkedInProvider;
 use App\Services\LinkedIn\Providers\MockLinkedInProvider;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
@@ -54,6 +55,8 @@ class SuperAdminLinkedInSyncTest extends TestCase
             'kode_prodi' => '71',
             'nama_prodi' => 'Informatika',
         ]);
+
+        Config::set('services.linkedin.provider', 'official');
     }
 
     /**

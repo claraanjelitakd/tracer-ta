@@ -525,19 +525,25 @@ c:/study/tracerstudy/
 │           │   └── LinkedInProfileMapper.php           -> Evaluasi posisi aktif & mapping perusahaan
 │           ├── Providers/
 │           │   ├── MockLinkedInProvider.php            -> Driver Mock (baca JSON lokal / fallback dinamis)
-│           │   └── ApiLinkedInProvider.php             -> Driver API (disiapkan untuk future server-to-server)
+│           │   ├── ApiLinkedInProvider.php             -> Driver API (disiapkan untuk future server-to-server)
+│           │   └── ApifyLinkedInProvider.php           -> Driver Apify Scraper (data_forge_org actor + download foto lokal)
 │           └── LinkedInProfileService.php              -> Orkestrator bisnis, transaksi & audit log
+├── database/
+│   └── migrations/
+│       └── 2026_10_05_130000_create_linkedin_sync_results_table.php -> Tabel staging audit scraping
 ├── config/
 │   ├── linkedin.php                                    -> Konfigurasi spesifik modul LinkedIn
-│   └── services.php                                    -> Mapping 'services.linkedin.*' konvensi Laravel
+│   └── services.php                                    -> Mapping 'services.linkedin.*' & 'services.apify.*'
 ├── resources/
 │   └── js/
 │       └── Pages/
 │           └── SuperAdmin/
+│               ├── Alumni/
+│               │   └── Show.vue                        -> Tab 4: Trace Hasil Scraping Apify vs Database Riil
 │               ├── Components/
 │               │   └── Sidebar.vue                     -> Navigasi menu 'Sinkronisasi LinkedIn'
 │               └── LinkedIn/
-│                   └── Index.vue                       -> Tampilan UI Reaktif Superadmin
+│                   └── Index.vue                       -> Tampilan UI Reaktif Superadmin & Review Staging
 ├── storage/
 │   └── app/
 │       └── mock/
@@ -545,7 +551,8 @@ c:/study/tracerstudy/
 │               └── johndoe.json                        -> Berkas sampel Mock JSON terstruktur
 └── tests/
     └── Feature/
-        └── SuperAdminLinkedInSyncTest.php              -> 17 Feature test komprehensif
+        ├── SuperAdminLinkedInSyncTest.php              -> 17 Feature test komprehensif
+        └── ApifyLinkedInProviderTest.php               -> 23 Skenario test Apify Provider
 
 ----------------------------------------------------------------------------------------------------
 B. TANGGUNG JAWAB SETIAP KOMPONEN
@@ -553,9 +560,14 @@ B. TANGGUNG JAWAB SETIAP KOMPONEN
 1. `LinkedInSyncController`:
    - Menangani request HTTP dari UI Superadmin.
    - Mengambil data tahun kelulusan unik dari `data_akademik` / `yudisium`.
-   - Mengirim data alumni dan metrik KPI awal ke frontend Inertia.
-   - Endpoint JSON asinkron untuk `syncSingle($id)` dan `syncBatch(Request)`.
-   - Tidak mengetahui driver provider apa yang sedang aktif.
+   - Mengirim data alumni, metrik KPI awal, dan data staging review ke frontend Inertia.
+   - Endpoint JSON asinkron untuk `syncSingle($id)`, `syncBatch(Request)`, `approve($id)`, dan `reject($id)`.
+   - Mengarahkan aksi approval untuk memperbarui `biodata` dan mendaftarkan `perusahaan` baru berstatus `Menunggu Verifikasi`.
+
+1.b `LinkedinSyncResult` (Model Staging & Audit):
+   - Menyimpan seluruh payload hasil scraping eksternal (`scraped_data`) secara terisolasi tanpa langsung mengubah master alumni.
+   - Melacak siklus hidup persetujuan (`pending`, `approved`, `rejected`), waktu scraping, dan user reviewer (`reviewed_by`, `reviewed_at`).
+   - Menyediakan data historis sinkronisasi untuk keperluan penelusuran audit universitas.
 
 2. `LinkedInProfileService`:
    - Orkestrator proses bisnis sinkronisasi data alumni.
