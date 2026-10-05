@@ -11,221 +11,403 @@ Dokumen ini berisi alur pengguna (*User Flow*) lengkap untuk setiap peran (*user
 3. [3. User Flow: Admin Fakultas](#3-user-flow-admin-fakultas)
 4. [4. User Flow: Admin Biro III / Kemahasiswaan & Alumni](#4-user-flow-admin-biro-iii--kemahasiswaan--alumni)
 5. [5. User Flow: Superadmin](#5-user-flow-superadmin)
-6. [6. User Flow: Publik / Anonim](#6-user-flow-publik--anonim)
+6. [6. User Flow: Publik / Tamu (Guest)](#6-user-flow-publik--tamu-guest)
+7. [7. User Flow: Atasan Langsung / Pengguna Lulusan](#7-user-flow-atasan-langsung--pengguna-lulusan-public-token-based-evaluation-flow)
 
 ---
 
 ## 1. User Flow: Alumni / Lulusan
 
-Alumni adalah pengguna utama pengisi kuesioner tracer study, pembaru data akademik/pekerjaan, serta pengguna fitur integrasi seperti LinkedIn.
+Alumni adalah pengguna yang mengisi data biodata & profil pekerjaan, kuesioner tracer study universitas (Kemdikbudristek), serta kuesioner khusus program studi.
 
 ### Diagram Mermaid: Alumni Flow
 
 ```mermaid
 flowchart TD
-    A[Mulai: Akses Halaman Utama] --> B{Sudah Login?}
-    B -- Belum --> C[Halaman Login]
-    C --> D{Metode Login}
-    D -- NIM/SSO -- E[Otentikasi Akun Alumni]
-    D -- LinkedIn OAuth -- F[Otentikasi via LinkedIn]
-    E --> G[Dashboard Alumni]
-    F --> G
+    A[Mulai: Akses Halaman Utama / Landing Page] --> B{Sudah Login?}
+    B -->|Sudah| G[Dashboard Alumni: /alumni/dashboard]
+    B -->|Belum| C[Halaman Login: /login]
+    
+    C --> D{Kredensial Login}
+    D -->|Username NIM & Password| E[Validasi Akun]
+    C -->|Lupa Kata Sandi| F[Form Lupa Kata Sandi: /forgot-password]
+    F -->|Kirim Token Email| F1[Reset Password: /reset-password/token]
+    F1 --> C
 
-    G --> H[Check Status Pengisian Kuesioner]
-    H --> I{Kuesioner Selesai?}
-    I -- Belum --> J[Pengisian Kuesioner Wajib Kemdikbud / Diktiristek]
-    J --> K[Pengisian Kuesioner Spesifik Prodi]
-    K --> L[Simpan & Submit Kuesioner]
-    L --> M[Update Status Kuesioner: Completed]
+    E -->|Gagal| C
+    E -->|Berhasil| H{Wajib Ganti Password? must_change_password}
+    H -->|Ya - Login Default Tgl Lahir| I[Halaman Ganti Sandi: /change-password]
+    I -->|Password Baru Disimpan| G
+    H -->|Tidak| G
 
-    I -- Sudah --> N[Lihat Ringkasan & Hasil Kuesioner]
+    G --> J[Navigasi Menu Utama Alumni]
+    
+    J --> K[1. Kelola Profil & Biodata: /alumni/profile]
+    K --> K1[Perbarui Kontak, Biodata & Riwayat Pekerjaan]
+    K --> K2[Input Data Atasan Langsung - Memicu Token Evaluasi Atasan]
+    K --> K3{Perusahaan Terdaftar?}
+    K3 -->|Belum Ada| K4[Tambah Perusahaan Baru: /alumni/company]
+    K3 -->|Sudah Ada| K5[Pilih dari Master Perusahaan]
+    K4 --> K6[Simpan Perubahan Profil]
+    K5 --> K6
+    K6 --> G
 
-    G --> O[Fitur Tambahan Alumni]
-    O --> P[Update Profil & Riwayat Pekerjaan]
-    O --> Q[Sinkronisasi LinkedIn Profile / MCP]
-    O --> R[Lihat Rekomendasi Karir / Lowongan]
-    O --> S[Unduh Bukti Pengisian Kuesioner]
+    J --> L[2. Isi Kuesioner Universitas: /alumni/kuesioner]
+    L --> L1[Pengisian Pertanyaan Tracer Study Kemdikbudristek]
+    L1 --> L2[Simpan Jawaban Kuesioner Universitas]
+    L2 --> G
 
-    M --> N
-    P --> T[Selesai / Logout]
-    Q --> T
-    R --> T
-    S --> T
-    N --> T
+    J --> M[3. Isi Kuesioner Program Studi: /alumni/kuesioner-prodi]
+    M --> M1[Pengisian Pertanyaan Khusus Sesuai Prodi Alumni]
+    M1 --> M2[Simpan Jawaban Kuesioner Prodi]
+    M2 --> G
+
+    G --> N[Pantau Progress di Dashboard]
+    N --> O{Keluar Sesi?}
+    O -->|Ya - Klik Logout| P[Konfirmasi Logout SweetAlert2]
+    P -->|Konfirmasi| Q[Logout: /logout -> Redirect ke Beranda]
 ```
 
-### Rincian Alur Alumni:
-1. **Otentikasi & Akses**: Alumni melakukan login menggunakan NIM/Password atau akun LinkedIn (OAuth).
-2. **Pengisian Kuesioner Utama**:
-   - Sistem memeriksa kelayakan pengisian berdasarkan tahun kelulusan/yudisium.
-   - Pengisian kuesioner standar Kemendikbudristek (status pekerjaan, pendapatan, jeda cari kerja, relevansi kurikulum).
-   - Pengisian pertanyaan tambahan khusus Program Studi.
-3. **Manajemen Profil & LinkedIn**:
-   - Memperbarui data biodata, kontak, dan riwayat pekerjaan terkini.
-   - Melakukan sinkronisasi data dari LinkedIn.
-4. **Output & Bukti**:
-   - Mengunduh sertifikat/bukti pengisian kuesioner.
+### Rincian Alur Alumni Sebenarnya (Sesuai Program):
+1. **Otentikasi & Keamanan Akun**:
+   - **Login Akun**: Alumni masuk melalui `/login` menggunakan **Username (NIM)** dan **Password**.
+   - **Password Bawaan (Default Password)**: Alumni yang baru pertama kali masuk dapat menggunakan tanggal lahir dengan format `DDMMYYYY` (contoh: `15082001`).
+   - **Wajib Ganti Password (`must_change_password`)**: Pengguna yang masuk menggunakan password bawaan otomatis diwajibkan mengganti kata sandi terlebih dahulu di rute `/change-password` sebelum diperbolehkan mengakses fitur dashboard.
+   - **Lupa Password**: Tersedia alur pemulihan kata sandi via email (`/forgot-password` dan `/reset-password/{token}`).
+2. **Dashboard Alumni (`/alumni/dashboard`)**:
+   - Menyajikan 3 kartu monitoring status kelengkapan data:
+     1. **Kelengkapan Profil & Biodata** (persentase & jumlah field terisi).
+     2. **Kuesioner Universitas** (persentase & jumlah soal wajib Kemdikbudristek yang sudah dijawab).
+     3. **Kuesioner Program Studi** (persentase & jumlah soal khusus prodi yang sudah dijawab).
+3. **Pengelolaan Profil & Pekerjaan (`/alumni/profile`)**:
+   - Mengubah biodata pribadi, nomor kontak, serta riwayat pekerjaan/posisi saat ini.
+   - Mengisi data atasan langsung (nama dan email atasan), yang secara otomatis menerbitkan data `evaluasi_atasan` untuk dinilai oleh pengguna lulusan via tautan ber-token.
+   - Mendaftarkan entitas perusahaan baru (`/alumni/company`) apabila tempat kerja belum ada pada data master universitas.
+4. **Pengisian Kuesioner Universitas / Tracer Study (`/alumni/kuesioner`)**:
+   - Mengisi butir-butir pertanyaan standar tracer study (pendapatan, masa tunggu kerja, relevansi keilmuan, dsb.).
+   - Menyimpan jawaban ke sistem (`POST /alumni/kuesioner`).
+5. **Pengisian Kuesioner Program Studi (`/alumni/kuesioner-prodi`)**:
+   - Mengisi kuesioner evaluasi kurikulum dan fasilitas spesifik yang dikelola oleh Program Studi masing-masing alumni.
+   - Menyimpan respon ke database (`POST /alumni/kuesioner-prodi`).
+6. **Logout / Keluar**:
+   - Alumni dapat keluar dari sistem melalui tombol Logout di Navbar dengan konfirmasi SweetAlert2 (`POST /logout`), yang menghapus sesi dan mengarahkan kembali ke Landing Page.
 
 ---
 
 ## 2. User Flow: Admin Program Studi (Admin Prodi)
 
-Admin Prodi berfokus pada pemantauan pengisian tracer study alumni di tingkat prodi, validasi data, serta analisis statistik prodi.
+Admin Program Studi bertanggung jawab mengelola kuesioner khusus prodi, memantau tingkat partisipasi alumni prodi, memvalidasi pengajuan perusahaan baru dari alumni, mengelola akun mahasiswa/alumni prodi, dan mengekspor data tracer prodi.
 
 ### Diagram Mermaid: Admin Prodi Flow
 
 ```mermaid
 flowchart TD
-    A[Mulai: Login Admin Prodi] --> B[Dashboard Prodi]
-    B --> C{Pilih Menu}
+    A[Mulai: Login Admin Prodi] --> B[Dashboard Prodi: /prodi/dashboard]
+    B --> C{Pilih Menu Operasional}
 
-    C --> D[Monitoring Response Rate Alumni Prodi]
-    D --> D1[Filter berdasarkan Tahun Lulus & Angkatan]
-    D1 --> D2[Kirim Pengingat / Remind WhatsApp / Email ke Alumni]
+    C --> D[1. Monitoring Partisipasi Alumni Prodi]
+    D --> D1[Lihat Metrik: Total Alumni, Respon Prodi, Respon Univ, % Partisipasi]
+    D --> D2[Lihat Tabel 5 Alumni Terbaru & Status Kelengkapan]
 
-    C --> E[Validasi & Verifikasi Data Alumni]
-    E --> E1[Cek Data Keselarasan Horisontal & Vertikal]
-    E1 --> E2[Verifikasi Bukti Status Pekerjaan]
+    C --> E[2. Direktori & Detail Alumni Prodi: /prodi/alumni]
+    E --> E1[Cari & Filter Data Alumni Prodi]
+    E --> E2[Lihat Detail Alumni & Respon Kuesioner: /prodi/alumni/id]
+    E2 --> E3[Perbarui Profil Alumni jika Diperlukan: POST /profile]
+    E1 --> E4[Ekspor Rekap Alumni Prodi ke Excel: /export-excel]
 
-    C --> F[Kelola Kuesioner Spesifik Prodi]
-    F --> F1[Tambah / Edit Pertanyaan Tambahan Prodi]
+    C --> F[3. Kelola Kuesioner Khusus Prodi]
+    F --> F1[Kelola Section / Bagian: /prodi/sections]
+    F1 --> F2[Tambah, Edit, Hapus & Atur Urutan Section: /reorder]
+    F --> F3[Kelola Pertanyaan Prodi: /prodi/pertanyaan]
+    F3 --> F4[Tambah, Edit, Hapus & Reorder Butir Pertanyaan]
+    F --> F5[Kelola Pilihan Opsi Jawaban: /prodi/opsi]
+    F5 --> F6[Tambah, Edit, Hapus Opsi Jawaban Radio / Checkbox]
 
-    C --> G[Laporan & Eksport Data Prodi]
-    G --> G1[Export Data Excel / CSV format PDDikti & Accreditation]
-    G1 --> G2[Generate Grafik Akreditasi BAN-PT / LAM]
+    C --> G[4. Verifikasi Pengajuan Perusahaan: /prodi/perusahaan]
+    G --> G1[Daftar Pengajuan Perusahaan Baru dari Alumni Prodi]
+    G1 --> G2{Tindakan Verifikasi}
+    G2 -->|Setujui Baru| G3[Verifikasi Perusahaan: POST /verify]
+    G2 -->|Tolak| G4[Tolak Pengajuan: POST /reject]
+    G2 -->|Duplikat / Sudah Ada| G5[Ganti & Hubungkan ke Master: POST /replace]
+    G2 -->|Koreksi Data| G6[Edit & Verifikasi: PUT /perusahaan/id]
 
-    D2 --> H[Selesai]
-    E2 --> H
-    F1 --> H
-    G2 --> H
+    C --> H[5. Manajemen Akun Mahasiswa / Alumni Prodi: /prodi/manajemen-akun]
+    H --> H1[Daftar Akun Alumni Program Studi]
+    H1 --> H2[Perbarui Data Akun: PUT /manajemen-akun/id]
+    H1 --> H3[Reset Password ke Default Tgl Lahir + Kirim Notifikasi: POST /reset-default-notify]
+
+    D2 --> Z[Selesai / Logout: /logout]
+    E4 --> Z
+    F6 --> Z
+    G3 --> Z
+    G4 --> Z
+    G5 --> Z
+    G6 --> Z
+    H3 --> Z
 ```
 
-### Rincian Alur Admin Prodi:
-1. **Dashboard & Monitoring**: Melihat persentase partisipasi alumni (*Response Rate*) pada prodi yang dikelola.
-2. **Blasting & Reminder**: Mengirimkan notifikasi pengingat ke alumni yang belum mengisi kuesioner.
-3. **Verifikasi Data**: Memeriksa validitas data pekerjaan dan gaji alumni untuk keperluan borang akreditasi prodi.
-4. **Custom Questions**: Mengelola kuesioner internal khusus prodi.
-5. **Reporting**: Menghasilkan file ekspor data standar borang akreditasi.
+### Rincian Alur Admin Prodi Sebenarnya:
+1. **Dashboard Prodi (`/prodi/dashboard`)**:
+   - Menampilkan metrik: Total Alumni Prodi, Responden Kuesioner Prodi, Responden Kuesioner Universitas, dan Persentase Partisipasi.
+   - Tabel ringkasan 5 alumni terbaru beserta status kelengkapan kuesioner universitas dan prodi.
+2. **Kelola Alumni Prodi (`/prodi/alumni`)**:
+   - Menampilkan direktori alumni khusus program studi yang bersangkutan.
+   - Melihat rincian profil biodata dan seluruh riwayat jawaban tracer study alumni (`/prodi/alumni/{id}`).
+   - Memperbarui data profil alumni jika terdapat koreksi informasi.
+   - Mengunduh rekap data alumni prodi ke format Excel (`/prodi/alumni/{id}/export-excel`).
+3. **Instrumen Kuesioner Khusus Prodi**:
+   - **Section Kuesioner Prodi (`/prodi/sections`)**: Menambah, mengedit, menghapus, dan mengatur urutan tampilan bagian soal (*reorder*).
+   - **Pertanyaan Prodi (`/prodi/pertanyaan`)**: Menambah, mengedit, menghapus, dan mengatur urutan butir pertanyaan prodi.
+   - **Opsi Jawaban Prodi (`/prodi/opsi`)**: Mengelola pilihan opsi respon untuk tipe pertanyaan pilihan ganda atau checkbox.
+4. **Verifikasi Perusahaan (`/prodi/perusahaan`)**:
+   - Memeriksa nama instansi/perusahaan baru yang dimasukkan alumni prodi saat memperbarui profil pekerjaan.
+   - Aksi: Setujui perusahaan baru (`verify`), tolak (`reject`), edit lalu verifikasi (`update`), atau ganti/hubungkan ke data perusahaan master yang sudah terverifikasi sebelumnya (`replace`).
+5. **Manajemen Akun Alumni Prodi (`/prodi/manajemen-akun`)**:
+   - Melihat akun login mahasiswa/alumni pada program studi tersebut.
+   - Mengubah username, nama, atau email akun alumni.
+   - Mereset password akun alumni ke tanggal lahir bawaan (`DDMMYYYY`) disertai notifikasi email resmi (`reset-default-notify`).
 
 ---
 
 ## 3. User Flow: Admin Fakultas
 
-Admin Fakultas bertugas memantau kinerja tracer study lintas program studi di lingkungan fakultas.
+Admin Fakultas bertugas memantau kinerja tracer study lintas program studi di lingkungan fakultasnya, memeriksa direktori alumni, memvalidasi pengajuan perusahaan alumni se-fakultas, dan mengelola akun mahasiswa/alumni tingkat fakultas.
 
 ### Diagram Mermaid: Admin Fakultas Flow
 
 ```mermaid
 flowchart TD
-    A[Mulai: Login Admin Fakultas] --> B[Dashboard Fakultas]
-    B --> C{Pilih Akses Menu}
+    A[Mulai: Login Admin Fakultas] --> B[Dashboard Fakultas: /fakultas/dashboard]
+    B --> C{Pilih Menu Operasional}
 
-    C --> D[Overview Statistik Lintas Prodi]
-    D --> D1[Komparasi Response Rate antar Prodi]
-    D1 --> D2[Analisis Rata-rata Gaji & Masa Tunggu per Prodi]
+    C --> D[1. Monitoring Statistik Tingkat Fakultas]
+    D --> D1[Lihat Metrik: Total Alumni Fakultas, Total Selesai, % Kelengkapan]
+    D --> D2[Tabel Distribusi Partisipasi per Program Studi dalam Fakultas]
 
-    C --> E[Pengawasan & Validasi Data Fakultas]
-    E --> E1[Audit Sample Data Alumni Fakultas]
+    C --> E[2. Direktori Alumni Fakultas: /fakultas/alumni]
+    E --> E1[Filter Alumni Berdasarkan Program Studi di Fakultas]
+    E --> E2[Lihat Rincian Alumni & Jawaban Kuesioner: /fakultas/alumni/id]
+    E2 --> E3[Perbarui Data Profil Alumni jika Perlu: POST /profile]
+    E1 --> E4[Ekspor Data Alumni Fakultas ke Excel: /export-excel]
 
-    C --> F[Pusat Laporan Eksekutif Fakultas]
-    F --> F1[Export Rekap Fakultas untuk Dekanat]
+    C --> F[3. Verifikasi Perusahaan Tingkat Fakultas: /fakultas/perusahaan]
+    F --> F1[Daftar Usulan Perusahaan dari Seluruh Alumni Fakultas]
+    F1 --> F2{Tindakan Verifikasi}
+    F2 -->|Setujui Baru| F3[Verifikasi Perusahaan: POST /verify]
+    F2 -->|Tolak Usulan| F4[Tolak Perusahaan: POST /reject]
+    F2 -->|Sudah Terdaftar| F5[Hubungkan ke Master Terverifikasi: POST /replace]
+    F2 -->|Koreksi Data| F6[Edit & Setujui: PUT /perusahaan/id]
 
-    D2 --> G[Selesai]
-    E1 --> G
-    F1 --> G
+    C --> G[4. Manajemen Akun Se-Fakultas: /fakultas/manajemen-akun]
+    G --> G1[Daftar Akun Alumni Seluruh Prodi dalam Fakultas]
+    G1 --> G2[Perbarui Akun Alumni: PUT /manajemen-akun/id]
+    G1 --> G3[Reset Password ke Default Tgl Lahir + Notifikasi: POST /reset-default-notify]
+
+    D2 --> Z[Selesai / Logout: /logout]
+    E4 --> Z
+    F3 --> Z
+    F4 --> Z
+    F5 --> Z
+    F6 --> Z
+    G3 --> Z
 ```
+
+### Rincian Alur Admin Fakultas Sebenarnya:
+1. **Dashboard Fakultas (`/fakultas/dashboard`)**:
+   - Menampilkan ringkasan metrik fakultas: Total alumni se-fakultas, total alumni yang telah menyelesaikan seluruh instrumen tracer study, dan persentase kelengkapan fakultas.
+   - Tabel komparasi respons dan tingkat partisipasi alumni untuk setiap Program Studi di bawah naungan fakultas.
+2. **Direktori & Detail Alumni Fakultas (`/fakultas/alumni`)**:
+   - Melihat daftar seluruh alumni dalam lingkup fakultas dengan filter program studi.
+   - Meninjau data detail profil dan lembar jawaban tracer study alumni (`/fakultas/alumni/{id}`).
+   - Melakukan koreksi/perubahan profil alumni bila diperlukan.
+   - Mengekspor data profil dan isian kuesioner alumni ke format Excel (`/export-excel`).
+3. **Verifikasi Perusahaan Lingkup Fakultas (`/fakultas/perusahaan`)**:
+   - Meninjau pengajuan perusahaan baru yang diinput oleh alumni dari prodi-prodi di fakultas terkait.
+   - Fitur approval: Verifikasi (`verify`), tolak (`reject`), edit & setujui (`update`), atau tautkan ke perusahaan terverifikasi (`replace`).
+4. **Manajemen Akun Mahasiswa / Alumni Se-Fakultas (`/fakultas/manajemen-akun`)**:
+   - Mengelola akun alumni pada semua prodi di fakultas bersangkutan.
+   - Mengedit informasi akun serta mereset kata sandi ke tanggal lahir bawaan (`DDMMYYYY`) via tombol *Reset Default & Notify*.
 
 ---
 
 ## 4. User Flow: Admin Biro III / Kemahasiswaan & Alumni
 
-Admin Biro III bertanggung jawab mengelola tracer study secara keseluruhan di tingkat universitas, integrasi ke PDDikti/Kemendikbud, serta administrasi tingkat pusat.
+Admin Biro 3 (Biro Kemahasiswaan, Alumni, dan Pengembangan Karir) memantau metrik pelacakan alumni di tingkat universitas, mengelola direktori alumni seluruh program studi, mengekspor laporan ke Excel, dan menjalankan sinkronisasi data karier alumni dari LinkedIn.
 
 ### Diagram Mermaid: Admin Biro III Flow
 
 ```mermaid
 flowchart TD
-    A[Mulai: Login Admin Biro III] --> B[Dashboard Universitas]
-    B --> C{Menu Operasional}
+    A[Mulai: Login Admin Biro 3] --> B[Dashboard Biro 3: /biro3/dashboard]
+    B --> C{Pilih Menu Operasional}
 
-    C --> D[Pengaturan Periode & Wave Tracer Study]
-    D --> D1[Buka / Tutup Periode Tracer Study]
+    C --> D[1. Dashboard KPI Universitas]
+    D --> D1[Pantau Total Alumni Universitas & Total Responden]
+    D --> D2[Pantau Rasio Response Rate Universitas %]
+    D --> D3[Pantau Jumlah Butir Instrumen Pertanyaan & Total Prodi]
+    D --> D4[Pantau Jumlah Alumni Terhubung Akun LinkedIn]
 
-    C --> E[Integrasi & Sync Data Kemendikbud / PDDikti]
-    E --> E1[Export Format DIKTI]
-    E1 --> E2[Validasi NIK, NIM, & Kode PT/Prodi]
+    C --> E[2. Direktori Alumni Universitas: /biro3/alumni]
+    E --> E1[Pencarian & Filter Alumni Seluruh Fakultas & Prodi]
+    E --> E2[Lihat Profil Lengkap & Rekap Kuesioner: /biro3/alumni/id]
+    E2 --> E3[Perbarui Data Profil Alumni: POST /profile]
+    E1 --> E4[Ekspor Rekapitulasi Alumni ke Excel: /export-excel]
 
-    C --> F[Master Data Alumni & Yudisium]
-    F --> F1[Import Data Kelulusan / Yudisium Terbaru]
+    C --> F[3. Sinkronisasi Profil LinkedIn Alumni]
+    F --> F1[Akses Detail Alumni: /biro3/alumni/id]
+    F1 --> F2[Klik Tombol: Sinkronisasi LinkedIn]
+    F2 --> F3[Sistem Mengambil Riwayat Pekerjaan dari LinkedIn API / MCP: POST /sync-linkedin]
+    F3 --> F4[Tinjau Hasil Ekstraksi Profil Karier & Perusahaan]
+    F4 --> F5[Simpan Data LinkedIn ke Riwayat Profil Alumni: POST /save-linkedin]
 
-    C --> G[Pesan Broadcast & Notification Center]
-    G --> G1[Kirim Email / WA Blast Massal ke Alumni]
-
-    D1 --> H[Selesai]
-    E2 --> H
-    F1 --> H
-    G1 --> H
+    D4 --> Z[Selesai / Logout: /logout]
+    E4 --> Z
+    F5 --> Z
 ```
+
+### Rincian Alur Admin Biro III Sebenarnya:
+1. **Dashboard Eksekutif Biro 3 (`/biro3/dashboard`)**:
+   - Menyajikan Indikator Kinerja Utama (KPI) Tracer Study tingkat kampus:
+     - Total keseluruhan alumni di database universitas.
+     - Total responden unik yang telah berpartisipasi mengisi kuesioner.
+     - Persentase rasio partisipasi (*Response Rate*) universitas.
+     - Total instrumen pertanyaan aktif dan total program studi.
+     - Total alumni yang profilnya telah tertaut dengan akun LinkedIn.
+2. **Kelola Direktori Alumni Universitas (`/biro3/alumni`)**:
+   - Memantau basis data alumni dari seluruh angkatan, fakultas, dan program studi.
+   - Meninjau lembar jawaban kuesioner dan data riwayat pekerjaan alumni (`/biro3/alumni/{id}`).
+   - Memperbarui data profil alumni secara langsung.
+   - Mengunduh rekapitulasi data profil dan tracer alumni ke format Excel (`/export-excel`).
+3. **Integrasi & Sinkronisasi LinkedIn Alumni (`/biro3/alumni/{id}/sync-linkedin`)**:
+   - Menjalankan sinkronisasi profil LinkedIn alumni untuk melacak posisi kerja, jabatan, dan instansi terkini secara otomatis via LinkedIn Profile Provider / MCP.
+   - Meninjau data riwayat pengalaman kerja hasil sinkronisasi.
+   - Menyimpan data riwayat pekerjaan hasil sinkronisasi ke tabel biodata/pekerjaan alumni (`POST /save-linkedin`).
 
 ---
 
 ## 5. User Flow: Superadmin
 
-Superadmin mengelola konfigurasi sistem, peran & hak akses pengguna, log aktivitas, serta infrastruktur aplikasi.
+Superadmin memegang kendali penuh atas seluruh modul sistem Tracer Study: instrumen kuesioner universitas, kuesioner khusus prodi, instrumen evaluasi atasan, verifikasi perusahaan tingkat kampus, sinkronisasi massal LinkedIn, manajemen akun seluruh role, dan log audit sistem.
 
 ### Diagram Mermaid: Superadmin Flow
 
 ```mermaid
 flowchart TD
-    A[Mulai: Login Superadmin] --> B[Dashboard System Admin]
-    B --> C{Manajemen Sistem}
+    A[Mulai: Login Superadmin] --> B[Dashboard Superadmin: /superadmin/dashboard]
+    B --> C{Pilih Modul Manajemen}
 
-    C --> D[User & Role Management]
-    D --> D1[Kelola Akun Admin Prodi, Fakultas, Biro III]
-    D1 --> D2[Atur Permission & Akses Role]
+    C --> D[1. Kelola Kuesioner Universitas]
+    D --> D1[Kelola Bagian / Section: /superadmin/sections]
+    D --> D2[Kelola Paket Kuesioner Induk & Toggle Aktif: /superadmin/kuesioner]
+    D --> D3[Kelola Butir Pertanyaan & Branching: /superadmin/pertanyaan]
+    D --> D4[Kelola Opsi Jawaban Pertanyaan: /superadmin/pertanyaan/options]
 
-    C --> E[System Configuration & Master Reference]
-    E --> E1[Kelola Kategori Pertanyaan & Opsi Jawab Standard]
+    C --> E[2. Kelola Kuesioner Khusus Prodi: /superadmin/prodi-kuesioner]
+    E --> E1[Pilih Program Studi Sasaran]
+    E1 --> E2[Kelola Section, Pertanyaan & Opsi Khusus Prodi Tersebut]
 
-    C --> F[Audit Log & Security Monitoring]
-    F --> F1[Cek System Logs & Integrasi OAuth / LinkedIn]
+    C --> F[3. Kelola Evaluasi Pengguna Lulusan / Atasan: /superadmin/evaluasi-atasan]
+    F --> F1[Kelola Butir Pertanyaan Penilaian Kinerja Lulusan]
+    F1 --> F2[Tambah, Edit, Toggle Aktif & Reorder Pertanyaan Evaluasi]
 
-    C --> G[Database Backup & System Maintenance]
+    C --> G[4. Direktori Alumni & Ekspor: /superadmin/alumni]
+    G --> G1[Audit Data Profil & Respon Seluruh Alumni Kampus]
+    G1 --> G2[Perbarui Profil Alumni & Ekspor ke Excel: /export-excel]
 
-    D2 --> H[Selesai]
-    E1 --> H
-    F1 --> H
-    G --> H
+    C --> H[5. Verifikasi Perusahaan Tingkat Pusat: /superadmin/perusahaan]
+    H --> H1[Daftar Pengajuan Perusahaan dari Seluruh Alumni]
+    H1 --> H2[Tindakan: Setujui /verify, Tolak /reject, Ganti /replace, Edit /update]
+
+    C --> I[6. Sinkronisasi LinkedIn Terpusat: /superadmin/linkedin-sync]
+    I --> I1[Sinkronisasi Satuan per Alumni: POST /single]
+    I --> I2[Sinkronisasi Batch / Massal Seluruh Alumni: POST /batch]
+
+    C --> J[7. Manajemen Akun Terpadu: /superadmin/manajemen-akun]
+    J --> J1[Kelola Akun Admin Fakultas, Admin Prodi, dan Mahasiswa]
+    J1 --> J2[Perbarui Data Akun: PUT /manajemen-akun/id]
+    J1 --> J3[Reset Password ke Default Tgl Lahir + Notifikasi: POST /reset-default-notify]
+
+    C --> K[8. Log Aktivitas & Audit Trail: /superadmin/logs]
+    K --> K1[Pantau Log Aktivitas Pengguna, Riwayat Perubahan, & Keamanan]
+
+    D4 --> Z[Selesai / Logout: /logout]
+    E2 --> Z
+    F2 --> Z
+    G2 --> Z
+    H2 --> Z
+    I2 --> Z
+    J3 --> Z
+    K1 --> Z
 ```
+
+### Rincian Alur Superadmin Sebenarnya:
+1. **Dashboard Superadmin (`/superadmin/dashboard`)**:
+   - Pusat pemantauan menyeluruh: Statistik pengisian tracer, ringkasan instrumen kuesioner, status approval perusahaan, dan peringatan operasional.
+2. **Kelola Kuesioner Universitas (Kemdikbudristek)**:
+   - **Section Kuesioner (`/superadmin/sections`)**: CRUD dan reorder bagian-bagian kuesioner.
+   - **Kuesioner Induk (`/superadmin/kuesioner`)**: Mengatur instrumen kuesioner dan toggle status aktif/nonaktif.
+   - **Pertanyaan & Opsi (`/superadmin/pertanyaan`)**: CRUD pertanyaan, konfigurasi percabangan soal (*branching logic*), serta kelola opsi pilihan jawaban.
+3. **Kelola Kuesioner Prodi Override (`/superadmin/prodi-kuesioner`)**:
+   - Memilih prodi mana saja dan mengelola section, pertanyaan, dan opsi kuesioner spesifik prodi tersebut.
+4. **Kelola Instrumen Evaluasi Atasan (`/superadmin/evaluasi-atasan`)**:
+   - Menambah, mengubah, mengaktifkan/menonaktifkan, dan mengatur urutan butir pertanyaan pada formulir evaluasi pengguna lulusan.
+5. **Verifikasi Perusahaan Terpusat (`/superadmin/perusahaan`)**:
+   - Memvalidasi seluruh usulan perusahaan baru dari alumni semua fakultas dan program studi.
+6. **Sinkronisasi LinkedIn Terpusat (`/superadmin/linkedin-sync`)**:
+   - Menjalankan sinkronisasi profil LinkedIn baik per alumni maupun secara massal (*batch sync*).
+7. **Manajemen Akun Terpadu (`/superadmin/manajemen-akun`)**:
+   - Mengelola akun seluruh peran: Admin Fakultas, Admin Prodi, dan Akun Alumni.
+   - Mereset password akun ke tanggal lahir default serta mengirimkan email notifikasi.
+8. **Log Aktivitas & Audit Trail (`/superadmin/logs`)**:
+   - Melihat rekam jejak aktivitas (*action logs*) seluruh pengguna untuk keamanan dan audit sistem.
 
 ---
 
-## 6. User Flow: Publik / Anonim
+## 6. User Flow: Publik / Tamu (Guest)
 
-Pengunjung publik (calon mahasiswa, stakeholder, atau pengguna umum) dapat mengakses statistik publik tanpa perlu login.
+Pengunjung umum dapat mengakses halaman depan (Landing Page), formulir Evaluasi Pengguna Lulusan (via tautan token khusus), halaman login, serta fitur pemulihan kata sandi tanpa perlu registrasi akun mandiri.
 
 ### Diagram Mermaid: Publik Flow
 
 ```mermaid
 flowchart TD
-    A[Landing Page Tracer Study] --> B{Pilih Informasi}
-    B --> C[Lihat Portal Statistik Publik]
-    C --> C1[Visualisasi Tingkat Penyerapan Kerja]
-    C --> C2[Visualisasi Sebaran Bidang Kerja Alumni]
-    B --> D[Halaman Informasi & FAQ]
-    B --> E[Akses Login System]
+    A[Mulai: Akses URL Sistem Tracer Study] --> B{Pilih Rute Akses}
 
-    C1 --> F[Selesai]
-    C2 --> F
-    D --> F
-    E --> G[Masuk ke Flow Otentikasi]
+    B -->|Akses URL Utama /| C[Landing Page Beranda]
+    C --> C1[Lihat Informasi & Sambutan Tracer Study UKDW]
+    C --> C2[Lihat Panduan & Tujuan Pelacakan Lulusan]
+    C --> C3[Klik Tombol Masuk / Login]
+    C3 --> D[Halaman Login: /login]
+
+    B -->|Buka Tautan Email Atasan| E[Formulir Evaluasi Atasan: /evaluasi-atasan/token]
+    E --> E1[Akses Khusus Pengguna Lulusan Berbasis Token Unik]
+
+    B -->|Akses URL /login| D[Halaman Login Terpadu: /login]
+    D --> D1{Status Pengguna}
+    D1 -->|Ingat Password| D2[Input Username & Password -> Masuk ke Dashboard Sesuai Role]
+    D1 -->|Lupa Password| F[Halaman Lupa Sandi: /forgot-password]
+    F --> F1[Input Email Terdaftar]
+    F1 --> F2[Sistem Mengirim Tautan Reset ke Email]
+    F2 --> F3[Buka Tautan Email: /reset-password/token]
+    F3 --> F4[Input Password Baru -> Simpan & Redirect ke Login]
+    F4 --> D
 ```
+
+### Rincian Alur Publik / Tamu Sebenarnya:
+1. **Landing Page Beranda (`/`)**:
+   - Menampilkan profil sistem Tracer Study UKDW, sambutan resmi, informasi urgensi tracer study bagi peningkatan mutu dan akreditasi kampus, serta tautan menuju halaman login.
+2. **Evaluasi Atasan Publik Berbasis Token (`/evaluasi-atasan/{token}`)**:
+   - Tautan langsung dari email undangan resmi untuk pimpinan tempat alumni bekerja tanpa perlu membuat akun atau login.
+3. **Halaman Login Terpadu (`/login`)**:
+   - Satu pintu masuk otentikasi yang mengarahkan pengguna secara otomatis ke dashboard perannya masing-masing (Alumni, Admin Prodi, Admin Fakultas, Admin Biro 3, Superadmin).
+4. **Lupa & Reset Kata Sandi (`/forgot-password` & `/reset-password/{token}`)**:
+   - Alur mandiri untuk memulihkan kata sandi akun melalui email yang terdaftar.
 
 ---
 
 ## 7. User Flow: Atasan Langsung / Pengguna Lulusan (Public Token-Based Evaluation Flow)
 
-Pimpinan/atasan langsung di perusahaan tempat alumni bekerja dapat memberikan evaluasi kepuasan dan penilaian kinerja lulusan secara aman melalui tautan publik ber-token unik tanpa perlu registrasi atau login.
+Pimpinan/atasan langsung di perusahaan tempat alumni bekerja dapat memberikan evaluasi kepuasan dan penilaian kinerja lulusan secara aman melalui tautan publik ber-token unik tanpa perlu registrasi atau login akun.
 
 ### Diagram Mermaid: Evaluasi Atasan Flow
 
@@ -235,35 +417,35 @@ flowchart TD
     B --> C[Atasan Menerima Email dengan Tautan Unik Token]
     C --> D[Atasan Klik Tautan: /evaluasi-atasan/token]
     D --> E{Validasi Token Sistem}
-    E -- Token Tidak Valid/Kedaluwarsa --> F[Halaman 404 / Tautan Tidak Ditemukan]
-    E -- Token Valid --> G[Buka Formulir Evaluasi Full Page]
+    E -->|Token Tidak Valid / Kedaluwarsa| F[Halaman 404 / Tautan Tidak Ditemukan]
+    E -->|Token Valid| G[Buka Formulir Evaluasi Full Page]
     
     G --> H[Periksa Data Identitas Alumni Yang Dinilai]
-    G --> I[Bagian I: Lengkapi/Perbarui Profil Instansi & Kontak Atasan]
+    G --> I[Bagian I: Lengkapi / Perbarui Profil Instansi & Kontak Atasan]
     I --> J[Tersimpan Otomatis ke Master Tabel Perusahaan & Atasan]
     
     G --> K[Bagian II: Evaluasi Kesiapan & Kinerja Lulusan]
     K --> K1[Nilai Tingkat Kesiapan Alumni dalam Bekerja]
-    K --> K2[Nilai 12 Aspek Kinerja Lulusan pada Matriks Likert]
+    K --> K2[Nilai Aspek Kinerja Lulusan pada Matriks Likert]
     K --> K3[Tuliskan Catatan Tambahan / Saran Khusus Opsional]
     
     K1 & K2 & K3 --> L[Klik Tombol: Kirim Respon Evaluasi Kinerja]
     L --> M[Sistem Validasi Kelengkapan Jawaban]
-    M -- Ada Butir Terlewat --> N[SweetAlert2: Peringatan Aspek Belum Lengkap]
+    M -->|Ada Butir Terlewat| N[SweetAlert2: Peringatan Aspek Belum Lengkap]
     N --> K
-    M -- Lengkap --> O[Simpan Jawaban ke respon_evaluasi_atasan]
+    M -->|Lengkap| O[Simpan Jawaban ke respon_evaluasi_atasan]
     O --> P[Update evaluasi_atasan: is_submitted = true, submitted_at = now]
     P --> Q[Tampilkan Status Berhasil & Kartu Ucapan Terima Kasih Resmi]
     Q --> R[Selesai]
 ```
 
 ### Rincian Alur Atasan:
-1. **Pemicu Undangan**: Setiap kali alumni menyimpan data riwayat pekerjaan yang mencakup nama dan email atasan langsung di halaman profil, sistem secara otomatis menerbitkan record `evaluasi_atasan` dengan token 64 karakter unik dan mengirimkan surat undangan evaluasi resmi via email.
+1. **Pemicu Undangan**: Setiap kali alumni menyimpan data riwayat pekerjaan yang mencakup nama dan email atasan langsung di halaman profil (`/alumni/profile`), sistem secara otomatis menerbitkan record `evaluasi_atasan` dengan token 64 karakter unik dan mengirimkan surat undangan evaluasi resmi via email.
 2. **Akses Formulir Tanpa Hambatan**: Atasan membuka tautan langsung dari email (`/evaluasi-atasan/{token}`). Tidak dibutuhkan proses registrasi atau login akun.
 3. **Penyempurnaan Profil Instansi (Bagian I)**: Atasan dapat memverifikasi atau melengkapi nama instansi, alamat, no telp/fax, website, bentuk perusahaan, skala usaha, jumlah pegawai, jumlah alumni UKDW, dan standar gaji pertama. Data perusahaan dan atasan disinkronkan ke tabel master `perusahaan` dan `atasan`.
-4. **Penilaian Kesiapan & Kinerja Dinamis (Bagian II)**:
+4. **Penilaian Kesiapan & Kinerja (Bagian II)**:
    - Menilai tingkat kesiapan alumni dalam bekerja (pilihan ganda).
-   - Menilai 12 aspek kinerja utama (Integritas, Keahlian Ilmu, Komunikasi, Kerjasama Tim, Pengembangan Diri, Kreativitas, Bahasa Asing, Penggunaan Teknologi, Manajerial, Analisis, Laporan, Inovasi) pada tabel ber-header lengket (*sticky header*) yang tetap memuat nama alumni saat discroll.
+   - Menilai butir aspek kinerja lulusan pada tabel ber-header lengket (*sticky header*) yang memuat nama alumni.
    - Menyampaikan saran/masukan konstruktif untuk universitas.
 5. **Konfirmasi & Audit**: Respon tersimpan ke tabel `respon_evaluasi_atasan` dan status berubah menjadi *"Sudah Selesai Diisi"*.
 
@@ -271,18 +453,27 @@ flowchart TD
 
 ## Ringkasan Matriks Akses Peran (RBAC Matrix)
 
-| Fitur / Modul | Alumni | Admin Prodi | Admin Fakultas | Admin Biro III | Superadmin | Atasan (Token) | Publik |
+Matriks berikut mencerminkan hak akses aktual berdasarkan middleware peran (`role:superadmin`, `role:admin_biro3`, `role:admin_fakultas`, `role:admin_prodi`, `role:alumni`, dan rute publik) pada aplikasi:
+
+| Modul / Fitur Sistem | Alumni | Admin Prodi | Admin Fakultas | Admin Biro III | Superadmin | Atasan (Token) | Publik |
 | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| **Landing Page & Stats Publik** | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ | ✅ |
-| **Isi Kuesioner Alumni** | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
-| **Update Profile & Data Atasan** | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
-| **Isi Form Evaluasi Kinerja (Token)** | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ | ❌ |
-| **Monitoring Response Rate Prodi**| ❌ | ✅ | ✅ | ✅ | ✅ | ❌ | ❌ |
-| **Audit & Kelola Evaluasi Atasan** | ❌ | ❌ | ❌ | ❌ | ✅ | ❌ | ❌ |
-| **Validasi & Borang Akreditasi** | ❌ | ✅ | ✅ | ✅ | ✅ | ❌ | ❌ |
-| **Pengaturan Wave / Periode** | ❌ | ❌ | ❌ | ✅ | ✅ | ❌ | ❌ |
-| **Export Data Format DIKTI** | ❌ | ❌ | ❌ | ✅ | ✅ | ❌ | ❌ |
-| **User & Role Management** | ❌ | ❌ | ❌ | ❌ | ✅ | ❌ | ❌ |
+| **Landing Page & Beranda** (`/`) | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ | ✅ |
+| **Otentikasi Login & Reset Password** | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ | ✅ |
+| **Kelola Profil & Riwayat Kerja Sendiri** | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| **Isi Kuesioner Tracer Universitas** | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| **Isi Kuesioner Khusus Prodi** | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| **Isi Evaluasi Kinerja Lulusan (Token Publik)** | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ | ❌ |
+| **Dashboard Pemantauan Partisipasi** | Status Pribadi | Khusus Prodi | Khusus Fakultas | Universitas (KPI) | Universitas (Audit) | ❌ | ❌ |
+| **Direktori & Detail Data Alumni** | ❌ | Khusus Prodi | Khusus Fakultas | Seluruh Kampus | Seluruh Kampus | ❌ | ❌ |
+| **Ekspor Rekap Alumni ke Excel** | ❌ | Khusus Prodi | Khusus Fakultas | Seluruh Kampus | Seluruh Kampus | ❌ | ❌ |
+| **Kelola Kuesioner Khusus Prodi (Section/Soal)** | ❌ | ✅ (Prodi Sendiri) | ❌ | ❌ | ✅ (Semua Prodi) | ❌ | ❌ |
+| **Kelola Kuesioner Universitas & Section** | ❌ | ❌ | ❌ | ❌ | ✅ | ❌ | ❌ |
+| **Kelola Soal Evaluasi Atasan** | ❌ | ❌ | ❌ | ❌ | ✅ | ❌ | ❌ |
+| **Verifikasi Pengajuan Perusahaan Alumni** | ❌ | Khusus Prodi | Khusus Fakultas | ❌ | Seluruh Kampus | ❌ | ❌ |
+| **Sinkronisasi Profil LinkedIn Alumni** | ❌ | ❌ | ❌ | ✅ (Satuan) | ✅ (Satuan & Batch) | ❌ | ❌ |
+| **Manajemen Akun Alumni (Reset Sandi Default)** | ❌ | Khusus Prodi | Khusus Fakultas | ❌ | Seluruh Pengguna | ❌ | ❌ |
+| **Audit Trail & Log Aktivitas Sistem** | ❌ | ❌ | ❌ | ❌ | ✅ | ❌ | ❌ |
 
 ---
-*Dokumen ini dibuat untuk referensi alur pengguna (UX) Sistem Tracer Study.*
+*Dokumen ini diperbarui sesuai dengan konfigurasi rute, controller, dan hak akses riil pada basis kode Sistem Tracer Study.*
+
