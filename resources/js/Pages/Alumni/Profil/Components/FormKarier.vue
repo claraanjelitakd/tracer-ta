@@ -182,6 +182,16 @@ const selectRole = (newRole) => {
             props.form.posisi_wiraswasta = '';
         }
         autoFillAtasanOwner();
+    } else if (newRole === 'Tidak Bekerja' || newRole === 'Mencari Kerja' || newRole === 'Belum Bekerja') {
+        props.form.posisi_jabatan = null;
+        props.form.posisi_wiraswasta = null;
+        props.form.posisi_wiraswasta_lainnya = null;
+        props.form.gaji = null;
+        if (props.form.nama_atasan === props.form.nama || props.form.email_atasan === (props.form.email_pribadi || props.form.email)) {
+            props.form.nama_atasan = '';
+            props.form.email_atasan = '';
+            props.form.telepon_atasan = '';
+        }
     }
 };
 
@@ -908,12 +918,12 @@ onUnmounted(() => {
                         </label>
                     </div>
 
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-2">
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-2">
                         <!-- Opsi 1: Pekerja / Karyawan -->
                         <div 
                             @click="selectRole('Pekerja')"
                             class="p-4 rounded-2xl border-2 cursor-pointer transition-all flex flex-col justify-between relative group"
-                            :class="form.kategori_pekerjaan === 'Pekerja' ? 'border-[#005B3C] bg-emerald-50/80 text-gray-900 shadow-sm ring-2 ring-[#005B3C]/30' : (form.kategori_pekerjaan === 'Wiraswasta' ? 'border-gray-200 bg-white text-gray-600' : 'border-rose-300 bg-rose-50/20 text-gray-700')"
+                            :class="form.kategori_pekerjaan === 'Pekerja' ? 'border-[#005B3C] bg-emerald-50/80 text-gray-900 shadow-sm ring-2 ring-[#005B3C]/30' : (form.kategori_pekerjaan ? 'border-gray-200 bg-white text-gray-600' : 'border-rose-300 bg-rose-50/20 text-gray-700')"
                         >
                             <div class="flex items-center justify-between">
                                 <div class="font-extrabold text-sm" :class="form.kategori_pekerjaan === 'Pekerja' ? 'text-[#005B3C]' : 'text-gray-800'">
@@ -927,7 +937,7 @@ onUnmounted(() => {
                         <div 
                             @click="selectRole('Wiraswasta')"
                             class="p-4 rounded-2xl border-2 cursor-pointer transition-all flex flex-col justify-between relative group"
-                            :class="form.kategori_pekerjaan === 'Wiraswasta' ? 'border-[#005B3C] bg-emerald-50/80 text-gray-900 shadow-sm ring-2 ring-[#005B3C]/30' : (form.kategori_pekerjaan === 'Pekerja' ? 'border-gray-200 bg-white text-gray-600' : 'border-rose-300 bg-rose-50/20 text-gray-700')"
+                            :class="form.kategori_pekerjaan === 'Wiraswasta' ? 'border-[#005B3C] bg-emerald-50/80 text-gray-900 shadow-sm ring-2 ring-[#005B3C]/30' : (form.kategori_pekerjaan ? 'border-gray-200 bg-white text-gray-600' : 'border-rose-300 bg-rose-50/20 text-gray-700')"
                         >
                             <div class="flex items-center justify-between">
                                 <div class="font-extrabold text-sm" :class="form.kategori_pekerjaan === 'Wiraswasta' ? 'text-[#005B3C]' : 'text-gray-800'">
@@ -935,6 +945,20 @@ onUnmounted(() => {
                                 </div>
                             </div>
                             <div class="text-xs text-gray-500 mt-1.5 leading-relaxed">Mendirikan bisnis sendiri, startup, atau freelance</div>
+                        </div>
+
+                        <!-- Opsi 3: Tidak Bekerja / Mencari Kerja -->
+                        <div 
+                            @click="selectRole('Tidak Bekerja')"
+                            class="p-4 rounded-2xl border-2 cursor-pointer transition-all flex flex-col justify-between relative group"
+                            :class="['Tidak Bekerja', 'Mencari Kerja', 'Belum Bekerja', 'Belum Memungkinkan Bekerja'].includes(form.kategori_pekerjaan) ? 'border-[#005B3C] bg-emerald-50/80 text-gray-900 shadow-sm ring-2 ring-[#005B3C]/30' : (form.kategori_pekerjaan ? 'border-gray-200 bg-white text-gray-600' : 'border-rose-300 bg-rose-50/20 text-gray-700')"
+                        >
+                            <div class="flex items-center justify-between">
+                                <div class="font-extrabold text-sm" :class="['Tidak Bekerja', 'Mencari Kerja', 'Belum Bekerja', 'Belum Memungkinkan Bekerja'].includes(form.kategori_pekerjaan) ? 'text-[#005B3C]' : 'text-gray-800'">
+                                    Tidak Bekerja / Mencari Kerja
+                                </div>
+                            </div>
+                            <div class="text-xs text-gray-500 mt-1.5 leading-relaxed">Belum memungkinkan bekerja atau sedang mencari kerja</div>
                         </div>
                     </div>
                 </div>
@@ -1630,10 +1654,12 @@ onUnmounted(() => {
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
                 <div class="md:col-span-2">
-                    <label class="block text-xs sm:text-sm font-bold text-gray-700 mb-1.5">
+                    <label for="input_nama_atasan_langsung" class="block text-xs sm:text-sm font-bold text-gray-700 mb-1.5">
                         Nama Lengkap Atasan <span class="text-rose-500 font-bold">*</span>
                     </label>
                     <input 
+                        id="input_nama_atasan_langsung"
+                        name="nama_atasan"
                         type="text" 
                         v-model="form.nama_atasan" 
                         autocomplete="off"
@@ -1644,10 +1670,12 @@ onUnmounted(() => {
                 </div>
                 
                 <div>
-                    <label class="block text-xs sm:text-sm font-bold text-gray-700 mb-1.5">
+                    <label for="input_email_atasan_langsung" class="block text-xs sm:text-sm font-bold text-gray-700 mb-1.5">
                         Email Atasan <span class="text-rose-500 font-bold">*</span>
                     </label>
                     <input 
+                        id="input_email_atasan_langsung"
+                        name="email_atasan"
                         type="email" 
                         v-model="form.email_atasan" 
                         autocomplete="off"
@@ -1658,10 +1686,12 @@ onUnmounted(() => {
                 </div>
 
                 <div>
-                    <label class="block text-xs sm:text-sm font-bold text-gray-700 mb-1.5">
+                    <label for="input_telepon_atasan_langsung" class="block text-xs sm:text-sm font-bold text-gray-700 mb-1.5">
                         Nomor Telepon Atasan <span class="text-rose-500 font-bold">*</span>
                     </label>
                     <input 
+                        id="input_telepon_atasan_langsung"
+                        name="telepon_atasan"
                         type="tel" 
                         v-model="form.telepon_atasan" 
                         autocomplete="off"

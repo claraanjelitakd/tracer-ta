@@ -79,6 +79,8 @@ class KuesionerSyncService
                             || ($vStr === 'pekerja' && str_contains($optText, 'bekerja'))
                             || ($vStr === 'bekerja' && str_contains($optText, 'bekerja'))
                             || ($vStr === 'mencari kerja' && str_contains($optText, 'mencari kerja'))
+                            || ($vStr === 'tidak bekerja' && (str_contains($optText, 'mencari kerja') || str_contains($optText, 'belum memungkinkan')))
+                            || ($vStr === 'belum bekerja' && (str_contains($optText, 'mencari kerja') || str_contains($optText, 'belum memungkinkan')))
                             || ($vStr === 'belum memungkinkan bekerja' && str_contains($optText, 'belum memungkinkan'))
                             || ($vStr === 'melanjutkan pendidikan' && str_contains($optText, 'melanjutkan pendidikan'))
                             || ($vStr === 'wiraswasta' && str_contains($optText, 'wiraswasta'));

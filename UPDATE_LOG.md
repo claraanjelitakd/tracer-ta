@@ -1,6 +1,47 @@
 # UPDATE LOG - SERU (Sistem Ekosistem Rekam Jejak Alumni)
 
-## [2026-10-03] Fleksibilitas Verifikasi Master Perusahaan, Penggantian Terverifikasi, dan Pre-select Fakultas pada Manajemen Akun
+## [2026-10-05] Normalisasi Basis Data Evaluasi Atasan, Migrasi Create Murni, Kuesioner Dinamis Kesiapan Kerja, dan Full-Page Form Sticky Header
+
+### Ringkasan Pembaruan
+1. **Normalisasi Entitas Perusahaan, Atasan, dan Evaluasi Pengguna Lulusan**:
+   - **Eliminasi Redundansi**: Menghapus duplikasi kolom institusi/perusahaan dari tabel `evaluasi_atasan` (`nama_perusahaan`, `alamat_lengkap`, `no_telp_fax`, `bentuk_perusahaan`, `skala_perusahaan`, `jumlah_pegawai`).
+   - **Single Source of Truth**:
+     - Tabel `perusahaan`: Menyimpan `nama_perusahaan`, `alamat`, `no_telp_fax`, `homepage`, `skala` (*Lokal, Nasional, Internasional*), `bentuk_perusahaan` (*BUMN, Perusahaan Terbatas, Koperasi, CV, Firma*), dan `jumlah_pegawai` (*< 50 Orang, 51 - 100 Orang, ..., > 500 Orang*).
+     - Tabel `atasan`: Menyimpan data kontak pimpinan (`nama`, `email`, `telepon`).
+     - Tabel `evaluasi_atasan`: Hanya menyimpan transaksi sesi survei berbobot alumni UKDW (`jumlah_alumni_ukdw`, `standar_gaji_pertama`, `token`, `is_submitted`, `submitted_at`).
+   - **Kuesioner Dinamis Kesiapan Kerja**: Memindahkan butir `tingkat_kesiapan_kerja` dari kolom flat tabel evaluasi menjadi butir pertanyaan dinamis kuesioner pada tabel `pertanyaan_evaluasi_atasan` (tipe `pilihan_ganda`, 4 opsi) dan disimpan pada tabel `respon_evaluasi_atasan`.
+
+2. **Konsolidasi Migrasi "Create-Only" & Pembersihan File Patch**:
+   - **Migrasi Bersih & Terstruktur**:
+     - [`2026_09_01_171342_create_companies_table.php`](file:///c:/study/tracerstudy/database/migrations/2026_09_01_171342_create_companies_table.php): Definisi murni tabel `perusahaan` mencakup kolom baru `homepage`, `no_telp_fax`, `bentuk_perusahaan`, `jumlah_pegawai` dengan komentar skema lengkap.
+     - [`2026_10_05_120000_create_evaluasi_atasans_table.php`](file:///c:/study/tracerstudy/database/migrations/2026_10_05_120000_create_evaluasi_atasans_table.php): Definisi murni tabel `evaluasi_atasan`, `pertanyaan_evaluasi_atasan`, dan `respon_evaluasi_atasan` tanpa perlu patch alter/drop column tambahan.
+   - **Penghapusan File Migrasi Patch Usang**:
+     - Menghapus `database/migrations/2026_10_05_130000_update_evaluasi_atasan_and_perusahaan_tables.php`.
+     - Menghapus `database/migrations/2026_10_05_130500_remove_kuesioner_columns_from_evaluasi_atasan_table.php`.
+     - Menghapus `database/migrations/2026_10_05_135000_drop_skala_perusahaan_from_evaluasi_atasan_table.php`.
+   - **Sinkronisasi Status Migrasi**: Membersihkan riwayat tabel `migrations` sehingga `php artisan migrate:status` berstatus rapi dan seluruh batch valid.
+
+3. **Restrukturisasi Seeder Pertanyaan Evaluasi Atasan**:
+   - [`PertanyaanEvaluasiAtasanSeeder.php`](file:///c:/study/tracerstudy/database/seeders/PertanyaanEvaluasiAtasanSeeder.php):
+     - Butir Urutan 1 (`KES_1`): Tingkat Kesiapan Alumni dalam Bekerja (Tipe: `pilihan_ganda`, opsi: *Sangat siap*, *Cukup Siap*, *Kurang siap*, *Tidak siap*).
+     - Butir Urutan 2 s/d 13 (`ASP_01` s/d `ASP_12`): 12 Aspek Kinerja Lulusan UKDW (Tipe: `likert_5`, skala 1: Sangat Kurang s/d 5: Sangat Baik).
+   - Terdaftar resmi pada [`DatabaseSeeder.php`](file:///c:/study/tracerstudy/database/seeders/DatabaseSeeder.php).
+
+4. **Penyempurnaan Controller & Tampilan Full-Page Form dengan Sticky Header**:
+   - [`EvaluasiAtasanController.php`](file:///c:/study/tracerstudy/app/Http/Controllers/EvaluasiAtasanController.php):
+     - Method `show()`: Memuat profil perusahaan, atasan, biodata alumni, dan bank pertanyaan aktif secara terurut.
+     - Method `store()`: Menyimpan pembaruan profil perusahaan ke tabel `perusahaan`, profil pimpinan ke `atasan`, agregat survey ke `evaluasi_atasan`, serta perulangan penyimpanan jawaban kesiapan kerja & 12 aspek Likert ke `respon_evaluasi_atasan`.
+   - [`EvaluasiAtasanForm.vue`](file:///c:/study/tracerstudy/resources/js/Pages/Public/EvaluasiAtasanForm.vue):
+     - Tampilan korporat formal UKDW full-page publik tanpa menu navigasi internal alumni.
+     - **Sticky Table Header**: Header matriks penilaian 12 aspek kinerja lulusan tetap melayang (*sticky `top-0`*) saat tabel digulir ke bawah, dilengkapi badge tag nama dan prodi alumni yang sedang dinilai.
+
+5. **Pembaruan Dokumentasi Arsitektur & User Flow**:
+   - [`docs/user-flow.md`](file:///c:/study/tracerstudy/docs/user-flow.md): Menambahkan Seksi 7 (Alur Pengguna: Atasan Langsung / Pengguna Lulusan) lengkap dengan diagram alur Mermaid dan matriks hak akses RBAC.
+   - [`ERD.md`](file:///c:/study/tracerstudy/ERD.md): Memperbarui diagram Mermaid relasi, kamus data Modul Evaluasi Pengguna Lulusan (Seksi G), dan matriks relasi antar tabel.
+   - [`DAFTAR_PERTANYAAN_MAPPING.md`](file:///c:/study/tracerstudy/DAFTAR_PERTANYAAN_MAPPING.md): Memperbarui 4 pintu pengisian sistem dan memetakan struktur form Bagian I (Profil Perusahaan) dan Bagian II (13 Butir Kuesioner Evaluasi Kinerja + Catatan Khusus).
+   - Seluruh Feature Test pada [`EvaluasiAtasanTest.php`](file:///c:/study/tracerstudy/tests/Feature/EvaluasiAtasanTest.php) lulus 100% (3 skenario, 24 assertions).
+
+---
 
 ### Ringkasan Pembaruan
 1. **Fleksibilitas Pengelolaan Master Perusahaan (Aksi & Auto Replace)**:

@@ -653,14 +653,11 @@ const isSectionAnswered = (section) => {
     const visibleQuestions = questions.filter(q => q.type !== 'header' && isQuestionVisible(q.id));
     if (visibleQuestions.length === 0) return true;
 
-    // Jika ada butir yang secara eksplisit bertanda wajib
-    const requiredQuestions = visibleQuestions.filter(q => (q.wajib ?? q.is_required));
-    if (requiredQuestions.length > 0) {
-        return requiredQuestions.every(q => isQuestionAnswered(q));
-    }
+    // Seluruh pertanyaan terlihat yang tidak secara eksplisit bertanda opsional wajib terisi
+    const mandatoryQuestions = visibleQuestions.filter(q => !(q.is_optional || q.optional));
+    if (mandatoryQuestions.length === 0) return true;
 
-    // Jika tidak ada tanda wajib khusus, semua pertanyaan yang terlihat wajib dijawab agar seksi berstatus selesai
-    return visibleQuestions.every(q => isQuestionAnswered(q));
+    return mandatoryQuestions.every(q => isQuestionAnswered(q));
 };
 
 /**
@@ -672,7 +669,7 @@ const isSectionAnswered = (section) => {
 const isSectionCompleted = (index) => {
     const sec = props.questionnaire?.sections?.[index];
     if (!sec) return false;
-    return isSectionAnswered(sec) || completedSectionIndices.value.has(index);
+    return isSectionAnswered(sec);
 };
 
 /**
@@ -713,10 +710,7 @@ const syncSectionCompletion = () => {
 
 // Navigasi Section: Berpindah ke section tertentu via stepper
 const setSection = (index) => {
-    if (currentSection.value && isSectionAnswered(currentSection.value)) {
-        completedSectionIndices.value.add(activeSectionIndex.value);
-        saveCompletedSections();
-    }
+    syncSectionCompletion();
     activeSectionIndex.value = index;
     window.scrollTo({ top: 0, behavior: 'smooth' });
 };
@@ -725,10 +719,7 @@ const setSection = (index) => {
 const prevSection = () => {
     const vIdx = activeVisibleSectionIndex.value;
     if (vIdx > 0) {
-        if (currentSection.value && isSectionAnswered(currentSection.value)) {
-            completedSectionIndices.value.add(activeSectionIndex.value);
-            saveCompletedSections();
-        }
+        syncSectionCompletion();
         const prevSec = visibleSections.value[vIdx - 1];
         if (prevSec) {
             activeSectionIndex.value = prevSec.originalIndex;
@@ -745,8 +736,7 @@ const handleNextOrSubmit = () => {
             preserveScroll: true,
             preserveState: true,
             onSuccess: () => {
-                completedSectionIndices.value.add(activeSectionIndex.value);
-                saveCompletedSections();
+                syncSectionCompletion();
                 if (typeof window !== 'undefined') {
                     localStorage.removeItem(ANSWERS_STORAGE_KEY);
                     localStorage.removeItem(SECTION_STORAGE_KEY);
@@ -755,9 +745,7 @@ const handleNextOrSubmit = () => {
             }
         });
     } else {
-        // Tandai section saat ini selesai & langsung navigasi ke section berikutnya (Instan 1x klik)
-        completedSectionIndices.value.add(activeSectionIndex.value);
-        saveCompletedSections();
+        syncSectionCompletion();
 
         const vIdx = activeVisibleSectionIndex.value;
         if (vIdx < visibleSections.value.length - 1) {
@@ -773,7 +761,7 @@ const handleNextOrSubmit = () => {
             preserveScroll: true,
             preserveState: true,
             onSuccess: () => {
-                saveCompletedSections();
+                syncSectionCompletion();
             }
         });
     }

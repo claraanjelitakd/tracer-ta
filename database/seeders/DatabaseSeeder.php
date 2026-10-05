@@ -69,6 +69,7 @@ class DatabaseSeeder extends Seeder
             RefSubpertanyaanDetilSeeder::class,
             QuestionMappingSeeder::class,
             ProdiQuestionnaireSeeder::class,
+            PertanyaanEvaluasiAtasanSeeder::class,
         ]);
 
         // 5. Seed Data Khusus Pengujian Alumni (Joshua Andrean)

@@ -127,6 +127,9 @@ erDiagram
     biodata ||--o| data_orang_tua : "kontak wali (orang_tua_id/nim)"
     perusahaan ||--o{ biodata : "tempat bekerja (perusahaan_id)"
     atasan ||--o{ biodata : "atasan langsung (atasan_id)"
+    biodata ||--o{ evaluasi_atasan : "dievaluasi atasan (biodata_id)"
+    perusahaan ||--o{ evaluasi_atasan : "tempat alumni dinilai (perusahaan_id)"
+    atasan ||--o{ evaluasi_atasan : "penilai survey (atasan_id)"
 
     data_akademik {
         bigint id PK
@@ -247,8 +250,12 @@ erDiagram
         foreignId kabupaten_id FK "nullable, references kabupaten.id"
         text alamat "nullable"
         string kode_pos "15, nullable"
+        string homepage "nullable"
+        string no_telp_fax "nullable"
         string sektor "nullable"
         string skala "default Nasional (Lokal, Nasional, Internasional)"
+        string bentuk_perusahaan "nullable (BUMN, Perusahaan Terbatas, Koperasi, CV, Firma)"
+        string jumlah_pegawai "nullable (< 50, 51-100, 101-150, 151-300, 301-500, > 500 Orang)"
         enum status_verifikasi "Menunggu Verifikasi, Terverifikasi, Ditolak"
         enum jenis_lokasi "Dalam Negeri, Luar Negeri"
         string negara "default Indonesia"
@@ -394,6 +401,51 @@ erDiagram
         timestamp created_at
         timestamp updated_at
     }
+
+    %% ==========================================
+    %% 6. EVALUASI ATASAN / PENGGUNA LULUSAN
+    %% ==========================================
+    evaluasi_atasan ||--o{ respon_evaluasi_atasan : "memiliki jawaban (evaluasi_atasan_id)"
+    pertanyaan_evaluasi_atasan ||--o{ respon_evaluasi_atasan : "direferensikan (pertanyaan_id)"
+
+    evaluasi_atasan {
+        bigint id PK
+        bigint biodata_id FK "references biodata.id"
+        bigint perusahaan_id FK "nullable, references perusahaan.id"
+        bigint atasan_id FK "nullable, references atasan.id"
+        string token UK "64, token survei publik tanpa login"
+        boolean is_submitted "default false"
+        timestamp submitted_at "nullable"
+        string jumlah_alumni_ukdw "nullable (< 5, 6-10, 11-20, > 21 Orang)"
+        string standar_gaji_pertama "nullable (< 1jt, 1-1.5jt, ..., > 5jt)"
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    pertanyaan_evaluasi_atasan {
+        bigint id PK
+        string kategori "kesiapan_kerja, kinerja_lulusan"
+        string kode_aspek "20, nullable, e.g. KES_1, ASP_01..12"
+        string aspek_penilaian
+        text deskripsi "nullable"
+        string tipe "50, likert_5, pilihan_ganda, text, textarea"
+        json pilihan_jawaban "nullable, untuk opsi pilihan_ganda"
+        int urutan
+        boolean is_active "default true"
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    respon_evaluasi_atasan {
+        bigint id PK
+        bigint evaluasi_atasan_id FK "references evaluasi_atasan.id"
+        bigint pertanyaan_id FK "references pertanyaan_evaluasi_atasan.id"
+        int nilai "nullable, 1-5 untuk skala Likert"
+        text jawaban_teks "nullable, jawaban opsi pilihan ganda / teks bebas"
+        text catatan "nullable"
+        timestamp created_at
+        timestamp updated_at
+    }
 ```
 
 ---
@@ -452,8 +504,9 @@ erDiagram
 4. **`data_orang_tua`**: Kontak dan domisili orang tua/wali alumni (`nama_orang_tua`, `pekerjaan`, `nomor_telepon`, `alamat`, `kota`, `kabupaten_id`, `propinsi_id`, `kode_pos`).
 5. **`perusahaan`** & **`atasan`**:
    - Master data entitas institusi/perusahaan dan atasan alumni.
-   - Kolom verifikasi: `status_verifikasi` (`Menunggu Verifikasi`, `Terverifikasi`, `Ditolak`), `created_by_user_id` (FK ke `users.id` pengaju), `created_by_prodi_id` (FK ke `prodi.id` pengaju).
-   - Setiap pendaftaran baru perusahaan (baik manual maupun hasil sinkronisasi LinkedIn) selalu berstatus default `'Menunggu Verifikasi'`.
+   - Kolom perusahaan: `nama_perusahaan`, `alamat`, `kode_pos`, `homepage`, `no_telp_fax`, `sektor`, `skala` (`Lokal`, `Nasional`, `Internasional`), `bentuk_perusahaan` (`BUMN`, `Perusahaan Terbatas`, `Koperasi`, `CV`, `Firma`), `jumlah_pegawai` (`< 50 Orang`, `51 - 100 Orang`, `101 – 150 Orang`, `151 – 300 Orang`, `301 – 500 Orang`, `> 500 Orang`), `status_verifikasi` (`Menunggu Verifikasi`, `Terverifikasi`, `Ditolak`), `jenis_lokasi`, `negara`, `created_by_user_id`, `created_by_prodi_id`.
+   - Kolom atasan: `nama`, `email`, `telepon`.
+   - Menjadi *Single Source of Truth* informasi profil institusi tempat alumni berkarier sehingga tidak terjadi redundansi kolom pada instrumen evaluasi.
 
 ---
 
@@ -487,6 +540,23 @@ erDiagram
 
 ---
 
+### G. Modul Evaluasi Pengguna Lulusan (Atasan Langsung)
+1. **`evaluasi_atasan`** (Model: [`EvaluasiAtasan`](file:///c:/study/tracerstudy/app/Models/EvaluasiAtasan.php)):
+   - Sesi survei evaluasi tingkat kepuasan dan kinerja lulusan UKDW oleh pimpinan/atasan tempat alumni bekerja.
+   - Kolom: `id`, `biodata_id` (FK), `perusahaan_id` (FK), `atasan_id` (FK), `token` (Unique, 64-char URL token), `is_submitted` (boolean), `submitted_at` (datetime), `jumlah_alumni_ukdw` (rentang jumlah lulusan UKDW di perusahaan), `standar_gaji_pertama` (standar gaji awal alumni UKDW per bulan).
+   - Diakses publik tanpa perlu autentikasi login via `/evaluasi-atasan/{token}`.
+2. **`pertanyaan_evaluasi_atasan`** (Model: [`PertanyaanEvaluasiAtasan`](file:///c:/study/tracerstudy/app/Models/PertanyaanEvaluasiAtasan.php)):
+   - Bank butir instrumen evaluasi kepuasan atasan dinamis.
+   - Kolom: `id`, `kategori` (`kesiapan_kerja`, `kinerja_lulusan`), `kode_aspek`, `aspek_penilaian`, `deskripsi`, `tipe` (`pilihan_ganda`, `likert_5`, `text`, `textarea`), `pilihan_jawaban` (JSON array opsi), `urutan`, `is_active`.
+   - Memuat:
+     - 1 butir tingkat kesiapan kerja alumni (`Sangat siap`, `Cukup Siap`, `Kurang siap`, `Tidak siap`).
+     - 12 butir aspek kinerja lulusan (Etika, Keahlian Bidang Ilmu, Bhs Inggris, TI, Komunikasi, Kerja Tim, Pengembangan Diri, Kepemimpinan, Etos Kerja, Tanggung Jawab, Adaptasi, Inisiatif).
+3. **`respon_evaluasi_atasan`** (Model: [`ResponEvaluasiAtasan`](file:///c:/study/tracerstudy/app/Models/ResponEvaluasiAtasan.php)):
+   - Menyimpan rekaman butir jawaban dari pimpinan/atasan.
+   - Kolom: `id`, `evaluasi_atasan_id` (FK), `pertanyaan_id` (FK), `nilai` (1-5 untuk skala Likert), `jawaban_teks` (untuk butir pilihan ganda / teks bebas), `catatan` (masukan/saran khusus).
+
+---
+
 ## 3. Matriks Relasi Antar Tabel
 
 | Entitas Sumber (Parent) | Relasi | Entitas Tujuan (Child) | Foreign Key / Constraint | Deskripsi & Perilaku Relasi |
@@ -507,6 +577,11 @@ erDiagram
 | `ref_negara` | 1 : N | `perusahaan` | `perusahaan.negara = ref_negara.nama_negara` | Negara domisili kantor perusahaan internasional. |
 | `perusahaan` | 1 : N | `biodata` | `biodata.perusahaan_id` | Tempat instansi/perusahaan alumni bekerja. |
 | `atasan` | 1 : N | `biodata` | `biodata.atasan_id` | Atasan langsung alumni di tempat kerja. |
+| `biodata` | 1 : N | `evaluasi_atasan` | `evaluasi_atasan.biodata_id` | Sesi survei evaluasi kinerja alumni oleh atasan langsung. |
+| `perusahaan` | 1 : N | `evaluasi_atasan` | `evaluasi_atasan.perusahaan_id` | Profil institusi/perusahaan tempat alumni dievaluasi. |
+| `atasan` | 1 : N | `evaluasi_atasan` | `evaluasi_atasan.atasan_id` | Atasan penilai survei evaluasi kepuasan pengguna. |
+| `evaluasi_atasan` | 1 : N | `respon_evaluasi_atasan` | `respon_evaluasi_atasan.evaluasi_atasan_id` | Rekaman butir jawaban evaluasi atasan per survei. |
+| `pertanyaan_evaluasi_atasan` | 1 : N | `respon_evaluasi_atasan` | `respon_evaluasi_atasan.pertanyaan_id` | Referensi butir aspek penilaian/kesiapan kerja. |
 | `propinsi` | 1 : N | `kabupaten` | `kabupaten.propinsi_id` | Hierarki kewilayahan provinsi ke kabupaten/kota. |
 | `propinsi` | 1 : 1 | `ump` | `ump.kode_provinsi` | Standar UMP ketetapan pemerintah provinsi. |
 | `kuesioner` | 1 : N | `kelompok_pertanyaan` | `kelompok_pertanyaan.kuesioner_id` | Seksi/bagian dalam instrumen tracer study universitas. |

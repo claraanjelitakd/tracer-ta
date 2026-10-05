@@ -3,15 +3,20 @@
 namespace App\Http\Controllers\Alumni\Profil;
 
 use App\Http\Controllers\Controller;
+use App\Mail\UndanganEvaluasiAtasanMail;
 use App\Models\Atasan;
 use App\Models\DataAkademik;
 use App\Models\DataOrangTua;
+use App\Models\EvaluasiAtasan;
 use App\Models\LogActivity;
 use App\Models\Perusahaan;
 use App\Models\Yudisium;
 use App\Services\Kuesioner\KuesionerSyncService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Str;
 
 /**
  * SimpanProfilController
@@ -180,6 +185,7 @@ class SimpanProfilController extends Controller
                 ]);
                 $idAtasan = $atasan->id;
             }
+
         } else {
             $idAtasan = null;
         }
@@ -276,6 +282,39 @@ class SimpanProfilController extends Controller
 
         // Sinkronisasi otomatis ke tabel tracer kuesioner
         KuesionerSyncService::syncProfileResponses($biodata);
+
+        // Jika data atasan dan email atasan terisi, buat / sinkronkan token evaluasi publik & kirim email undangan
+        if ($idAtasan && $emailAtasan && filter_var($emailAtasan, FILTER_VALIDATE_EMAIL)) {
+            try {
+                $evaluasi = EvaluasiAtasan::firstOrCreate(
+                    ['biodata_id' => $biodata->id],
+                    [
+                        'perusahaan_id' => $biodata->perusahaan_id,
+                        'atasan_id' => $idAtasan,
+                        'token' => Str::random(40),
+                        'nama_perusahaan' => $biodata->perusahaan?->nama_perusahaan,
+                        'alamat_lengkap' => $biodata->perusahaan?->alamat,
+                    ]
+                );
+
+                $evaluasiUpdates = [];
+                if ($evaluasi->atasan_id !== $idAtasan) {
+                    $evaluasiUpdates['atasan_id'] = $idAtasan;
+                }
+                if ($biodata->perusahaan_id && $evaluasi->perusahaan_id !== $biodata->perusahaan_id) {
+                    $evaluasiUpdates['perusahaan_id'] = $biodata->perusahaan_id;
+                    $evaluasiUpdates['nama_perusahaan'] = $biodata->perusahaan?->nama_perusahaan;
+                    $evaluasiUpdates['alamat_lengkap'] = $biodata->perusahaan?->alamat;
+                }
+                if (! empty($evaluasiUpdates)) {
+                    $evaluasi->update($evaluasiUpdates);
+                }
+
+                Mail::to($emailAtasan)->send(new UndanganEvaluasiAtasanMail($biodata, $evaluasi));
+            } catch (\Throwable $e) {
+                Log::error('Gagal mengirim email evaluasi ke atasan: '.$e->getMessage());
+            }
+        }
 
         return redirect()->back()->with('success', 'Profil biodata berhasil diperbarui.');
     }

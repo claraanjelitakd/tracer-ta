@@ -21,9 +21,13 @@ class Perusahaan extends Model
         'propinsi_id',
         'kabupaten_id',
         'alamat',
+        'homepage',
+        'no_telp_fax',
         'kode_pos',
         'sektor',
         'skala',
+        'bentuk_perusahaan',
+        'jumlah_pegawai',
         'jenis_perusahaan',
         'jenis_perusahaan_lainnya',
         'jenis_lokasi',
@@ -53,6 +57,11 @@ class Perusahaan extends Model
     public function biodata()
     {
         return $this->hasMany(Biodata::class, 'perusahaan_id');
+    }
+
+    public function evaluasiAtasan()
+    {
+        return $this->hasMany(EvaluasiAtasan::class, 'perusahaan_id');
     }
 
     public function creator()

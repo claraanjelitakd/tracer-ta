@@ -21,11 +21,13 @@ use App\Http\Controllers\Alumni\Kuesioner\KuesionerProdiController;
 use App\Http\Controllers\Alumni\Kuesioner\SimpanJawabanController;
 use App\Http\Controllers\Alumni\Profil\ProfilController;
 use App\Http\Controllers\Alumni\Profil\SimpanProfilController;
+use App\Http\Controllers\EvaluasiAtasanController;
 use App\Http\Controllers\Otentikasi\LoginController;
 use App\Http\Controllers\Otentikasi\LupaKataSandiController;
 use App\Http\Controllers\Otentikasi\UbahKataSandiController;
 use App\Http\Controllers\SuperAdmin\KelolaAlumni\DaftarAlumniSuperAdminController;
 use App\Http\Controllers\SuperAdmin\KelolaAlumni\DetailAlumniSuperAdminController;
+use App\Http\Controllers\SuperAdmin\KelolaEvaluasiAtasanController;
 use App\Http\Controllers\SuperAdmin\KelolaPertanyaan\DaftarPertanyaanController;
 use App\Http\Controllers\SuperAdmin\KelolaPertanyaan\KelolaKuesionerProdiSuperAdminController;
 use App\Http\Controllers\SuperAdmin\KelolaPertanyaan\KelolaOpsiController;
@@ -40,9 +42,13 @@ use App\Http\Controllers\Tamu\BerandaController;
 use Illuminate\Support\Facades\Route;
 
 // =========================================================================
-// Rute Tamu (Guest)
+// Rute Tamu & Akses Publik (Guest / Public Token)
 // =========================================================================
 Route::get('/', [BerandaController::class, 'tampilkanBeranda']);
+
+// Public Route: Kuesioner Evaluasi Pengguna Lulusan / Atasan UKDW (Tanpa Login)
+Route::get('/evaluasi-atasan/{token}', [EvaluasiAtasanController::class, 'show'])->name('evaluasi-atasan.show');
+Route::post('/evaluasi-atasan/{token}', [EvaluasiAtasanController::class, 'store'])->name('evaluasi-atasan.store');
 
 Route::middleware('guest')->group(function () {
     Route::get('/login', [LoginController::class, 'tampilkanHalamanLogin'])->name('login');
@@ -252,6 +258,14 @@ Route::middleware('auth')->group(function () {
             Route::post('/superadmin/prodi-kuesioner/opsi', [KelolaKuesionerProdiSuperAdminController::class, 'storeOption'])->name('superadmin.prodi-kuesioner.opsi.store');
             Route::put('/superadmin/prodi-kuesioner/opsi/{id}', [KelolaKuesionerProdiSuperAdminController::class, 'updateOption'])->name('superadmin.prodi-kuesioner.opsi.update');
             Route::delete('/superadmin/prodi-kuesioner/opsi/{id}', [KelolaKuesionerProdiSuperAdminController::class, 'destroyOption'])->name('superadmin.prodi-kuesioner.opsi.destroy');
+
+            // Pengaturan Kuesioner Evaluasi Atasan (SuperAdmin)
+            Route::get('/superadmin/evaluasi-atasan', [KelolaEvaluasiAtasanController::class, 'index'])->name('superadmin.evaluasi-atasan.index');
+            Route::post('/superadmin/evaluasi-atasan/pertanyaan', [KelolaEvaluasiAtasanController::class, 'storeQuestion'])->name('superadmin.evaluasi-atasan.pertanyaan.store');
+            Route::put('/superadmin/evaluasi-atasan/pertanyaan/{id}', [KelolaEvaluasiAtasanController::class, 'updateQuestion'])->name('superadmin.evaluasi-atasan.pertanyaan.update');
+            Route::patch('/superadmin/evaluasi-atasan/pertanyaan/{id}/toggle', [KelolaEvaluasiAtasanController::class, 'toggleQuestion'])->name('superadmin.evaluasi-atasan.pertanyaan.toggle');
+            Route::delete('/superadmin/evaluasi-atasan/pertanyaan/{id}', [KelolaEvaluasiAtasanController::class, 'destroyQuestion'])->name('superadmin.evaluasi-atasan.pertanyaan.destroy');
+            Route::post('/superadmin/evaluasi-atasan/pertanyaan/reorder', [KelolaEvaluasiAtasanController::class, 'reorderQuestions'])->name('superadmin.evaluasi-atasan.pertanyaan.reorder');
 
             // Log Aktivitas / Audit Trail Sistem
             Route::get('/superadmin/logs', [LogAktivitasController::class, 'index'])->name('superadmin.logs.index');
