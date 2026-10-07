@@ -248,5 +248,37 @@ class SuperAdminDaftarAlumniTest extends TestCase
         $content = $response->streamedContent();
         $this->assertStringContainsString('Kode', $content);
         $this->assertStringContainsString('Respon / Jawaban Alumni', $content);
+        $this->assertStringContainsString('Hasil Evaluasi Atasan', $content);
+    }
+
+    /**
+     * Test superadmin dapat mengunduh arsip ZIP berisi Excel per alumni untuk program studi dan tahun tertentu.
+     */
+    public function test_superadmin_can_export_zip_per_prodi_and_tahun(): void
+    {
+        $response = $this->actingAs($this->superadmin)
+            ->get(route('superadmin.alumni.export-zip', [
+                'prodi_id' => $this->prodi->id,
+                'tahun' => '2024',
+            ]));
+
+        $response->assertStatus(200);
+        $response->assertHeader('content-type', 'application/zip');
+    }
+
+    /**
+     * Test detail alumni memuat data evaluasi atasan dan kuesionernya.
+     */
+    public function test_superadmin_detail_alumni_includes_evaluasi_atasan(): void
+    {
+        $response = $this->actingAs($this->superadmin)
+            ->get(route('superadmin.alumni.show', $this->alumni->id));
+
+        $response->assertStatus(200);
+        $response->assertInertia(fn (Assert $page) => $page
+            ->component('SuperAdmin/Alumni/Show')
+            ->has('evaluasiAtasan')
+            ->has('pertanyaanEvaluasiAtasan')
+        );
     }
 }

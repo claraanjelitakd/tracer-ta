@@ -1065,4 +1065,28 @@ lulusan tahun 2026:
   * 5 alumni memiliki `linkedin_username` untuk keperluan pengujian Sinkronisasi LinkedIn Super Admin.
   * Menjalankan seeder:
     `php artisan db:seed --class=Lulusan2026Seeder`
+
+----------------------------------------------------------------------------------------------------
+F. NAVIGASI DUA ARAH DETAIL ALUMNI & LINKEDIN SYNC, SERTA STANDARISASI SKILLS & EXPERIENCE
+----------------------------------------------------------------------------------------------------
+1. Deep Linking Terarah dari Detail Alumni:
+   - File UI: `resources/js/Pages/SuperAdmin/Alumni/Show.vue`
+   - Banner "Audit & Trace Hasil Scraping LinkedIn" kini mengarahkan tautan logo & tombol ke:
+     `/superadmin/linkedin-sync?alumni_id={id}&search={nim}`
+   - Controller `LinkedInSyncController.php` mendeteksi parameter `alumni_id` dan secara otomatis
+     menyesuaikan filter tahun kelulusan aktif sesuai tahun lulus target alumni.
+   - Komponen `Index.vue` mengaktifkan pencarian, memfokuskan baris dengan ring highlight hijau
+     emerald dan badge "Profil Dipilih", serta melakukan auto-scroll ke baris alumni tersebut.
+
+2. Tombol Aksi Cepat Ikon Mata di LinkedIn Sync:
+   - File UI: `resources/js/Pages/SuperAdmin/LinkedIn/Index.vue`
+   - Kolom "Aksi" pada tabel alumni menyematkan tombol ikon mata (Detail Alumni) yang mengarahkan
+     langsung ke `/superadmin/alumni/{id}` (contoh: `/superadmin/alumni/23`) pada kedua mode (Apify & Official).
+
+3. Standarisasi Kolom `skills` & `experience` pada Tabel `biodata`:
+   - Migrasi: `2026_10_08_000000_rename_minat_and_expert_to_experience_and_skills_in_biodata_table.php`
+   - `expert` diganti menjadi `skills` (daftar keahlian teknis alumni).
+   - `minat` diganti menjadi `experience` (riwayat pengalaman kerja & profesional alumni).
+   - Replikasi otomatis ke View SQL `v_alumni_profile_summary` dan `v_alumni_audit_rekap`.
 ====================================================================================================
+

@@ -114,8 +114,10 @@ class ProfilController extends Controller
             'linkedin_url' => $biodata?->linkedin_url ?? '',
             'linkedin_username' => $biodata?->linkedin_username ?? '',
 
-            'expert' => $biodata?->expert ?? '',
-            'minat' => $biodata?->minat ?? '',
+            'skills' => $biodata?->skills ?? $biodata?->expert ?? '',
+            'experience' => $biodata?->experience ?? $biodata?->minat ?? '',
+            'expert' => $biodata?->skills ?? $biodata?->expert ?? '',
+            'minat' => $biodata?->experience ?? $biodata?->minat ?? '',
             'kategori_pekerjaan' => $biodata?->kategori_pekerjaan ?? '',
             'posisi_jabatan' => $biodata?->posisi_jabatan ?? '',
             'posisi_wiraswasta' => $biodata?->posisi_wiraswasta ?? '',

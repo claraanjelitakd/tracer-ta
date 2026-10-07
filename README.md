@@ -373,6 +373,17 @@ LINKEDIN_MOCK_PATH=storage/app/mock/linkedin
 - **Proteksi Data Otoritatif**: Field otoritatif alumni (NIM, NIK, NPWP, email pribadi, nomor telepon, alamat domisili, dan riwayat akademik) tidak pernah ditimpa oleh data LinkedIn.
 - **Audit Trail**: Seluruh aktivitas sinkronisasi dicatat ke tabel `log_activities` melalui `LogActivity::record()` dengan aksi `'linkedin_sync'`.
 
+### G. Navigasi Dua Arah & Deep Linking Terarah (Detail Alumni ⇄ LinkedIn Sync)
+- **Deep Linking dari Detail Alumni (`/superadmin/alumni/{id}`)**:
+  - Pada banner "Audit & Trace Hasil Scraping LinkedIn", klik pada logo LinkedIn maupun tombol "Buka Menu LinkedIn Sync &rarr;" langsung mengarahkan ke `/superadmin/linkedin-sync?alumni_id={id}&search={nim}`.
+  - `LinkedInSyncController` secara otomatis mendeteksi tahun kelulusan target alumni sehingga data alumni pasti termuat dalam hasil kueri tanpa terhalang filter tahun default.
+  - Komponen Vue mengaktifkan pencarian otomatis, memberikan sorotan visual cincin hijau emerald (*ring highlight* dengan badge "Profil Dipilih"), dan melakukan *auto-scroll* mulus ke baris alumni terkait.
+- **Tombol Aksi Cepat Ikon Mata di LinkedIn Sync**:
+  - Pada setiap baris data tabel alumni di modul LinkedIn Sync (`/superadmin/linkedin-sync`), tersedia tombol aksi dengan ikon mata (*Lihat Detail Alumni*).
+  - Mengarahkan Super Admin langsung ke halaman Detail Alumni lengkap (`/superadmin/alumni/{id}`) untuk audit lembar jawaban kuesioner universitas, kuesioner prodi, kuesioner atasan, dan tab audit trace LinkedIn.
+- **Standarisasi Kolom `skills` & `experience`**:
+  - Tabel `biodata` menggunakan kolom terstandarisasi `skills` (daftar keahlian teknis) dan `experience` (riwayat pengalaman kerja), menggantikan penamaan lama (`expert` dan `minat`), terintegrasi dengan view database `v_alumni_profile_summary` dan `v_alumni_audit_rekap`.
+
 ---
 
 ## 6. Modularisasi Komponen Vue Alumni

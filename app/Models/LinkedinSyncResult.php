@@ -271,6 +271,7 @@ class LinkedinSyncResult extends Model
             'about' => $about,
             'location' => $location,
             'experience' => $experienceList,
+            'experiences' => $experienceList,
             'education' => $educationList,
             'skills' => $skillsList,
             'current_job' => $currentJob,

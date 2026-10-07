@@ -2,6 +2,13 @@
 
 Semua perubahan besar pada sistem dicatat dalam dokumen ini.
 
+## [2026-10-08]
+- **Deep Linking Terarah Detail Alumni ke LinkedIn Sync**: Menghubungkan banner *Audit & Trace Hasil Scraping LinkedIn* pada Detail Alumni (`/superadmin/alumni/{id}`) langsung ke `/superadmin/linkedin-sync?alumni_id={id}&search={nim}` dengan auto-select tahun lulus alumni, filter pencarian otomatis, highlight cincin hijau emerald ("Profil Dipilih"), dan auto-scroll viewport ke baris profil alumni.
+- **Tombol Aksi Cepat Ikon Mata di LinkedIn Sync**: Menyematkan tombol aksi ikon mata pada setiap baris alumni di tabel LinkedIn Sync (`/superadmin/linkedin-sync`) untuk navigasi instan ke halaman Detail Alumni lengkap (`/superadmin/alumni/{id}`).
+- **Standarisasi Kolom `skills` & `experience`**: Melakukan migrasi penggantian nama kolom `expert` menjadi `skills` dan `minat` menjadi `experience` pada tabel `biodata`, serta mereplikasi pembaruan pada view database `v_alumni_profile_summary` dan `v_alumni_audit_rekap`.
+- **Ekspor Excel & ZIP per Prodi**: Penyempurnaan ekspor data profil dan lembar evaluasi atasan ke format spreadsheet Excel per prodi pada filter tahun terbaru.
+- **Automated Testing & Code Quality**: 123 automated feature & unit tests lulus (745 assertions), linting Pint agent lulus, dan Vite build sukses tanpa kendala.
+
 ## [2026-10-06]
 - **Integrasi Apify LinkedIn Provider & Multi-Provider Architecture**: Menambahkan driver `ApifyLinkedInProvider` untuk integrasi web scraping pihak ketiga menggunakan Actor `data_forge_org~linkedin-scraper` via autentikasi aman Bearer token (`APIFY_API_TOKEN`). Mendukung pemilihan driver via `LINKEDIN_PROVIDER=official`, `LINKEDIN_PROVIDER=apify`, atau `LINKEDIN_DRIVER=mock` di `.env`.
 - **Tabel Staging & Histori Audit (`linkedin_sync_results`)**: Hasil scraping diisolasi ke tabel staging `linkedin_sync_results` berstatus `pending` lengkap dengan payload mentah JSON (`raw_response`), parameter input (`input_params`), perbandingan data (`mapped_data`), serta jejak auditor (`reviewed_by`, `reviewed_at`).

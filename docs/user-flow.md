@@ -313,14 +313,20 @@ flowchart TD
     C --> G[4. Direktori Alumni & Ekspor: /superadmin/alumni]
     G --> G1[Audit Data Profil & Respon Seluruh Alumni Kampus]
     G1 --> G2[Perbarui Profil Alumni & Ekspor ke Excel: /export-excel]
+    G1 --> G3[Akses Detail Alumni: /superadmin/alumni/id]
+    G3 --> G4[Audit Kuesioner Univ, Prodi, Evaluasi Atasan & Trace LinkedIn]
+    G4 -->|Klik Logo / Tombol LinkedIn Banner| I
 
     C --> H[5. Verifikasi Perusahaan Tingkat Pusat: /superadmin/perusahaan]
     H --> H1[Daftar Pengajuan Perusahaan dari Seluruh Alumni]
     H1 --> H2[Tindakan: Setujui /verify, Tolak /reject, Ganti /replace, Edit /update]
 
     C --> I[6. Sinkronisasi LinkedIn Terpusat: /superadmin/linkedin-sync]
-    I --> I1[Sinkronisasi Satuan per Alumni: POST /single]
-    I --> I2[Sinkronisasi Batch / Massal Seluruh Alumni: POST /batch]
+    I --> I1[Auto-Filter Tahun Lulus & Highlight Profil Dipilih via Param alumni_id]
+    I --> I2[Sinkronisasi Satuan per Alumni: POST /single]
+    I --> I3[Sinkronisasi Batch / Massal Seluruh Alumni: POST /batch]
+    I --> I4[Aksi Ikon Mata Detail Alumni: Klik menuju /superadmin/alumni/id]
+    I4 -->|Navigasi Cepat Detail| G3
 
     C --> J[7. Manajemen Akun Terpadu: /superadmin/manajemen-akun]
     J --> J1[Kelola Akun Admin Fakultas, Admin Prodi, dan Mahasiswa]
@@ -335,7 +341,7 @@ flowchart TD
     F2 --> Z
     G2 --> Z
     H2 --> Z
-    I2 --> Z
+    I3 --> Z
     J3 --> Z
     K1 --> Z
 ```
@@ -353,12 +359,20 @@ flowchart TD
    - Menambah, mengubah, mengaktifkan/menonaktifkan, dan mengatur urutan butir pertanyaan pada formulir evaluasi pengguna lulusan.
 5. **Verifikasi Perusahaan Terpusat (`/superadmin/perusahaan`)**:
    - Memvalidasi seluruh usulan perusahaan baru dari alumni semua fakultas dan program studi.
-6. **Sinkronisasi LinkedIn Terpusat (`/superadmin/linkedin-sync`)**:
-   - Menjalankan sinkronisasi profil LinkedIn baik per alumni maupun secara massal (*batch sync*).
-7. **Manajemen Akun Terpadu (`/superadmin/manajemen-akun`)**:
+6. **Direktori Alumni Se-Universitas & Audit Detail (`/superadmin/alumni`)**:
+   - Menelusuri seluruh data alumni lintas prodi dan fakultas dengan filter tahun kelulusan terbaru atau spesifik.
+   - Mengunduh rekapitulasi data profil dan kuesioner alumni ke berkas Excel (`.xls` / `.zip` per prodi).
+   - **Halaman Detail Alumni (`/superadmin/alumni/{id}`)**: Memeriksa tab detail profil lengkap, lembar audit jawaban kuesioner universitas, kuesioner prodi, kuesioner evaluasi atasan, serta tab Audit & Trace Scraping LinkedIn.
+   - **Tautan Terarah ke Profil LinkedIn**: Pada banner audit LinkedIn, Superadmin dapat mengklik logo LinkedIn atau tombol "Buka Menu LinkedIn Sync &rarr;". Tautan ini membawa parameter query `alumni_id={id}&search={nim}` yang langsung mengarahkan dan memfokuskan baris alumni tersebut di halaman LinkedIn Sync.
+7. **Sinkronisasi LinkedIn Terpusat (`/superadmin/linkedin-sync`)**:
+   - **Deteksi Otomatis & Deep Linking**: Jika halaman diakses dari Detail Alumni (`alumni_id`), sistem otomatis memilih tab tahun kelulusan alumni terkait, menerapkan filter teks, memberi sorotan cincin emerald (*pulse badge* "Profil Dipilih"), dan menggulirkan posisi layar (*auto-scroll*) tepat ke baris alumni tersebut.
+   - **Aksi Cepat Ikon Mata**: Pada setiap baris data alumni (baik mode Apify maupun Official Provider), tersedia tombol aksi dengan ikon mata (*Lihat Detail Alumni*) untuk membuka halaman `/superadmin/alumni/{id}` secara instan.
+   - **Sinkronisasi Satuan & Staging Review**: Menjalankan ekstraksi data LinkedIn via Apify atau API resmi, meninjau perbandingan data staging di modal review, menyetujui (*Approve*) data agar tersimpan ke tabel `biodata` (termasuk foto fisik, posisi jabatan, perusahaan, skills, dan experience), atau menolak (*Reject*).
+   - **Sinkronisasi Batch**: Memproses antrean sinkronisasi secara massal untuk mode Official Provider.
+8. **Manajemen Akun Terpadu (`/superadmin/manajemen-akun`)**:
    - Mengelola akun seluruh peran: Admin Fakultas, Admin Prodi, dan Akun Alumni.
    - Mereset password akun ke tanggal lahir default serta mengirimkan email notifikasi.
-8. **Log Aktivitas & Audit Trail (`/superadmin/logs`)**:
+9. **Log Aktivitas & Audit Trail (`/superadmin/logs`)**:
    - Melihat rekam jejak aktivitas (*action logs*) seluruh pengguna untuk keamanan dan audit sistem.
 
 ---

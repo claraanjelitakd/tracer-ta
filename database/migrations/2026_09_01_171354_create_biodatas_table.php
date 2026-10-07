@@ -59,9 +59,9 @@ return new class extends Migration
                 $table->text('linkedin_url')->nullable();
                 $table->text('linkedin_username')->nullable();
 
-                // Keahlian & Minat
-                $table->text('expert')->nullable()->comment('Keahlian spesifik');
-                $table->text('minat')->nullable()->comment('Minat bidang kerja');
+                // Keahlian & Pengalaman Kerja (LinkedIn Compatible)
+                $table->text('skills')->nullable()->comment('Keahlian / Skills spesifik');
+                $table->text('experience')->nullable()->comment('Pengalaman kerja / Experience');
 
                 // Data Karier & Tracer Pekerjaan
                 $table->foreignId('perusahaan_id')->nullable()->constrained('perusahaan')->nullOnDelete()->comment('Perusahaan tempat bekerja');

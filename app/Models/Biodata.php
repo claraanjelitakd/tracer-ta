@@ -99,6 +99,8 @@ class Biodata extends Model
         'facebook_url',
         'linkedin_url',
         'linkedin_username',
+        'skills',
+        'experience',
         'expert',
         'minat',
         'perusahaan_id',
@@ -221,6 +223,22 @@ class Biodata extends Model
     }
 
     /**
+     * Relasi ke Evaluasi Atasan / Pengguna Lulusan Terakhir.
+     */
+    public function evaluasiAtasan()
+    {
+        return $this->hasOne(EvaluasiAtasan::class, 'biodata_id')->latestOfMany();
+    }
+
+    /**
+     * Relasi ke Seluruh Riwayat Evaluasi Atasan.
+     */
+    public function allEvaluasiAtasan()
+    {
+        return $this->hasMany(EvaluasiAtasan::class, 'biodata_id');
+    }
+
+    /**
      * Relasi ke Log Aktivitas Sinkronisasi LinkedIn Terakhir (Audit Trail).
      */
     public function latestLinkedinSyncLog()
@@ -256,7 +274,7 @@ class Biodata extends Model
      */
     public function getNamaAttribute(): ?string
     {
-        return $this->dataAkademik?->nama;
+        return $this->dataAkademik?->nama ?? $this->user?->name;
     }
 
     /**
@@ -355,6 +373,38 @@ class Biodata extends Model
     public function getNoBpjsAttribute(): ?string
     {
         return $this->dataAkademik?->no_bpjs;
+    }
+
+    /**
+     * Alias backwards-compatible: get expert -> skills.
+     */
+    public function getExpertAttribute(): ?string
+    {
+        return $this->attributes['skills'] ?? null;
+    }
+
+    /**
+     * Alias backwards-compatible: set expert -> skills.
+     */
+    public function setExpertAttribute($value): void
+    {
+        $this->attributes['skills'] = $value;
+    }
+
+    /**
+     * Alias backwards-compatible: get minat -> experience.
+     */
+    public function getMinatAttribute(): ?string
+    {
+        return $this->attributes['experience'] ?? null;
+    }
+
+    /**
+     * Alias backwards-compatible: set minat -> experience.
+     */
+    public function setMinatAttribute($value): void
+    {
+        $this->attributes['experience'] = $value;
     }
 
     // =========================================================================

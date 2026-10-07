@@ -130,6 +130,8 @@ erDiagram
     biodata ||--o{ evaluasi_atasan : "dievaluasi atasan (biodata_id)"
     perusahaan ||--o{ evaluasi_atasan : "tempat alumni dinilai (perusahaan_id)"
     atasan ||--o{ evaluasi_atasan : "penilai survey (atasan_id)"
+    biodata ||--o{ linkedin_sync_results : "riwayat staging scraping linkedin (biodata_id)"
+    users ||--o{ linkedin_sync_results : "direview oleh superadmin (reviewed_by)"
 
     data_akademik {
         bigint id PK
@@ -211,8 +213,8 @@ erDiagram
         text facebook_url "nullable"
         text linkedin_url "nullable"
         text linkedin_username "nullable"
-        text expert "nullable (Keahlian spesifik)"
-        text minat "nullable (Minat bidang kerja)"
+        text skills "nullable (Keahlian spesifik / LinkedIn Skills)"
+        text experience "nullable (Pengalaman kerja / LinkedIn Experiences)"
         bigint perusahaan_id FK "nullable, references perusahaan.id"
         bigint atasan_id FK "nullable, references atasan.id"
         string kategori_pekerjaan "Pekerja, Wiraswasta, Melanjutkan Pendidikan"
@@ -224,6 +226,21 @@ erDiagram
         decimal gaji "15,2, nullable (Take Home Pay)"
         string jenis_pekerjaan "500, nullable"
         string zipcode "nullable (Kode pos lokasi kerja)"
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    linkedin_sync_results {
+        bigint id PK
+        bigint biodata_id FK "references biodata.id"
+        string status "pending, approved, rejected"
+        text linkedin_url
+        string linkedin_username "nullable"
+        json scraped_data "nullable (JSON mentah scraping Apify)"
+        timestamp scraped_at "nullable"
+        bigint reviewed_by FK "nullable, references users.id"
+        timestamp reviewed_at "nullable"
+        text review_notes "nullable"
         timestamp created_at
         timestamp updated_at
     }
@@ -500,7 +517,7 @@ erDiagram
      - Kontak Pribadi: `email_pribadi` (digunakan untuk login dan notifikasi reset password), `nomor_telepon`.
      - Domisili Terkini: `alamat`, `kelurahan`, `kecamatan`, `kabupaten_id`, `propinsi_id`, `kode_pos`.
      - Perpajakan & Medsos: `nik`, `npwp`, `instagram_url`, `facebook_url`, `linkedin_url`, `linkedin_username`.
-     - Portofolio & Karier: `expert`, `minat`, `kategori_pekerjaan` (`Pekerja`, `Wiraswasta`, `Melanjutkan Pendidikan`), `posisi_jabatan`, `posisi_wiraswasta`, `pendidikan_tingkat`, `perguruan_tinggi`, `pendidikan_prodi`, `gaji`, `jenis_pekerjaan`, `zipcode`.
+     - Portofolio & Karier: `skills`, `experience`, `kategori_pekerjaan` (`Pekerja`, `Wiraswasta`, `Melanjutkan Pendidikan`), `posisi_jabatan`, `posisi_wiraswasta`, `pendidikan_tingkat`, `perguruan_tinggi`, `pendidikan_prodi`, `gaji`, `jenis_pekerjaan`, `zipcode`.
 4. **`data_orang_tua`**: Kontak dan domisili orang tua/wali alumni (`nama_orang_tua`, `pekerjaan`, `nomor_telepon`, `alamat`, `kota`, `kabupaten_id`, `propinsi_id`, `kode_pos`).
 5. **`perusahaan`** & **`atasan`**:
    - Master data entitas institusi/perusahaan dan atasan alumni.
@@ -557,6 +574,14 @@ erDiagram
 
 ---
 
+### H. Modul Integrasi & Sinkronisasi LinkedIn
+1. **`linkedin_sync_results`** (Model: [`LinkedinSyncResult`](file:///c:/study/tracerstudy/app/Models/LinkedinSyncResult.php)):
+   - Tabel staging penampung hasil penarikan (*scraping*) data profil profesional alumni via LinkedIn Provider (Apify Actor / Official API).
+   - Kolom: `id`, `biodata_id` (FK ke `biodata.id`), `status` (`pending`, `approved`, `rejected`), `linkedin_url`, `linkedin_username`, `scraped_data` (JSON mentah lengkap profil), `scraped_at` (datetime), `reviewed_by` (FK ke `users.id`), `reviewed_at` (datetime), `review_notes` (catatan revisi/penolakan).
+   - Menjamin isolasi data mentah scraping sebelum disetujui (*Approve*) oleh Super Admin untuk masuk ke tabel profil `biodata`.
+
+---
+
 ## 3. Matriks Relasi Antar Tabel
 
 | Entitas Sumber (Parent) | Relasi | Entitas Tujuan (Child) | Foreign Key / Constraint | Deskripsi & Perilaku Relasi |
@@ -582,6 +607,8 @@ erDiagram
 | `atasan` | 1 : N | `evaluasi_atasan` | `evaluasi_atasan.atasan_id` | Atasan penilai survei evaluasi kepuasan pengguna. |
 | `evaluasi_atasan` | 1 : N | `respon_evaluasi_atasan` | `respon_evaluasi_atasan.evaluasi_atasan_id` | Rekaman butir jawaban evaluasi atasan per survei. |
 | `pertanyaan_evaluasi_atasan` | 1 : N | `respon_evaluasi_atasan` | `respon_evaluasi_atasan.pertanyaan_id` | Referensi butir aspek penilaian/kesiapan kerja. |
+| `biodata` | 1 : N | `linkedin_sync_results` | `linkedin_sync_results.biodata_id` | Riwayat staging dan ekstraksi profil LinkedIn per alumni. |
+| `users` | 1 : N | `linkedin_sync_results` | `linkedin_sync_results.reviewed_by` | Akun Super Admin peninjau dan penyetuju data scraping LinkedIn. |
 | `propinsi` | 1 : N | `kabupaten` | `kabupaten.propinsi_id` | Hierarki kewilayahan provinsi ke kabupaten/kota. |
 | `propinsi` | 1 : 1 | `ump` | `ump.kode_provinsi` | Standar UMP ketetapan pemerintah provinsi. |
 | `kuesioner` | 1 : N | `kelompok_pertanyaan` | `kelompok_pertanyaan.kuesioner_id` | Seksi/bagian dalam instrumen tracer study universitas. |

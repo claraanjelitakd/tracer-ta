@@ -3,7 +3,10 @@
 namespace App\Http\Controllers\SuperAdmin\KelolaAlumni;
 
 use App\Http\Controllers\Controller;
+use App\Models\Biodata;
+use App\Models\EvaluasiAtasan;
 use App\Models\Prodi;
+use App\Services\Export\AlumniTracerExcelExporter;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
@@ -14,8 +17,8 @@ use Inertia\Response;
  *
  * Fungsi:
  * Menampilkan daftar seluruh alumni terpadu untuk Super Admin lengkap dengan filter Prodi,
- * Tahun Kelulusan, Semester Lulus, Pencarian Nama/NIM, serta audit status kelengkapan data
- * menggunakan Database View (v_alumni_audit_rekap) berkecepatan tinggi tanpa N+1 query.
+ * Tahun Kelulusan (default tahun terbaru), Semester Lulus, Pencarian Nama/NIM, serta audit status
+ * kelengkapan data & evaluasi atasan, serta fitur ekspor ZIP per Prodi untuk tahun yang difilter.
  */
 class DaftarAlumniSuperAdminController extends Controller
 {
@@ -25,7 +28,6 @@ class DaftarAlumniSuperAdminController extends Controller
     public function index(Request $request): Response
     {
         $pencarian = $request->input('search');
-        $tahunTerpilih = $request->input('tahun');
         $semesterTerpilih = $request->input('semester');
         $statusTerpilih = $request->input('status');
         $prodiIdTerpilih = $request->input('prodi_id');
@@ -44,6 +46,13 @@ class DaftarAlumniSuperAdminController extends Controller
 
                 return trim($item);
             })->unique()->sortDesc()->values()->all();
+
+        // Sesuai kebutuhan pengguna: Tahun Kelulusan default ke tahun terbaru saja (tidak perlu 'all')
+        $tahunTerbaru = $daftarTahun[0] ?? (string) date('Y');
+        $tahunTerpilih = $request->input('tahun', $tahunTerbaru);
+        if ($tahunTerpilih === 'all' || empty($tahunTerpilih)) {
+            $tahunTerpilih = $tahunTerbaru;
+        }
 
         // 1b. Ambil daftar target periode kelulusan unik (Semester & Tahun Lulus)
         $daftarTarget = DB::table('v_alumni_audit_rekap')
@@ -77,8 +86,8 @@ class DaftarAlumniSuperAdminController extends Controller
             });
         }
 
-        // Filter Tahun Kelulusan
-        if ($tahunTerpilih && $tahunTerpilih !== 'all') {
+        // Filter Tahun Kelulusan (Default ke tahun terbaru)
+        if ($tahunTerpilih) {
             $query->where(function ($q) use ($tahunTerpilih) {
                 $q->where('tahun_akademik_lulus', 'like', "%{$tahunTerpilih}%")
                     ->orWhere('tahun_lulus', 'like', "%{$tahunTerpilih}%");
@@ -98,6 +107,12 @@ class DaftarAlumniSuperAdminController extends Controller
         }
 
         $semuaAlumni = $query->orderBy('nim', 'asc')->get();
+
+        // Ambil status Evaluasi Atasan untuk seluruh alumni yang terfilter
+        $biodataIds = $semuaAlumni->pluck('biodata_id')->filter()->all();
+        $evaluasiMap = EvaluasiAtasan::whereIn('biodata_id', $biodataIds)
+            ->get()
+            ->keyBy('biodata_id');
 
         // 3. Mapping data reaktif untuk Frontend
         $alumniList = [];
@@ -119,6 +134,12 @@ class DaftarAlumniSuperAdminController extends Controller
                 $semesterLabel = 'Genap';
             } elseif (stripos($rawSemesterLulus, 'gasal') !== false) {
                 $semesterLabel = 'Gasal';
+            }
+
+            $ev = $evaluasiMap->get($item->biodata_id);
+            $evaluasiStatus = 'none';
+            if ($ev) {
+                $evaluasiStatus = $ev->is_submitted ? 'submitted' : 'pending';
             }
 
             $alumniList[] = [
@@ -159,6 +180,14 @@ class DaftarAlumniSuperAdminController extends Controller
                         'total_questions' => (int) $item->total_prodi_questions,
                     ],
                 ],
+                'evaluasi_atasan' => [
+                    'has_evaluasi' => (bool) $ev,
+                    'is_submitted' => (bool) ($ev?->is_submitted),
+                    'status' => $evaluasiStatus,
+                    'status_label' => $ev ? ($ev->is_submitted ? 'Sudah Diisi' : 'Menunggu Respon') : 'Belum Ada Atasan',
+                    'submitted_at' => $ev?->submitted_at ? $ev->submitted_at->format('d/m/Y H:i') : null,
+                    'token' => $ev?->token,
+                ],
             ];
         }
 
@@ -189,5 +218,114 @@ class DaftarAlumniSuperAdminController extends Controller
                 'persentase_selesai' => $rasioSelesai,
             ],
         ]);
+    }
+
+    /**
+     * Download Berkas ZIP berisi Excel (.xls) per Lulusan untuk Prodi dan Tahun Tertentu
+     */
+    public function exportZip(Request $request)
+    {
+        $prodiId = $request->input('prodi_id');
+        $tahun = $request->input('tahun');
+
+        if (! $prodiId || $prodiId === 'all') {
+            return back()->with('error', 'Silakan pilih Program Studi terlebih dahulu untuk mengunduh arsip ZIP.');
+        }
+
+        $prodi = Prodi::findOrFail($prodiId);
+
+        // Ambil ID biodata yang cocok melalui view database v_alumni_audit_rekap
+        $auditQuery = DB::table('v_alumni_audit_rekap')
+            ->where('prodi_id', $prodiId);
+
+        if ($tahun && $tahun !== 'all') {
+            $auditQuery->where(function ($q) use ($tahun) {
+                $q->where('tahun_akademik_lulus', 'like', "%{$tahun}%")
+                    ->orWhere('tahun_lulus', 'like', "%{$tahun}%");
+            });
+        }
+
+        $biodataIds = $auditQuery->pluck('biodata_id')->filter()->unique()->values()->all();
+
+        if (empty($biodataIds)) {
+            $fallbackQuery = Biodata::where('prodi_id', $prodiId);
+            if ($tahun && $tahun !== 'all') {
+                $fallbackQuery->whereHas('dataAkademik', function ($da) use ($tahun) {
+                    $da->where('tahun_akademik_lulus', 'like', "%{$tahun}%")
+                        ->orWhere('tahun_lulus', 'like', "%{$tahun}%");
+                });
+            }
+
+            $alumnis = $fallbackQuery->with([
+                'dataAkademik.yudisium',
+                'dataAkademik.orangTua',
+                'dataAkademik.propinsi',
+                'dataAkademik.kabupaten',
+                'yudisium',
+                'orangTua',
+                'propinsi',
+                'kabupaten',
+                'perusahaan.propinsi',
+                'perusahaan.kabupaten',
+                'atasan',
+                'user',
+                'prodi.fakultas',
+                'evaluasiAtasan.atasan',
+                'evaluasiAtasan.perusahaan',
+                'evaluasiAtasan.respons.pertanyaan',
+            ])->get();
+        } else {
+            $alumnis = Biodata::whereIn('id', $biodataIds)
+                ->with([
+                    'dataAkademik.yudisium',
+                    'dataAkademik.orangTua',
+                    'dataAkademik.propinsi',
+                    'dataAkademik.kabupaten',
+                    'yudisium',
+                    'orangTua',
+                    'propinsi',
+                    'kabupaten',
+                    'perusahaan.propinsi',
+                    'perusahaan.kabupaten',
+                    'atasan',
+                    'user',
+                    'prodi.fakultas',
+                    'evaluasiAtasan.atasan',
+                    'evaluasiAtasan.perusahaan',
+                    'evaluasiAtasan.respons.pertanyaan',
+                ])
+                ->get();
+        }
+
+        if ($alumnis->isEmpty()) {
+            return back()->with('error', 'Tidak ditemukan data alumni untuk Program Studi '.$prodi->nama_prodi.' pada tahun '.$tahun.'.');
+        }
+
+        $cleanProdiName = preg_replace('/[^a-zA-Z0-9_-]/', '_', $prodi->nama_prodi);
+        $cleanTahun = $tahun ?: 'Terbaru';
+        $zipFileName = "Tracer_Study_{$cleanProdiName}_{$cleanTahun}.zip";
+
+        $zipPath = tempnam(sys_get_temp_dir(), 'tracer_zip_');
+        $zip = new \ZipArchive;
+
+        if ($zip->open($zipPath, \ZipArchive::CREATE | \ZipArchive::OVERWRITE) !== true) {
+            return back()->with('error', 'Gagal memproses arsip ZIP di server.');
+        }
+
+        foreach ($alumnis as $alumni) {
+            $excelContent = AlumniTracerExcelExporter::generateExcelContent($alumni);
+            $nim = preg_replace('/[^a-zA-Z0-9_-]/', '_', (string) $alumni->nim);
+            $nama = preg_replace('/[^a-zA-Z0-9_-]/', '_', (string) ($alumni->nama ?? 'Alumni'));
+            $excelFileName = "Tracer_Study_{$nim}_{$nama}.xls";
+
+            $zip->addFromString($excelFileName, $excelContent);
+        }
+
+        $zip->close();
+
+        return response()->download($zipPath, $zipFileName, [
+            'Content-Type' => 'application/zip',
+            'Cache-Control' => 'no-cache, no-store, must-revalidate',
+        ])->deleteFileAfterSend(true);
     }
 }

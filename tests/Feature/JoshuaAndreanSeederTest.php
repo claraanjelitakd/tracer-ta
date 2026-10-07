@@ -54,6 +54,8 @@ class JoshuaAndreanSeederTest extends TestCase
         $this->assertNull($biodata->atasan_id);
         $this->assertNull($biodata->posisi_jabatan);
         $this->assertNull($biodata->gaji);
+        $this->assertNull($biodata->skills);
+        $this->assertNull($biodata->experience);
         $this->assertNull($biodata->expert);
         $this->assertNull($biodata->minat);
         $this->assertNull($biodata->npwp);

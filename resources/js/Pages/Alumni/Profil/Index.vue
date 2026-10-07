@@ -154,8 +154,11 @@ const tabCompleteness = computed(() => {
     if (!form.linkedin_username || !String(form.linkedin_username).trim()) missingKarier.push('LinkedIn Username');
     if (!form.instagram_url || !isValidUrl(form.instagram_url)) missingKarier.push('Instagram URL');
     if (!form.facebook_url || !isValidUrl(form.facebook_url)) missingKarier.push('Facebook URL');
-    if (!form.expert || !String(form.expert).trim()) missingKarier.push('Bidang Keahlian (Expertise)');
-    if (!form.minat || !String(form.minat).trim()) missingKarier.push('Minat & Ketertarikan');
+    const hasSkills = (form.skills && String(form.skills).trim()) || (form.expert && String(form.expert).trim());
+    if (!hasSkills) missingKarier.push('Keahlian (Skills)');
+
+    const hasExperience = (form.experience && String(form.experience).trim()) || (form.minat && String(form.minat).trim());
+    if (!hasExperience) missingKarier.push('Pengalaman Kerja (Experience)');
 
     const kategori = (form.kategori_pekerjaan || '').trim();
     if (!kategori) {

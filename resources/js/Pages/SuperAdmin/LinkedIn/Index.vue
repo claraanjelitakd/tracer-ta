@@ -10,8 +10,8 @@
      - Histori lengkap sinkronisasi
 -->
 <script setup>
-import { Head, router } from '@inertiajs/vue3';
-import { ref, computed } from 'vue';
+import { Head, router, Link } from '@inertiajs/vue3';
+import { ref, computed, onMounted, nextTick } from 'vue';
 import Swal from 'sweetalert2';
 import Sidebar from '../Components/Sidebar.vue';
 
@@ -32,6 +32,14 @@ const props = defineProps({
         type: String,
         default: 'official',
     },
+    targetAlumniId: {
+        type: [Number, String],
+        default: null,
+    },
+    initialSearch: {
+        type: String,
+        default: '',
+    },
     stats: {
         type: Object,
         default: () => ({
@@ -47,7 +55,8 @@ const props = defineProps({
 
 // State Filter & Pencarian
 const selectedTahun = ref(props.tahunTerpilih || (props.daftarTahun[0] || ''));
-const search = ref('');
+const search = ref(props.initialSearch || '');
+const highlightedAlumniId = ref(props.targetAlumniId ? Number(props.targetAlumniId) : null);
 
 // State Data Alumni Lokal (Reaktif untuk update tanpa reload halaman)
 const alumniList = ref(props.alumnis.map(item => ({
@@ -119,6 +128,7 @@ const paginatedAlumni = computed(() => {
 
 // Aksi Terapkan Filter Tahun Kelulusan
 const applyTahunFilter = () => {
+    highlightedAlumniId.value = null;
     router.get('/superadmin/linkedin-sync', {
         tahun: selectedTahun.value,
     }, {
@@ -126,6 +136,24 @@ const applyTahunFilter = () => {
         preserveScroll: true,
     });
 };
+
+// Auto fokus dan scroll ke target alumni jika diarahkan dari detail alumni
+onMounted(() => {
+    if (highlightedAlumniId.value) {
+        // Cari posisi alumni di dalam data yang difilter
+        const targetIndex = filteredAlumni.value.findIndex(a => a.id === highlightedAlumniId.value);
+        if (targetIndex !== -1) {
+            currentPage.value = Math.floor(targetIndex / perPage.value) + 1;
+        }
+
+        nextTick(() => {
+            const el = document.getElementById(`alumni-row-${highlightedAlumniId.value}`);
+            if (el) {
+                el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        });
+    }
+});
 
 // Ambil Token CSRF
 const getCsrfToken = () => {
@@ -813,7 +841,12 @@ const executeBulkSync = async (candidates) => {
                                 <tr
                                     v-for="alumni in paginatedAlumni"
                                     :key="alumni.id"
-                                    class="hover:bg-slate-50/75 transition-colors"
+                                    :id="'alumni-row-' + alumni.id"
+                                    :class="[
+                                        alumni.id === highlightedAlumniId
+                                            ? 'bg-emerald-50/80 ring-2 ring-emerald-500 transition-all duration-300'
+                                            : 'hover:bg-slate-50/75 transition-colors'
+                                    ]"
                                 >
                                     <!-- NIM -->
                                     <td class="px-4 py-3 font-mono font-medium text-slate-900">
@@ -822,7 +855,16 @@ const executeBulkSync = async (candidates) => {
 
                                     <!-- Nama -->
                                     <td class="px-4 py-3 font-semibold text-slate-900">
-                                        {{ alumni.nama }}
+                                        <div class="flex items-center gap-2 flex-wrap">
+                                            <span>{{ alumni.nama }}</span>
+                                            <span 
+                                                v-if="alumni.id === highlightedAlumniId" 
+                                                class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-[#0D542B] text-white shadow-xs animate-pulse"
+                                            >
+                                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                                                Profil Dipilih
+                                            </span>
+                                        </div>
                                     </td>
 
                                     <!-- Tahun Kelulusan -->
@@ -929,6 +971,18 @@ const executeBulkSync = async (candidates) => {
                                     <td class="px-4 py-3 text-center whitespace-nowrap">
                                         <!-- Mode Apify -->
                                         <div v-if="provider === 'apify'" class="flex items-center justify-center gap-1.5">
+                                            <!-- Tombol Detail Alumni (Mata) -->
+                                            <Link
+                                                :href="'/superadmin/alumni/' + alumni.id"
+                                                class="inline-flex items-center justify-center p-1.5 text-slate-600 hover:text-[#0D542B] hover:bg-emerald-50 rounded-lg border border-slate-200 transition-colors cursor-pointer shadow-2xs"
+                                                title="Lihat Detail Alumni"
+                                            >
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                                                </svg>
+                                            </Link>
+
                                             <!-- Tombol Tinjau (Review) jika status pending -->
                                             <button
                                                 v-if="alumni.latest_sync_result && alumni.latest_sync_result.status === 'pending'"
@@ -982,7 +1036,19 @@ const executeBulkSync = async (candidates) => {
                                         </div>
 
                                         <!-- Mode Official Provider (Existing) -->
-                                        <div v-else class="flex items-center justify-center">
+                                        <div v-else class="flex items-center justify-center gap-1.5">
+                                            <!-- Tombol Detail Alumni (Mata) -->
+                                            <Link
+                                                :href="'/superadmin/alumni/' + alumni.id"
+                                                class="inline-flex items-center justify-center p-1.5 text-slate-600 hover:text-[#0D542B] hover:bg-emerald-50 rounded-lg border border-slate-200 transition-colors cursor-pointer shadow-2xs"
+                                                title="Lihat Detail Alumni"
+                                            >
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                                                </svg>
+                                            </Link>
+
                                             <button
                                                 type="button"
                                                 @click="syncSingle(alumni)"

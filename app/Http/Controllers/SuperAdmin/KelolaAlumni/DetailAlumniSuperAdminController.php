@@ -5,9 +5,11 @@ namespace App\Http\Controllers\SuperAdmin\KelolaAlumni;
 use App\Http\Controllers\Controller;
 use App\Models\Atasan;
 use App\Models\Biodata;
+use App\Models\EvaluasiAtasan;
 use App\Models\Kabupaten;
 use App\Models\Kuesioner;
 use App\Models\LinkedinSyncResult;
+use App\Models\PertanyaanEvaluasiAtasan;
 use App\Models\Perusahaan;
 use App\Models\ProdiQuestionSection;
 use App\Models\ProdiResponse;
@@ -266,10 +268,22 @@ class DetailAlumniSuperAdminController extends Controller
             ->take(10)
             ->get();
 
+        // Ambil Data Evaluasi Atasan (Pengguna Lulusan)
+        $evaluasiAtasan = EvaluasiAtasan::where('biodata_id', $alumni->id)
+            ->with(['atasan', 'perusahaan', 'respons.pertanyaan'])
+            ->latest('updated_at')
+            ->first();
+
+        $pertanyaanEvaluasiAtasan = PertanyaanEvaluasiAtasan::where('is_active', true)
+            ->orderBy('order', 'asc')
+            ->get();
+
         return Inertia::render('SuperAdmin/Alumni/Show', [
             'biodata' => $alumni,
             'alumni' => $alumni,
             'evaluasi' => $evaluasi,
+            'evaluasiAtasan' => $evaluasiAtasan,
+            'pertanyaanEvaluasiAtasan' => $pertanyaanEvaluasiAtasan,
             'sections' => $sectionsWithAnswers,
             'prodiSections' => $prodiSectionsWithAnswers,
             'prodiEvaluasi' => $prodiEvaluasi,
@@ -507,23 +521,52 @@ class DetailAlumniSuperAdminController extends Controller
             $handledKeys[] = 'headline';
         }
 
-        // 14. Experiences (Riwayat Pengalaman Kerja)
-        if (isset($item['experiences']) && is_array($item['experiences'])) {
-            $countExp = count($item['experiences']);
-            $firstExpTitle = $item['experiences'][0]['title'] ?? '-';
-            $firstExpComp = $item['experiences'][0]['company_name'] ?? '-';
+        // 14. Keahlian (Skills)
+        $rawSkills = $item['skills'] ?? [];
+        $skillsList = [];
+        if (is_array($rawSkills)) {
+            foreach ($rawSkills as $skill) {
+                if (is_string($skill)) {
+                    $skillsList[] = $skill;
+                } elseif (is_array($skill) && ! empty($skill['name'])) {
+                    $skillsList[] = $skill['name'];
+                }
+            }
+        }
+        $scrapedSkills = ! empty($skillsList) ? implode(', ', array_slice($skillsList, 0, 10)) : null;
+        $dbSkills = $alumni->skills ?? $alumni->expert;
+        $rows[] = [
+            'key' => 'skills',
+            'label' => 'Keahlian Alumni (Skills)',
+            'scraped_value' => $scrapedSkills ?: '(Tidak dicantumkan publik)',
+            'target_table' => 'biodata',
+            'target_column' => 'skills',
+            'db_value' => $dbSkills ?: '(Belum terisi)',
+            'status' => ! empty($dbSkills) ? 'Tersinkron' : 'Belum Disinkron',
+            'badge' => ! empty($dbSkills) ? 'emerald' : 'amber',
+            'note' => 'Daftar keahlian profesional LinkedIn alumni',
+        ];
+        $handledKeys = array_merge($handledKeys, ['skills']);
+
+        // 15. Experiences (Riwayat Pengalaman Kerja)
+        $rawExp = $item['experiences'] ?? ($item['experience'] ?? []);
+        if (is_array($rawExp) && ! empty($rawExp)) {
+            $countExp = count($rawExp);
+            $firstExpTitle = $rawExp[0]['title'] ?? ($rawExp[0]['position'] ?? '-');
+            $firstExpComp = $rawExp[0]['company_name'] ?? ($rawExp[0]['company'] ?? '-');
+            $dbExp = $alumni->experience ?? $alumni->minat;
             $rows[] = [
                 'key' => 'experiences',
                 'label' => "Riwayat Pengalaman Kerja ({$countExp} entri)",
                 'scraped_value' => "Posisi Terkini: {$firstExpTitle} di {$firstExpComp} (+".($countExp - 1).' lainnya)',
-                'target_table' => 'biodata & perusahaan (Pekerjaan Terkini)',
-                'target_column' => 'posisi_jabatan & nama_perusahaan',
-                'db_value' => "{$alumni->posisi_jabatan} di ".($alumni->perusahaan?->nama_perusahaan ?? '-'),
-                'status' => 'Tersinkron',
-                'badge' => 'emerald',
-                'note' => 'Pekerjaan terakhir dipetakan ke profil; seluruh riwayat disimpan di staging',
+                'target_table' => 'biodata',
+                'target_column' => 'experience',
+                'db_value' => $dbExp ?: "{$alumni->posisi_jabatan} di ".($alumni->perusahaan?->nama_perusahaan ?? '-'),
+                'status' => ! empty($dbExp) ? 'Tersinkron' : 'Belum Disinkron',
+                'badge' => ! empty($dbExp) ? 'emerald' : 'amber',
+                'note' => 'Riwayat posisi dan tempat kerja hasil sinkronisasi LinkedIn',
             ];
-            $handledKeys[] = 'experiences';
+            $handledKeys = array_merge($handledKeys, ['experiences', 'experience', 'positions']);
         }
 
         // 15. Tambahkan sisa atribut scraping yang belum dimapping (metadata Apify)

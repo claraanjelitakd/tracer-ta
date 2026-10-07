@@ -1,5 +1,33 @@
 # UPDATE LOG - SERU (Sistem Ekosistem Rekam Jejak Alumni)
 
+## [2026-10-08] Deep Linking Dua Arah Detail Alumni - LinkedIn Sync, Tombol Aksi Ikon Mata, Skema Kolom Skills & Experience, dan Replikasi Database Views
+
+### Ringkasan Pembaruan
+1. **Navigasi Terarah & Deep Linking dari Detail Alumni (`/superadmin/alumni/{id}`) ke LinkedIn Sync**:
+   - **Tautan Banner Terarah**: Mengubah tautan gambar/logo LinkedIn dan tombol *"Buka Menu LinkedIn Sync &rarr;"* pada kartu banner *Audit & Trace Hasil Scraping LinkedIn* di [`Show.vue`](file:///c:/study/tracerstudy/resources/js/Pages/SuperAdmin/Alumni/Show.vue) dari rute umum (`/superadmin/linkedin-sync`) menjadi rute terarah berparameter query:
+     `/superadmin/linkedin-sync?alumni_id=${alumni.id}&search=${encodeURIComponent(alumni.nim || alumni.nama)}`.
+   - **Deteksi Tahun Kelulusan Otomatis (Backend)**: Di [`LinkedInSyncController.php`](file:///c:/study/tracerstudy/app/Http/Controllers/SuperAdmin/LinkedIn/LinkedInSyncController.php), saat parameter `alumni_id` diterima, controller otomatis mendeteksi tahun kelulusan alumni terkait (`tahun_lulus` / `dataAkademik->tahun_lulus`) dan mengeset `$tahunTerpilih` ke tahun tersebut, serta menyertakan alumni dalam kueri data sehingga alumni yang dicari dipastikan muncul di tabel tanpa terblokir oleh filter default tahun terkini.
+   - **State Initial Search & Row Highlighting (Frontend)**: Di [`Index.vue`](file:///c:/study/tracerstudy/resources/js/Pages/SuperAdmin/LinkedIn/Index.vue), props `targetAlumniId` dan `initialSearch` diterima. State `search` otomatis terisi dengan NIM/nama alumni target.
+   - **Visual Feedback & Auto-Scroll**: Baris alumni target ditandai dengan sorotan cincin hijau emerald (`ring-2 ring-emerald-500 bg-emerald-50/80`), badge animasi *"Profil Dipilih"*, dan secara otomatis digulirkan (*smooth auto-scroll*) ke tengah layar viewport saat halaman dimuat (`onMounted`).
+
+2. **Tombol Aksi Detail Alumni (Ikon Mata) di Tabel LinkedIn Sync**:
+   - **Aksi Cepat Lintas Modul**: Pada tabel sinkronisasi LinkedIn di [`Index.vue`](file:///c:/study/tracerstudy/resources/js/Pages/SuperAdmin/LinkedIn/Index.vue), menambahkan tombol aksi dengan ikon mata SVG (*Lihat Detail Alumni*) di kolom **Aksi** untuk kedua mode provider (baik Apify Provider maupun Official Provider).
+   - **Tautan Langsung**: Mengarahkan Super Admin langsung ke halaman Detail Alumni terkait (`/superadmin/alumni/{alumni.id}`), e.g. `http://127.0.0.1:8000/superadmin/alumni/23`, untuk mempermudah pengecekan lembar kuesioner universitas, kuesioner prodi, evaluasi atasan, dan tab audit trace LinkedIn.
+
+3. **Standarisasi Penamaan Kolom `skills` & `experience` pada Tabel `biodata`**:
+   - **Migrasi Database**: Menjalankan migrasi [`2026_10_08_000000_rename_minat_and_expert_to_experience_and_skills_in_biodata_table.php`](file:///c:/study/tracerstudy/database/migrations/2026_10_08_000000_rename_minat_and_expert_to_experience_and_skills_in_biodata_table.php) yang mengganti nama kolom:
+     - `expert` &rarr; `skills` (daftar keahlian teknis alumni)
+     - `minat` &rarr; `experience` (riwayat pengalaman kerja & profesional alumni)
+   - **Model & Service Update**: Memperbarui `$fillable` pada [`Biodata.php`](file:///c:/study/tracerstudy/app/Models/Biodata.php), pemetaan controller [`SimpanProfilController.php`](file:///c:/study/tracerstudy/app/Http/Controllers/Alumni/Profil/SimpanProfilController.php), [`AdminAlumniProfileService.php`](file:///c:/study/tracerstudy/app/Services/Alumni/AdminAlumniProfileService.php), ekspor Excel [`AlumniDataSheet.php`](file:///c:/study/tracerstudy/app/Exports/Alumni/AlumniDataSheet.php), dan seeder [`BiodataSeeder.php`](file:///c:/study/tracerstudy/database/seeders/BiodataSeeder.php).
+   - **Replikasi Database View**: Memperbarui view SQL `v_alumni_profile_summary` dan `v_alumni_audit_rekap` untuk mereferensikan `b.skills` dan `b.experience`.
+
+4. **Verifikasi Kualitas & Pengujian Menyeluruh**:
+   - ✅ **123 Feature & Unit Tests** lulus 100% (`123 passed, 745 assertions`).
+   - ✅ **Vite Frontend Build**: `npm run build` berhasil tanpa error.
+   - ✅ **Laravel Pint**: Formatter agent passed (0 linting issues).
+
+---
+
 ## [2026-10-06] Integrasi Provider Pihak Ketiga Apify LinkedIn, Tabel Staging Audit, Pemetaan Trace Database, dan Sinkronisasi Foto Profil Fisik
 
 ### Ringkasan Pembaruan

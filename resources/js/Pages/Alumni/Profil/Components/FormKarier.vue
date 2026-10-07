@@ -902,33 +902,37 @@ onUnmounted(() => {
                     />
                 </div>
                 
-                <!-- Input: Bidang Keahlian -->
+                <!-- Input: Keahlian (Skills) -->
                 <div class="md:col-span-2">
-                    <label class="block text-xs sm:text-sm font-bold text-gray-700 mb-1.5">
-                        Bidang Keahlian (Expertise) <span class="text-rose-500 font-bold">*</span>
+                    <label class="block text-xs sm:text-sm font-bold text-gray-700 mb-1.5 flex items-center justify-between">
+                        <span>Keahlian (Skills) <span class="text-rose-500 font-bold">*</span></span>
+                        <span class="text-[11px] font-normal text-gray-500">Sinkron dengan LinkedIn Skills</span>
                     </label>
                     <input 
                         type="text" 
-                        v-model="form.expert" 
+                        v-model="form.skills" 
+                        @input="form.expert = form.skills"
                         autocomplete="off"
                         class="block w-full border rounded-xl shadow-2xs px-4 py-3 text-sm font-medium transition-all focus:ring-2 focus:ring-[#005B3C]/20" 
-                        :class="form.expert?.trim() ? 'border-emerald-300 bg-white text-gray-900 focus:border-[#005B3C]' : 'border-rose-300 bg-rose-50/20 text-gray-900 focus:border-rose-500'"
-                        placeholder="Contoh: Software Engineering, Data Science, Digital Marketing..." 
+                        :class="(form.skills?.trim() || form.expert?.trim()) ? 'border-emerald-300 bg-white text-gray-900 focus:border-[#005B3C]' : 'border-rose-300 bg-rose-50/20 text-gray-900 focus:border-rose-500'"
+                        placeholder="Contoh: Software Engineering, Data Science, Python, Project Management..." 
                     />
                 </div>
 
-                <!-- Input: Minat / Ketertarikan -->
+                <!-- Input: Pengalaman Kerja (Experience) -->
                 <div class="md:col-span-2">
-                    <label class="block text-xs sm:text-sm font-bold text-gray-700 mb-1.5">
-                        Minat & Ketertarikan <span class="text-rose-500 font-bold">*</span>
+                    <label class="block text-xs sm:text-sm font-bold text-gray-700 mb-1.5 flex items-center justify-between">
+                        <span>Pengalaman Kerja (Experience) <span class="text-rose-500 font-bold">*</span></span>
+                        <span class="text-[11px] font-normal text-gray-500">Sinkron dengan LinkedIn Experiences</span>
                     </label>
                     <input 
                         type="text" 
-                        v-model="form.minat" 
+                        v-model="form.experience" 
+                        @input="form.minat = form.experience"
                         autocomplete="off"
                         class="block w-full border rounded-xl shadow-2xs px-4 py-3 text-sm font-medium transition-all focus:ring-2 focus:ring-[#005B3C]/20" 
-                        :class="form.minat?.trim() ? 'border-emerald-300 bg-white text-gray-900 focus:border-[#005B3C]' : 'border-rose-300 bg-rose-50/20 text-gray-900 focus:border-rose-500'"
-                        placeholder="Contoh: Artificial Intelligence, Cloud Computing, Start-up..." 
+                        :class="(form.experience?.trim() || form.minat?.trim()) ? 'border-emerald-300 bg-white text-gray-900 focus:border-[#005B3C]' : 'border-rose-300 bg-rose-50/20 text-gray-900 focus:border-rose-500'"
+                        placeholder="Contoh: Software Engineer di PT Telkom Indonesia (2022 - Saat Ini)..." 
                     />
                 </div>
 

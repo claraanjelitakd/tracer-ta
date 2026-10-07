@@ -54,14 +54,47 @@ class LinkedInSyncController extends Controller
             $daftarTahun = [(string) date('Y')];
         }
 
-        // 2. Tahun terpilih dari request (default: tahun kelulusan terbaru)
-        $tahunTerpilih = (string) $request->input('tahun', $daftarTahun[0]);
+        // 2. Target alumni spesifik (jika diarahkan dari halaman Detail Alumni)
+        $targetAlumniId = $request->input('alumni_id');
+        $searchQuery = (string) $request->input('search', $request->input('nim', ''));
 
-        // 3. Query alumni yang lulus pada tahun tersebut
+        // 3. Tahun terpilih dari request (default: tahun kelulusan terbaru atau tahun lulus alumni target)
+        $tahunTerpilih = (string) $request->input('tahun', '');
+
+        if ($targetAlumniId) {
+            $targetAlumni = Biodata::with('dataAkademik')->find($targetAlumniId);
+            if ($targetAlumni) {
+                if (empty($tahunTerpilih)) {
+                    $targetYear = $targetAlumni->tahun_lulus ?: ($targetAlumni->dataAkademik?->tahun_lulus ?: null);
+                    if ($targetYear) {
+                        $tahunTerpilih = (string) $targetYear;
+                    }
+                }
+                if (empty($searchQuery)) {
+                    $searchQuery = (string) ($targetAlumni->nim ?: $targetAlumni->nama);
+                }
+            }
+        }
+
+        if (empty($tahunTerpilih)) {
+            $tahunTerpilih = $daftarTahun[0];
+        }
+
+        if (! in_array($tahunTerpilih, $daftarTahun, true)) {
+            array_unshift($daftarTahun, $tahunTerpilih);
+        }
+
+        // 4. Query alumni yang lulus pada tahun tersebut (atau sertakan alumni target)
         $queryAlumni = Biodata::with(['perusahaan', 'dataAkademik', 'latestLinkedinSyncLog', 'latestLinkedinSyncResult.reviewer'])
-            ->where(function ($q) use ($tahunTerpilih) {
-                $q->whereHas('dataAkademik', fn ($sub) => $sub->where('tahun_lulus', $tahunTerpilih))
-                    ->orWhereHas('yudisium.dataAkademik', fn ($sub) => $sub->where('tahun_lulus', $tahunTerpilih));
+            ->where(function ($q) use ($tahunTerpilih, $targetAlumniId) {
+                $q->where(function ($sub) use ($tahunTerpilih) {
+                    $sub->whereHas('dataAkademik', fn ($a) => $a->where('tahun_lulus', $tahunTerpilih))
+                        ->orWhereHas('yudisium.dataAkademik', fn ($a) => $a->where('tahun_lulus', $tahunTerpilih));
+                });
+
+                if ($targetAlumniId) {
+                    $q->orWhere('id', $targetAlumniId);
+                }
             })
             ->orderBy('nim', 'asc')
             ->get();
@@ -185,6 +218,8 @@ class LinkedInSyncController extends Controller
             'tahunTerpilih' => $tahunTerpilih,
             'provider' => $provider,
             'alumnis' => $alumniList,
+            'targetAlumniId' => $targetAlumniId ? (int) $targetAlumniId : null,
+            'initialSearch' => $searchQuery ?: '',
             'stats' => [
                 'total_alumni' => $totalAlumni,
                 'dengan_linkedin' => $denganLinkedin,
@@ -376,7 +411,10 @@ class LinkedInSyncController extends Controller
                 'current_data' => [
                     'posisi_jabatan' => $result->biodata->posisi_jabatan,
                     'nama_perusahaan' => $result->biodata->perusahaan?->nama_perusahaan,
-                    'expert' => $result->biodata->expert,
+                    'skills' => $result->biodata->skills ?? $result->biodata->expert,
+                    'experience' => $result->biodata->experience ?? $result->biodata->minat,
+                    'expert' => $result->biodata->skills ?? $result->biodata->expert,
+                    'minat' => $result->biodata->experience ?? $result->biodata->minat,
                 ],
             ],
         ]);
@@ -506,11 +544,39 @@ class LinkedInSyncController extends Controller
                 }
             }
 
-            // 6. Pemetaan Keahlian (Skills) jika ada dan field expert di biodata masih kosong
-            if (! empty($preview['skills']) && empty($biodata->expert)) {
-                $skillsStr = implode(', ', array_slice($preview['skills'], 0, 10));
-                $updates['expert'] = $skillsStr;
-                $changesSummary[] = "Keahlian diisi dari profil LinkedIn: {$skillsStr}";
+            // 6. Pemetaan Keahlian (Skills) jika ada dan field skills di biodata masih kosong
+            if (! empty($preview['skills']) && empty($biodata->skills)) {
+                $skillsArray = is_array($preview['skills']) ? $preview['skills'] : explode(',', (string) $preview['skills']);
+                $skillsClean = array_map(function ($s) {
+                    return is_array($s) ? ($s['name'] ?? '') : trim((string) $s);
+                }, $skillsArray);
+                $skillsClean = array_values(array_filter($skillsClean));
+                $skillsStr = implode(', ', array_slice($skillsClean, 0, 15));
+                if (! empty($skillsStr)) {
+                    $updates['skills'] = $skillsStr;
+                    $changesSummary[] = "Keahlian (Skills) diisi dari profil LinkedIn: {$skillsStr}";
+                }
+            }
+
+            // 7. Pemetaan Pengalaman Kerja (Experience) jika ada dan field experience di biodata masih kosong
+            $rawExpList = ! empty($preview['experiences']) ? $preview['experiences'] : (! empty($preview['experience']) ? $preview['experience'] : []);
+            if (! empty($rawExpList) && empty($biodata->experience)) {
+                $expLines = [];
+                foreach (array_slice($rawExpList, 0, 5) as $exp) {
+                    $pos = $exp['position'] ?? ($exp['title'] ?? '');
+                    $comp = $exp['company'] ?? ($exp['company_name'] ?? '');
+                    $dt = $exp['date'] ?? ($exp['time_period'] ?? '');
+                    $loc = $exp['location'] ?? '';
+                    $line = trim("{$pos} di {$comp}".($dt ? " ({$dt})" : '').($loc ? " - {$loc}" : ''));
+                    if ($line) {
+                        $expLines[] = $line;
+                    }
+                }
+                if (! empty($expLines)) {
+                    $expStr = implode("\n", $expLines);
+                    $updates['experience'] = $expStr;
+                    $changesSummary[] = 'Pengalaman Kerja (Experience) diisi dari profil LinkedIn ('.count($expLines).' entri)';
+                }
             }
 
             // 7. Perbarui data utama biodata jika ada perubahan

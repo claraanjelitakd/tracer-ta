@@ -111,8 +111,8 @@ class KelengkapanTracerService
             'Posisi Jabatan' => $biodata->posisi_jabatan,
 
             // Data Media Sosial & Profesional Alumni (Tabel biodata)
-            'Bidang Keahlian (Expertise)' => $biodata->expert,
-            'Minat & Ketertarikan' => $biodata->minat,
+            'Keahlian (Skills)' => $biodata->skills ?? $biodata->expert,
+            'Pengalaman Kerja (Experience)' => $biodata->experience ?? $biodata->minat,
             'LinkedIn Profil URL' => $biodata->linkedin_url,
             'LinkedIn Username' => $biodata->linkedin_username,
             'Instagram Profil URL' => $biodata->instagram_url,

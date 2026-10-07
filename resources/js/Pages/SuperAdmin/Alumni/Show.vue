@@ -86,13 +86,77 @@ const props = defineProps({
         type: Array,
         default: () => [],
     },
+    evaluasiAtasan: {
+        type: Object,
+        default: null,
+    },
+    pertanyaanEvaluasiAtasan: {
+        type: Array,
+        default: () => [],
+    },
 });
 
-// Urutan Tab Utama: 'profil' (1), 'kuesioner' (2), 'kuesioner_prodi' (3), 'linkedin' (4)
+// Urutan Tab Utama: 'profil' (1), 'kuesioner' (2), 'kuesioner_prodi' (3), 'evaluasi_atasan' (4), 'linkedin' (5)
 const activeMainTab = ref('profil');
 
 // Sub-Tab Profil: 'pribadi', 'akademik', 'orangtua', 'karier'
 const activeProfileTab = ref('pribadi');
+
+// State & Helper Evaluasi Atasan
+const copySurveyUrl = () => {
+    if (!props.evaluasiAtasan?.survey_url) return;
+    navigator.clipboard.writeText(props.evaluasiAtasan.survey_url)
+        .then(() => {
+            Swal.fire({
+                toast: true,
+                position: 'top-end',
+                icon: 'success',
+                title: 'Tautan survei atasan berhasil disalin!',
+                showConfirmButton: false,
+                timer: 2000,
+            });
+        });
+};
+
+const getSkorLabel = (skor) => {
+    if (!skor) return '-';
+    const num = Number(skor);
+    if (num >= 4) return 'Sangat Baik';
+    if (num === 3) return 'Baik';
+    if (num === 2) return 'Cukup';
+    if (num === 1) return 'Kurang';
+    return String(skor);
+};
+
+const getSkorBadgeClass = (skor) => {
+    const num = Number(skor);
+    if (num >= 4) return 'bg-emerald-100 text-emerald-800 border-emerald-200';
+    if (num === 3) return 'bg-blue-100 text-blue-800 border-blue-200';
+    if (num === 2) return 'bg-amber-100 text-amber-800 border-amber-200';
+    if (num === 1) return 'bg-rose-100 text-rose-800 border-rose-200';
+    return 'bg-gray-100 text-gray-700 border-gray-200';
+};
+
+const evaluasiAtasanQuestionsWithAnswers = computed(() => {
+    if (!props.pertanyaanEvaluasiAtasan || props.pertanyaanEvaluasiAtasan.length === 0) return [];
+    
+    const responsMap = {};
+    if (props.evaluasiAtasan?.respons) {
+        props.evaluasiAtasan.respons.forEach(r => {
+            responsMap[r.pertanyaan_id] = r;
+        });
+    }
+
+    return props.pertanyaanEvaluasiAtasan.map(q => {
+        const resp = responsMap[q.id];
+        return {
+            ...q,
+            skor: resp ? resp.skor : null,
+            catatan: resp ? resp.catatan : null,
+            has_response: !!resp,
+        };
+    });
+});
 
 // State Pencarian & Tampilan Tabel Trace LinkedIn
 const searchTraceQuery = ref('');
@@ -438,13 +502,37 @@ const statusYudisium = computed(() => {
                         <span>Kuesioner Program Studi: {{ alumni.prodi?.nama_prodi || 'Program Studi' }}</span>
                     </button>
 
-                    <!-- Tab 4: Audit & Pemetaan LinkedIn (Urutan 4) -->
+                    <!-- Tab 4: Hasil Evaluasi Atasan (Urutan 4) -->
+                    <button 
+                        @click="activeMainTab = 'evaluasi_atasan'"
+                        class="py-3 px-5 text-xs sm:text-sm font-bold rounded-xl transition-all cursor-pointer flex items-center gap-2 shrink-0"
+                        :class="activeMainTab === 'evaluasi_atasan' ? 'bg-[#0D542B] text-white shadow-sm' : 'bg-gray-50 hover:bg-gray-100 text-gray-600'"
+                    >
+                        <span class="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-black" :class="activeMainTab === 'evaluasi_atasan' ? 'bg-white text-[#0D542B]' : 'bg-gray-200 text-gray-700'">4</span>
+                        <span>Hasil Evaluasi Atasan</span>
+                        <span 
+                            v-if="evaluasiAtasan?.is_submitted" 
+                            class="text-[10px] font-black px-2 py-0.5 rounded-full ml-1"
+                            :class="activeMainTab === 'evaluasi_atasan' ? 'bg-[#FDC700] text-black' : 'bg-emerald-100 text-emerald-800'"
+                        >
+                            Sudah Diisi
+                        </span>
+                        <span 
+                            v-else-if="evaluasiAtasan" 
+                            class="text-[10px] font-black px-2 py-0.5 rounded-full ml-1"
+                            :class="activeMainTab === 'evaluasi_atasan' ? 'bg-[#FDC700] text-black' : 'bg-amber-100 text-amber-800'"
+                        >
+                            Pending
+                        </span>
+                    </button>
+
+                    <!-- Tab 5: Audit & Pemetaan LinkedIn (Urutan 5) -->
                     <button 
                         @click="activeMainTab = 'linkedin'"
                         class="py-3 px-5 text-xs sm:text-sm font-bold rounded-xl transition-all cursor-pointer flex items-center gap-2 shrink-0"
                         :class="activeMainTab === 'linkedin' ? 'bg-[#0D542B] text-white shadow-sm' : 'bg-gray-50 hover:bg-gray-100 text-gray-600'"
                     >
-                        <span class="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-black" :class="activeMainTab === 'linkedin' ? 'bg-white text-[#0D542B]' : 'bg-gray-200 text-gray-700'">4</span>
+                        <span class="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-black" :class="activeMainTab === 'linkedin' ? 'bg-white text-[#0D542B]' : 'bg-gray-200 text-gray-700'">5</span>
                         <span>Hasil Scraping & Trace LinkedIn</span>
                         <span 
                             v-if="linkedinSyncResult" 
@@ -912,16 +1000,232 @@ const statusYudisium = computed(() => {
                 </div>
 
                 <!-- ============================================================= -->
-                <!-- HALAMAN 4: HASIL SCRAPING & AUDIT TRACE LINKEDIN              -->
+                <!-- HALAMAN 4: HASIL EVALUASI ATASAN (PENGGUNA LULUSAN)          -->
+                <!-- ============================================================= -->
+                <div v-if="activeMainTab === 'evaluasi_atasan'" class="space-y-6">
+                    <!-- Card Ringkasan Evaluasi Atasan & Info Pengisian -->
+                    <div class="bg-white rounded-2xl p-6 sm:p-8 shadow-xs border border-gray-200">
+                        <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-5 pb-6 border-b border-gray-100">
+                            <div class="flex items-start gap-4">
+                                <div class="w-14 h-14 rounded-2xl bg-[#0D542B]/10 text-[#0D542B] flex items-center justify-center shrink-0">
+                                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                                    </svg>
+                                </div>
+                                <div>
+                                    <div class="flex items-center gap-2 flex-wrap">
+                                        <h2 class="text-xl font-black text-gray-900">Hasil Evaluasi Pengguna Lulusan (Atasan)</h2>
+                                        <span 
+                                            v-if="evaluasiAtasan?.is_submitted" 
+                                            class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-200 flex items-center gap-1"
+                                        >
+                                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                                            Sudah Diisi ({{ evaluasiAtasan.submitted_at }})
+                                        </span>
+                                        <span 
+                                            v-else-if="evaluasiAtasan" 
+                                            class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-800 border border-amber-200 flex items-center gap-1"
+                                        >
+                                            <span class="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
+                                            Menunggu Respon Atasan
+                                        </span>
+                                        <span v-else class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-gray-100 text-gray-600">
+                                            Belum Ada Data Evaluasi
+                                        </span>
+                                    </div>
+                                    <p class="text-xs text-gray-500 mt-1 leading-relaxed">
+                                        Penilaian langsung dari atasan/pimpinan tempat alumni bekerja mengenai performa kerja, etika, dan kompetensi lulusan.
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div class="flex items-center gap-2.5 shrink-0 flex-wrap">
+                                <!-- Link Cepat ke Kelola Soal Evaluasi Atasan -->
+                                <Link 
+                                    href="/superadmin/evaluasi-atasan" 
+                                    class="px-4 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-800 text-xs font-bold rounded-xl transition flex items-center gap-2 shadow-2xs border border-gray-200"
+                                >
+                                    <svg class="w-4 h-4 text-[#0D542B]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                                    <span>Kelola Soal Evaluasi Atasan</span>
+                                </Link>
+
+                                <button 
+                                    v-if="evaluasiAtasan?.survey_url"
+                                    type="button" 
+                                    @click="copySurveyUrl" 
+                                    class="px-4 py-2.5 bg-[#0D542B] hover:bg-[#093c1f] text-white text-xs font-bold rounded-xl transition flex items-center gap-1.5 shadow-2xs cursor-pointer"
+                                    title="Salin Tautan Kuesioner Atasan"
+                                >
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"/></svg>
+                                    <span>Salin Link Kuesioner</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Info Kontak Atasan & Perusahaan -->
+                        <div v-if="evaluasiAtasan" class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
+                            <!-- Card Profil Atasan -->
+                            <div class="p-4 bg-slate-50/80 rounded-xl border border-slate-200/70 space-y-2.5">
+                                <div class="flex items-center gap-2 pb-2 border-b border-slate-200 text-xs font-bold text-slate-800">
+                                    <svg class="w-4 h-4 text-[#0D542B]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7 7z"/></svg>
+                                    <span>Data Atasan Langsung</span>
+                                </div>
+                                <div class="grid grid-cols-2 gap-2 text-xs">
+                                    <div>
+                                        <span class="text-gray-400 block text-[10px] uppercase font-bold">Nama Atasan</span>
+                                        <span class="font-bold text-gray-900">{{ evaluasiAtasan.atasan?.nama || '-' }}</span>
+                                    </div>
+                                    <div>
+                                        <span class="text-gray-400 block text-[10px] uppercase font-bold">Jabatan</span>
+                                        <span class="font-semibold text-gray-800">{{ evaluasiAtasan.atasan?.jabatan || '-' }}</span>
+                                    </div>
+                                    <div>
+                                        <span class="text-gray-400 block text-[10px] uppercase font-bold">Email</span>
+                                        <span class="font-medium text-gray-700 truncate block">{{ evaluasiAtasan.atasan?.email || '-' }}</span>
+                                    </div>
+                                    <div>
+                                        <span class="text-gray-400 block text-[10px] uppercase font-bold">No. HP / WA</span>
+                                        <span class="font-medium text-gray-700">{{ evaluasiAtasan.atasan?.no_hp || '-' }}</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Card Data Perusahaan & Token -->
+                            <div class="p-4 bg-slate-50/80 rounded-xl border border-slate-200/70 space-y-2.5">
+                                <div class="flex items-center gap-2 pb-2 border-b border-slate-200 text-xs font-bold text-slate-800">
+                                    <svg class="w-4 h-4 text-[#0D542B]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+                                    <span>Instansi / Perusahaan & Token</span>
+                                </div>
+                                <div class="grid grid-cols-2 gap-2 text-xs">
+                                    <div>
+                                        <span class="text-gray-400 block text-[10px] uppercase font-bold">Perusahaan</span>
+                                        <span class="font-bold text-gray-900">{{ evaluasiAtasan.perusahaan?.nama || '-' }}</span>
+                                    </div>
+                                    <div>
+                                        <span class="text-gray-400 block text-[10px] uppercase font-bold">Kota</span>
+                                        <span class="font-semibold text-gray-800">{{ evaluasiAtasan.perusahaan?.kota || '-' }}</span>
+                                    </div>
+                                    <div>
+                                        <span class="text-gray-400 block text-[10px] uppercase font-bold">Token Akses</span>
+                                        <code class="font-mono bg-white px-2 py-0.5 rounded border border-gray-200 text-[#0D542B] font-bold text-[11px] inline-block">{{ evaluasiAtasan.token || '-' }}</code>
+                                    </div>
+                                    <div>
+                                        <span class="text-gray-400 block text-[10px] uppercase font-bold">Status Verifikasi</span>
+                                        <span class="font-semibold text-emerald-700 capitalize">{{ evaluasiAtasan.status || 'Aktif' }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Empty State jika belum ada atasan terdaftar -->
+                        <div v-else class="py-8 text-center bg-gray-50/50 rounded-xl border border-dashed border-gray-200 mt-6">
+                            <p class="text-xs text-gray-500 font-medium">
+                                Alumni ini belum mengisi informasi kontak atasan tempat bekerja atau belum ada penugasan evaluasi atasan.
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- ========================================================= -->
+                    <!-- TABEL HASIL PENILAIAN ASPEK KOMPETENSI                    -->
+                    <!-- ========================================================= -->
+                    <div class="bg-white rounded-2xl shadow-xs border border-gray-200 overflow-hidden">
+                        <div class="p-4 sm:p-5 bg-gray-50/80 border-b border-gray-200 flex items-center justify-between">
+                            <div class="flex items-center gap-2">
+                                <span class="text-xs font-extrabold text-gray-800 uppercase tracking-wider">Hasil Penilaian Aspek Kinerja & Kemampuan Alumni</span>
+                                <span class="px-2.5 py-0.5 bg-[#0D542B] text-white text-[10px] font-bold rounded-full">
+                                    {{ evaluasiAtasanQuestionsWithAnswers.length }} Butir Penilaian
+                                </span>
+                            </div>
+                            <span v-if="evaluasiAtasan?.is_submitted" class="text-xs font-semibold text-emerald-700 flex items-center gap-1">
+                                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+                                Respon Terverifikasi
+                            </span>
+                        </div>
+
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left text-xs border-collapse">
+                                <thead>
+                                    <tr class="bg-slate-100 text-slate-700 border-b border-gray-200">
+                                        <th class="py-3 px-3 text-center font-bold w-12 border-r border-gray-200">#</th>
+                                        <th class="py-3 px-4 font-bold border-r border-gray-200 w-28">Kode Butir</th>
+                                        <th class="py-3 px-4 font-bold border-r border-gray-200 min-w-[280px]">Aspek Penilaian & Deskripsi</th>
+                                        <th class="py-3 px-4 font-bold text-center border-r border-gray-200 w-36">Skor / Nilai</th>
+                                        <th class="py-3 px-4 font-bold min-w-[200px]">Catatan / Evaluasi Atasan</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-gray-100">
+                                    <tr 
+                                        v-for="(item, idx) in evaluasiAtasanQuestionsWithAnswers" 
+                                        :key="item.id || idx"
+                                        class="hover:bg-slate-50/80 transition-colors"
+                                        :class="idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/30'"
+                                    >
+                                        <td class="py-3 px-3 text-center font-mono font-bold text-gray-400 border-r border-gray-100">
+                                            {{ idx + 1 }}
+                                        </td>
+                                        <td class="py-3 px-4 font-mono font-bold text-gray-800 border-r border-gray-100">
+                                            <span class="bg-slate-100 px-2 py-0.5 rounded text-[11px] text-slate-700 border border-slate-200">
+                                                {{ item.kode_pertanyaan }}
+                                            </span>
+                                        </td>
+                                        <td class="py-3 px-4 border-r border-gray-100">
+                                            <div class="font-bold text-gray-900">{{ item.aspek_penilaian }}</div>
+                                            <p v-if="item.keterangan" class="text-[11px] text-gray-500 mt-0.5">{{ item.keterangan }}</p>
+                                        </td>
+                                        <td class="py-3 px-4 text-center border-r border-gray-100">
+                                            <div v-if="item.skor !== null && item.skor !== undefined" class="flex flex-col items-center gap-1">
+                                                <span 
+                                                    class="px-2.5 py-1 rounded-full text-[11px] font-black border"
+                                                    :class="getSkorBadgeClass(item.skor)"
+                                                >
+                                                    Skor: {{ item.skor }} - {{ getSkorLabel(item.skor) }}
+                                                </span>
+                                            </div>
+                                            <span v-else class="text-gray-400 italic font-medium">Belum Diisi</span>
+                                        </td>
+                                        <td class="py-3 px-4 text-gray-800">
+                                            <span v-if="item.catatan" class="font-medium text-xs">{{ item.catatan }}</span>
+                                            <span v-else class="text-gray-400 italic text-[11px]">-</span>
+                                        </td>
+                                    </tr>
+
+                                    <tr v-if="evaluasiAtasanQuestionsWithAnswers.length === 0">
+                                        <td colspan="5" class="py-12 text-center text-gray-400 font-medium">
+                                            Belum ada butir pertanyaan kuesioner evaluasi atasan yang dikonfigurasi.
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Saran & Rekomendasi Terbuka dari Atasan -->
+                    <div v-if="evaluasiAtasan?.saran" class="bg-white rounded-2xl p-6 shadow-xs border border-gray-200">
+                        <div class="flex items-center gap-2 mb-3">
+                            <svg class="w-5 h-5 text-[#0D542B]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z"/></svg>
+                            <h3 class="text-sm font-extrabold text-gray-900">Saran & Rekomendasi Pengembangan Kurikulum dari Pihak Pengguna Lulusan</h3>
+                        </div>
+                        <div class="p-4 bg-emerald-50/50 rounded-xl border border-emerald-100 text-xs sm:text-sm text-gray-800 leading-relaxed italic whitespace-pre-line">
+                            &ldquo;{{ evaluasiAtasan.saran }}&rdquo;
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ============================================================= -->
+                <!-- HALAMAN 5: HASIL SCRAPING & AUDIT TRACE LINKEDIN              -->
                 <!-- ============================================================= -->
                 <div v-if="activeMainTab === 'linkedin'" class="space-y-6">
                     <!-- Card Ringkasan LinkedIn & Status Staging -->
                     <div class="bg-white rounded-2xl p-6 sm:p-8 shadow-xs border border-gray-200">
                         <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-5 pb-6 border-b border-gray-100">
                             <div class="flex items-start gap-4">
-                                <div class="w-14 h-14 rounded-2xl bg-[#0077B5]/10 text-[#0077B5] flex items-center justify-center shrink-0">
-                                    <svg class="w-8 h-8" fill="currentColor" viewBox="0 0 24 24"><path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/></svg>
-                                </div>
+                                <Link 
+                                    :href="'/superadmin/linkedin-sync?alumni_id=' + alumni.id + '&search=' + encodeURIComponent(alumni.nim || alumni.nama || '')" 
+                                    class="w-14 h-14 rounded-2xl bg-[#0077B5]/10 text-[#0077B5] hover:bg-[#0077B5]/20 hover:scale-105 transition-all flex items-center justify-center shrink-0 cursor-pointer shadow-xs group"
+                                    title="Arahkan langsung ke profil LinkedIn alumni ini di LinkedIn Sync"
+                                >
+                                    <svg class="w-8 h-8 group-hover:scale-110 transition-transform" fill="currentColor" viewBox="0 0 24 24"><path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/></svg>
+                                </Link>
                                 <div>
                                     <div class="flex items-center gap-2 flex-wrap">
                                         <h2 class="text-xl font-black text-gray-900">Audit & Trace Hasil Scraping LinkedIn</h2>
@@ -963,8 +1267,9 @@ const statusYudisium = computed(() => {
                                 </button>
 
                                 <Link 
-                                    href="/superadmin/linkedin-sync" 
+                                    :href="'/superadmin/linkedin-sync?alumni_id=' + alumni.id + '&search=' + encodeURIComponent(alumni.nim || alumni.nama || '')" 
                                     class="px-4 py-2 bg-[#0D542B] hover:bg-[#0A4322] text-white text-xs font-bold rounded-xl transition flex items-center gap-1.5 shadow-2xs"
+                                    title="Arahkan langsung ke profil LinkedIn alumni ini di LinkedIn Sync"
                                 >
                                     <span>Buka Menu LinkedIn Sync &rarr;</span>
                                 </Link>

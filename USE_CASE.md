@@ -358,7 +358,7 @@ flowchart LR
 - **Main Flow (Basic Flow)**:
   1. Alumni membuka halaman `/alumni/profile`.
   2. Sistem menampilkan data profil yang tersimpan pada tabel `biodata` dan referensi `data_akademik`.
-  3. Alumni memperbarui nomor telepon/WhatsApp, email korespondensi, alamat, media sosial, keahlian (*expert*), dan minat.
+  3. Alumni memperbarui nomor telepon/WhatsApp, email korespondensi, alamat, media sosial, keahlian (*skills*), dan pengalaman kerja (*experience*).
   4. Alumni memilih kategori status saat ini (Bekerja, Wiraswasta, atau Melanjutkan Pendidikan).
   5. Jika bekerja: Alumni memilih instansi dari daftar master `perusahaan` yang sudah terverifikasi, memasukkan jabatan, besaran gaji, dan mengisi nama serta email atasan langsung.
   6. Alumni menekan tombol "Simpan Perubahan".
@@ -786,16 +786,18 @@ flowchart LR
 - **Usecase ID**: UC-30
 - **Usecase Name**: Mengelola Direktori dan Audit Jawaban Alumni Seluruh Universitas
 - **Actors Involved**: Superadmin
-- **Description**: Modul audit menyeluruh terhadap data alumni se-universitas, mencakup pemeriksaan konsistensi data yudisium, riwayat karir, respon kuesioner nasional dan prodi, serta ekspor data lengkap ke Excel.
+- **Description**: Modul audit menyeluruh terhadap data alumni se-universitas, mencakup pemeriksaan konsistensi data yudisium, riwayat karir, respon kuesioner nasional, respon kuesioner prodi, kuesioner evaluasi atasan, serta navigasi terarah (*deep link*) ke modul sinkronisasi LinkedIn.
 - **Preconditions**: Superadmin membuka menu `/superadmin/alumni`.
 - **Main Flow (Basic Flow)**:
   1. Sistem menampilkan direktori seluruh alumni tanpa batasan fakultas atau prodi.
   2. Superadmin mencari atau memfilter data alumni berdasarkan angkatan, tahun lulus, fakultas, atau prodi.
   3. Superadmin membuka halaman detail alumni (`/superadmin/alumni/{id}`).
-  4. Superadmin dapat mengaudit setiap jawaban kuesioner, memutakhirkan profil alumni, atau mengunduh laporan Excel (`/superadmin/alumni/{id}/export-excel`).
+  4. Superadmin dapat mengaudit profil alumni (termasuk riwayat keahlian `skills` dan pengalaman `experience`), lembar jawaban kuesioner universitas, kuesioner prodi, dan kuesioner atasan, atau mengunduh laporan Excel (`/superadmin/alumni/{id}/export-excel`).
+  5. **Tautan Terarah ke LinkedIn Sync**: Pada banner/kartu "Audit & Trace Hasil Scraping LinkedIn", Superadmin dapat mengklik logo LinkedIn atau tombol "Buka Menu LinkedIn Sync &rarr;".
+  6. Sistem otomatis mengarahkan ke `/superadmin/linkedin-sync?alumni_id={id}&search={nim}` dengan memilih tahun kelulusan yang sesuai, memfilter data, memberi sorotan visual (*ring highlight*) "Profil Dipilih", dan melakukan *auto-scroll* tepat ke baris profil alumni tersebut.
 - **Alternate Flow (Alternative Flow)**:
   - Superadmin dapat berpindah ke modul manajemen akun jika alumni mengalami kendala login [UC-33].
-- **Post Conditions**: Audit kualitas data tracer alumni se-universitas terlaksana dengan transparan.
+- **Post Conditions**: Audit kualitas data tracer alumni se-universitas terlaksana dengan transparan dan terhubung langsung secara presisi dengan modul sinkronisasi LinkedIn.
 
 ---
 
@@ -820,21 +822,22 @@ flowchart LR
 - **Usecase ID**: UC-32
 - **Usecase Name**: Melakukan Sinkronisasi LinkedIn Terpusat (Single & Batch)
 - **Actors Involved**: Superadmin
-- **Description**: Menjalankan sinkronisasi data profil karir alumni dari LinkedIn secara satuan (*single sync*) maupun secara massal (*batch sync*), meninjau hasil ekstraksi (*review*), serta menyetujui (*approve*) atau menolak (*reject*) hasil sinkronisasi sebelum diterapkan ke profil alumni.
+- **Description**: Menjalankan sinkronisasi data profil karir alumni dari LinkedIn secara satuan (*single sync*) maupun secara massal (*batch sync*), meninjau hasil ekstraksi (*review*), menyetujui (*approve*) atau menolak (*reject*) hasil sinkronisasi, serta mengakses detail profil alumni via tombol aksi cepat ikon mata.
 - **Preconditions**: Superadmin membuka modul `/superadmin/linkedin-sync`.
 - **Main Flow (Basic Flow)**:
-  1. Superadmin meninjau daftar alumni yang memiliki tautan LinkedIn.
-  2. **Sinkronisasi Satuan**: Superadmin menekan tombol sinkron pada salah satu alumni (`POST /linkedin-sync/{id}`).
-  3. **Sinkronisasi Massal (Batch)**: Superadmin menekan tombol "Sinkronisasi Massal" untuk memproses antrean alumni sekaligus (`POST /linkedin-sync/batch`).
-  4. Sistem mengambil data pengalaman kerja via LinkedIn Provider API/MCP.
-  5. Superadmin membuka halaman hasil ekstraksi (`GET /linkedin-sync/results/{id}`).
-  6. Superadmin memeriksa jabatan, nama kantor, dan periode kerja yang didapat:
-     - Jika sesuai: Superadmin menekan "Setujui & Terapkan" (`POST /approve`). Data otomatis masuk ke tabel `biodata`.
+  1. Superadmin meninjau daftar alumni yang memiliki tautan LinkedIn. Jika diakses dengan parameter `alumni_id` atau `search`, sistem secara otomatis mengaktifkan tahun lulus alumni terkait, memfilter pencarian, memberikan sorotan hijau pada baris tabel ("Profil Dipilih"), dan menggulirkan layar ke baris alumni tersebut.
+  2. **Navigasi Cepat Detail Alumni (Ikon Mata)**: Pada kolom Aksi di tabel alumni, Superadmin dapat mengklik tombol ikon mata (*Lihat Detail Alumni*) untuk langsung membuka halaman detail audit lengkap alumni pada rute `/superadmin/alumni/{id}`.
+  3. **Sinkronisasi Satuan**: Superadmin menekan tombol sinkron pada salah satu alumni (`POST /linkedin-sync/{id}`).
+  4. **Sinkronisasi Massal (Batch)**: Superadmin menekan tombol "Sinkronisasi Massal" untuk memproses antrean alumni sekaligus (`POST /linkedin-sync/batch`).
+  5. Sistem mengambil data pengalaman kerja via LinkedIn Provider API/MCP.
+  6. Superadmin membuka modal hasil ekstraksi staging (`GET /linkedin-sync/results/{id}`).
+  7. Superadmin memeriksa jabatan, nama kantor, periode kerja, dan foto profil fisik yang didapat:
+     - Jika sesuai: Superadmin menekan "Setujui & Terapkan" (`POST /approve`). Data otomatis masuk ke tabel `biodata` (termasuk foto fisik, posisi jabatan, perusahaan, skills, dan experience).
      - Jika tidak sesuai: Superadmin menekan "Tolak" (`POST /reject`).
-  7. Superadmin dapat melihat riwayat riil sinkronisasi pada `/linkedin-sync/alumni/{id}/history`.
+  8. Superadmin dapat melihat riwayat riil sinkronisasi pada `/linkedin-sync/alumni/{id}/history`.
 - **Alternate Flow (Alternative Flow)**:
   - **A1. Kuota API Habis / Error Provider**: Sistem mencatat pesan kesalahan pada log dan menandai status sinkronisasi sebagai gagal.
-- **Post Conditions**: Riwayat karir alumni terbarui dengan data valid dari LinkedIn dan tercatat pada histori sinkronisasi.
+- **Post Conditions**: Riwayat karir alumni terbarui dengan data valid dari LinkedIn, tercatat pada histori sinkronisasi, dan terhubung dua arah dengan halaman detail alumni.
 
 ---
 

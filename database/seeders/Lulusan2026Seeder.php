@@ -284,8 +284,8 @@ class Lulusan2026Seeder extends Seeder
                     'linkedin_url' => $item['linkedin_username'] ? 'https://linkedin.com/in/'.$item['linkedin_username'] : null,
                     'instagram_url' => null,
                     'facebook_url' => null,
-                    'expert' => null,
-                    'minat' => null,
+                    'skills' => null,
+                    'experience' => null,
                 ]
             );
         }

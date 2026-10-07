@@ -200,6 +200,7 @@ Route::middleware('auth')->group(function () {
 
             // Direktori Mahasiswa/Alumni & Audit Kuesioner Tracer
             Route::get('/superadmin/alumni', [DaftarAlumniSuperAdminController::class, 'index'])->name('superadmin.alumni.index');
+            Route::get('/superadmin/alumni/export-zip', [DaftarAlumniSuperAdminController::class, 'exportZip'])->name('superadmin.alumni.export-zip');
             Route::get('/superadmin/alumni/{id}', [DetailAlumniSuperAdminController::class, 'show'])->name('superadmin.alumni.show');
             Route::get('/superadmin/alumni/{id}/export-excel', [DetailAlumniSuperAdminController::class, 'exportExcel'])->name('superadmin.alumni.export-excel');
             Route::post('/superadmin/alumni/{id}/profile', [DetailAlumniSuperAdminController::class, 'updateProfile'])->name('superadmin.alumni.profile.update');

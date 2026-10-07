@@ -89,6 +89,8 @@ class ApifyLinkedInProviderTest extends TestCase
             'linkedin_url' => $linkedinUrl,
             'linkedin_username' => $linkedinUsername,
             'posisi_jabatan' => 'Staff Pemula',
+            'skills' => null,
+            'experience' => null,
             'expert' => null,
         ]);
     }
@@ -501,8 +503,10 @@ class ApifyLinkedInProviderTest extends TestCase
         $this->assertEquals('PT Bukalapak.com Tbk', $fresh->perusahaan->nama_perusahaan);
         $this->assertEquals('Menunggu Verifikasi', $fresh->perusahaan->status_verifikasi);
 
-        // Skills dipetakan ke field expert jika sebelumnya kosong
+        // Skills dipetakan ke field skills jika sebelumnya kosong
+        $this->assertStringContainsString('PHP', $fresh->skills);
         $this->assertStringContainsString('PHP', $fresh->expert);
+        $this->assertNotNull($fresh->experience);
     }
 
     // -------------------------------------------------------------------------

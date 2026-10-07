@@ -65,8 +65,8 @@ class AlumniKuesionerMultipleNumberTest extends TestCase
             'prodi_id' => $prodi->id,
             'nim' => '71190001',
             'nama' => 'Alumni Test',
-            'expert' => 'Web Development',
-            'minat' => 'Cloud Computing',
+            'skills' => 'Web Development',
+            'experience' => 'Cloud Computing',
         ]);
 
         $this->kuesioner = Kuesioner::create([
