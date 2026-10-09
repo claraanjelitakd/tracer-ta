@@ -280,7 +280,7 @@ const handleLogout = () => {
                     </span>
                 </div>
 
-                <!-- 5. Master Data & Verifikasi Perusahaan -->
+                <!-- 6. Master Data & Verifikasi Perusahaan -->
                 <Link
                     href="/superadmin/perusahaan"
                     @click="closeMobileMenu"
@@ -297,7 +297,7 @@ const handleLogout = () => {
                     <span class="truncate">Master Data Perusahaan</span>
                 </Link>
 
-                <!-- 6. Data Alumni -->
+                <!-- 7. Data Alumni -->
                 <Link
                     href="/superadmin/alumni"
                     @click="closeMobileMenu"
@@ -314,7 +314,7 @@ const handleLogout = () => {
                     <span class="truncate">Data Alumni</span>
                 </Link>
 
-                <!-- 7. Sinkronisasi LinkedIn -->
+                <!-- 8. Sinkronisasi LinkedIn -->
                 <Link
                     href="/superadmin/linkedin-sync"
                     @click="closeMobileMenu"
@@ -331,7 +331,7 @@ const handleLogout = () => {
                     <span class="truncate">Sinkronisasi LinkedIn</span>
                 </Link>
 
-                <!-- 7. Manajemen Akun -->
+                <!-- 9. Manajemen Akun -->
                 <Link
                     href="/superadmin/manajemen-akun"
                     @click="closeMobileMenu"
@@ -348,7 +348,7 @@ const handleLogout = () => {
                     <span class="truncate">Manajemen Akun</span>
                 </Link>
 
-                <!-- 8. Log Aktivitas / Audit Trail -->
+                <!-- 10. Log Aktivitas / Audit Trail -->
                 <Link
                     href="/superadmin/logs"
                     @click="closeMobileMenu"
