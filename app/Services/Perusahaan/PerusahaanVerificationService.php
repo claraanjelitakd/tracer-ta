@@ -398,6 +398,7 @@ class PerusahaanVerificationService
                     // Tambahkan alasan ke array $reasons untuk UI admin
                     $reasons[] = 'Struktur Huruf Mirip ('.round($percent).'%)';
                 }
+
             }
 
             // =========================================================================

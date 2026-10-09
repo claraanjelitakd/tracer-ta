@@ -145,7 +145,7 @@ const resetFilters = () => {
         <Sidebar :user="user" :fakultas="fakultas" />
 
         <!-- Area Konten Utama -->
-        <main class="flex-1 flex flex-col min-w-0 h-screen overflow-hidden bg-[#F8FAFC]">
+        <main class="flex-1 flex flex-col min-w-0 h-screen overflow-hidden bg-[#F8FAFC] lg:pl-72">
             <div class="flex-1 overflow-y-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
 
                 <!-- Header Banner Fakultas -->
