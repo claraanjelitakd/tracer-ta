@@ -449,17 +449,8 @@ c:/study/tracerstudy/resources/js/components/landing/hero-section.vue
 c:/study/tracerstudy/resources/js/components/landing/alumni-map-section.vue
 - Peta sebaran interaktif Leaflet + OpenStreetMap 38 provinsi dengan layout 2-kolom sejajar, filter multi-dimensi, hover tooltip informatif (daftar PT & alumni), paginasi grid 2x2 kartu alumni, dan popup SweetAlert2 detail alumni lengkap foto profil & link publikasi repositori.
 
-c:/study/tracerstudy/resources/js/components/landing/testimonial-slider-section.vue
-- Etalase Karya & Tugas Akhir Alumni UKDW memuat inovasi skripsi, penulis, institusi kerja saat ini, jenis publikasi, dan tautan repositori dokumen karya ilmiah kampus.
-
-c:/study/tracerstudy/resources/js/components/landing/stats-transformation-section.vue
-- Statistik capaian transformasi kurikulum dan serapan lulusan berpadu maskot pigo-update-data.png.
-
-c:/study/tracerstudy/resources/js/components/landing/sektor-alumni-section.vue
-- Etalase sektor industri alumni (Teknologi & IT, Pendidikan & Riset, Bisnis & Publik).
-
-c:/study/tracerstudy/resources/js/components/landing/career-pillars-section.vue
-- Tiga pilar keilmuan UKDW dengan maskot Pigo (anak-it.png, pigo-dokter.png, pigo-laptop.png).
+c:/study/tracerstudy/resources/js/components/landing/tentang-section.vue
+- Profil singkat dan visi ekosistem SERU UKDW.
 
 c:/study/tracerstudy/resources/js/components/landing/user-guide-section.vue
 - Panduan 4 tahap mudah alur pengisian kuesioner tracer study bagi alumni pemula.
@@ -467,11 +458,17 @@ c:/study/tracerstudy/resources/js/components/landing/user-guide-section.vue
 c:/study/tracerstudy/resources/js/components/landing/berkas-section.vue
 - Pusat pengunduhan berkas panduan kuesioner tracer study.
 
+c:/study/tracerstudy/resources/js/components/landing/stats-transformation-section.vue
+- Statistik capaian transformasi kurikulum dan serapan lulusan berpadu maskot pigo-update-data.png.
+
 c:/study/tracerstudy/resources/js/components/landing/blog-section.vue
 - Warta berita dan artikel seputar alumni dan tracer study UKDW.
 
-c:/study/tracerstudy/resources/js/components/landing/tentang-section.vue
-- Profil singkat dan visi ekosistem SERU UKDW.
+c:/study/tracerstudy/resources/js/components/landing/navbar.vue
+- Bilah navigasi atas responsif landing page.
+
+c:/study/tracerstudy/resources/js/components/landing/footer.vue
+- Footer komprehensif situs Tracer Study UKDW.
 
 G. KOMPONEN UI GLOBAL (resources/js/components/ui)
 ----------------------------------------------------------------------------------------------------
