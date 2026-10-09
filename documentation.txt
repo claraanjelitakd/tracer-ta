@@ -23,6 +23,10 @@ DAFTAR ISI
 11. PANDUAN 17 TIPE INPUT KUESIONER & ALUR DATA
 12. ARSITEKTUR & IMPLEMENTASI SINKRONISASI LINKEDIN (DRIVER-BASED & ERD)
 13. LOG PEMBARUAN SISTEM (UPDATE LOG)
+14. ARSITEKTUR INTEGRASI DATA AKADEMIK, YUDISIUM, & BIODATA (ZERO DUPLICATION)
+15. ARSITEKTUR VERIFIKASI PERUSAHAAN (MULTI-LEVEL SIMILARITY & TEXT CLEANING PIPELINE)
+16. STANDARISASI MULTI-ROLE ALUMNI & PERBAIKAN TATA LETAK RESPONSIF
+17. KEBIJAKAN KONTROL VERSI & ATURAN PENGEMBANGAN (GIT PUSH POLICY)
 
 ====================================================================================================
 1. PETA STRUKTUR FOLDER UTAMA
@@ -244,17 +248,27 @@ c:/study/tracerstudy/app/Models/AlumniAuditRekap.php (VIEW: `v_alumni_audit_reka
 c:/study/tracerstudy/app/Services/Alumni/AdminAlumniProfileService.php
 - Service terpusat pembacaan dan penyimpanan profil biodata alumni oleh admin lintas stakeholder.
 
+c:/study/tracerstudy/app/Services/Alumni/LinkedinTraceHelper.php
+- Service helper terpadu lintas controller (Super Admin, Fakultas, Prodi) untuk menyusun tabel audit trace hasil scraping LinkedIn (pemetaan key scraping -> target kolom database -> nilai riil database), filter pencarian instan, dan riwayat sinkronisasi historis alumni.
+
 c:/study/tracerstudy/app/Services/Kuesioner/KuesionerSyncService.php
 - Mengotomatiskan sinkronisasi data profil (NIM, Nama, Tempat/Tanggal Lahir, Perusahaan, Atasan) ke tabel `tracer` dan `prodi_response`.
 
 c:/study/tracerstudy/app/Services/Kuesioner/KelengkapanTracerService.php
 - Menghitung persentase skor kelengkapan pengisian kuesioner universitas, kuesioner prodi, dan profil alumni.
 
-c:/study/tracerstudy/app/Services/LinkedIn/LinkedInService.php
-- Logika integrasi pengambilan dan parsing profil publik LinkedIn alumni.
+c:/study/tracerstudy/app/Services/LinkedIn/LinkedInProfileService.php
+- Service orkestrator terpusat: resolusi driver provider via IoC Container (Mock, Official API, Apify Scraper), eksekusi transaksi database terisolasi, parsing DTO, dan pencatatan audit log `log_activities`.
 
 c:/study/tracerstudy/app/Services/Perusahaan/PerusahaanVerificationService.php
-- Logika verifikasi perusahaan baru, modul auto-replace relasi alumni ke master terverifikasi, serta algoritma rekomendasi kemiripan cerdas (Multi-level String Similarity Matching + Geographic Scoring) untuk mencegah data ganda. Detail lengkap di docs/verifikasi-perusahaan-similarity.md.
+- Logika verifikasi perusahaan baru, modul auto-replace relasi alumni ke master terverifikasi, serta algoritma rekomendasi kemiripan cerdas (Multi-Level String Similarity Matching + Geographic Scoring) untuk mencegah data ganda:
+  * Pembersihan teks: menghapus tanda kurung cabang `(...)`, normalisasi simbol/spasi, dan pemfilteran stop words unit/badan usaha.
+  * Hierarki Pencocokan: Level 1 Identik (95 pt), Level 2 Akronim Penuh (88 pt), Level 3 Frasa Substring (75-90 pt), Level 3B Akronim Parsial/Compound (70-80 pt), Level 4 Irisan Kata Token Intersect dengan syarat rasio overlap >= 33% & proteksi sektor industri generik tunggal (50-75 pt), Level 5 Fuzzy Typo `similar_text` >= 60% (hingga 100 pt).
+  * Pembobotan Geografis: Bonus +20 poin (Kabupaten/Kota sama) dan +10 poin (Provinsi sama).
+  * Panduan lengkap dan simulasi kasus di docs/verifikasi-perusahaan-similarity.md.
+
+c:/study/tracerstudy/app/Services/Export/AlumniTracerExcelExporter.php
+- Service pembentukan berkas ekspor spreadsheet Microsoft Excel dan arsip ZIP multi-sheet untuk data rekap alumni, respon kuesioner tracer universitas, kuesioner evaluasi prodi, dan lembar evaluasi atasan langsung per prodi dan tahun kelulusan.
 
 ====================================================================================================
 5. BACKEND: MIDDLEWARE (app/Http/Middleware)
@@ -946,6 +960,45 @@ Seluruh komponen dirancang modular sebagai kode inti produksi, dengan pembagian 
 5. Panduan Pembersihan Cache Konfigurasi:
    - Jika aplikasi dijalankan dengan cache konfigurasi aktif di lingkungan staging/produksi, jalankan perintah berikut setelah mengubah `.env`:
      `php artisan config:clear`
+
+----------------------------------------------------------------------------------------------------
+[2026-10-06] INTEGRASI PROVIDER APIFY LINKEDIN SCRAPER, TABEL STAGING, & AUDIT TRACE DETAIL ALUMNI
+----------------------------------------------------------------------------------------------------
+1. Ringkasan Perubahan:
+   - Menambahkan implementasi driver `ApifyLinkedInProvider` memanfaatkan actor Apify `data_forge_org~linkedin-scraper` via autentikasi aman Bearer token (`APIFY_API_TOKEN`) tanpa mengekspos token pada query string.
+   - Mengisolasi hasil scraping ke tabel staging `linkedin_sync_results` berstatus `pending` lengkap dengan payload mentah JSON (`raw_response`), parameter input (`input_params`), pemetaan data (`mapped_data`), serta jejak auditor (`reviewed_by`, `reviewed_at`).
+   - Alur persetujuan SuperAdmin (Approval Workflow) untuk meninjau, menyetujui (Approve), atau menolak (Reject) hasil scraping sebelum memodifikasi data profil alumni.
+   - Mengunduh foto profil LinkedIn secara fisik ke disk lokal (`public/uploads/profile/profile_{nim}_{timestamp}.jpg`) untuk mengatasi expiry token URL CDN LinkedIn.
+   - Menambahkan preview avatar interaktif pada `FormPribadi.vue` dan handler upload fisik mandiri di `SimpanProfilController.php`.
+   - Menambahkan Tab 4 "Hasil Scraping & Trace LinkedIn" pada halaman Detail Alumni (`Show.vue`) berisi kartu status, pencarian atribut, JSON viewer interaktif, dan tabel audit perbandingan komprehensif 6 kolom.
+   - Sinkronisasi otomatis status karier menjadi 'Pekerja' dan opsi jabatan kustom dinamis di `FormKarier.vue`.
+   - Otomatisasi pengujian: 23 skenario feature test di `ApifyLinkedInProviderTest.php` dan 17 skenario di `SuperAdminLinkedInSyncTest.php` (100% passed).
+
+----------------------------------------------------------------------------------------------------
+[2026-10-08] DEEP LINKING ALUMNI LINKEDIN SYNC, EKSPOR EXCEL/ZIP, & STANDARISASI SKILLS/EXPERIENCE
+----------------------------------------------------------------------------------------------------
+1. Ringkasan Perubahan:
+   - Deep Linking dua arah: Banner audit trace pada `Show.vue` alumni langsung mengarahkan ke `/superadmin/linkedin-sync?alumni_id={id}&search={nim}` dengan auto-select tahun kelulusan, pencarian otomatis, highlight cincin hijau emerald, dan auto-scroll viewport ke baris profil alumni.
+   - Menambahkan tombol aksi cepat ikon mata di tabel LinkedIn Sync (`/superadmin/linkedin-sync`) untuk melompat langsung ke halaman detail alumni `/superadmin/alumni/{id}`.
+   - Migrasi standarisasi penamaan kolom basis data: `expert` diubah menjadi `skills` dan `minat` diubah menjadi `experience` pada tabel `biodata`, serta mereplikasi otomatis perubahan pada SQL View `v_alumni_profile_summary` dan `v_alumni_audit_rekap`.
+   - Modul ekspor spreadsheet Microsoft Excel dan arsip ZIP multi-sheet per program studi (`AlumniTracerExcelExporter.php`).
+   - Otomatisasi pengujian: 123 tests passed (745 assertions).
+
+----------------------------------------------------------------------------------------------------
+[2026-10-09] REKOMENDASI KECOCOKAN PERUSAHAAN (33% TOKEN OVERLAP & GENERIC FILTER), PENYELARASAN MULTI-ROLE ALUMNI, FIX TATA LETAK, & KEBIJAKAN GIT PUSH
+----------------------------------------------------------------------------------------------------
+1. Ringkasan Perubahan:
+   - Penyelarasan Desain Direktori Alumni Multi-Role: Menghapus kolom status redundan pada tabel alumni di Super Admin, Admin Fakultas, dan Admin Prodi.
+   - Penyeragaman Halaman Detail Alumni: Admin Fakultas dan Admin Prodi kini memiliki struktur 5-tab komprehensif identik dengan Super Admin, didukung helper bersama `app/Services/Alumni/LinkedinTraceHelper.php`.
+   - Perbaikan Tata Letak Tampilan Alumni: Menambahkan padding responsif `lg:pl-72` pada kontainer `<main>` di `AdminProdi/Alumni/Index.vue` dan `AdminFakultas/Alumni/Index.vue` sehingga konten stat cards, avatar foto, nama alumni, dan tabel tidak lagi tertutup sidebar fixed `w-72`.
+   - Penyempurnaan Pipeline Pembersihan Teks (`cleanCompanyName`): Membersihkan keterangan tanda kurung cabang `(...)` seperti `(Kantor Pusat)` dan memperluas stop words unit/kantor cabang.
+   - Algoritma Kemiripan Perusahaan Tingkat Lanjut (`PerusahaanVerificationService.php`):
+     * Akronim Natural: `PT Bank Central Asia Tbk` $\rightarrow$ `bca`, cocok dengan `PT BCA INDONESIA` (Skor 88%).
+     * Level 3B (Compound Token Acronym Intersect): Mendeteksi kemiripan parsial akronim seperti `BCA Digital` $\leftrightarrow$ `Bank Central Asia` (Skor 70-80%).
+     * Penyesuaian Ambang Batas Token Overlap Ratio menjadi minimal 33% (sepertiga bagian nama) untuk fleksibilitas kecocokan nama majemuk.
+     * Filter Klasifikasi Sektor Industri Generik Tunggal: Menambahkan `$genericIndustryWords` (`bank`, `universitas`, `rs`, `hotel`, dll) sehingga entitas seperti `Bank Mandiri` tidak lagi merekomendasikan seluruh bank lain di Indonesia hanya karena kata "Bank", namun tetap merekomendasikan variasi nama entitas spesifik seperti `CV Theresia Inovasi Mandiri` (58%).
+   - Penetapan Kebijakan Kontrol Versi: Menetapkan aturan bahwa agen AI DILARANG KERAS melakukan `git push` otomatis (`.agents/rules/git-push-policy.md` & `AGENTS.md`). Seluruh kode wajib diuji dan dilaporkan secara lokal terlebih dahulu.
+   - Otomatisasi pengujian: 124 tests passed (747 assertions), Pint clean, Vite build sukses.
 ====================================================================================================
 14. ARSITEKTUR INTEGRASI DATA AKADEMIK, YUDISIUM, & BIODATA (ZERO DUPLICATION)
 ====================================================================================================
@@ -1095,4 +1148,112 @@ F. NAVIGASI DUA ARAH DETAIL ALUMNI & LINKEDIN SYNC, SERTA STANDARISASI SKILLS & 
    - `minat` diganti menjadi `experience` (riwayat pengalaman kerja & profesional alumni).
    - Replikasi otomatis ke View SQL `v_alumni_profile_summary` dan `v_alumni_audit_rekap`.
 ====================================================================================================
+
+====================================================================================================
+15. ARSITEKTUR VERIFIKASI PERUSAHAAN (MULTI-LEVEL SIMILARITY & TEXT CLEANING PIPELINE)
+====================================================================================================
+A. LATAR BELAKANG & TANTANGAN DATA GANDA
+Ketika alumni mengisi kuesioner atau memperbarui profil, mereka seringkali menuliskan nama instansi/perusahaan
+tempat kerja dengan berbagai variasi penulisan, misalnya:
+- "PT Bank Central Asia Tbk (Kantor Pusat)" vs "PT BCA INDONESIA" vs "Bank Central Asia"
+- "Gojek" vs "PT Gojek Indonesia" vs "Gojek Super App"
+- "Tokopedia" vs "PT. Tokopedia"
+Tanpa sistem pembersihan dan pencocokan cerdas, basis data akan dipenuhi duplikasi perusahaan yang merusak
+validitas statistik penyerapan alumni dan kerja sama mitra kampus.
+
+B. ARSITEKTUR KOMPONEN
+1. Domain Service: `app/Services/Perusahaan/PerusahaanVerificationService.php`
+2. Controllers:
+   - Super Admin : `app/Http/Controllers/SuperAdmin/Perusahaan/VerifikasiPerusahaanSuperAdminController.php`
+   - Admin Fakultas: `app/Http/Controllers/AdminFakultas/VerifikasiPerusahaan/VerifikasiPerusahaanFakultasController.php`
+   - Admin Prodi  : `app/Http/Controllers/AdminProdi/VerifikasiPerusahaan/VerifikasiPerusahaanProdiController.php`
+3. Dokumentasi Teknis Rinci: `docs/verifikasi-perusahaan-similarity.md`
+
+C. PIPELINE PEMBERSIHAN TEKS (TEXT PREPROCESSING PIPELINE - `cleanCompanyName`)
+Sebelum dua nama perusahaan dibandingkan, string mentah disterilkan melalui tahapan:
+1. Pemotongan Teks Keterangan Cabang/Lokasi dalam Tanda Kurung `(...)`:
+   Regex `preg_replace('/\([^)]*\)/', ' ', $name)` memotong teks seperti `(Kantor Pusat)`, `(Surabaya)`, `(Persero)`
+   sehingga perbandingan fokus pada entitas pokok badan usaha.
+2. Normalisasi Karakter & Tanda Baca:
+   Mengubah string ke huruf kecil (`strtolower`) dan menghapus simbol/tanda baca (`[.,\-_()\[\]\/\\\&+]`).
+3. Penyaringan Stop Words Bertingkat:
+   - Badan Usaha: 'pt', 'cv', 'tbk', 'persero', 'corp', 'inc', 'ltd', 'llc', 'yayasan', 'ud', 'koperasi', dll.
+   - Unit/Cabang/Wilayah: 'kantor', 'pusat', 'cabang', 'kcu', 'kc', 'kcp', 'unit', 'witel', 'regional',
+     'wilayah', 'area', 'divisi', 'office', 'hq', 'head', 'representative'.
+   - Lembaga: 'dinas', 'kementerian', 'badan', 'lembaga'.
+   - Geografis & Preposisi: 'indonesia', 'dan', 'and', 'of', 'the', 'in', 'di'.
+
+D. HIERARKI PENILAIAN NAMA MULTI-LEVEL (MULTI-LEVEL NAME MATCHING)
+Penilaian kemiripan nama menggunakan struktur hierarki prioritas:
+1. Level 1 - Exact Match (Skor: 95 Poin):
+   Nama bersih kedua entitas identik 100% setelah stop words dihilangkan.
+2. Level 2 - Akronim / Singkatan Cocok (Skor: 88 Poin):
+   Mencocokkan singkatan inisial huruf depan (`bca`) dengan nama panjangnya (`bank central asia`), atau sebaliknya.
+3. Level 3 - Substring / Frasa Terkandung (Skor: 75 s/d 90 Poin):
+   Salah satu nama bersih terkandung utuh di dalam nama lainnya (contoh: "Gojek" di dalam "Gojek Super App").
+   Skor dasar 75 + bonus rasio panjang karakter (hingga 90 poin).
+4. Level 3B - Akronim Parsial / Compound Acronym (Skor: 70 s/d 80 Poin):
+   Salah satu kata token merupakan akronim dari entitas master (contoh: "BCA Digital" vs "Bank Central Asia").
+5. Level 4 - Irisan Kata / Token Intersect (Skor: 50 s/d 75 Poin):
+   Mencari kata-kata yang sama (`array_intersect`) dengan syarat:
+   a) Rasio tumpang tindih kata minimal 33% (sepertiga bagian nama): `overlapRatio >= 0.33`.
+   b) Bukan kecocokan tunggal pada kata sektor industri generik (`$genericIndustryWords`: 'bank',
+      'universitas', 'sekolah', 'rs', 'hotel', 'studio', 'resto', 'cafe', 'toko', 'media', 'lab').
+   Contoh: "CV Theresia Inovasi Mandiri" vs "Bank Mandiri" menghasilkan skor 58 (kata 'mandiri' spesifik),
+   sedangkan "Bank Mandiri" vs "Bank Central Asia" menghasilkan skor 0 (kata 'bank' generik tunggal ditolak).
+6. Level 5 - Fuzzy Distance / Deteksi Typo (Skor: 60 s/d 100 Poin):
+   Menggunakan fungsi `similar_text()` (algoritma Ratcliff/Obershelp) jika persentase kemiripan huruf >= 60%.
+   Contoh: "Bank Centrl Asia" vs "Bank Central Asia" menghasilkan skor 97%.
+
+E. PEMBOBOTAN LOKASI GEOGRAFIS (GEOGRAPHIC LOCATION BONUS)
+- Kabupaten/Kota Sama (`kabupaten_id` identik & skor nama >= 35): +20 Poin.
+- Provinsi Sama (`propinsi_id` identik & skor nama >= 35): +10 Poin.
+- Skor total dibatasi maksimal 100 poin.
+
+F. MODUL AUTO-REPLACE & KONSOLIDASI DATABASE
+Fitur `autoReplace()` mentransfer seluruh keterhubungan alumni (`biodata.perusahaan_id`) dari pengajuan
+sementara ke entitas master terverifikasi, lalu menghapus data pengajuan yang tidak diperlukan, menjamin
+integritas relasi tanpa menimbulkan data yatim (*orphaned records*).
+
+====================================================================================================
+16. STANDARISASI MULTI-ROLE ALUMNI & PERBAIKAN TATA LETAK RESPONSIF
+====================================================================================================
+A. PENYERAGAMAN DIREKTORI ALUMNI
+- Kolom Status dihapus dari tabel direktori alumni di Super Admin, Admin Fakultas, dan Admin Prodi.
+- Tampilan tabel menjadi lebih lega, rapi, dan terfokus pada NIM, Nama, Angkatan, IPK, Karier, dan Aksi.
+
+B. KESERAGAMAN HALAMAN DETAIL ALUMNI (5-TAB ARCHITECTURE)
+Halaman Detail Alumni (`Show.vue`) pada Admin Fakultas dan Admin Prodi diselaraskan menjadi 5 tab seragam
+identik dengan Super Admin:
+- Tab 1: Kuesioner Tracer Universitas (Respon F1 - F22 lengkap dengan badge dan format 17 tipe input).
+- Tab 2: Kuesioner Evaluasi Program Studi (Respon kuesioner prodi dinamis).
+- Tab 3: Data Profil Lengkap (Identitas diri, data akademik, orang tua, pekerjaan, atasan, dan kontak).
+- Tab 4: Hasil Scraping & Trace LinkedIn (Ringkasan status, pencarian atribut, JSON viewer, tabel audit trace).
+- Tab 5: Evaluasi Pengguna Lulusan / Atasan (Data atasan langsung dan kuesioner kepuasan pengguna).
+
+C. HELPER TERPUSAT: `LinkedinTraceHelper.php`
+Dibuat service helper bersama `app/Services/Alumni/LinkedinTraceHelper.php` untuk:
+- Mengekstrak riwayat sinkronisasi LinkedIn terbaru (`latestSync`).
+- Membangun tabel perbandingan 6 kolom (Key Atribut -> Deskripsi -> Nilai Apify -> Kolom DB -> Nilai DB -> Status).
+- Mengisolasi logika formatting agar controller `DetailAlumniSuperAdminController`,
+  `DetailAlumniFakultasController`, dan `DetailAlumniProdiController` tetap ramping dan DRY (*Don't Repeat Yourself*).
+
+D. PERBAIKAN TATA LETAK RESPONSIF SIDEBAR ALUMNI
+- Masalah: Pada resolusi desktop, fixed sidebar `w-72` menimpa konten header dan kolom kiri tabel alumni prodi/fakultas.
+- Solusi: Menambahkan utility class `lg:pl-72` pada tag `<main>` di `AdminProdi/Alumni/Index.vue` dan
+  `AdminFakultas/Alumni/Index.vue`. Konten kini terdorong sempurna ke kanan sidebar secara responsif dan proporsional.
+
+====================================================================================================
+17. KEBIJAKAN KONTROL VERSI & ATURAN PENGEMBANGAN (GIT PUSH POLICY)
+====================================================================================================
+A. ATURAN BAKU GIT PUSH:
+- **DILARANG KERAS `git push` SECARA MANDIRI ATAU OTOMATIS**.
+- Perintah `git push` HANYA boleh dieksekusi jika pengguna secara eksplisit meminta push pada giliran pesan tersebut.
+- Seluruh pekerjaan wajib diuji dan disimpan di lingkungan lokal, lalu dilaporkan untuk diperiksa pengguna terlebih dahulu.
+
+B. REFERENSI DOKUMEN ATURAN:
+- File Rule Proyek: `c:/study/tracerstudy/.agents/rules/git-push-policy.md`
+- Master Guidelines : `c:/study/tracerstudy/AGENTS.md` (bagian Foundation Rules & Conventions)
+====================================================================================================
+
 

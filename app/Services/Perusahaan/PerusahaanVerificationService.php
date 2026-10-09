@@ -390,8 +390,20 @@ class PerusahaanVerificationService
                 // Variabel $percent: Menampung angka persentase kemiripan huruf jika ada salah ketik/typo (misal "centrl" vs "central" -> 96.9).
                 similar_text($cleanPending, $cleanVerified, $percent);
 
+                // Cek apakah ada kata klasifikasi sektor industri generik yang mendistorsi kemiripan huruf (misal sama-sama kata "bank")
+                $pendingCore = trim(implode(' ', array_diff($pendingTokens, $this->genericIndustryWords)));
+                $verifiedCore = trim(implode(' ', array_diff($verifiedTokens, $this->genericIndustryWords)));
+                $isDistortedByGeneric = false;
+                if ($pendingCore !== '' && $verifiedCore !== '') {
+                    similar_text($pendingCore, $verifiedCore, $percentCore);
+                    // Jika kata inti di luar sektor generik berbeda (< 60%) dan satu-satunya kata yang sama adalah kata sektor generik, jangan anggap typo
+                    if ($percentCore < 60 && count($intersect) === 1 && in_array(reset($intersect), $this->genericIndustryWords, true)) {
+                        $isDistortedByGeneric = true;
+                    }
+                }
+
                 // [LANGKAH 8] Cek apakah persentase >= 60% dan lebih tinggi dari skor irisan kata sebelumnya.
-                if ($percent >= 60 && (int) $percent > $nameScore) {
+                if ($percent >= 60 && ! $isDistortedByGeneric && (int) $percent > $nameScore) {
                     // Konversi nilai persen ke integer dan simpan sebagai skor nama utama
                     $nameScore = (int) $percent;
 
@@ -694,6 +706,28 @@ class PerusahaanVerificationService
             }
             if ($acr !== '') {
                 $acronyms[] = strtolower($acr);
+            }
+        }
+
+        // 1b. Akronim inklusif: menghitung akronim alami dari seluruh kata penting termasuk kata entitas negara/geografis (misal 'indonesia')
+        // Menangani kasus natural seperti "Bank Nasional Indonesia" -> "bni", "Kereta Api Indonesia" -> "kai", "Bank Rakyat Indonesia" -> "bri"
+        $nameWithoutParentheses = preg_replace('/\([^)]*\)/', ' ', $name);
+        $rawLower = strtolower(trim((string) $nameWithoutParentheses));
+        $rawClean = preg_replace('/[.,\-_()\[\]\/\\\&+]+/', ' ', $rawLower);
+        $rawWords = preg_split('/\s+/', (string) $rawClean, -1, PREG_SPLIT_NO_EMPTY) ?: [];
+        $legalStopWords = [
+            'pt', 'p.t', 'cv', 'c.v', 'tbk', 'persero', 'corp', 'corporation', 'inc', 'ltd',
+            'llc', 'gmbh', 'co', 'company', 'group', 'holding', 'perum', 'yayasan',
+            'ud', 'u.d', 'fa', 'firma', 'koperasi', 'pte',
+        ];
+        $meaningfulWords = array_values(array_filter($rawWords, fn ($w) => ! in_array($w, $legalStopWords, true)));
+        if (count($meaningfulWords) > 1) {
+            $inclusiveAcr = '';
+            foreach ($meaningfulWords as $w) {
+                $inclusiveAcr .= $w[0] ?? '';
+            }
+            if ($inclusiveAcr !== '') {
+                $acronyms[] = strtolower($inclusiveAcr);
             }
         }
 

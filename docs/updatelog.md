@@ -2,6 +2,28 @@
 
 Semua perubahan besar pada sistem dicatat dalam dokumen ini.
 
+## [2026-10-09]
+- **Penyelarasan Desain & Antarmuka Direktori Alumni Multi-Role**:
+  - Menghapus kolom Status yang tidak relevan/redundan pada tabel alumni di Super Admin, Admin Fakultas, dan Admin Prodi sehingga visual tabel lebih lega, rapi, dan konsisten.
+  - Menyamakan struktur halaman Detail Alumni (`Show.vue`) pada Admin Fakultas dan Admin Prodi menjadi 5 tab komprehensif identik dengan Super Admin: Tab 1 (Kuesioner Universitas), Tab 2 (Kuesioner Prodi), Tab 3 (Data Profil Lengkap), Tab 4 (Hasil Scraping & Trace LinkedIn), dan Tab 5 (Evaluasi Pengguna Lulusan / Atasan).
+  - Melakukan ekstraksi service helper bersama [`app/Services/Alumni/LinkedinTraceHelper.php`](file:///c:/study/tracerstudy/app/Services/Alumni/LinkedinTraceHelper.php) untuk menyatukan logika perbandingan field database vs hasil scraping, pemetaan atribut, dan audit trail histori sinkronisasi LinkedIn di semua controller stakeholder.
+- **Perbaikan Bug Tata Letak Layar Alumni Terpotong (Sidebar Padding Fix)**:
+  - Memperbaiki padding responsif `lg:pl-72` pada elemen `<main>` di [`resources/js/Pages/AdminProdi/Alumni/Index.vue`](file:///c:/study/tracerstudy/resources/js/Pages/AdminProdi/Alumni/Index.vue) dan [`resources/js/Pages/AdminFakultas/Alumni/Index.vue`](file:///c:/study/tracerstudy/resources/js/Pages/AdminFakultas/Alumni/Index.vue).
+  - Mengatasi masalah konten yang tertimpa oleh fixed sidebar `w-72`, sehingga judul direktori, 4 kartu metrik statistik alumni, foto avatar, nama lengkap, dan data tabel dapat diakses dengan jelas dan proporsional di semua resolusi layar desktop.
+- **Penyempurnaan Pipeline Normalisasi Teks & Algoritma Rekomendasi Kecocokan Perusahaan (`PerusahaanVerificationService.php`)**:
+  - Penambahan pembersihan string tanda kurung `(...)` (seperti `(Kantor Pusat)`, `(Persero)`) pada fungsi `cleanCompanyName()` untuk memastikan pencocokan nama berfokus pada entitas pokok badan usaha.
+  - Perluasan daftar stop words unit kantor, cabang, dan wilayah (`'kantor', 'pusat', 'cabang', 'branch', 'subcabang', 'kcu', 'kc', 'kcp', 'unit', 'witel', 'regional', 'wilayah', 'area', 'divisi', 'division', 'office', 'hq', 'head', 'representative'`).
+  - Pembuatan akronim natural otomatis: Mengakomodasi nama panjang berformat standar seperti `PT Bank Central Asia Tbk` $\rightarrow$ `bca`, cocok dengan `PT BCA INDONESIA` pada Level 2 (Skor 88%).
+  - Penambahan Level 3B (Compound Token Acronym Intersect): Mendeteksi akronim parsial pada nama majemuk seperti `BCA Digital` $\leftrightarrow$ `Bank Central Asia` (Skor 70-80%).
+  - Ambang batas Token Overlap Ratio disesuaikan menjadi minimal 33% (sepertiga bagian nama) untuk menangani variasi nama dengan panjang token berbeda secara fleksibel dan proporsional.
+  - Filter Klasifikasi Sektor Industri Generik Tunggal: Menambahkan `$genericIndustryWords` (`'bank', 'universitas', 'univ', 'institut', 'sekolah', 'rs', 'hospital', 'hotel', 'studio', 'restoran', 'resto', 'cafe', 'toko', 'media', 'lab', 'laboratorium'`) agar entitas seperti `Bank Mandiri` tidak lagi merekomendasikan seluruh bank lain di Indonesia hanya karena kata "Bank", namun tetap merekomendasikan `CV Theresia Inovasi Mandiri` (58%).
+- **Penerapan Kebijakan Ketat Larangan Git Push Otomatis (`.agents/rules/git-push-policy.md` & `AGENTS.md`)**:
+  - Menyusun aturan tetap dalam proyek bahwa agen AI dilarang keras melakukan `git push` mandiri tanpa instruksi eksplisit pengguna pada sesi pesan tersebut. Semua hasil pekerjaan wajib diuji dan dilaporkan secara lokal terlebih dahulu.
+- **Automated Testing & Kualitas Kode**:
+  - 124 feature & unit tests lulus (100% passed, 747 assertions).
+  - Pint formatting lolos standar PSR-12/Laravel Pint.
+  - Vite build bundle sukses tanpa galat.
+
 ## [2026-10-08]
 - **Deep Linking Terarah Detail Alumni ke LinkedIn Sync**: Menghubungkan banner *Audit & Trace Hasil Scraping LinkedIn* pada Detail Alumni (`/superadmin/alumni/{id}`) langsung ke `/superadmin/linkedin-sync?alumni_id={id}&search={nim}` dengan auto-select tahun lulus alumni, filter pencarian otomatis, highlight cincin hijau emerald ("Profil Dipilih"), dan auto-scroll viewport ke baris profil alumni.
 - **Tombol Aksi Cepat Ikon Mata di LinkedIn Sync**: Menyematkan tombol aksi ikon mata pada setiap baris alumni di tabel LinkedIn Sync (`/superadmin/linkedin-sync`) untuk navigasi instan ke halaman Detail Alumni lengkap (`/superadmin/alumni/{id}`).

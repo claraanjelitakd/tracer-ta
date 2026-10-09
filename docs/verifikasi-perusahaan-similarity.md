@@ -120,7 +120,8 @@ Sistem membandingkan data pengajuan alumni (`$pendingCompany`) dengan **setiap**
 | **Level 1** | `$cleanPending === $cleanVerified` | Operator identik string `===` | `"tokopedia"` vs `"tokopedia"` |
 | **Level 2** | `in_array(strtolower($cleanPending), $verifiedAcronyms)` | Pencocokan string akronim & alias | `"bca"` vs `"bca"` dari `"bank central asia"` |
 | **Level 3** | `str_contains($cleanVerified, $cleanPending)` | Pengecekan frasa terkandung | `"Gojek"` di dalam `"Gojek Super App"` |
-| **Level 4** | `array_intersect($pendingTokens, $verifiedTokens)` | Irisan kata yang sama | `["bank", "mandiri"]` dari kedua nama |
+| **Level 3B** | `count(array_intersect($pendingTokens, $verifiedAcronyms)) > 0` | Akronim parsial pada nama majemuk | `"BCA Digital"` $\leftrightarrow$ `"Bank Central Asia"` |
+| **Level 4** | `array_intersect($pendingTokens, $verifiedTokens)` | Irisan kata (Rasio $\ge 33\%$ & non-generic) | `"Theresia Inovasi Mandiri"` vs `"Bank Mandiri"` |
 | **Level 5** | `similar_text($cleanPending, $cleanVerified, $percent)` | Persentase kemiripan karakter huruf | `"centrl"` vs `"central"` (Typo 97%) |
 
 ---
@@ -133,12 +134,14 @@ Sistem menggunakan struktur `if ... elseif ... else` sebagai **hierarki priorita
 if ($cleanPending !== '' && $cleanPending === $cleanVerified) {
     // LEVEL 1: Exact Match (95 Poin)
 } elseif (...) {
-    // LEVEL 2: Akronim / Singkatan (88 Poin)
+    // LEVEL 2: Akronim / Singkatan Cocok (88 Poin)
 } elseif (...) {
     // LEVEL 3: Substring / Frasa Terkandung (75 - 90 Poin)
+} elseif (...) {
+    // LEVEL 3B: Akronim Parsial / Compound Acronym (70 - 80 Poin)
 } else {
-    // LEVEL 4: Irisan Kata (Token Intersect)
-    // LEVEL 5: Deteksi Typo (similar_text)
+    // LEVEL 4: Irisan Kata / Token Intersect (50 - 75 Poin, Rasio >= 33% & Non-Generic)
+    // LEVEL 5: Deteksi Typo / Fuzzy Distance (similar_text >= 60%)
 }
 ```
 
@@ -160,6 +163,9 @@ if ($cleanPending !== '' && $cleanPending === $cleanVerified) {
 #### 2. Level 2 - Akronim / Singkatan Cocok (Skor: 88 Poin)
 ```php
 elseif (
+    (! empty($verifiedAcronyms) && in_array(strtolower($cleanPending), $verifiedAcronyms, true)) ||
+    (! empty($pendingAcronyms) && in_array(strtolower($cleanVerified), $pendingAcronyms, true)) ||
+    (! empty($verifiedAcronyms) && ! empty($pendingAcronyms) && count(array_intersect($pendingAcronyms, $verifiedAcronyms)) > 0) ||
     (! empty($verifiedAcronym) && strtolower($cleanPending) === strtolower($verifiedAcronym)) ||
     (! empty($pendingAcronym) && strtolower($cleanVerified) === strtolower($pendingAcronym)) ||
     (in_array(strtolower($cleanPending), $verifiedTokens, true)) ||
@@ -169,12 +175,12 @@ elseif (
     $reasons[] = 'Akronim / Singkatan Cocok';
 }
 ```
-* **Maksud Kode:** Menguji 4 kemungkinan singkatan:
+* **Maksud Kode:** Menguji kemungkinan singkatan:
   1. Input alumni adalah akronim dari master database (misal `"bca"` vs akronim dari `"bank central asia"`).
   2. Master database berupa singkatan dan input alumni nama panjangnya.
   3. Input alumni adalah salah satu kata dalam token master.
   4. Master database adalah salah satu kata dalam token input alumni.
-* **Contoh Kasus:** Alumni hanya menulis `"BCA"`, sistem otomatis mencocokkannya dengan `"PT Bank Central Asia, Tbk"` dan memberi skor 88 poin.
+* **Contoh Kasus:** Alumni mengetik `"PT BCA INDONESIA"`, sistem membersihkannya menjadi `"bca"`, mencocokkannya dengan akronim `"PT Bank Central Asia Tbk (Kantor Pusat)"`, dan memberi skor 88 poin.
 
 #### 3. Level 3 - Substring / Frasa Terkandung (Skor: 75 s/d 90 Poin)
 ```php
@@ -195,27 +201,59 @@ elseif (
   * Skor bonus rasio: Dihitung dari perbandingan panjang karakter yang lebih pendek dibagi yang lebih panjang dikalikan 15. Jika panjangnya hampir sama, skor mendekati 90 poin.
 * **Contoh Kasus:** Alumni menginput `"Gojek"` (5 huruf), master bertuliskan `"Gojek Super App"` (15 huruf). Karena `"Gojek"` ada di dalamnya, sistem memberikan skor rekomendasi $75 + (5/15 \times 15) = 80$ poin.
 
-#### 4. Level 4 - Irisan Kata / Token Intersect (Skor proporsional maks 75 Poin)
+#### 4. Level 3B - Akronim Parsial / Compound Acronym (Skor: 70 s/d 80 Poin)
+```php
+elseif (
+    (! empty($verifiedAcronyms) && count($matchedAcrTokens = array_intersect($pendingTokens, $verifiedAcronyms)) > 0) ||
+    (! empty($pendingAcronyms) && count($matchedAcrTokens = array_intersect($verifiedTokens, $pendingAcronyms)) > 0)
+) {
+    $matchedWord = strtoupper(implode(', ', $matchedAcrTokens));
+    $totalTokens = max(count($pendingTokens), count($verifiedTokens));
+    $ratio = $totalTokens > 0 ? (count($matchedAcrTokens) / $totalTokens) : 0.5;
+    $nameScore = 70 + (int) ($ratio * 15);
+    $reasons[] = "Mengandung Akronim Entitas Terkait ({$matchedWord})";
+}
+```
+* **Maksud Kode:** Menangani entitas anak atau perusahaan afiliasi di mana salah satu kata dari nama majemuk merupakan akronim dari entitas induk.
+* **Contoh Kasus:** 
+  * Pengajuan: `"BCA Digital"` (token: `bca`, `digital`).
+  * Master: `"Bank Central Asia"` (akronim: `bca`).
+  * Token `bca` cocok dengan akronim master $\rightarrow$ Diberikan skor 75 poin dengan alasan `"Mengandung Akronim Entitas Terkait (BCA)"`.
+
+#### 5. Level 4 - Irisan Kata / Token Intersect (Skor proporsional 50 s/d 75 Poin)
 ```php
 $intersect = array_intersect($pendingTokens, $verifiedTokens);
 $overlapCount = count($intersect);
+
 if ($overlapCount > 0) {
     $totalTokens = max(count($pendingTokens), count($verifiedTokens));
-    $tokenScore = (int) (($overlapCount / $totalTokens) * 75);
-    if ($tokenScore > $nameScore) {
-        $nameScore = $tokenScore;
-        $reasons[] = "Memiliki {$overlapCount} Kata Yang Sama (".implode(', ', $intersect).')';
+    $overlapRatio = $totalTokens > 0 ? ($overlapCount / $totalTokens) : 0;
+
+    // Filter jika hanya 1 kata yang sama dan kata tersebut adalah klasifikasi industri umum
+    $isSingleGenericMatch = ($overlapCount === 1 && in_array(reset($intersect), $this->genericIndustryWords, true));
+
+    // Syarat ambang batas: Rasio kesamaan kata minimal 33% (sepertiga bagian) & bukan sektor generik tunggal
+    if ($overlapRatio >= 0.33 && ! $isSingleGenericMatch) {
+        $tokenScore = 50 + (int) ($overlapRatio * 25);
+        if ($tokenScore > $nameScore) {
+            $nameScore = $tokenScore;
+            $reasons[] = "Memiliki {$overlapCount} Kata Yang Sama (".implode(', ', $intersect).')';
+        }
     }
 }
 ```
-* **Maksud Kode:** Jika nama tidak saling terkandung utuh, sistem memecah nama menjadi kumpulan kata dan mencari kata apa saja yang sama (`array_intersect`).
+* **Maksud Kode:**
+  1. `overlapRatio >= 0.33`: Memastikan minimal sepertiga (33%) dari seluruh kata di dalam nama identik, sehingga nama dengan variasi urutan tetap terdeteksi.
+  2. `! $isSingleGenericMatch`: Mengeliminasi false positive akibat kesamaan 1 kata sektor industri umum seperti `"bank"`, `"universitas"`, `"rs"`, `"hotel"`, dll.
 * **Contoh Kasus:**
-  * Pengajuan: `"Bank Mandiri Syariah"` (3 kata).
-  * Master: `"Bank Mandiri Taspen"` (3 kata).
-  * Kata yang sama: `["bank", "mandiri"]` (2 kata).
-  * Skor: $(2 / 3) \times 75 = 50$ poin.
+  * Pengajuan: `"CV Theresia Inovasi Mandiri"` vs Master: `"Bank Mandiri"`.
+    - Kata yang sama: `["mandiri"]`.
+    - Karena `"mandiri"` bukan kata sektor industri generik, dan rasio overlap $1/3 = 33\%$, sistem tetap memberikan rekomendasi relevan sebesar **58 poin**.
+  * Pengajuan: `"Bank Mandiri"` vs Master: `"Bank Central Asia"`.
+    - Kata yang sama: `["bank"]`.
+    - Karena `"bank"` terdaftar di `$genericIndustryWords` dan merupakan kecocokan tunggal (1 kata), rekomendasi **diabaikan (0 poin)** untuk mencegah saran palsu antar bank yang berbeda.
 
-#### 5. Level 5 - Fuzzy Distance / Deteksi Typo (Skor hingga 100 Poin)
+#### 6. Level 5 - Fuzzy Distance / Deteksi Typo (Skor hingga 100 Poin)
 ```php
 similar_text($cleanPending, $cleanVerified, $percent);
 if ($percent >= 60 && (int) $percent > $nameScore) {
@@ -241,7 +279,9 @@ if ($percent >= 60 && (int) $percent > $nameScore) {
 | **Identik** | `PT. Tokopedia` | `Tokopedia` | Level 1 | `Nama Identik (Tanpa PT/CV)` | **95** |
 | **Singkatan** | `BCA` | `PT Bank Central Asia` | Level 2 | `Akronim / Singkatan Cocok` | **88** |
 | **Frasa** | `Gojek` | `Gojek Super App` | Level 3 | `Nama Mengandung Frasa Yang Sama` | **80** |
-| **Irisan Kata** | `Bank Mandiri Syariah` | `Bank Mandiri Taspen` | Level 4 | `Memiliki 2 Kata Yang Sama (bank, mandiri)` | **50** |
+| **Akronim Parsial** | `BCA Digital` | `PT Bank Central Asia` | Level 3B | `Mengandung Akronim Entitas Terkait (BCA)` | **75** |
+| **Irisan Kata Valid** | `CV Inovasi Mandiri` | `PT Mandiri Solusi` | Level 4 | `Memiliki 1 Kata Yang Sama (mandiri)` | **58** |
+| **Sektor Generik (Ditolak)** | `Bank Mandiri` | `Bank Danamon` | Level 4 (Filter) | *Tidak direkomendasikan (Generik Tunggal)* | **0** |
 | **Typo** | `Bank Centrl Asia` | `Bank Central Asia` | Level 5 | `Struktur Huruf Mirip (97%)` | **97** |
 
 ---

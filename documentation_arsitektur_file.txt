@@ -21,6 +21,7 @@ DAFTAR ISI
 9. FRONTEND: VUE PAGES & COMPONENTS (resources/js/Pages)
 10. AUTOMATED TESTS (tests/Feature & tests/Unit)
 11. PANDUAN 17 TIPE INPUT KUESIONER & ALUR DATA
+12. ATURAN PENGEMBANGAN & KEBIJAKAN KONTROL VERSI (.agents/rules)
 
 ====================================================================================================
 1. PETA STRUKTUR FOLDER UTAMA
@@ -87,7 +88,13 @@ c:/study/tracerstudy/app/Http/Controllers/AdminProdi/Dashboard/DashboardControll
 - Menghitung KPI respon lulusan, grafik persentase serapan kerja, dan ringkasan aktivitas alumni khusus prodi admin.
 
 c:/study/tracerstudy/app/Http/Controllers/AdminProdi/KelolaAlumni/DaftarAlumniProdiController.php
-- Menampilkan direktori seluruh alumni prodi serta halaman audit detail 3-tab (Kuesioner Prodi, Univ, Profil).
+- Menampilkan direktori seluruh alumni prodi dengan pencarian dan filter tahun lulus.
+
+c:/study/tracerstudy/app/Http/Controllers/AdminProdi/KelolaAlumni/DetailAlumniProdiController.php
+- Audit detail 5-tab alumni prodi: Kuesioner Universitas, Kuesioner Prodi, Data Profil Lengkap, Hasil Scraping & Trace LinkedIn, Evaluasi Atasan.
+
+c:/study/tracerstudy/app/Http/Controllers/AdminProdi/VerifikasiPerusahaan/VerifikasiPerusahaanProdiController.php
+- Verifikasi pengajuan tempat kerja alumni khusus prodi (ACC Langsung, Auto Replace dengan rekomendasi kemiripan, Edit & Verifikasi, Tolak).
 
 c:/study/tracerstudy/app/Http/Controllers/AdminProdi/KelolaPertanyaan/KelolaSectionProdiController.php
 - CRUD bagian/seksi kuesioner program studi dan fitur ubah urutan (reorder) posisi seksi.
@@ -101,7 +108,21 @@ c:/study/tracerstudy/app/Http/Controllers/AdminProdi/KelolaPertanyaan/SimpanPert
 c:/study/tracerstudy/app/Http/Controllers/AdminProdi/KelolaPertanyaan/KelolaOpsiProdiController.php
 - Tambah, edit, dan hapus pilihan opsi jawaban pada butir pertanyaan kuesioner program studi.
 
-E. MODUL SUPER ADMIN (Role: superadmin)
+E. MODUL ADMIN FAKULTAS (Role: admin_fakultas)
+----------------------------------------------------------------------------------------------------
+c:/study/tracerstudy/app/Http/Controllers/AdminFakultas/Dashboard/DashboardController.php
+- Dashboard metrik kelulusan, serapan kerja, dan capaian alumni tingkat fakultas.
+
+c:/study/tracerstudy/app/Http/Controllers/AdminFakultas/KelolaAlumni/DaftarAlumniFakultasController.php
+- Direktori alumni lingkup seluruh prodi di bawah fakultas dengan filter prodi dan tahun kelulusan.
+
+c:/study/tracerstudy/app/Http/Controllers/AdminFakultas/KelolaAlumni/DetailAlumniFakultasController.php
+- Audit detail 5-tab komprehensif alumni fakultas: Kuesioner Universitas, Kuesioner Prodi, Profil Biodata, Trace LinkedIn, Evaluasi Atasan.
+
+c:/study/tracerstudy/app/Http/Controllers/AdminFakultas/VerifikasiPerusahaan/VerifikasiPerusahaanFakultasController.php
+- Verifikasi dan konsolidasi data master perusahaan untuk seluruh prodi di bawah fakultas dengan algoritma rekomendasi kemiripan.
+
+F. MODUL SUPER ADMIN (Role: superadmin)
 ----------------------------------------------------------------------------------------------------
 c:/study/tracerstudy/app/Http/Controllers/SuperAdmin/Dashboard/DashboardController.php
 - Dashboard analitik tingkat universitas, visualisasi chart sebaran kerja, dan pemantauan sistem.
@@ -140,7 +161,7 @@ c:/study/tracerstudy/app/Http/Controllers/SuperAdmin/LogAktivitasController.php
 c:/study/tracerstudy/app/Http/Controllers/SuperAdmin/LinkedIn/LinkedInSyncController.php
 - Mengelola sinkronisasi profil LinkedIn alumni untuk Superadmin (`/superadmin/linkedin-sync`), metrik analitik kelulusan, aksi single sync asinkron, dan bulk sync batch per angkatan.
 
-F. MODUL ADMIN BIRO 3 (Role: admin_biro3)
+G. MODUL ADMIN BIRO 3 (Role: admin_biro3)
 ----------------------------------------------------------------------------------------------------
 c:/study/tracerstudy/app/Http/Controllers/AdminBiroTiga/Dashboard/DashboardController.php
 - Monitoring jumlah responden per semester/tahun kelulusan dan statistik kelulusan yudisium.
@@ -240,6 +261,15 @@ c:/study/tracerstudy/app/Models/AlumniAuditRekap.php (VIEW: `v_alumni_audit_reka
 ====================================================================================================
 c:/study/tracerstudy/app/Services/Alumni/AdminAlumniProfileService.php
 - Service terpusat pembacaan dan penyimpanan profil biodata alumni oleh admin lintas stakeholder.
+
+c:/study/tracerstudy/app/Services/Alumni/LinkedinTraceHelper.php
+- Service helper bersama untuk menyusun tabel audit trace hasil scraping LinkedIn (pemetaan key scraping -> kolom DB -> nilai riil DB), filter pencarian atribut, dan penyajian histori sinkronisasi lintas controller admin (Super Admin, Fakultas, Prodi).
+
+c:/study/tracerstudy/app/Services/Perusahaan/PerusahaanVerificationService.php
+- Service domain verifikasi, konsolidasi, dan rekomendasi kemiripan perusahaan tempat kerja alumni. Mengimplementasikan text preprocessing (pembersihan tanda kurung dan stop words unit cabang), multi-level matching (Level 1 Identik, Level 2 Akronim, Level 3 Substring, Level 3B Akronim Parsial/Compound, Level 4 Irisan Kata dengan ambang batas rasio >= 33% & proteksi sektor industri generik tunggal, Level 5 Typo similar_text >= 60%), serta pembobotan geografis (+20 Kab/Kota, +10 Provinsi) dan auto-replace referensi alumni.
+
+c:/study/tracerstudy/app/Services/Export/AlumniTracerExcelExporter.php
+- Service pembentukan berkas ekspor spreadsheet Microsoft Excel dan arsip ZIP multi-sheet untuk data rekap alumni, respon kuesioner tracer universitas, kuesioner evaluasi prodi, dan lembar evaluasi atasan langsung.
 
 c:/study/tracerstudy/app/Services/Kuesioner/KuesionerSyncService.php
 - Mengotomatiskan sinkronisasi data profil (NIM, Nama, Tempat/Tanggal Lahir, Perusahaan, Atasan) ke tabel `tracer` dan `prodi_response`.
@@ -526,4 +556,16 @@ c:/study/tracerstudy/tests/Feature/UmpTest.php
 15. `date`              -> Pemilih tanggal kalender.
 16. `time`              -> Pemilih format jam dan menit.
 17. `file`              -> Dropzone upload berkas dokumen (PDF, PNG, JPG).
+====================================================================================================
+
+====================================================================================================
+12. ATURAN PENGEMBANGAN & KEBIJAKAN KONTROL VERSI (.agents/rules)
+====================================================================================================
+c:/study/tracerstudy/.agents/rules/git-push-policy.md
+- Kebijakan keamanan Git Push: Agen AI DILARANG KERAS menjalankan perintah `git push` otomatis atau mandiri.
+- Setiap pembaruan kode hanya boleh diuji dan dikomit secara lokal.
+- `git push` HANYA boleh dieksekusi jika pengguna secara eksplisit memberikan instruksi push pada sesi percakapan tersebut.
+
+c:/study/tracerstudy/AGENTS.md
+- Panduan foundation & boost guidelines Laravel, instruksi coding standard, dan konvensi proyek.
 ====================================================================================================

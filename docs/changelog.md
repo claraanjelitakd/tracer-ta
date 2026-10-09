@@ -1,5 +1,22 @@
 # Update Log Tracer Study
 
+## 09 Oktober 2026
+- **Penyelarasan Desain & Fitur Alumni Multi-Role (Super Admin, Fakultas, Prodi)**:
+  - Mengeliminasi kolom Status yang redundan pada tabel direktori alumni di Super Admin, Admin Fakultas, dan Admin Prodi untuk tampilan yang lebih bersih, konsisten, dan fokus pada data inti lulusan.
+  - Menyeragamkan halaman Detail Alumni (`Show.vue`) pada Fakultas dan Prodi menjadi 5 tab komprehensif identik dengan Super Admin: Tab 1 (Kuesioner Universitas), Tab 2 (Kuesioner Prodi), Tab 3 (Data Profil Lengkap), Tab 4 (Hasil Scraping & Trace LinkedIn), dan Tab 5 (Evaluasi Pengguna Lulusan / Atasan).
+  - Ekstraksi helper bersama [`app/Services/Alumni/LinkedinTraceHelper.php`](file:///c:/study/tracerstudy/app/Services/Alumni/LinkedinTraceHelper.php) untuk mengisolasi logika penyusunan audit trace, perbandingan field, dan histori sinkronisasi LinkedIn lintas controller.
+- **Perbaikan Tata Letak Tampilan Alumni Terpotong (Sidebar Layout Fix)**:
+  - Memperbaiki padding responsif `lg:pl-72` pada kontainer `<main>` di [`resources/js/Pages/AdminProdi/Alumni/Index.vue`](file:///c:/study/tracerstudy/resources/js/Pages/AdminProdi/Alumni/Index.vue) dan [`resources/js/Pages/AdminFakultas/Alumni/Index.vue`](file:///c:/study/tracerstudy/resources/js/Pages/AdminFakultas/Alumni/Index.vue).
+  - Memastikan konten judul halaman, 4 kartu ringkasan metrik statistik alumni, foto avatar, nama, dan tabel tidak lagi tertutup atau terpotong oleh fixed sidebar `w-72`.
+- **Penyempurnaan Algoritma Rekomendasi Kecocokan Perusahaan (`PerusahaanVerificationService.php`)**:
+  - Pembersihan teks mendalam (*Text Preprocessing*): Memotong teks keterangan cabang/kantor di dalam tanda kurung `(...)` (seperti `(Kantor Pusat)`, `(Persero)`), serta memperluas daftar stop words unit/cabang administratif (`kantor`, `pusat`, `cabang`, `kcu`, `witel`, `divisi`, `office`, `hq`, dll).
+  - Deteksi Akronim Natural: Menghubungkan nama panjang seperti `PT Bank Central Asia Tbk` $\rightarrow$ `bca`, cocok dengan `PT BCA INDONESIA` (skor 88%).
+  - Level 3B (Compound Token Acronym Intersect): Mendeteksi kecocokan parsial akronim pada nama majemuk entitas anak/afiliasi seperti `BCA Digital` $\leftrightarrow$ `Bank Central Asia` (skor 75%).
+  - Penyesuaian Ambang Batas Token Overlap (33%): Menetapkan rasio irisan kata minimal $\ge 33\%$ (sepertiga bagian nama) untuk menangani variasi nama dengan panjang token berbeda secara adil.
+  - Pengecualian Kata Sektor Industri Generik Tunggal: Menambahkan `$genericIndustryWords` (`bank`, `universitas`, `rs`, `hotel`, `studio`, `cafe`, dll) sehingga entitas seperti `Bank Mandiri` tidak lagi merekomendasikan seluruh bank lain di Indonesia, namun tetap merekomendasikan entitas spesifik seperti `CV Theresia Inovasi Mandiri` (58%).
+- **Penetapan Aturan Keamanan & Kontrol Versi (`.agents/rules/git-push-policy.md` & `AGENTS.md`)**:
+  - Menetapkan kebijakan ketat pelarangan eksekusi `git push` otomatis tanpa persetujuan eksplisit dari pengguna guna menjamin seluruh perubahan terverifikasi dan aman sebelum dipublikasikan ke remote repository.
+
 ## 06 Oktober 2026
 - **Integrasi Provider Pihak Ketiga Apify LinkedIn**: Menambahkan `ApifyLinkedInProvider` memanfaatkan actor Apify `data_forge_org~linkedin-scraper` via autentikasi aman Bearer token (`APIFY_API_TOKEN`) tanpa mengekspos token pada query string URL.
 - **Tabel Staging & Histori Audit (`linkedin_sync_results`)**: Data hasil scraping LinkedIn masuk ke tabel staging terisolasi (`linkedin_sync_results`) berstatus `pending` sehingga data master alumni tidak langsung terpengaruh sebelum direview.
