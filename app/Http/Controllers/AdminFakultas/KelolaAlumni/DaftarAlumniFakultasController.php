@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\AdminFakultas\KelolaAlumni;
 
 use App\Http\Controllers\Controller;
+use App\Models\EvaluasiAtasan;
 use App\Models\Prodi;
 use App\Models\RefFakultas;
 use Illuminate\Http\Request;
@@ -66,6 +67,17 @@ class DaftarAlumniFakultasController extends Controller
                 return trim($item);
             })->unique()->sortDesc()->values()->all();
 
+        // 2b. Ambil daftar target kelulusan unik
+        $daftarTarget = DB::table('v_alumni_audit_rekap')
+            ->whereIn('prodi_id', $prodiIdsFakultas)
+            ->whereNotNull('tahun_akademik_lulus')
+            ->where('tahun_akademik_lulus', '!=', '')
+            ->distinct()
+            ->pluck('tahun_akademik_lulus')
+            ->filter()
+            ->values()
+            ->all();
+
         // 3. Kueri cepat dari Database View v_alumni_audit_rekap
         $query = DB::table('v_alumni_audit_rekap')
             ->whereIn('prodi_id', $prodiIdsFakultas);
@@ -103,6 +115,12 @@ class DaftarAlumniFakultasController extends Controller
 
         $semuaAlumni = $query->orderBy('nim', 'asc')->get();
 
+        // Ambil evaluasi atasan untuk alumni yang terfilter
+        $biodataIds = $semuaAlumni->pluck('biodata_id')->filter()->all();
+        $evaluasiMap = EvaluasiAtasan::whereIn('biodata_id', $biodataIds)
+            ->get()
+            ->keyBy('biodata_id');
+
         // 4. Mapping data untuk Frontend
         $alumniList = [];
         $totalSelesai = 0;
@@ -124,6 +142,12 @@ class DaftarAlumniFakultasController extends Controller
                 $semesterLabel = 'Gasal';
             }
 
+            $ev = $evaluasiMap->get($item->biodata_id);
+            $evaluasiStatus = 'none';
+            if ($ev) {
+                $evaluasiStatus = $ev->is_submitted ? 'submitted' : 'pending';
+            }
+
             $alumniList[] = [
                 'id' => $item->biodata_id,
                 'biodata_id' => $item->biodata_id,
@@ -138,7 +162,7 @@ class DaftarAlumniFakultasController extends Controller
                 'semester' => $semesterLabel,
                 'tahun_lulus' => $item->tahun_lulus ?? '-',
                 'ipk' => $item->ipk ?? '-',
-                'status_yudisium' => $item->status_yudisium ?? 'Lulus',
+                'status_yudisium' => $item->status_yudisium ?? ($item->status_mahasiswa ?? 'Lulus'),
                 'perusahaan' => $item->nama_perusahaan ?? '-',
                 'posisi_jabatan' => $item->posisi_jabatan ?? '-',
                 'kelengkapan' => [
@@ -162,6 +186,14 @@ class DaftarAlumniFakultasController extends Controller
                         'total_questions' => (int) $item->total_prodi_questions,
                     ],
                 ],
+                'evaluasi_atasan' => [
+                    'has_evaluasi' => (bool) $ev,
+                    'is_submitted' => (bool) ($ev?->is_submitted),
+                    'status' => $evaluasiStatus,
+                    'status_label' => $ev ? ($ev->is_submitted ? 'Sudah Diisi' : 'Menunggu Respon') : 'Belum Ada Atasan',
+                    'submitted_at' => $ev?->submitted_at ? $ev->submitted_at->format('d/m/Y H:i') : null,
+                    'token' => $ev?->token,
+                ],
             ];
         }
 
@@ -171,8 +203,10 @@ class DaftarAlumniFakultasController extends Controller
         return Inertia::render('AdminFakultas/Alumni/Index', [
             'user' => $user,
             'fakultas' => $fakultas,
+            'biodatas' => $alumniList,
             'alumnis' => $alumniList,
             'daftarTahun' => $daftarTahun,
+            'daftarTarget' => $daftarTarget,
             'prodis' => $daftarProdiFakultas,
             'filters' => [
                 'search' => $pencarian ?? '',

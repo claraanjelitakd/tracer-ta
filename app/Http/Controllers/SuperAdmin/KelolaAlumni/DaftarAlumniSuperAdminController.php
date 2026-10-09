@@ -33,11 +33,10 @@ class DaftarAlumniSuperAdminController extends Controller
         $prodiIdTerpilih = $request->input('prodi_id');
         $targetTerpilih = $request->input('target');
 
-        // 1. Ambil list tahun kelulusan unik langsung dari data_akademik (ringan, instan, tanpa view overhead)
-        $daftarTahun = DB::table('data_akademik')
+        // 1. Ambil list tahun kelulusan unik dari view untuk dropdown filter
+        $daftarTahun = DB::table('v_alumni_audit_rekap')
             ->whereNotNull('tahun_lulus')
-            ->where('tahun_lulus', '!=', '')
-            ->distinct()
+            ->orWhereNotNull('tahun_akademik_lulus')
             ->pluck('tahun_lulus')
             ->filter()
             ->map(function ($item) {
@@ -48,10 +47,6 @@ class DaftarAlumniSuperAdminController extends Controller
                 return trim($item);
             })->unique()->sortDesc()->values()->all();
 
-        if (empty($daftarTahun)) {
-            $daftarTahun = [(string) date('Y')];
-        }
-
         // Sesuai kebutuhan pengguna: Tahun Kelulusan default ke tahun terbaru saja (tidak perlu 'all')
         $tahunTerbaru = $daftarTahun[0] ?? (string) date('Y');
         $tahunTerpilih = $request->input('tahun', $tahunTerbaru);
@@ -59,13 +54,11 @@ class DaftarAlumniSuperAdminController extends Controller
             $tahunTerpilih = $tahunTerbaru;
         }
 
-        // 1b. Ambil daftar target periode kelulusan unik langsung dari data_akademik
-        $daftarTarget = DB::table('data_akademik')
+        // 1b. Ambil daftar target periode kelulusan unik (Semester & Tahun Lulus)
+        $daftarTarget = DB::table('v_alumni_audit_rekap')
             ->whereNotNull('tahun_akademik_lulus')
             ->where('tahun_akademik_lulus', '!=', '')
-            ->distinct()
             ->pluck('tahun_akademik_lulus')
-            ->filter()
             ->unique()
             ->sortDesc()
             ->values()
@@ -115,21 +108,11 @@ class DaftarAlumniSuperAdminController extends Controller
             $query->where('is_complete_total', 0);
         }
 
-        // Ambil hanya kolom yang dibutuhkan untuk tampilan tabel & ekspor
-        $semuaAlumni = $query->select([
-            'biodata_id', 'nim', 'nama', 'nama_prodi', 'kode_prodi', 'prodi_id',
-            'nama_fakultas', 'fakultas_id', 'tahun_akademik_lulus', 'tahun_lulus',
-            'ipk', 'status_yudisium', 'nama_perusahaan', 'posisi_jabatan',
-            'is_complete_total', 'status_tracer_label', 'univ_percentage',
-            'is_profile_complete', 'is_complete_univ', 'answered_mandatory_univ',
-            'total_mandatory_univ', 'is_complete_prodi', 'prodi_percentage',
-            'answered_prodi_questions', 'total_prodi_questions',
-        ])->orderBy('nim', 'asc')->get();
+        $semuaAlumni = $query->orderBy('nim', 'asc')->get();
 
-        // Ambil status Evaluasi Atasan untuk alumni yang terfilter
+        // Ambil status Evaluasi Atasan untuk seluruh alumni yang terfilter
         $biodataIds = $semuaAlumni->pluck('biodata_id')->filter()->all();
         $evaluasiMap = EvaluasiAtasan::whereIn('biodata_id', $biodataIds)
-            ->select(['id', 'biodata_id', 'is_submitted', 'submitted_at', 'token'])
             ->get()
             ->keyBy('biodata_id');
 
@@ -175,7 +158,7 @@ class DaftarAlumniSuperAdminController extends Controller
                 'semester' => $semesterLabel,
                 'tahun_lulus' => $item->tahun_lulus ?? '-',
                 'ipk' => $item->ipk ?? '-',
-                'status_yudisium' => $item->status_yudisium ?? 'Lulus',
+                'status_yudisium' => $item->status_yudisium ?? ($item->status_mahasiswa ?? 'Lulus'),
                 'perusahaan' => $item->nama_perusahaan ?? '-',
                 'posisi_jabatan' => $item->posisi_jabatan ?? '-',
                 'kelengkapan' => [
@@ -214,7 +197,7 @@ class DaftarAlumniSuperAdminController extends Controller
         $rasioSelesai = $totalFiltered > 0 ? (int) round(($totalSelesai / $totalFiltered) * 100) : 0;
 
         // 4. Master Program Studi
-        $daftarProdi = Prodi::orderBy('kode_prodi', 'asc')->get(['id', 'kode_prodi', 'nama_prodi']);
+        $daftarProdi = Prodi::orderBy('kode_prodi', 'asc')->get();
 
         return Inertia::render('SuperAdmin/Alumni/Index', [
             'biodatas' => $alumniList,

@@ -4,8 +4,11 @@ namespace App\Http\Controllers\AdminFakultas\KelolaAlumni;
 
 use App\Http\Controllers\Controller;
 use App\Models\Biodata;
+use App\Models\EvaluasiAtasan;
 use App\Models\Kabupaten;
 use App\Models\Kuesioner;
+use App\Models\LinkedinSyncResult;
+use App\Models\PertanyaanEvaluasiAtasan;
 use App\Models\Perusahaan;
 use App\Models\Prodi;
 use App\Models\ProdiQuestionSection;
@@ -15,6 +18,7 @@ use App\Models\RefFakultas;
 use App\Models\RefNegara;
 use App\Models\Tracer;
 use App\Services\Alumni\AdminAlumniProfileService;
+use App\Services\Alumni\LinkedinTraceHelper;
 use App\Services\Export\AlumniTracerExcelExporter;
 use App\Services\Kuesioner\KelengkapanTracerService;
 use App\Services\Kuesioner\KuesionerSyncService;
@@ -61,6 +65,7 @@ class DetailAlumniFakultasController extends Controller
             'atasan',
             'user',
             'prodi',
+            'latestLinkedinSyncResult.reviewer',
         ])
             ->whereIn('prodi_id', $prodiIdsFakultas)
             ->findOrFail($id);
@@ -256,12 +261,32 @@ class DetailAlumniFakultasController extends Controller
         $refOptions = AdminAlumniProfileService::getRefOptions();
         $perusahaans = Perusahaan::select('id', 'nama_perusahaan', 'jenis_lokasi', 'negara', 'propinsi_id', 'kabupaten_id', 'alamat', 'kode_pos', 'skala', 'jenis_perusahaan', 'jenis_perusahaan_lainnya', 'status_verifikasi')->get();
 
+        $latestSync = $alumni->latestLinkedinSyncResult;
+        $linkedinTraceMapping = LinkedinTraceHelper::buildTraceMapping($alumni, $latestSync);
+        $linkedinHistory = LinkedinSyncResult::where('biodata_id', $alumni->id)
+            ->with('reviewer')
+            ->orderByDesc('id')
+            ->take(10)
+            ->get();
+
+        // Ambil Data Evaluasi Atasan (Pengguna Lulusan)
+        $evaluasiAtasan = EvaluasiAtasan::where('biodata_id', $alumni->id)
+            ->with(['atasan', 'perusahaan', 'respons.pertanyaan'])
+            ->latest('updated_at')
+            ->first();
+
+        $pertanyaanEvaluasiAtasan = PertanyaanEvaluasiAtasan::where('is_active', true)
+            ->orderBy('order', 'asc')
+            ->get();
+
         return Inertia::render('AdminFakultas/Alumni/Show', [
             'user' => $user,
             'fakultas' => $fakultas,
             'biodata' => $alumni,
             'alumni' => $alumni,
             'evaluasi' => $evaluasi,
+            'evaluasiAtasan' => $evaluasiAtasan,
+            'pertanyaanEvaluasiAtasan' => $pertanyaanEvaluasiAtasan,
             'sections' => $univSectionsWithAnswers,
             'prodiSections' => $prodiSectionsWithAnswers,
             'prodiEvaluasi' => $prodiEvaluasi,
@@ -273,6 +298,9 @@ class DetailAlumniFakultasController extends Controller
             'refOptions' => $refOptions,
             'perusahaans' => $perusahaans,
             'companies' => $perusahaans,
+            'linkedinSyncResult' => $latestSync,
+            'linkedinTraceMapping' => $linkedinTraceMapping,
+            'linkedinHistory' => $linkedinHistory,
         ]);
     }
 

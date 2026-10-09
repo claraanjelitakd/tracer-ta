@@ -916,46 +916,52 @@ const dashboardRoute = computed(() => {
                                         </span>
                                     </td>
 
-                                    <!-- 6. Aksi Cepat -->
+                                    <!-- 6. Aksi Cepat (Tombol Ikon Berukuran Pasti) -->
                                     <td class="py-4 px-6 text-center">
-                                        <div class="flex items-center justify-center gap-1.5 flex-wrap">
-                                            <!-- Tombol Sync Single -->
+                                        <div class="inline-flex items-center justify-center gap-1.5">
+                                            <!-- Tombol Sync Single (Icon Berukuran Pasti 32x32) -->
                                             <button
                                                 type="button"
                                                 @click="syncSingle(alumni)"
                                                 :disabled="alumni.isSyncing"
-                                                class="px-2.5 py-1.5 rounded-lg text-xs font-bold text-white bg-[#0D542B] hover:bg-[#0A4322] transition-colors shadow-2xs disabled:opacity-50 cursor-pointer flex items-center gap-1"
-                                                title="Sinkronkan data LinkedIn alumni ini"
+                                                class="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 text-white bg-[#0D542B] hover:bg-[#0A4322] active:scale-95 transition-all shadow-2xs disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                                                :title="alumni.isSyncing ? 'Sedang memproses sinkronisasi...' : 'Sinkronkan Profil LinkedIn'"
+                                                aria-label="Sinkronkan Profil LinkedIn"
                                             >
-                                                <svg v-if="!alumni.isSyncing" class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
+                                                <svg v-if="!alumni.isSyncing" class="w-4 h-4 fill-current" viewBox="0 0 24 24">
                                                     <path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/>
                                                 </svg>
-                                                <svg v-else class="animate-spin w-3.5 h-3.5 text-white" fill="none" viewBox="0 0 24 24">
+                                                <svg v-else class="animate-spin w-4 h-4 text-white" fill="none" viewBox="0 0 24 24">
                                                     <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                                                     <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
                                                 </svg>
-                                                <span>{{ alumni.isSyncing ? 'Proses...' : 'Sync' }}</span>
                                             </button>
 
-                                            <!-- Tombol Review (Jika status Pending Review) -->
+                                            <!-- Tombol Review (Jika status Pending Review, Icon Berukuran Pasti 32x32) -->
                                             <button
                                                 v-if="alumni.latest_sync_result && alumni.latest_sync_result.status === 'pending'"
                                                 type="button"
                                                 @click="openReviewModal(alumni.latest_sync_result.id, alumni)"
-                                                class="px-2.5 py-1.5 rounded-lg text-xs font-bold text-amber-900 bg-amber-100 hover:bg-amber-200 transition-colors shadow-2xs cursor-pointer"
+                                                class="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 text-amber-800 bg-amber-100 hover:bg-amber-200 border border-amber-200/80 active:scale-95 transition-all shadow-2xs cursor-pointer"
                                                 title="Tinjau hasil scraping Apify"
+                                                aria-label="Tinjau hasil sinkronisasi"
                                             >
-                                                Tinjau
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+                                                </svg>
                                             </button>
 
-                                            <!-- Tombol Histori -->
+                                            <!-- Tombol Histori (Icon Berukuran Pasti 32x32) -->
                                             <button
                                                 type="button"
                                                 @click="openHistoryModal(alumni)"
-                                                class="px-2.5 py-1.5 rounded-lg text-xs font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 transition-colors cursor-pointer"
+                                                class="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-200/60 active:scale-95 transition-all shadow-2xs cursor-pointer"
                                                 title="Lihat riwayat sinkronisasi alumni ini"
+                                                aria-label="Riwayat sinkronisasi"
                                             >
-                                                Histori
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                </svg>
                                             </button>
                                         </div>
                                     </td>

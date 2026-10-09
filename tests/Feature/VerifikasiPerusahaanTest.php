@@ -112,6 +112,29 @@ class VerifikasiPerusahaanTest extends TestCase
         $this->assertGreaterThanOrEqual(70, $recommendations[0]['similarity_score']);
     }
 
+    public function test_alur_pembersihan_string_dapat_merekomendasikan_akronim_nama_perusahaan_dengan_keterangan_cabang(): void
+    {
+        // Master terverifikasi memiliki imbuhan keterangan cabang/kantor pusat dalam tanda kurung
+        $verifiedBCA = Perusahaan::create([
+            'nama_perusahaan' => 'PT Bank Central Asia Tbk (Kantor Pusat)',
+            'status_verifikasi' => 'Terverifikasi',
+        ]);
+
+        // Input pengajuan alumni mengandung kata stopword negara dan singkatan akronim
+        $pendingBCA = Perusahaan::create([
+            'nama_perusahaan' => 'PT BCA INDONESIA',
+            'status_verifikasi' => 'Menunggu Verifikasi',
+        ]);
+
+        $service = app(PerusahaanVerificationService::class);
+        $recommendations = $service->getSimilarRecommendations($pendingBCA);
+
+        $this->assertNotEmpty($recommendations);
+        $this->assertEquals($verifiedBCA->id, $recommendations[0]['id']);
+        $this->assertEquals(88, $recommendations[0]['similarity_score']);
+        $this->assertContains('Akronim / Singkatan Cocok', $recommendations[0]['match_reasons']);
+    }
+
     public function test_admin_dapat_melakukan_auto_replace_perusahaan_ke_master_terverifikasi(): void
     {
         $verifiedCompany = Perusahaan::create([

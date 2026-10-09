@@ -56,24 +56,31 @@ Algoritma bekerja secara berurutan dalam 5 tahapan utama:
 
 ---
 
-### Tahap 1: Text Preprocessing & Stopword Stripping (`cleanCompanyName`)
-Sebelum teks dibandingkan, nama perusahaan disterilisasi agar perbandingan fokus pada nama inti entitas:
-1. Mengubah seluruh huruf menjadi huruf kecil (*lowercase* via `strtolower`).
-2. Menghapus tanda baca, simbol, titik, koma, kurung, garis miring menggunakan Regular Expression:
-   ```php
-   $clean = preg_replace('/[.,\-_()\[\]\/\\\\]+/', ' ', $lower);
-   ```
-3. Membuang **Stop Words** (istilah bentuk badan usaha & institusi umum):
-   - `'pt'`, `'p.t'`, `'cv'`, `'c.v'`, `'tbk'`, `'persero'`, `'corp'`, `'corporation'`
-   - `'inc'`, `'ltd'`, `'co'`, `'company'`, `'indonesia'`, `'group'`, `'holding'`
-   - `'perum'`, `'yayasan'`, `'kantor'`, `'dinas'`, `'kementerian'`, `'badan'`, `'lembaga'`, dll.
-4. **Contoh Hasil:**
-   - `"PT. Bank Central Asia, Tbk"` $\rightarrow$ `"bank central asia"`
-   - `"PT Gojek Indonesia"` $\rightarrow$ `"gojek"`
+### Tahap 1: Text Preprocessing & Cleaning Pipeline (`cleanCompanyName`)
+Sebelum teks dibandingkan, nama perusahaan disterilisasi melalui pipeline pembersihan bertahap agar perbandingan fokus pada entitas pokok perusahaan:
+1. **Pemisahan Keterangan Cabang / Tambahan dalam Tanda Kurung `(...)`**:
+   - Tanda kurung seringkali berisi status cabang, lokasi, atau badan hukum (contoh: `(Kantor Pusat)`, `(Surabaya Office)`, `(Persero)`).
+   - Regex `preg_replace('/\([^)]*\)/', ' ', $name)` memisahkan keterangan tambahan ini dari nama utama entitas.
+   - Jika di dalam tanda kurung merupakan alias/singkatan resmi (seperti `(UKDW)` atau `(BCA)`), alias tersebut diekstrak secara otomatis oleh `getAcronyms()`.
+2. **Normalisasi Karakter**:
+   - Mengubah seluruh huruf menjadi huruf kecil (*lowercase* via `strtolower`).
+   - Menghapus tanda baca, simbol, titik, koma, kurung, garis miring, dan karakter non-alfanumerik menggunakan Regular Expression:
+     ```php
+     $clean = preg_replace('/[.,\-_()\[\]\/\\\&+]+/', ' ', $lower);
+     ```
+3. **Penyaringan Stop Words (Bentuk Usaha, Unit Kantor/Cabang, Preposisi)**:
+   - **Badan Usaha & Legalitas:** `'pt'`, `'cv'`, `'tbk'`, `'persero'`, `'corp'`, `'inc'`, `'ltd'`, `'llc'`, `'gmbh'`, `'co'`, `'company'`, `'group'`, `'holding'`, `'perum'`, `'yayasan'`, `'ud'`, `'fa'`, `'koperasi'`, `'pte'`.
+   - **Unit Cabang / Kantor / Wilayah:** `'kantor'`, `'pusat'`, `'cabang'`, `'branch'`, `'subcabang'`, `'kcu'`, `'kc'`, `'kcp'`, `'unit'`, `'witel'`, `'regional'`, `'wilayah'`, `'area'`, `'divisi'`, `'division'`, `'office'`, `'hq'`, `'head'`, `'representative'`.
+   - **Instansi & Lembaga:** `'dinas'`, `'kementerian'`, `'badan'`, `'lembaga'`.
+   - **Geografis Umum & Preposisi:** `'indonesia'`, `'dan'`, `'and'`, `'of'`, `'the'`, `'in'`, `'di'`.
+4. **Contoh Hasil Pembersihan Alami:**
+   - `"PT Bank Central Asia Tbk (Kantor Pusat)"` $\rightarrow$ bersih: `"bank central asia"`
+   - `"PT BCA INDONESIA"` $\rightarrow$ bersih: `"bca"`
+   - `"Universitas Kristen Duta Wacana (UKDW)"` $\rightarrow$ bersih: `"universitas kristen duta wacana"`, alias: `["ukdw"]`
 
 ---
 
-### Tahap 2: Ekstraksi Token & Pembuatan Akronim (`getTokens`, `makeAcronym`)
+### Tahap 2: Ekstraksi Token & Pembuatan Akronim (`getTokens`, `getAcronyms`, `makeAcronym`)
 
 #### A. Apa itu "Token" dan Dari Mana Didapat?
 > **Token** adalah istilah teknis pemrograman untuk **satu potong kata** hasil membelah kalimat panjang.
@@ -82,7 +89,7 @@ Proses pemotongan teks menjadi token dilakukan oleh fungsi `getTokens()` menggun
 ```php
 return preg_split('/\s+/', $clean, -1, PREG_SPLIT_NO_EMPTY) ?: [];
 ```
-* **`$clean`**: String nama yang sudah bersih dari PT/CV (misal: `"bank central asia"`).
+* **`$clean`**: String nama yang sudah bersih dari PT/CV dan keterangan cabang (misal: `"bank central asia"`).
 * **`/\s+/`**: Pola regex yang berarti **spasi** (satu atau banyak spasi).
 * **`preg_split`**: Membelah string setiap kali menemukan spasi menjadi elemen array.
 * **Hasil (Array Token):**
@@ -94,10 +101,12 @@ return preg_split('/\s+/', $clean, -1, PREG_SPLIT_NO_EMPTY) ?: [];
   ];
   ```
 
-#### B. Pembuatan Akronim Otomatis (`makeAcronym`)
-Fungsi `makeAcronym()` mengambil huruf pertama dari setiap token (`$token[0]`), lalu menggabungkannya:
-* Dari `"bank"` diambil `'b'`, dari `"central"` diambil `'c'`, dari `"asia"` diambil `'a'`.
-* Menghasilkan string akronim: `"bca"`.
+#### B. Pembuatan Akronim Otomatis (`getAcronyms` & `makeAcronym`)
+Fungsi `getAcronyms()` dan `makeAcronym()` menghasilkan daftar akronim potensial:
+1. Mengambil huruf pertama dari setiap token nama entitas utama (`$token[0]`), lalu menggabungkannya:
+   * Dari `"bank"` diambil `'b'`, dari `"central"` diambil `'c'`, dari `"asia"` diambil `'a'`.
+   * Menghasilkan string akronim: `"bca"`.
+2. Mengekstrak alias/singkatan eksplisit dari dalam kurung jika tersedia (misal: `(UKDW)` $\rightarrow$ `"ukdw"`).
 
 ---
 
@@ -109,7 +118,7 @@ Sistem membandingkan data pengajuan alumni (`$pendingCompany`) dengan **setiap**
 | Level | Titik Kode Pencocokan | Logika / Fungsi | Contoh Kasus |
 | :---: | :--- | :--- | :--- |
 | **Level 1** | `$cleanPending === $cleanVerified` | Operator identik string `===` | `"tokopedia"` vs `"tokopedia"` |
-| **Level 2** | `strtolower($cleanPending) === strtolower($verifiedAcronym)` | Pencocokan string akronim | `"bca"` vs `"bca"` |
+| **Level 2** | `in_array(strtolower($cleanPending), $verifiedAcronyms)` | Pencocokan string akronim & alias | `"bca"` vs `"bca"` dari `"bank central asia"` |
 | **Level 3** | `str_contains($cleanVerified, $cleanPending)` | Pengecekan frasa terkandung | `"Gojek"` di dalam `"Gojek Super App"` |
 | **Level 4** | `array_intersect($pendingTokens, $verifiedTokens)` | Irisan kata yang sama | `["bank", "mandiri"]` dari kedua nama |
 | **Level 5** | `similar_text($cleanPending, $cleanVerified, $percent)` | Persentase kemiripan karakter huruf | `"centrl"` vs `"central"` (Typo 97%) |

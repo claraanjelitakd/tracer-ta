@@ -4,8 +4,11 @@ namespace App\Http\Controllers\AdminProdi\KelolaAlumni;
 
 use App\Http\Controllers\Controller;
 use App\Models\Biodata;
+use App\Models\EvaluasiAtasan;
 use App\Models\Kabupaten;
 use App\Models\Kuesioner;
+use App\Models\LinkedinSyncResult;
+use App\Models\PertanyaanEvaluasiAtasan;
 use App\Models\Perusahaan;
 use App\Models\ProdiQuestionSection;
 use App\Models\ProdiResponse;
@@ -13,6 +16,7 @@ use App\Models\Propinsi;
 use App\Models\RefNegara;
 use App\Models\Tracer;
 use App\Services\Alumni\AdminAlumniProfileService;
+use App\Services\Alumni\LinkedinTraceHelper;
 use App\Services\Export\AlumniTracerExcelExporter;
 use App\Services\Kuesioner\KelengkapanTracerService;
 use App\Services\Kuesioner\KuesionerSyncService;
@@ -68,6 +72,17 @@ class DaftarAlumniProdiController extends Controller
                 return trim($item);
             })->unique()->sortDesc()->values()->all();
 
+        // 1b. Ambil daftar target kelulusan unik
+        $daftarTarget = DB::table('v_alumni_audit_rekap')
+            ->where('prodi_id', $prodiId)
+            ->whereNotNull('tahun_akademik_lulus')
+            ->where('tahun_akademik_lulus', '!=', '')
+            ->distinct()
+            ->pluck('tahun_akademik_lulus')
+            ->filter()
+            ->values()
+            ->all();
+
         // 2. Kueri cepat berbasis Database View (v_alumni_audit_rekap)
         $query = DB::table('v_alumni_audit_rekap')
             ->where('prodi_id', $prodiId);
@@ -100,6 +115,12 @@ class DaftarAlumniProdiController extends Controller
 
         $semuaAlumni = $query->orderBy('nim', 'asc')->get();
 
+        // Ambil evaluasi atasan untuk alumni yang terfilter
+        $biodataIds = $semuaAlumni->pluck('biodata_id')->filter()->all();
+        $evaluasiMap = EvaluasiAtasan::whereIn('biodata_id', $biodataIds)
+            ->get()
+            ->keyBy('biodata_id');
+
         // 3. Mapping data reaktif untuk Frontend
         $alumniList = [];
         $totalSelesai = 0;
@@ -121,6 +142,12 @@ class DaftarAlumniProdiController extends Controller
                 $semesterLabel = 'Gasal';
             }
 
+            $ev = $evaluasiMap->get($item->biodata_id);
+            $evaluasiStatus = 'none';
+            if ($ev) {
+                $evaluasiStatus = $ev->is_submitted ? 'submitted' : 'pending';
+            }
+
             $alumniList[] = [
                 'id' => $item->biodata_id,
                 'biodata_id' => $item->biodata_id,
@@ -135,7 +162,7 @@ class DaftarAlumniProdiController extends Controller
                 'semester' => $semesterLabel,
                 'tahun_lulus' => $item->tahun_lulus ?? '-',
                 'ipk' => $item->ipk ?? '-',
-                'status_yudisium' => $item->status_yudisium ?? 'Lulus',
+                'status_yudisium' => $item->status_yudisium ?? ($item->status_mahasiswa ?? 'Lulus'),
                 'perusahaan' => $item->nama_perusahaan ?? '-',
                 'posisi_jabatan' => $item->posisi_jabatan ?? '-',
                 'kelengkapan' => [
@@ -159,6 +186,14 @@ class DaftarAlumniProdiController extends Controller
                         'total_questions' => (int) $item->total_prodi_questions,
                     ],
                 ],
+                'evaluasi_atasan' => [
+                    'has_evaluasi' => (bool) $ev,
+                    'is_submitted' => (bool) ($ev?->is_submitted),
+                    'status' => $evaluasiStatus,
+                    'status_label' => $ev ? ($ev->is_submitted ? 'Sudah Diisi' : 'Menunggu Respon') : 'Belum Ada Atasan',
+                    'submitted_at' => $ev?->submitted_at ? $ev->submitted_at->format('d/m/Y H:i') : null,
+                    'token' => $ev?->token,
+                ],
             ];
         }
 
@@ -168,8 +203,10 @@ class DaftarAlumniProdiController extends Controller
         return Inertia::render('AdminProdi/Alumni/Index', [
             'user' => $user,
             'prodi' => $prodi,
+            'biodatas' => $alumniList,
             'alumnis' => $alumniList,
             'daftarTahun' => $daftarTahun,
+            'daftarTarget' => $daftarTarget,
             'filters' => [
                 'search' => $pencarian ?? '',
                 'tahun' => $tahunTerpilih,
@@ -208,6 +245,7 @@ class DaftarAlumniProdiController extends Controller
             'atasan',
             'user',
             'prodi',
+            'latestLinkedinSyncResult.reviewer',
         ])
             ->where('prodi_id', $prodiId)
             ->findOrFail($id);
@@ -394,12 +432,32 @@ class DaftarAlumniProdiController extends Controller
         $refOptions = AdminAlumniProfileService::getRefOptions();
         $perusahaans = Perusahaan::select('id', 'nama_perusahaan', 'jenis_lokasi', 'negara', 'propinsi_id', 'kabupaten_id', 'alamat', 'kode_pos', 'skala', 'jenis_perusahaan', 'jenis_perusahaan_lainnya', 'status_verifikasi')->get();
 
+        $latestSync = $alumni->latestLinkedinSyncResult;
+        $linkedinTraceMapping = LinkedinTraceHelper::buildTraceMapping($alumni, $latestSync);
+        $linkedinHistory = LinkedinSyncResult::where('biodata_id', $alumni->id)
+            ->with('reviewer')
+            ->orderByDesc('id')
+            ->take(10)
+            ->get();
+
+        // Ambil Data Evaluasi Atasan (Pengguna Lulusan)
+        $evaluasiAtasan = EvaluasiAtasan::where('biodata_id', $alumni->id)
+            ->with(['atasan', 'perusahaan', 'respons.pertanyaan'])
+            ->latest('updated_at')
+            ->first();
+
+        $pertanyaanEvaluasiAtasan = PertanyaanEvaluasiAtasan::where('is_active', true)
+            ->orderBy('order', 'asc')
+            ->get();
+
         return Inertia::render('AdminProdi/Alumni/Show', [
             'user' => $user,
             'prodi' => $prodi,
             'biodata' => $alumni,
             'alumni' => $alumni,
             'evaluasi' => $evaluasi,
+            'evaluasiAtasan' => $evaluasiAtasan,
+            'pertanyaanEvaluasiAtasan' => $pertanyaanEvaluasiAtasan,
             'sections' => $univSectionsWithAnswers,
             'univSections' => $univSectionsWithAnswers,
             'prodiSections' => $prodiSectionsWithAnswers,
@@ -412,6 +470,9 @@ class DaftarAlumniProdiController extends Controller
             'refOptions' => $refOptions,
             'perusahaans' => $perusahaans,
             'companies' => $perusahaans,
+            'linkedinSyncResult' => $latestSync,
+            'linkedinTraceMapping' => $linkedinTraceMapping,
+            'linkedinHistory' => $linkedinHistory,
         ]);
     }
 

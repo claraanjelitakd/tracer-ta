@@ -17,14 +17,37 @@ use Illuminate\Support\Facades\DB;
 class PerusahaanVerificationService
 {
     /**
-     * Kata-kata umum atau bentuk badan usaha yang diabaikan saat normalisasi nama perusahaan.
+     * Kata-kata umum, bentuk badan usaha, dan atribut unit/cabang administratif yang diabaikan saat normalisasi nama perusahaan.
      *
      * @var array<int, string>
      */
     protected array $stopWords = [
+        // Bentuk badan usaha & legalitas
         'pt', 'p.t', 'cv', 'c.v', 'tbk', 'persero', 'corp', 'corporation', 'inc', 'ltd',
-        'co', 'company', 'indonesia', 'group', 'holding', 'perum', 'yayasan', 'kantor',
-        'dinas', 'kementerian', 'badan', 'lembaga', 'ud', 'u.d', 'fa', 'firma',
+        'llc', 'gmbh', 'co', 'company', 'group', 'holding', 'perum', 'yayasan',
+        'ud', 'u.d', 'fa', 'firma', 'koperasi', 'pte',
+
+        // Keterangan kantor, cabang, unit operasional, dan wilayah
+        'kantor', 'pusat', 'cabang', 'branch', 'subcabang', 'kcu', 'kc', 'kcp',
+        'unit', 'witel', 'regional', 'wilayah', 'area', 'divisi', 'division',
+        'office', 'hq', 'head', 'representative',
+
+        // Instansi & lembaga birokrasi pemerintahan
+        'dinas', 'kementerian', 'badan', 'lembaga',
+
+        // Kata hubung & penanda geografis umum
+        'indonesia', 'dan', 'and', 'of', 'the', 'in', 'di',
+    ];
+
+    /**
+     * Kata-kata klasifikasi jenis industri/sektor umum yang tidak boleh menjadi penentu kecocokan tunggal jika hanya 1 kata yang sama.
+     * Mencegah "Bank Mandiri" merekomendasikan "Bank BCA", "Bank BPD", "Bank Aceh" hanya karena sama-sama ada kata "Bank".
+     *
+     * @var array<int, string>
+     */
+    protected array $genericIndustryWords = [
+        'bank', 'universitas', 'univ', 'institut', 'sekolah', 'rs', 'hospital',
+        'hotel', 'studio', 'restoran', 'resto', 'cafe', 'toko', 'media', 'lab', 'laboratorium',
     ];
 
     /**
@@ -204,8 +227,9 @@ class PerusahaanVerificationService
         // Variabel $pendingTokens (array): Kumpulan kata penyusun nama (output: ["bank", "central", "asia"]).
         $pendingTokens = $this->getTokens($rawPendingName);
 
-        // [BARIS 5] Memanggil method makeAcronym() yang mengambil huruf inisial depan setiap kata token.
-        // Variabel $pendingAcronym (string): Singkatan otomatis dalam huruf kecil (output: "bca").
+        // [BARIS 5] Memanggil method getAcronyms() dan makeAcronym() untuk ekstraksi singkatan/akronim.
+        // Variabel $pendingAcronyms (array): Kumpulan akronim potensial (output: ["bca"]).
+        $pendingAcronyms = $this->getAcronyms($rawPendingName);
         $pendingAcronym = $this->makeAcronym($rawPendingName);
 
         // [BARIS 6] Menjalankan query Eloquent untuk mengambil seluruh data master perusahaan yang sudah 'Terverifikasi'
@@ -231,7 +255,8 @@ class PerusahaanVerificationService
             // [BARIS 8.3] Memotong nama master menjadi array kata (token) -> output array: misal ["bank", "central", "asia"]
             $verifiedTokens = $this->getTokens($rawVerifiedName);
 
-            // [BARIS 8.4] Membuat akronim dari nama master -> output string: misal "bca"
+            // [BARIS 8.4] Membuat akronim dari nama master -> output array: misal ["bca"]
+            $verifiedAcronyms = $this->getAcronyms($rawVerifiedName);
             $verifiedAcronym = $this->makeAcronym($rawVerifiedName);
 
             // [BARIS 8.5] Variabel penampung nilai skor nama (default 0)
@@ -264,11 +289,14 @@ class PerusahaanVerificationService
             // -------------------------------------------------------------------------
             // Logika: Mencocokkan singkatan inisial huruf depan dengan nama panjangnya.
             // Contoh nyata:
-            //   - Kasus A: Alumni mengetik "BCA", di database ada "Bank Central Asia"
-            //              Akronim dari "Bank Central Asia" dibuat jadi "bca", cocok dengan input alumni!
-            //   - Kasus B: Alumni mengetik "Bank Central Asia", di database tersimpan "BCA".
-            //   - Kasus C: Kata singkatan ada di dalam daftar kata master (misal "Shopee" di "PT Shopee Express").
+            //   - Kasus A: Alumni mengetik "PT BCA INDONESIA", bersih jadi "bca".
+            //              Master "PT Bank Central Asia Tbk (Kantor Pusat)", akronim jadi "bca". Cocok!
+            //   - Kasus B: Alumni mengetik "Universitas Kristen Duta Wacana", master tersimpan "(UKDW)".
+            //   - Kasus C: Kata singkatan ada di dalam daftar token master (misal "Shopee" di "PT Shopee Express").
             elseif (
+                (! empty($verifiedAcronyms) && in_array(strtolower($cleanPending), $verifiedAcronyms, true)) ||
+                (! empty($pendingAcronyms) && in_array(strtolower($cleanVerified), $pendingAcronyms, true)) ||
+                (! empty($verifiedAcronyms) && ! empty($pendingAcronyms) && count(array_intersect($pendingAcronyms, $verifiedAcronyms)) > 0) ||
                 (! empty($verifiedAcronym) && strtolower($cleanPending) === strtolower($verifiedAcronym)) ||
                 (! empty($pendingAcronym) && strtolower($cleanVerified) === strtolower($pendingAcronym)) ||
                 (in_array(strtolower($cleanPending), $verifiedTokens, true)) ||
@@ -302,6 +330,25 @@ class PerusahaanVerificationService
             }
 
             // -------------------------------------------------------------------------
+            // LEVEL 3B: PENCOCOKAN AKRONIM PARSIAL / COMPOUND ACRONYM MATCH (SKOR: 70 - 80 POIN)
+            // -------------------------------------------------------------------------
+            // Logika: Salah satu kata (token) merupakan akronim dari nama entitas lainnya.
+            // Contoh nyata:
+            //   - Kasus A: "BCA Digital" memiliki token ["bca", "digital"].
+            //              Kata "bca" adalah akronim dari "Bank Central Asia" -> Terdeteksi kemiripan entitas terkait!
+            //   - Kasus B: "BCA Finance", "BCA Syariah", "Mandiri Sekuritas".
+            elseif (
+                (! empty($verifiedAcronyms) && count($matchedAcrTokens = array_intersect($pendingTokens, $verifiedAcronyms)) > 0) ||
+                (! empty($pendingAcronyms) && count($matchedAcrTokens = array_intersect($verifiedTokens, $pendingAcronyms)) > 0)
+            ) {
+                $matchedWord = strtoupper(implode(', ', $matchedAcrTokens));
+                $totalTokens = max(count($pendingTokens), count($verifiedTokens));
+                $ratio = $totalTokens > 0 ? (count($matchedAcrTokens) / $totalTokens) : 0.5;
+                $nameScore = 70 + (int) ($ratio * 15);
+                $reasons[] = "Mengandung Akronim Entitas Terkait ({$matchedWord})";
+            }
+
+            // -------------------------------------------------------------------------
             // LEVEL 4 & 5: IRISAN KATA (TOKEN INTERSECT) & DETEKSI TYPO (FUZZY SIMILARITY)
             // -------------------------------------------------------------------------
             // Jika nama tidak identik, bukan singkatan, dan tidak saling terkandung utuh,
@@ -319,20 +366,22 @@ class PerusahaanVerificationService
                 // [LANGKAH 3] Mengecek apakah ada minimal 1 kata yang sama.
                 if ($overlapCount > 0) {
                     // [LANGKAH 4] max(): Mengambil jumlah kata terbanyak di antara nama pengajuan atau master.
-                    // Variabel $totalTokens: Angka integer total kata maksimum pembanding (misal max(3, 3) = 3).
                     $totalTokens = max(count($pendingTokens), count($verifiedTokens));
+                    $overlapRatio = $totalTokens > 0 ? ($overlapCount / $totalTokens) : 0;
 
-                    // [LANGKAH 5] Menghitung persentase irisan kata dikali bobot maksimal 75 poin, lalu di-cast ke integer (int).
-                    // Variabel $tokenScore: Nilai skor kemiripan kata. Rumus: (overlap / total) * 75. Contoh: (2 / 3) * 75 = 50.
-                    $tokenScore = (int) (($overlapCount / $totalTokens) * 75);
+                    // Cek apakah kecocokan tunggal (hanya 1 kata) merupakan kata jenis industri/sektor umum (misal "bank")
+                    $isSingleGenericMatch = ($overlapCount === 1 && in_array(reset($intersect), $this->genericIndustryWords, true));
 
-                    // [LANGKAH 6] Jika nilai irisan kata ini lebih besar dari nilai nama saat ini, perbarui nilainya.
-                    if ($tokenScore > $nameScore) {
-                        // Simpan nilai baru ke variabel $nameScore
-                        $nameScore = $tokenScore;
+                    // [LANGKAH 5] Syarat ambang batas rasio kata: Minimal 33% (sepertiga bagian nama) harus identik,
+                    // dan bukan hanya kata jenis sektor umum tunggal.
+                    if ($overlapRatio >= 0.33 && ! $isSingleGenericMatch) {
+                        $tokenScore = 50 + (int) ($overlapRatio * 25);
 
-                        // Tambahkan keterangan alasan kecocokan ke array $reasons untuk ditampilkan di UI
-                        $reasons[] = "Memiliki {$overlapCount} Kata Yang Sama (".implode(', ', $intersect).')';
+                        // [LANGKAH 6] Jika nilai irisan kata ini lebih besar dari nilai nama saat ini, perbarui nilainya.
+                        if ($tokenScore > $nameScore) {
+                            $nameScore = $tokenScore;
+                            $reasons[] = "Memiliki {$overlapCount} Kata Yang Sama (".implode(', ', $intersect).')';
+                        }
                     }
                 }
 
@@ -543,45 +592,60 @@ class PerusahaanVerificationService
     }
 
     /**
-     * Membersihkan nama perusahaan dari tanda baca dan kata umum / bentuk badan usaha (Stop Words).
-     * Contoh: "PT. Bank Central Asia, Tbk" -> "bank central asia"
+     * Membersihkan nama perusahaan dari tanda kurung keterangan cabang/lokasi,
+     * tanda baca, dan kata umum / bentuk badan usaha (Stop Words).
+     *
+     * Alur Pembersihan (Cleaning Pipeline):
+     * 1. Menghilangkan teks keterangan cabang/organisasi di dalam kurung (...) seperti '(Kantor Pusat)', '(Surabaya Office)', '(Persero)'
+     *    agar menyisakan entitas pokok perusahaan. Jika nama menjadi kosong, fallback ke nama utuh.
+     * 2. Menghapus tanda baca, simbol, dan karakter non-alfanumerik.
+     * 3. Memecah string menjadi token kata dan menyaring seluruh kata yang terdaftar di Stop Words.
+     * 4. Menggabungkan kembali kata-kata esensial menjadi string nama bersih huruf kecil (lowercase).
+     *
+     * Contoh: "PT Bank Central Asia Tbk (Kantor Pusat)" -> "bank central asia"
+     * Contoh: "PT. BCA INDONESIA" -> "bca"
      *
      * @param  string  $name  Nama mentah perusahaan
      * @return string Nama yang dinormalisasi huruf kecil, tanpa tanda baca, dan tanpa stop words
      */
     protected function cleanCompanyName(string $name): string
     {
-        // [LANGKAH 1] trim() membuang spasi di pinggir, strtolower() mengubah semua huruf jadi kecil (lowercase)
-        // Variabel $lower (string): Contoh: "pt. bank central asia, tbk"
-        $lower = strtolower(trim($name));
+        // Alur Tahap 1: Pisahkan/abaikan keterangan di dalam tanda kurung jika ada (misal '(Kantor Pusat)')
+        $nameWithoutParentheses = preg_replace('/\([^)]*\)/', ' ', $name);
+        $cleanMain = $this->cleanString((string) $nameWithoutParentheses);
 
-        // [LANGKAH 2] preg_replace() mencari simbol titik, koma, strip, kurung, garis miring dan menggantinya dengan spasi tunggal
-        // Variabel $clean (string): Contoh: "pt  bank central asia  tbk" (simbol hilang berganti spasi)
-        $clean = preg_replace('/[.,\-_()\[\]\/\\\\]+/', ' ', $lower);
+        // Jika setelah membuang kurung hasilnya tidak kosong, gunakan nama utama yang bersih
+        if ($cleanMain !== '') {
+            return $cleanMain;
+        }
 
-        // [LANGKAH 3] preg_split('/\s+/', ...) memotong (split) string berdasarkan spasi berurutan menjadi kumpulan kata (token)
-        // Variabel $words (array): Contoh: ["pt", "bank", "central", "asia", "tbk"]
+        // Fallback jika seluruh nama aslinya berada di dalam tanda kurung (misal: "(PT BCA)")
+        return $this->cleanString($name);
+    }
+
+    /**
+     * Fungsi pembantu pembersihan string dari tanda baca dan stop words.
+     */
+    protected function cleanString(string $str): string
+    {
+        $lower = strtolower(trim($str));
+        $clean = preg_replace('/[.,\-_()\[\]\/\\\&+]+/', ' ', $lower);
         $words = preg_split('/\s+/', (string) $clean, -1, PREG_SPLIT_NO_EMPTY) ?: [];
-
-        // [LANGKAH 4] array_filter() menyaring dan membuang kata yang terdaftar di daftar $this->stopWords (pt, cv, tbk, dll.)
-        // Variabel $filtered (array): Contoh: ["bank", "central", "asia"]
         $filtered = array_filter($words, fn ($w) => ! in_array($w, $this->stopWords, true));
 
-        // [LANGKAH 5] implode(' ', $filtered) menggabungkan kembali array kata-kata inti menjadi 1 baris kalimat string dipisahkan spasi
-        // Output (string): Contoh: "bank central asia"
         return trim(implode(' ', $filtered));
     }
 
     /**
      * Menghasilkan array token kata bersih setelah proses pembersihan stop words.
-     * Contoh: "Bank Central Asia" -> ["bank", "central", "asia"]
+     * Contoh: "PT Bank Central Asia Tbk (Kantor Pusat)" -> ["bank", "central", "asia"]
      *
      * @param  string  $name  Nama mentah perusahaan
      * @return array<int, string> Kumpulan kata-kata penyusun nama
      */
     protected function getTokens(string $name): array
     {
-        // [LANGKAH 1] Ambil dulu string bersih tanpa PT/CV dari cleanCompanyName()
+        // [LANGKAH 1] Ambil string bersih tanpa PT/CV dan tanpa keterangan kantor/cabang
         $clean = $this->cleanCompanyName($name);
 
         // [LANGKAH 2] Jika string kosong, langsung kembalikan array kosong []
@@ -589,39 +653,70 @@ class PerusahaanVerificationService
             return [];
         }
 
-        // [LANGKAH 3] INILAH TEMPAT DIA MEMOTONG-MOTONG MENJADI TOKEN KATA!
-        // preg_split('/\s+/', ...) membelah string berdasarkan spasi menjadi elemen array.
-        // Output (array): Contoh "bank central asia" dipotong menjadi -> ["bank", "central", "asia"]
+        // [LANGKAH 3] Potong string berdasarkan spasi menjadi elemen array kata-kata inti
         return preg_split('/\s+/', $clean, -1, PREG_SPLIT_NO_EMPTY) ?: [];
     }
 
     /**
-     * Menghasilkan akronim/singkatan otomatis dari huruf depan setiap kata penting.
-     * Berguna mendeteksi kecocokan seperti "BCA" dengan "Bank Central Asia".
+     * Menghasilkan akronim/singkatan otomatis utama dari huruf depan setiap kata penting.
+     * Contoh: "PT Bank Central Asia Tbk (Kantor Pusat)" -> "bca"
      *
      * @param  string  $name  Nama perusahaan
      * @return string Akronim huruf kecil (contoh: "bca"), atau string kosong jika hanya 1 kata
      */
     protected function makeAcronym(string $name): string
     {
-        // [LANGKAH 1] Ambil array kumpulan kata token (misal: ["bank", "central", "asia"])
+        $acronyms = $this->getAcronyms($name);
+
+        return $acronyms[0] ?? '';
+    }
+
+    /**
+     * Mengekstrak seluruh variasi akronim potensial dari nama perusahaan.
+     * Mencakup:
+     * 1. Akronim dari huruf depan token nama utama (contoh: "Bank Central Asia" -> "bca").
+     * 2. Alias / singkatan eksplisit yang ditulis di dalam tanda kurung (contoh: "Universitas Kristen Duta Wacana (UKDW)" -> "ukdw").
+     *
+     * @param  string  $name  Nama perusahaan
+     * @return array<int, string> Daftar akronim/singkatan dalam huruf kecil
+     */
+    protected function getAcronyms(string $name): array
+    {
+        $acronyms = [];
+
+        // 1. Akronim dari huruf depan setiap token kata nama utama
         $tokens = $this->getTokens($name);
-
-        // [LANGKAH 2] Jika hanya ada 1 kata (misal "Google"), tidak perlu dibuat akronim (kembalikan string kosong)
-        if (count($tokens) <= 1) {
-            return '';
+        if (count($tokens) > 1) {
+            $acr = '';
+            foreach ($tokens as $token) {
+                $acr .= $token[0] ?? '';
+            }
+            if ($acr !== '') {
+                $acronyms[] = strtolower($acr);
+            }
         }
 
-        // [LANGKAH 3] Inisialisasi string kosong untuk menampung huruf-huruf depan
-        $acronym = '';
-
-        // [LANGKAH 4] Looping setiap kata token, lalu ambil indeks karakter ke-0 ($token[0])
-        // Misal kata "bank" -> ambil 'b', kata "central" -> ambil 'c', kata "asia" -> ambil 'a'
-        foreach ($tokens as $token) {
-            $acronym .= $token[0] ?? '';
+        // 2. Ekstrak alias eksplisit dari dalam tanda kurung (...) jika ada
+        if (preg_match_all('/\(([^)]+)\)/', $name, $matches)) {
+            foreach ($matches[1] as $content) {
+                $aliasClean = $this->cleanString($content);
+                if ($aliasClean !== '') {
+                    $aliasTokens = preg_split('/\s+/', $aliasClean, -1, PREG_SPLIT_NO_EMPTY) ?: [];
+                    if (count($aliasTokens) === 1 && strlen($aliasTokens[0]) <= 8) {
+                        $acronyms[] = strtolower($aliasTokens[0]);
+                    } elseif (count($aliasTokens) > 1) {
+                        $aliasAcr = '';
+                        foreach ($aliasTokens as $t) {
+                            $aliasAcr .= $t[0] ?? '';
+                        }
+                        if ($aliasAcr !== '') {
+                            $acronyms[] = strtolower($aliasAcr);
+                        }
+                    }
+                }
+            }
         }
 
-        // [LANGKAH 5] Kembalikan akronim dalam format huruf kecil (lowercase). Contoh output: "bca"
-        return strtolower($acronym);
+        return array_values(array_unique(array_filter($acronyms)));
     }
 }

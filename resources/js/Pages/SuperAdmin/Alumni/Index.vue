@@ -491,8 +491,7 @@ const handleDownloadZip = () => {
                                     <th class="py-3.5 px-4 text-center">Profil</th>
                                     <th class="py-3.5 px-4 text-center">Kuesioner</th>
                                     <th class="py-3.5 px-4 text-center">Evaluasi Atasan</th>
-                                    <th class="py-3.5 px-4 text-center">Status</th>
-                                    <th class="py-3.5 px-4 text-center">Aksi</th>
+                                    <th class="py-3.5 px-4 text-center w-16">Aksi</th>
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-slate-100">
@@ -619,47 +618,27 @@ const handleDownloadZip = () => {
                                         </span>
                                     </td>
 
-                                    <!-- Status Akhir (Badge Harmonis) -->
+                                    <!-- Tombol Aksi Detail dengan Icon Mata Berukuran Pasti 32x32 -->
                                     <td class="py-4 px-4 text-center">
-                                        <span 
-                                            v-if="alumni.kelengkapan.is_complete" 
-                                            class="inline-flex items-center gap-1 px-3 py-1 bg-emerald-600 text-white font-bold rounded-full text-[11px] shadow-2xs"
-                                        >
-                                            <svg class="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" />
-                                            </svg>
-                                            <span>Selesai</span>
-                                        </span>
-                                        <span 
-                                            v-else 
-                                            class="inline-flex items-center gap-1 px-3 py-1 bg-amber-500 text-white font-bold rounded-full text-[11px] shadow-2xs"
-                                        >
-                                            <svg class="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 8v4l3 3" />
-                                            </svg>
-                                            <span>Belum Selesai</span>
-                                        </span>
-                                    </td>
-
-                                    <!-- Tombol Aksi Detail dengan Icon Mata Modern -->
-                                    <td class="py-4 px-4 text-center">
-                                        <Link 
-                                            :href="`/superadmin/alumni/${alumni.id}`" 
-                                            class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#0D542B] hover:bg-[#08381c] text-white rounded-lg text-xs font-bold transition-all shadow-2xs hover:shadow-xs active:scale-95 cursor-pointer"
-                                            title="Lihat rincian kuesioner dan data alumni"
-                                        >
-                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                                            </svg>
-                                            <span>Lihat Detail</span>
-                                        </Link>
+                                        <div class="inline-flex items-center justify-center">
+                                            <Link 
+                                                :href="`/superadmin/alumni/${alumni.id}`" 
+                                                class="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 bg-[#0D542B] hover:bg-[#08381c] text-white transition-all shadow-2xs hover:shadow-xs active:scale-95 cursor-pointer"
+                                                title="Lihat rincian kuesioner dan data alumni"
+                                                aria-label="Lihat Detail Alumni"
+                                            >
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                                </svg>
+                                            </Link>
+                                        </div>
                                     </td>
                                 </tr>
 
                                 <!-- Empty State -->
                                 <tr v-if="alumnis.length === 0">
-                                    <td colspan="9" class="py-16 text-center text-slate-500">
+                                    <td colspan="8" class="py-16 text-center text-slate-500">
                                         <div class="w-12 h-12 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center mx-auto mb-3">
                                             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2 2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
