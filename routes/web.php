@@ -83,16 +83,16 @@ Route::middleware('auth')->group(function () {
         // -----------------------------------------------------------------
         Route::middleware('role:alumni')->group(function () {
             // Dashboard
-            Route::get('/alumni/dashboard', [DashboardController::class, 'tampilkanDashboard']);
+            Route::get('/alumni/dashboard', [DashboardController::class, 'tampilkanDashboard'])->name('alumni.dashboard');
 
             // Profil
             Route::get('/alumni/profile', [ProfilController::class, 'tampilkanHalamanProfil'])->name('alumni.profile');
-            Route::post('/alumni/profile', [SimpanProfilController::class, 'simpanPerubahanProfil']);
+            Route::post('/alumni/profile', [SimpanProfilController::class, 'simpanPerubahanProfil'])->name('alumni.profile.simpan');
             Route::post('/alumni/company', [SimpanProfilController::class, 'tambahPerusahaanBaru'])->name('alumni.company.store');
 
             // Kuesioner Umum Tracer Study
-            Route::get('/alumni/kuesioner', [KuesionerController::class, 'tampilkanKuesioner']);
-            Route::post('/alumni/kuesioner', [SimpanJawabanController::class, 'simpanJawabanKuesioner']);
+            Route::get('/alumni/kuesioner', [KuesionerController::class, 'tampilkanKuesioner'])->name('alumni.kuesioner');
+            Route::post('/alumni/kuesioner', [SimpanJawabanController::class, 'simpanJawabanKuesioner'])->name('alumni.kuesioner.simpan');
 
             // Kuesioner Khusus Program Studi
             Route::get('/alumni/kuesioner-prodi', [KuesionerProdiController::class, 'tampilkanKuesionerProdi'])->name('alumni.kuesioner-prodi');
@@ -134,10 +134,6 @@ Route::middleware('auth')->group(function () {
             Route::post('/prodi/sections', [KelolaSectionProdiController::class, 'store'])->name('prodi.sections.store');
             Route::put('/prodi/sections/{id}', [KelolaSectionProdiController::class, 'update'])->name('prodi.sections.update');
             Route::delete('/prodi/sections/{id}', [KelolaSectionProdiController::class, 'destroy'])->name('prodi.sections.destroy');
-            // Alias rute tunggal untuk backward compatibility form modal pertanyaan
-            Route::post('/prodi/section', [KelolaSectionProdiController::class, 'store'])->name('prodi.section.store');
-            Route::put('/prodi/section/{id}', [KelolaSectionProdiController::class, 'update'])->name('prodi.section.update');
-            Route::delete('/prodi/section/{id}', [KelolaSectionProdiController::class, 'destroy'])->name('prodi.section.destroy');
 
             // Kelola Pertanyaan & Opsi Kuesioner Khusus Prodi
             Route::get('/prodi/pertanyaan', [DaftarPertanyaanProdiController::class, 'index'])->name('prodi.pertanyaan.index');
@@ -165,7 +161,6 @@ Route::middleware('auth')->group(function () {
 
             // Sinkronisasi Profil LinkedIn Khusus Program Studi
             Route::get('/prodi/linkedin-sync', [LinkedInSyncController::class, 'index'])->name('prodi.linkedin-sync.index');
-            Route::get('/prodi/linkedin', [LinkedInSyncController::class, 'index'])->name('prodi.linkedin.index');
             Route::post('/prodi/linkedin-sync/batch', [LinkedInSyncController::class, 'syncBatch'])->name('prodi.linkedin-sync.batch');
             Route::post('/prodi/linkedin-sync/{id}', [LinkedInSyncController::class, 'syncSingle'])->name('prodi.linkedin-sync.single');
             Route::get('/prodi/linkedin-sync/results/{id}', [LinkedInSyncController::class, 'showResult'])->name('prodi.linkedin-sync.result.show');
@@ -202,7 +197,6 @@ Route::middleware('auth')->group(function () {
 
             // Sinkronisasi Profil LinkedIn Khusus Lingkup Fakultas
             Route::get('/fakultas/linkedin-sync', [LinkedInSyncController::class, 'index'])->name('fakultas.linkedin-sync.index');
-            Route::get('/fakultas/linkedin', [LinkedInSyncController::class, 'index'])->name('fakultas.linkedin.index');
             Route::post('/fakultas/linkedin-sync/batch', [LinkedInSyncController::class, 'syncBatch'])->name('fakultas.linkedin-sync.batch');
             Route::post('/fakultas/linkedin-sync/{id}', [LinkedInSyncController::class, 'syncSingle'])->name('fakultas.linkedin-sync.single');
             Route::get('/fakultas/linkedin-sync/results/{id}', [LinkedInSyncController::class, 'showResult'])->name('fakultas.linkedin-sync.result.show');

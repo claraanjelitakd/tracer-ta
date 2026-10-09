@@ -108,7 +108,7 @@ class AdminProdiKuesionerTest extends TestCase
 
     public function test_admin_prodi_can_create_section_for_own_prodi(): void
     {
-        $response = $this->actingAs($this->adminSI)->post('/prodi/section', [
+        $response = $this->actingAs($this->adminSI)->post('/prodi/sections', [
             'title' => 'Fasilitas & Lab Komputer SI',
             'description' => 'Evaluasi kelayakan fasilitas laboratorium',
             'order' => 2,
