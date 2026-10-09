@@ -86,9 +86,14 @@ class DaftarAlumniSuperAdminController extends Controller
             });
         }
 
-        // Filter Tahun Kelulusan (Memfilter eksak kolom tahun_lulus agar tidak bocor ke tahun akademik lain)
+        // Filter Tahun Kelulusan (Mendukung tahun 4-digit maupun format akademik seperti '2024/2025')
         if ($tahunTerpilih && $tahunTerpilih !== 'all') {
-            $query->where('tahun_lulus', $tahunTerpilih);
+            $tahunNormalized = preg_match('/(\d{4})/', (string) $tahunTerpilih, $m) ? $m[1] : $tahunTerpilih;
+            $query->where(function ($q) use ($tahunTerpilih, $tahunNormalized) {
+                $q->where('tahun_lulus', $tahunNormalized)
+                    ->orWhere('tahun_lulus', $tahunTerpilih)
+                    ->orWhere('tahun_akademik_lulus', 'like', "%{$tahunNormalized}%");
+            });
         }
 
         // Filter Semester Kelulusan (Gasal / Genap)
