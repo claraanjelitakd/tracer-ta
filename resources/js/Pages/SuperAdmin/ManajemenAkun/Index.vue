@@ -49,7 +49,7 @@ const openEditUserModal = (u) => {
     ).join('');
 
     Swal.fire({
-        title: `<span class="text-base font-bold text-slate-900">Sunting Data Akun Pengguna</span>`,
+        title: `<span class="text-base font-bold text-slate-900">Edit</span>`,
         html: `
             <div class="text-left text-xs space-y-3 pt-1 text-slate-800">
                 <div>
@@ -291,7 +291,7 @@ const handleResetToDefaultAndNotify = (userData) => {
                                             class="px-2.5 py-1 bg-slate-100 text-slate-700 font-bold rounded text-[11px] hover:bg-slate-200 border border-slate-300 cursor-pointer"
                                             title="Sunting email, nama, username, atau role pengguna"
                                         >
-                                            Sunting Data
+                                            Edit
                                         </button>
                                         <!-- Tombol Reset 1-Klik ke Tanggal Lahir + Email Konfirmasi -->
                                         <button
@@ -299,7 +299,7 @@ const handleResetToDefaultAndNotify = (userData) => {
                                             class="px-2.5 py-1 bg-[#0D542B] text-white font-semibold rounded text-[11px] hover:bg-[#08381c] cursor-pointer"
                                             title="Reset password otomatis ke tanggal lahir (ddmmyyyy) & kirim email konfirmasi ke email terdaftar"
                                         >
-                                            Reset Password & Email
+                                            Reset Password
                                         </button>
                                     </div>
                                 </td>

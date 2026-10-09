@@ -84,12 +84,9 @@ class DaftarAlumniFakultasController extends Controller
             });
         }
 
-        // Filter Tahun Kelulusan
+        // Filter Tahun Kelulusan (Pencocokan eksak kolom tahun_lulus)
         if ($tahunTerpilih && $tahunTerpilih !== 'all') {
-            $query->where(function ($q) use ($tahunTerpilih) {
-                $q->where('tahun_akademik_lulus', 'like', "%{$tahunTerpilih}%")
-                    ->orWhere('tahun_lulus', 'like', "%{$tahunTerpilih}%");
-            });
+            $query->where('tahun_lulus', $tahunTerpilih);
         }
 
         // Filter Semester Kelulusan

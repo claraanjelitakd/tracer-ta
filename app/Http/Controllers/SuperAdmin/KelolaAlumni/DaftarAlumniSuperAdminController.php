@@ -86,12 +86,9 @@ class DaftarAlumniSuperAdminController extends Controller
             });
         }
 
-        // Filter Tahun Kelulusan (Default ke tahun terbaru)
-        if ($tahunTerpilih) {
-            $query->where(function ($q) use ($tahunTerpilih) {
-                $q->where('tahun_akademik_lulus', 'like', "%{$tahunTerpilih}%")
-                    ->orWhere('tahun_lulus', 'like', "%{$tahunTerpilih}%");
-            });
+        // Filter Tahun Kelulusan (Memfilter eksak kolom tahun_lulus agar tidak bocor ke tahun akademik lain)
+        if ($tahunTerpilih && $tahunTerpilih !== 'all') {
+            $query->where('tahun_lulus', $tahunTerpilih);
         }
 
         // Filter Semester Kelulusan (Gasal / Genap)
@@ -239,10 +236,7 @@ class DaftarAlumniSuperAdminController extends Controller
             ->where('prodi_id', $prodiId);
 
         if ($tahun && $tahun !== 'all') {
-            $auditQuery->where(function ($q) use ($tahun) {
-                $q->where('tahun_akademik_lulus', 'like', "%{$tahun}%")
-                    ->orWhere('tahun_lulus', 'like', "%{$tahun}%");
-            });
+            $auditQuery->where('tahun_lulus', $tahun);
         }
 
         $biodataIds = $auditQuery->pluck('biodata_id')->filter()->unique()->values()->all();
@@ -251,8 +245,7 @@ class DaftarAlumniSuperAdminController extends Controller
             $fallbackQuery = Biodata::where('prodi_id', $prodiId);
             if ($tahun && $tahun !== 'all') {
                 $fallbackQuery->whereHas('dataAkademik', function ($da) use ($tahun) {
-                    $da->where('tahun_akademik_lulus', 'like', "%{$tahun}%")
-                        ->orWhere('tahun_lulus', 'like', "%{$tahun}%");
+                    $da->where('tahun_lulus', $tahun);
                 });
             }
 

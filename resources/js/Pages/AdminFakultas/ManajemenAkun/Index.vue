@@ -29,7 +29,7 @@ const applyFilters = () => {
 
 const openEditUserModal = (u) => {
     Swal.fire({
-        title: `<span class="text-base font-bold text-slate-900">Sunting Data Akun Mahasiswa</span>`,
+        title: `<span class="text-base font-bold text-slate-900">Edit</span>`,
         html: `
             <div class="text-left text-xs space-y-3 pt-1 text-slate-800">
                 <div>
@@ -186,14 +186,14 @@ const handleResetToDefaultAndNotify = (userData) => {
                                             class="px-2.5 py-1 bg-slate-100 text-slate-700 font-bold rounded text-[11px] hover:bg-slate-200 border border-slate-300 cursor-pointer"
                                             title="Sunting email, nama, atau NIM"
                                         >
-                                            Sunting Data
+                                            Edit
                                         </button>
                                         <button
                                             @click="handleResetToDefaultAndNotify(u)"
                                             class="px-2.5 py-1 bg-[#0D542B] text-white font-semibold rounded text-[11px] hover:bg-[#08381c] cursor-pointer"
                                             title="Reset password otomatis ke tanggal lahir & kirim konfirmasi email"
                                         >
-                                            Reset Password & Email
+                                            Reset Password
                                         </button>
                                     </div>
                                 </td>

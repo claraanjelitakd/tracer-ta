@@ -44,6 +44,10 @@ const isAlumniActive = computed(() => {
     return page.url.startsWith('/fakultas/alumni');
 });
 
+const isLinkedInActive = computed(() => {
+    return page.url.startsWith('/fakultas/linkedin');
+});
+
 const isPerusahaanActive = computed(() => {
     return page.url.startsWith('/fakultas/perusahaan');
 });
@@ -196,6 +200,23 @@ const handleLogout = () => {
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
                     </svg>
                     <span class="truncate">Data Alumni Fakultas</span>
+                </Link>
+
+                <!-- 3. Sinkronisasi LinkedIn Fakultas -->
+                <Link
+                    href="/fakultas/linkedin-sync"
+                    @click="closeMobileMenu"
+                    class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-semibold transition-colors"
+                    :class="[
+                        isLinkedInActive
+                            ? 'bg-[#0D542B] text-white shadow-2xs'
+                            : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                    ]"
+                >
+                    <svg class="w-4 h-4 shrink-0 fill-current" viewBox="0 0 24 24">
+                        <path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/>
+                    </svg>
+                    <span class="truncate">Sinkronisasi LinkedIn</span>
                 </Link>
 
                 <div class="px-2.5 pt-3 pb-1">

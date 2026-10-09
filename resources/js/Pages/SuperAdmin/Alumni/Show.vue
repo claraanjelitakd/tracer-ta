@@ -13,7 +13,7 @@
   - Butir Terjawab: Background Putih/Hijau (#FFFFFF / emerald-50) & status hijau terisi.
 -->
 <script setup>
-import { Head, Link, useForm } from '@inertiajs/vue3';
+import { Head, Link, useForm, router } from '@inertiajs/vue3';
 import { ref, computed } from 'vue';
 import Swal from 'sweetalert2';
 import Sidebar from '../Components/Sidebar.vue';
@@ -190,6 +190,196 @@ const copyRawJson = () => {
                 timer: 2000,
             });
         });
+};
+
+// =========================================================================
+// SINKRONISASI LINKEDIN LANGSUNG (IN-PLACE TANPA PINDAH HALAMAN)
+// =========================================================================
+const isDirectSyncing = ref(false);
+const isApprovingSync = ref(false);
+
+const handleDirectLinkedInSync = async () => {
+    let targetUrl = props.alumni.linkedin_url || '';
+
+    // Jika URL LinkedIn belum terisi, sediakan dialog input interaktif
+    if (!targetUrl || !targetUrl.trim()) {
+        const { value: inputUrl } = await Swal.fire({
+            title: 'URL LinkedIn Belum Diisi',
+            text: 'Masukkan URL profil publik LinkedIn alumni ini untuk memulai sinkronisasi:',
+            input: 'url',
+            inputPlaceholder: 'https://www.linkedin.com/in/username-alumni',
+            showCancelButton: true,
+            confirmButtonText: 'Simpan & Sinkronkan',
+            cancelButtonText: 'Batal',
+            confirmButtonColor: '#0D542B',
+            cancelButtonColor: '#94a3b8',
+            inputValidator: (val) => {
+                if (!val || !val.trim()) {
+                    return 'URL LinkedIn tidak boleh kosong!';
+                }
+                if (!val.includes('linkedin.com/')) {
+                    return 'URL harus berupa tautan profil LinkedIn (contoh: https://www.linkedin.com/in/username)';
+                }
+            },
+        });
+
+        if (!inputUrl) return;
+
+        // Simpan tautan URL ke biodata terlebih dahulu
+        try {
+            await fetch(`/superadmin/alumni/${props.alumni.id}/profile`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+                },
+                body: JSON.stringify({
+                    linkedin_url: inputUrl,
+                }),
+            });
+            props.alumni.linkedin_url = inputUrl;
+            targetUrl = inputUrl;
+        } catch (e) {
+            // Lanjutkan eksekusi
+        }
+    }
+
+    isDirectSyncing.value = true;
+
+    // Tampilkan dialog loading interaktif saat menunggu proses scraping Apify
+    Swal.fire({
+        title: 'Menghubungi LinkedIn...',
+        html: `
+            <div class="space-y-2 text-center py-2">
+                <p class="text-xs text-gray-600">Mengambil data profil publik melalui Apify Engine.</p>
+                <p class="text-xs text-amber-700 font-semibold bg-amber-50 py-1.5 px-3 rounded-lg border border-amber-200">
+                    Proses scraping membutuhkan waktu 10–30 detik. Mohon tidak menutup halaman ini...
+                </p>
+            </div>
+        `,
+        allowOutsideClick: false,
+        allowEscapeKey: false,
+        showConfirmButton: false,
+        didOpen: () => {
+            Swal.showLoading();
+        },
+    });
+
+    try {
+        const response = await fetch(`/superadmin/linkedin-sync/${props.alumni.id}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+            },
+        });
+
+        const data = await response.json();
+
+        Swal.close();
+
+        if (response.ok && data.success) {
+            await Swal.fire({
+                icon: 'success',
+                title: 'Sinkronisasi Berhasil!',
+                text: data.message || 'Data LinkedIn berhasil diambil dan disimpan dalam status Pending Review.',
+                confirmButtonColor: '#0D542B',
+                confirmButtonText: 'OK, Lanjutkan',
+            });
+            // Reload komponen data secara in-place tanpa perlu meninggalkan halaman
+            router.reload({ preserveScroll: true });
+        } else {
+            Swal.fire({
+                icon: 'error',
+                title: 'Sinkronisasi Gagal',
+                text: data.message || 'Gagal menyinkronkan profil LinkedIn.',
+                confirmButtonColor: '#0D542B',
+            });
+        }
+    } catch (err) {
+        Swal.close();
+        console.error('LinkedIn Direct Sync Error:', err);
+        Swal.fire({
+            icon: 'warning',
+            title: 'Waktu Tunggu Jaringan / Terputus',
+            text: err.name === 'AbortError'
+                ? 'Waktu tunggu permintaan ke LinkedIn telah habis.'
+                : (err.message || 'Koneksi ke server terputus saat menunggu hasil scraping. Jika data sebenarnya sudah masuk di server, silakan muat ulang halaman.'),
+            confirmButtonColor: '#0D542B',
+            confirmButtonText: 'Muat Ulang Halaman',
+            showCancelButton: true,
+            cancelButtonText: 'Tutup',
+        }).then((result) => {
+            if (result.isConfirmed) {
+                router.reload({ preserveScroll: true });
+            }
+        });
+    } finally {
+        isDirectSyncing.value = false;
+    }
+};
+
+const handleDirectApproveStaging = async () => {
+    if (!props.linkedinSyncResult || props.linkedinSyncResult.status !== 'pending') return;
+
+    const confirm = await Swal.fire({
+        title: 'Setujui Hasil Scraping?',
+        text: 'Data hasil scraping LinkedIn ini akan diterapkan ke profil utama alumni (biodata & perusahaan).',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#0D542B',
+        cancelButtonColor: '#94a3b8',
+        confirmButtonText: 'Ya, Setujui & Terapkan',
+        cancelButtonText: 'Batal',
+    });
+
+    if (!confirm.isConfirmed) return;
+
+    isApprovingSync.value = true;
+    try {
+        const response = await fetch(`/superadmin/linkedin-sync/results/${props.linkedinSyncResult.id}/approve`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+            },
+            body: JSON.stringify({
+                tipe_pekerjaan: 'pekerja',
+                sync_foto: true,
+            }),
+        });
+
+        const data = await response.json();
+
+        if (response.ok && data.success) {
+            await Swal.fire({
+                icon: 'success',
+                title: 'Berhasil Disetujui!',
+                text: 'Data profil alumni telah diperbarui dengan data LinkedIn.',
+                confirmButtonColor: '#0D542B',
+            });
+            router.reload({ preserveScroll: true });
+        } else {
+            Swal.fire({
+                icon: 'error',
+                title: 'Gagal Menyetujui',
+                text: data.message || 'Terjadi kesalahan.',
+                confirmButtonColor: '#0D542B',
+            });
+        }
+    } catch (e) {
+        Swal.fire({
+            icon: 'error',
+            title: 'Kesalahan Sistem',
+            text: 'Gagal memproses persetujuan hasil staging.',
+            confirmButtonColor: '#0D542B',
+        });
+    } finally {
+        isApprovingSync.value = false;
+    }
 };
 
 // Form data reaktif untuk edit profil oleh Super Admin
@@ -1247,6 +1437,39 @@ const statusYudisium = computed(() => {
                             </div>
 
                             <div class="flex items-center gap-2 shrink-0 flex-wrap">
+                                <!-- Tombol Sinkronisasi Langsung In-Place (Tanpa Pindah Halaman) -->
+                                <button 
+                                    type="button" 
+                                    @click="handleDirectLinkedInSync"
+                                    :disabled="isDirectSyncing"
+                                    class="px-4 py-2 bg-[#0077B5] hover:bg-[#005f93] text-white text-xs font-bold rounded-xl transition flex items-center gap-2 shadow-2xs disabled:opacity-60 cursor-pointer"
+                                    title="Sinkronkan data LinkedIn alumni ini secara langsung tanpa perlu meninggalkan halaman ini"
+                                >
+                                    <svg v-if="!isDirectSyncing" class="w-3.5 h-3.5 fill-current shrink-0" viewBox="0 0 24 24">
+                                        <path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/>
+                                    </svg>
+                                    <svg v-else class="animate-spin w-3.5 h-3.5 text-white shrink-0" fill="none" viewBox="0 0 24 24">
+                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                                    </svg>
+                                    <span>{{ isDirectSyncing ? 'Menyinkronkan...' : 'Sinkronkan LinkedIn Sekarang' }}</span>
+                                </button>
+
+                                <!-- Tombol Setujui Staging Langsung (Jika Status Pending) -->
+                                <button
+                                    v-if="linkedinSyncResult && linkedinSyncResult.status === 'pending'"
+                                    type="button"
+                                    @click="handleDirectApproveStaging"
+                                    :disabled="isApprovingSync"
+                                    class="px-4 py-2 bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold rounded-xl transition flex items-center gap-1.5 shadow-2xs disabled:opacity-60 cursor-pointer"
+                                    title="Setujui hasil scraping dan terapkan ke profil alumni tanpa meninggalkan halaman"
+                                >
+                                    <svg class="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                                    </svg>
+                                    <span>{{ isApprovingSync ? 'Menyetujui...' : 'Setujui Hasil LinkedIn' }}</span>
+                                </button>
+
                                 <button 
                                     v-if="linkedinSyncResult?.scraped_data"
                                     type="button" 
@@ -1269,7 +1492,7 @@ const statusYudisium = computed(() => {
                                 <Link 
                                     :href="'/superadmin/linkedin-sync?alumni_id=' + alumni.id + '&search=' + encodeURIComponent(alumni.nim || alumni.nama || '')" 
                                     class="px-4 py-2 bg-[#0D542B] hover:bg-[#0A4322] text-white text-xs font-bold rounded-xl transition flex items-center gap-1.5 shadow-2xs"
-                                    title="Arahkan langsung ke profil LinkedIn alumni ini di LinkedIn Sync"
+                                    title="Buka direktori lengkap LinkedIn Sync di halaman tersendiri"
                                 >
                                     <span>Buka Menu LinkedIn Sync &rarr;</span>
                                 </Link>

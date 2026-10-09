@@ -78,7 +78,10 @@ class VerifikasiPerusahaanSuperAdminController extends Controller
             $companies = $query->latest('updated_at')->paginate($filters['per_page'])->withQueryString();
         }
 
-        // Lampirkan data rekomendasi kemiripan perusahaan terverifikasi untuk membantu konsolidasi/penggabungan data
+        // Lampirkan data rekomendasi kemiripan perusahaan terverifikasi untuk membantu konsolidasi/penggabungan data.
+        // Catatan: getSimilarRecommendations() menggunakan algoritma Multi-level String Similarity (bukan hanya trim):
+        // 1) Text Preprocessing & Stopword stripping (PT/CV), 2) Exact match, 3) Acronym matching (misal BCA),
+        // 4) Substring & Token overlap, 5) Levenshtein/similar_text, 6) Geographic bonus (kota & provinsi).
         $companies->getCollection()->transform(function ($company) {
             $company->recommendations = $this->verificationService->getSimilarRecommendations($company, 5);
 

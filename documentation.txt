@@ -102,7 +102,15 @@ c:/study/tracerstudy/app/Http/Controllers/AdminProdi/KelolaPertanyaan/SimpanPert
 c:/study/tracerstudy/app/Http/Controllers/AdminProdi/KelolaPertanyaan/KelolaOpsiProdiController.php
 - Tambah, edit, dan hapus pilihan opsi jawaban pada butir pertanyaan kuesioner program studi.
 
-E. MODUL SUPER ADMIN (Role: superadmin)
+c:/study/tracerstudy/app/Http/Controllers/AdminProdi/VerifikasiPerusahaan/VerifikasiPerusahaanProdiController.php
+- Verifikasi dan persetujuan pengajuan perusahaan tempat kerja alumni khusus lingkup program studi admin terkait (Fitur: ACC Langsung, Auto-Replace dengan rekomendasi kemiripan cerdas, Update & Verifikasi, serta Penolakan).
+
+E. MODUL ADMIN FAKULTAS (Role: admin_fakultas)
+----------------------------------------------------------------------------------------------------
+c:/study/tracerstudy/app/Http/Controllers/AdminFakultas/VerifikasiPerusahaan/VerifikasiPerusahaanFakultasController.php
+- Verifikasi dan persetujuan pengajuan perusahaan alumni untuk seluruh program studi di bawah naungan fakultas admin. Terintegrasi dengan rekomendasi kemiripan master perusahaan terverifikasi.
+
+F. MODUL SUPER ADMIN (Role: superadmin)
 ----------------------------------------------------------------------------------------------------
 c:/study/tracerstudy/app/Http/Controllers/SuperAdmin/Dashboard/DashboardController.php
 - Dashboard analitik tingkat universitas, visualisasi chart sebaran kerja, dan pemantauan sistem.
@@ -244,6 +252,9 @@ c:/study/tracerstudy/app/Services/Kuesioner/KelengkapanTracerService.php
 
 c:/study/tracerstudy/app/Services/LinkedIn/LinkedInService.php
 - Logika integrasi pengambilan dan parsing profil publik LinkedIn alumni.
+
+c:/study/tracerstudy/app/Services/Perusahaan/PerusahaanVerificationService.php
+- Logika verifikasi perusahaan baru, modul auto-replace relasi alumni ke master terverifikasi, serta algoritma rekomendasi kemiripan cerdas (Multi-level String Similarity Matching + Geographic Scoring) untuk mencegah data ganda. Detail lengkap di docs/verifikasi-perusahaan-similarity.md.
 
 ====================================================================================================
 5. BACKEND: MIDDLEWARE (app/Http/Middleware)

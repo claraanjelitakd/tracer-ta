@@ -4,9 +4,9 @@ namespace App\Http\Controllers\SuperAdmin\LinkedIn;
 
 use App\Http\Controllers\Controller;
 use App\Models\Biodata;
-use App\Models\DataAkademik;
 use App\Models\LinkedinSyncResult;
 use App\Models\LogActivity;
+use App\Models\Prodi;
 use App\Services\LinkedIn\Exceptions\LinkedInProfileNotFoundException;
 use App\Services\LinkedIn\Exceptions\LinkedInSyncException;
 use App\Services\LinkedIn\LinkedInProfileService;
@@ -22,71 +22,184 @@ use Inertia\Response;
 /**
  * Class LinkedInSyncController
  *
- * Mengelola fitur Sinkronisasi Profil LinkedIn untuk Super Admin:
- * - Menampilkan direktori alumni berdasarkan filter Tahun Kelulusan resmi.
- * - Mendukung 2 provider resmi yang dapat dikonfigurasi:
- *   1. Official LinkedIn Provider (Driver: Mock atau API server-to-server)
- *   2. Apify LinkedIn Scraper Provider (Actor: data_forge_org~linkedin-scraper) dengan flow staging & review
- * - Menyediakan sinkronisasi individual per-alumni.
- * - Menyediakan alur Review Staging (Approve / Reject) untuk provider Apify.
- * - Menyediakan histori lengkap setiap sinkronisasi tanpa menimpa data sebelumnya.
+ * Mengelola fitur Sinkronisasi Profil LinkedIn terpadu untuk Super Admin, Admin Fakultas, dan Admin Prodi:
+ * - Menampilkan direktori alumni berdasarkan filter Tahun Kelulusan, Target Periode, Semester, Prodi, dan Status Sinkronisasi.
+ * - Menyesuaikan batasan data berdasarkan peran yang sedang login:
+ *   1. Super Admin: Seluruh fakultas dan program studi UKDW.
+ *   2. Admin Fakultas: Alumni dari program studi dalam naungan fakultasnya.
+ *   3. Admin Prodi: Khusus alumni program studinya sendiri.
+ * - Mendukung 2 provider resmi: Official Provider dan Apify Third-Party Scraper (Staging & Review).
+ * - Menyediakan fitur sinkronisasi langsung (in-place) per alumni maupun massal.
  */
 class LinkedInSyncController extends Controller
 {
     /**
-     * Menampilkan halaman utama Sinkronisasi LinkedIn Super Admin.
+     * Mendapatkan lingkup akses (scope) dan base route berdasarkan peran user yang sedang login.
+     *
+     * @return array{role: string, baseRoute: string, prodiId: int|null, fakultasId: int|null}
+     */
+    private function getUserScope(Request $request): array
+    {
+        $user = Auth::user();
+
+        // 1. Otoritas Admin Program Studi
+        if ($user?->role === 'admin_prodi' || $request->is('prodi/*')) {
+            return [
+                'role' => 'admin_prodi',
+                'baseRoute' => '/prodi/linkedin-sync',
+                'prodiId' => $user?->prodi_id,
+                'fakultasId' => null,
+            ];
+        }
+
+        // 2. Otoritas Admin Fakultas (Dekanat / GKM)
+        if ($user?->role === 'admin_fakultas' || $request->is('fakultas/*')) {
+            return [
+                'role' => 'admin_fakultas',
+                'baseRoute' => '/fakultas/linkedin-sync',
+                'prodiId' => null,
+                'fakultasId' => $user?->fakultas_id,
+            ];
+        }
+
+        // 3. Otoritas Super Admin (Pusat / Universitas)
+        return [
+            'role' => 'superadmin',
+            'baseRoute' => '/superadmin/linkedin-sync',
+            'prodiId' => null,
+            'fakultasId' => null,
+        ];
+    }
+
+    /**
+     * Memvalidasi apakah alumni berada dalam wewenang akses akun yang sedang login.
+     */
+    private function validateAlumniScope(Biodata $biodata, array $scope): void
+    {
+        if ($scope['role'] === 'admin_prodi') {
+            if ($biodata->prodi_id != $scope['prodiId']) {
+                abort(403, 'Anda tidak memiliki wewenang untuk mengelola data alumni di luar program studi Anda.');
+            }
+        } elseif ($scope['role'] === 'admin_fakultas') {
+            $prodiIdsFakultas = Prodi::where('fakultas_id', $scope['fakultasId'])->pluck('id')->all();
+            if (! in_array($biodata->prodi_id, $prodiIdsFakultas)) {
+                abort(403, 'Anda tidak memiliki wewenang untuk mengelola data alumni di luar lingkungan fakultas Anda.');
+            }
+        }
+    }
+
+    /**
+     * Menampilkan halaman utama Sinkronisasi LinkedIn (Super Admin, Fakultas, Prodi).
      */
     public function index(Request $request): Response
     {
         $provider = config('services.linkedin.provider', 'official');
+        $scope = $this->getUserScope($request);
 
-        // 1. Ambil daftar tahun kelulusan unik dari master data akademik / yudisium
-        $daftarTahun = DataAkademik::whereNotNull('tahun_lulus')
-            ->where('tahun_lulus', '>', 1990)
-            ->distinct()
-            ->orderByDesc('tahun_lulus')
+        // 1. Ambil daftar Program Studi yang diizinkan untuk akun ini
+        if ($scope['role'] === 'admin_prodi') {
+            $daftarProdi = Prodi::where('id', $scope['prodiId'])->get();
+            $prodiIdsScope = [$scope['prodiId']];
+        } elseif ($scope['role'] === 'admin_fakultas') {
+            $daftarProdi = Prodi::where('fakultas_id', $scope['fakultasId'])->orderBy('kode_prodi', 'asc')->get();
+            $prodiIdsScope = $daftarProdi->pluck('id')->all();
+        } else {
+            $daftarProdi = Prodi::orderBy('kode_prodi', 'asc')->get();
+            $prodiIdsScope = null;
+        }
+
+        // 2. Ambil daftar tahun kelulusan unik dari view v_alumni_audit_rekap sesuai scope
+        $tahunQuery = DB::table('v_alumni_audit_rekap');
+        if ($prodiIdsScope !== null) {
+            $tahunQuery->whereIn('prodi_id', $prodiIdsScope);
+        }
+        $daftarTahun = $tahunQuery
+            ->where(function ($q) {
+                $q->whereNotNull('tahun_lulus')
+                    ->orWhereNotNull('tahun_akademik_lulus');
+            })
             ->pluck('tahun_lulus')
-            ->map(fn ($y) => (string) $y)
-            ->values()
-            ->all();
+            ->filter()
+            ->map(function ($item) {
+                if (preg_match('/(\d{4})/', (string) $item, $matches)) {
+                    return $matches[1];
+                }
+
+                return trim($item);
+            })->unique()->sortDesc()->values()->all();
 
         if (empty($daftarTahun)) {
             $daftarTahun = [(string) date('Y')];
         }
 
-        // 2. Target alumni spesifik (jika diarahkan dari halaman Detail Alumni)
+        // 3. Ambil daftar target periode kelulusan unik (Semester & Tahun Lulus)
+        $targetQuery = DB::table('v_alumni_audit_rekap');
+        if ($prodiIdsScope !== null) {
+            $targetQuery->whereIn('prodi_id', $prodiIdsScope);
+        }
+        $daftarTarget = $targetQuery
+            ->whereNotNull('tahun_akademik_lulus')
+            ->where('tahun_akademik_lulus', '!=', '')
+            ->pluck('tahun_akademik_lulus')
+            ->unique()
+            ->sortDesc()
+            ->values()
+            ->all();
+
+        // 4. Parameter Filter Request (Selaras persis dengan Halaman superadmin/alumni)
+        $searchQuery = trim((string) $request->input('search', $request->input('nim', '')));
+        $tahunTerbaru = $daftarTahun[0] ?? (string) date('Y');
+        $tahunTerpilih = (string) $request->input('tahun', $tahunTerbaru);
+        if ($tahunTerpilih === 'all' || empty($tahunTerpilih)) {
+            $tahunTerpilih = $tahunTerbaru;
+        }
+
+        $semesterTerpilih = (string) $request->input('semester', 'all');
+        $targetTerpilih = (string) $request->input('target', 'all');
+        $statusTerpilih = (string) $request->input('status', 'all');
+        $prodiIdTerpilih = (string) $request->input('prodi_id', 'all');
+
+        // Untuk Admin Prodi, kunci filter prodi ke ID prodinya sendiri
+        if ($scope['role'] === 'admin_prodi') {
+            $prodiIdTerpilih = (string) $scope['prodiId'];
+        }
+
+        // 5. Target alumni spesifik jika dialihkan dari detail alumni
         $targetAlumniId = $request->input('alumni_id');
-        $searchQuery = (string) $request->input('search', $request->input('nim', ''));
-
-        // 3. Tahun terpilih dari request (default: tahun kelulusan terbaru atau tahun lulus alumni target)
-        $tahunTerpilih = (string) $request->input('tahun', '');
-
         if ($targetAlumniId) {
             $targetAlumni = Biodata::with('dataAkademik')->find($targetAlumniId);
             if ($targetAlumni) {
-                if (empty($tahunTerpilih)) {
-                    $targetYear = $targetAlumni->tahun_lulus ?: ($targetAlumni->dataAkademik?->tahun_lulus ?: null);
-                    if ($targetYear) {
-                        $tahunTerpilih = (string) $targetYear;
-                    }
-                }
                 if (empty($searchQuery)) {
                     $searchQuery = (string) ($targetAlumni->nim ?: $targetAlumni->nama);
                 }
             }
         }
 
-        if (empty($tahunTerpilih)) {
-            $tahunTerpilih = $daftarTahun[0];
+        // 6. Kueri data alumni berbasis Eloquent dengan relasi lengkap
+        $queryAlumni = Biodata::with([
+            'perusahaan',
+            'dataAkademik',
+            'prodi.fakultas',
+            'latestLinkedinSyncLog',
+            'latestLinkedinSyncResult.reviewer',
+        ]);
+
+        // Terapkan batasan wewenang (Role Scope)
+        if ($scope['role'] === 'admin_prodi') {
+            $queryAlumni->where('prodi_id', $scope['prodiId']);
+        } elseif ($scope['role'] === 'admin_fakultas') {
+            if ($prodiIdTerpilih !== 'all' && in_array((int) $prodiIdTerpilih, $prodiIdsScope, true)) {
+                $queryAlumni->where('prodi_id', (int) $prodiIdTerpilih);
+            } else {
+                $queryAlumni->whereIn('prodi_id', $prodiIdsScope);
+            }
+        } elseif ($prodiIdTerpilih !== 'all') {
+            $queryAlumni->where('prodi_id', (int) $prodiIdTerpilih);
         }
 
-        if (! in_array($tahunTerpilih, $daftarTahun, true)) {
-            array_unshift($daftarTahun, $tahunTerpilih);
-        }
-
-        // 4. Query alumni yang lulus pada tahun tersebut (atau sertakan alumni target)
-        $queryAlumni = Biodata::with(['perusahaan', 'dataAkademik', 'latestLinkedinSyncLog', 'latestLinkedinSyncResult.reviewer'])
-            ->where(function ($q) use ($tahunTerpilih, $targetAlumniId) {
+        // Filter Tahun Kelulusan (Pencocokan eksak kolom tahun_lulus agar tidak bocor ke tahun akademik lain)
+        if ($tahunTerpilih && $tahunTerpilih !== 'all') {
+            $queryAlumni->where(function ($q) use ($tahunTerpilih, $targetAlumniId) {
                 $q->where(function ($sub) use ($tahunTerpilih) {
                     $sub->whereHas('dataAkademik', fn ($a) => $a->where('tahun_lulus', $tahunTerpilih))
                         ->orWhereHas('yudisium.dataAkademik', fn ($a) => $a->where('tahun_lulus', $tahunTerpilih));
@@ -95,19 +208,50 @@ class LinkedInSyncController extends Controller
                 if ($targetAlumniId) {
                     $q->orWhere('id', $targetAlumniId);
                 }
-            })
-            ->orderBy('nim', 'asc')
-            ->get();
+            });
+        }
 
-        // 4. Kalkulasi metrik analitik (Summary KPI)
-        $totalAlumni = $queryAlumni->count();
+        // Filter Target Periode Kelulusan (Semester + Tahun)
+        if ($targetTerpilih && $targetTerpilih !== 'all') {
+            $queryAlumni->whereHas('dataAkademik', fn ($a) => $a->where('tahun_akademik_lulus', $targetTerpilih));
+        }
+
+        // Filter Semester Kelulusan (Gasal / Genap)
+        if ($semesterTerpilih && $semesterTerpilih !== 'all') {
+            $queryAlumni->whereHas('dataAkademik', fn ($a) => $a->where('tahun_akademik_lulus', 'like', "%{$semesterTerpilih}%"));
+        }
+
+        // Filter Pencarian Teks (NIM, Nama di Data Akademik/User, Email, URL LinkedIn, atau Username)
+        if ($searchQuery) {
+            $queryAlumni->where(function ($w) use ($searchQuery) {
+                $w->where('nim', 'like', "%{$searchQuery}%")
+                    ->orWhere('email_pribadi', 'like', "%{$searchQuery}%")
+                    ->orWhere('linkedin_url', 'like', "%{$searchQuery}%")
+                    ->orWhere('linkedin_username', 'like', "%{$searchQuery}%")
+                    ->orWhereHas('dataAkademik', function ($da) use ($searchQuery) {
+                        $da->where('nama', 'like', "%{$searchQuery}%")
+                            ->orWhere('email_pribadi', 'like', "%{$searchQuery}%")
+                            ->orWhere('email_students', 'like', "%{$searchQuery}%");
+                    })
+                    ->orWhereHas('user', function ($u) use ($searchQuery) {
+                        $u->where('name', 'like', "%{$searchQuery}%");
+                    });
+            });
+        }
+
+        $semuaAlumni = $queryAlumni->orderBy('nim', 'asc')->get();
+
+        // 7. Hitung metrik analitik dan format data reaktif
+        $totalAlumni = $semuaAlumni->count();
         $denganLinkedin = 0;
         $berhasilSinkron = 0;
         $gagalSinkron = 0;
         $dilewati = 0;
         $pendingReview = 0;
 
-        $alumniList = $queryAlumni->map(function (Biodata $b) use (&$denganLinkedin, &$berhasilSinkron, &$gagalSinkron, &$dilewati, &$pendingReview, $provider) {
+        $alumniList = [];
+
+        foreach ($semuaAlumni as $b) {
             $hasUrl = ! empty(trim($b->linkedin_url ?? ''));
             $hasUsername = ! empty(trim($b->linkedin_username ?? ''));
 
@@ -144,11 +288,16 @@ class LinkedInSyncController extends Controller
                 $terakhirSync = $latestResult ? $latestResult->scraped_at?->format('d/m/Y H:i') : '-';
                 $terakhirSyncHuman = $latestResult ? $latestResult->scraped_at?->diffForHumans() : '-';
 
-                return [
+                $alumniItem = [
                     'id' => $b->id,
                     'nim' => $b->nim,
                     'nama' => $b->nama ?? 'Nama Alumni Tidak Ditemukan',
-                    'tahun_lulus' => $b->tahun_lulus ?? '-',
+                    'prodi' => $b->prodi?->nama_prodi ?? '-',
+                    'prodi_kode' => $b->prodi?->kode_prodi ?? '',
+                    'prodi_id' => $b->prodi_id,
+                    'fakultas' => $b->prodi?->fakultas?->nama_fakultas ?? '-',
+                    'tahun_lulus' => $b->tahun_lulus ?: ($b->dataAkademik?->tahun_lulus ?? '-'),
+                    'tahun_akademik_lulus' => $b->dataAkademik?->tahun_akademik_lulus ?? '-',
                     'linkedin_username' => $b->linkedin_username ?: null,
                     'linkedin_url' => $b->linkedin_url ?: null,
                     'perusahaan' => $b->perusahaan?->nama_perusahaan ?? '-',
@@ -165,61 +314,100 @@ class LinkedInSyncController extends Controller
                         'reviewer_name' => $latestResult->reviewer?->name,
                     ] : null,
                 ];
-            }
-
-            // Official Provider Flow
-            if ($hasUsername) {
-                $denganLinkedin++;
             } else {
-                $dilewati++;
-            }
-
-            $lastLog = $b->latestLinkedinSyncLog;
-            $statusSync = 'Belum Disinkronkan';
-            $statusColor = 'slate';
-
-            if ($lastLog) {
-                $newValues = $lastLog->new_values ?? [];
-                $logStatus = $newValues['status'] ?? null;
-
-                if ($logStatus === 'Berhasil') {
-                    $statusSync = 'Berhasil';
-                    $statusColor = 'emerald';
-                    $berhasilSinkron++;
-                } elseif ($logStatus === 'Gagal') {
-                    $statusSync = 'Gagal';
-                    $statusColor = 'rose';
-                    $gagalSinkron++;
+                // Official Provider Flow
+                if ($hasUsername) {
+                    $denganLinkedin++;
+                } else {
+                    $dilewati++;
                 }
-            } elseif (! $hasUsername) {
-                $statusSync = 'Belum Ada Username';
-                $statusColor = 'amber';
+
+                $lastLog = $b->latestLinkedinSyncLog;
+                $statusSync = 'Belum Disinkronkan';
+                $statusColor = 'slate';
+
+                if ($lastLog) {
+                    $newValues = $lastLog->new_values ?? [];
+                    $logStatus = $newValues['status'] ?? null;
+
+                    if ($logStatus === 'Berhasil') {
+                        $statusSync = 'Berhasil';
+                        $statusColor = 'emerald';
+                        $berhasilSinkron++;
+                    } elseif ($logStatus === 'Gagal') {
+                        $statusSync = 'Gagal';
+                        $statusColor = 'rose';
+                        $gagalSinkron++;
+                    }
+                } elseif (! $hasUsername) {
+                    $statusSync = 'Belum Ada Username';
+                    $statusColor = 'amber';
+                }
+
+                $alumniItem = [
+                    'id' => $b->id,
+                    'nim' => $b->nim,
+                    'nama' => $b->nama ?? 'Nama Alumni Tidak Ditemukan',
+                    'prodi' => $b->prodi?->nama_prodi ?? '-',
+                    'prodi_kode' => $b->prodi?->kode_prodi ?? '',
+                    'prodi_id' => $b->prodi_id,
+                    'fakultas' => $b->prodi?->fakultas?->nama_fakultas ?? '-',
+                    'tahun_lulus' => $b->tahun_lulus ?: ($b->dataAkademik?->tahun_lulus ?? '-'),
+                    'tahun_akademik_lulus' => $b->dataAkademik?->tahun_akademik_lulus ?? '-',
+                    'linkedin_username' => $b->linkedin_username ?: null,
+                    'linkedin_url' => $b->linkedin_url ?: null,
+                    'perusahaan' => $b->perusahaan?->nama_perusahaan ?? '-',
+                    'posisi' => $b->posisi_jabatan ?? '-',
+                    'status_sync' => $statusSync,
+                    'status_color' => $statusColor,
+                    'terakhir_sync' => $lastLog ? $lastLog->created_at->format('d/m/Y H:i') : '-',
+                    'terakhir_sync_human' => $lastLog ? $lastLog->created_at->diffForHumans() : '-',
+                    'latest_sync_result' => null,
+                ];
             }
 
-            return [
-                'id' => $b->id,
-                'nim' => $b->nim,
-                'nama' => $b->nama ?? 'Nama Alumni Tidak Ditemukan',
-                'tahun_lulus' => $b->tahun_lulus ?? '-',
-                'linkedin_username' => $b->linkedin_username ?: null,
-                'linkedin_url' => $b->linkedin_url ?: null,
-                'perusahaan' => $b->perusahaan?->nama_perusahaan ?? '-',
-                'posisi' => $b->posisi_jabatan ?? '-',
-                'status_sync' => $statusSync,
-                'status_color' => $statusColor,
-                'terakhir_sync' => $lastLog ? $lastLog->created_at->format('d/m/Y H:i') : '-',
-                'terakhir_sync_human' => $lastLog ? $lastLog->created_at->diffForHumans() : '-',
-                'latest_sync_result' => null,
-            ];
-        })->values()->all();
+            // Filter Tambahan: Status Sinkronisasi
+            if ($statusTerpilih && $statusTerpilih !== 'all') {
+                if ($statusTerpilih === 'approved' && $alumniItem['status_sync'] !== 'Approved' && $alumniItem['status_sync'] !== 'Berhasil') {
+                    continue;
+                }
+                if ($statusTerpilih === 'pending' && $alumniItem['status_sync'] !== 'Pending Review') {
+                    continue;
+                }
+                if ($statusTerpilih === 'rejected' && $alumniItem['status_sync'] !== 'Rejected' && $alumniItem['status_sync'] !== 'Gagal') {
+                    continue;
+                }
+                if ($statusTerpilih === 'belum_sync' && ! in_array($alumniItem['status_sync'], ['Belum Disinkronkan', 'Belum Ada URL LinkedIn', 'Belum Ada Username'])) {
+                    continue;
+                }
+                if ($statusTerpilih === 'ada_linkedin' && empty($alumniItem['linkedin_url']) && empty($alumniItem['linkedin_username'])) {
+                    continue;
+                }
+            }
+
+            $alumniList[] = $alumniItem;
+        }
+
+        $rasioSinkron = $totalAlumni > 0 ? (int) round(($berhasilSinkron / $totalAlumni) * 100) : 0;
 
         return Inertia::render('SuperAdmin/LinkedIn/Index', [
             'daftarTahun' => $daftarTahun,
             'tahunTerpilih' => $tahunTerpilih,
+            'daftarTarget' => $daftarTarget,
+            'prodis' => $daftarProdi,
             'provider' => $provider,
             'alumnis' => $alumniList,
             'targetAlumniId' => $targetAlumniId ? (int) $targetAlumniId : null,
-            'initialSearch' => $searchQuery ?: '',
+            'role' => $scope['role'],
+            'baseRoute' => $scope['baseRoute'],
+            'filters' => [
+                'search' => $searchQuery,
+                'tahun' => $tahunTerpilih,
+                'semester' => $semesterTerpilih,
+                'target' => $targetTerpilih,
+                'status' => $statusTerpilih,
+                'prodi_id' => $prodiIdTerpilih,
+            ],
             'stats' => [
                 'total_alumni' => $totalAlumni,
                 'dengan_linkedin' => $denganLinkedin,
@@ -227,6 +415,7 @@ class LinkedInSyncController extends Controller
                 'gagal_sinkron' => $gagalSinkron,
                 'dilewati' => $dilewati,
                 'pending_review' => $pendingReview,
+                'persentase_sinkron' => $rasioSinkron,
             ],
         ]);
     }
@@ -237,7 +426,10 @@ class LinkedInSyncController extends Controller
      */
     public function syncSingle(Request $request, int $id, LinkedInProfileService $service): JsonResponse
     {
+        $scope = $this->getUserScope($request);
         $biodata = Biodata::with(['perusahaan', 'dataAkademik'])->findOrFail($id);
+        $this->validateAlumniScope($biodata, $scope);
+
         $provider = config('services.linkedin.provider', 'official');
 
         // =====================================================================
@@ -389,10 +581,13 @@ class LinkedInSyncController extends Controller
     /**
      * Menampilkan detail hasil sinkronisasi staging untuk peninjauan (Review Modal).
      */
-    public function showResult(int $id): JsonResponse
+    public function showResult(Request $request, int $id): JsonResponse
     {
+        $scope = $this->getUserScope($request);
         $result = LinkedinSyncResult::with(['biodata.dataAkademik', 'biodata.perusahaan', 'reviewer'])
             ->findOrFail($id);
+
+        $this->validateAlumniScope($result->biodata, $scope);
 
         return response()->json([
             'success' => true,
@@ -425,8 +620,12 @@ class LinkedInSyncController extends Controller
      */
     public function approveResult(Request $request, int $id, LinkedInProfileMapper $mapper): JsonResponse
     {
-        return DB::transaction(function () use ($id, $mapper, $request) {
+        $scope = $this->getUserScope($request);
+
+        return DB::transaction(function () use ($id, $mapper, $request, $scope) {
             $result = LinkedinSyncResult::with(['biodata.perusahaan'])->lockForUpdate()->findOrFail($id);
+
+            $this->validateAlumniScope($result->biodata, $scope);
 
             // Validasi status wajib 'pending'
             if ($result->status !== 'pending') {
@@ -631,8 +830,12 @@ class LinkedInSyncController extends Controller
      */
     public function rejectResult(Request $request, int $id): JsonResponse
     {
-        return DB::transaction(function () use ($id) {
+        $scope = $this->getUserScope($request);
+
+        return DB::transaction(function () use ($id, $scope) {
             $result = LinkedinSyncResult::with('biodata')->lockForUpdate()->findOrFail($id);
+
+            $this->validateAlumniScope($result->biodata, $scope);
 
             // Validasi status wajib 'pending'
             if ($result->status !== 'pending') {
@@ -652,7 +855,7 @@ class LinkedInSyncController extends Controller
             // Catat log audit aktivitas
             LogActivity::record(
                 action: 'linkedin_sync_rejected',
-                description: "Super Admin menolak hasil sinkronisasi LinkedIn Apify untuk alumni {$result->biodata->nama} ({$result->biodata->nim}). Data utama tidak diubah.",
+                description: "Admin menolak hasil sinkronisasi LinkedIn Apify untuk alumni {$result->biodata->nama} ({$result->biodata->nim}). Data utama tidak diubah.",
                 subject: $result->biodata,
                 oldValues: null,
                 newValues: [
@@ -681,9 +884,11 @@ class LinkedInSyncController extends Controller
     /**
      * Mengambil seluruh histori hasil sinkronisasi LinkedIn untuk seorang alumni.
      */
-    public function history(int $id): JsonResponse
+    public function history(Request $request, int $id): JsonResponse
     {
+        $scope = $this->getUserScope($request);
         $biodata = Biodata::findOrFail($id);
+        $this->validateAlumniScope($biodata, $scope);
 
         $results = LinkedinSyncResult::where('biodata_id', $id)
             ->with('reviewer')

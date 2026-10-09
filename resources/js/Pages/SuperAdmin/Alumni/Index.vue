@@ -10,7 +10,7 @@
 -->
 <script setup>
 import { Head, Link, router } from '@inertiajs/vue3';
-import { ref, computed } from 'vue';
+import { ref, computed, watch } from 'vue';
 import Swal from 'sweetalert2';
 import Sidebar from '../Components/Sidebar.vue';
 
@@ -54,6 +54,27 @@ const semester = ref(props.filters.semester || 'all');
 const target = ref(props.filters.target || 'all');
 const status = ref(props.filters.status || 'all');
 const prodiId = ref(props.filters.prodi_id || 'all');
+
+// Sinkronkan state filter jika server mengembalikan props filters baru
+watch(() => props.filters, (newFilters) => {
+    if (newFilters) {
+        if (newFilters.tahun !== undefined) {
+            tahun.value = newFilters.tahun;
+        }
+        if (newFilters.semester !== undefined) {
+            semester.value = newFilters.semester || 'all';
+        }
+        if (newFilters.target !== undefined) {
+            target.value = newFilters.target || 'all';
+        }
+        if (newFilters.status !== undefined) {
+            status.value = newFilters.status || 'all';
+        }
+        if (newFilters.prodi_id !== undefined) {
+            prodiId.value = newFilters.prodi_id || 'all';
+        }
+    }
+}, { deep: true });
 
 // Pagination lokal ala DataTables
 const perPage = ref(10);
