@@ -371,17 +371,67 @@ class KelengkapanTracerService
             }
         }
 
+        // Evaluasi Keterisian Seluruh Butir Instrumen Relevan (Wajib + Opsional)
+        $allApplicableQuestions = $allQuestions->filter(function ($q) use ($profileCodesUpper) {
+            $code = strtoupper(trim((string) $q->kode_pertanyaan));
+
+            return $q->type !== 'header' && ! in_array($code, $profileCodesUpper);
+        });
+
+        $totalApplicableQuestions = 0;
+        $totalAnsweredQuestions = 0;
+        $missingOptional = [];
+
+        foreach ($allApplicableQuestions as $q) {
+            $code = strtoupper(trim((string) $q->kode_pertanyaan));
+
+            if (isset($skippedCodes[$code]) || isset($skippedCodes[$q->id])) {
+                continue;
+            }
+
+            $totalApplicableQuestions++;
+            $resp = $responses->get($code) ?? $responses->get((string) $q->id);
+            $hasAnswer = false;
+
+            if ($resp) {
+                $rawAnswer = $resp->answer ?? $resp->answer_text;
+                if (! empty($rawAnswer) && trim((string) $rawAnswer) !== '') {
+                    $hasAnswer = true;
+                } elseif (is_array($resp->answer_json) && count($resp->answer_json) > 0) {
+                    $hasAnswer = true;
+                }
+            }
+
+            if ($hasAnswer) {
+                $totalAnsweredQuestions++;
+            } elseif (! $q->wajib) {
+                $missingOptional[] = "{$q->kode_pertanyaan} ({$q->subpertanyaan})";
+            }
+        }
+
         $totalMandatory = count($applicableMandatory);
         $missingCount = count($missing);
         $answeredCount = max(0, $totalMandatory - $missingCount);
         $percentage = $totalMandatory > 0 ? (int) round(($answeredCount / $totalMandatory) * 100) : 100;
+        $overallPercentage = $totalApplicableQuestions > 0 ? (int) round(($totalAnsweredQuestions / $totalApplicableQuestions) * 100) : 100;
+
+        $isMandatoryComplete = ($missingCount === 0);
+        $isFullyComplete = ($missingCount === 0 && count($missingOptional) === 0);
 
         return [
-            'is_complete' => ($missingCount === 0),
+            'is_complete' => $isMandatoryComplete,
+            'is_mandatory_complete' => $isMandatoryComplete,
+            'is_fully_complete' => $isFullyComplete,
             'percentage' => $percentage,
+            'mandatory_percentage' => $percentage,
+            'overall_percentage' => $overallPercentage,
             'answered_count' => $answeredCount,
             'total_mandatory' => $totalMandatory,
+            'total_applicable' => $totalApplicableQuestions,
+            'total_answered' => $totalAnsweredQuestions,
+            'unanswered_optional_count' => count($missingOptional),
             'missing_questions' => $missing,
+            'missing_optional_questions' => $missingOptional,
         ];
     }
 
@@ -397,9 +447,15 @@ class KelengkapanTracerService
 
         $isComplete = $evalProfil['is_complete'] && $evalKuesioner['is_complete'];
 
+        $statusText = 'Belum Selesai';
+        if ($isComplete) {
+            $statusText = $evalKuesioner['is_fully_complete'] ? 'Selesai Sempurna' : 'Selesai (Wajib Dikti)';
+        }
+
         return [
-            'status' => $isComplete ? 'Selesai' : 'Belum Selesai',
+            'status' => $statusText,
             'is_complete' => $isComplete,
+            'is_fully_complete' => ($isComplete && $evalKuesioner['is_fully_complete']),
             'profile' => $evalProfil,
             'questionnaire' => $evalKuesioner,
         ];

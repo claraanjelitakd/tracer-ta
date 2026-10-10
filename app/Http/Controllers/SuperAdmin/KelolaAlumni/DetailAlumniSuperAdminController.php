@@ -140,9 +140,21 @@ class DetailAlumniSuperAdminController extends Controller
                     ];
                 }
 
-                // Hitung berapa pertanyaan wajib di section ini yang belum dijawab
-                $unansweredCount = count(array_filter($subpertanyaansList, function ($item) {
+                // Hitung berapa pertanyaan wajib dan opsional di section ini yang belum dijawab
+                $unansweredMandatoryCount = count(array_filter($subpertanyaansList, function ($item) {
                     return $item['is_mandatory'] && ! $item['is_answered'] && ! $item['is_header'];
+                }));
+
+                $unansweredOptionalCount = count(array_filter($subpertanyaansList, function ($item) {
+                    return ! $item['is_mandatory'] && ! $item['is_answered'] && ! $item['is_header'];
+                }));
+
+                $answeredCount = count(array_filter($subpertanyaansList, function ($item) {
+                    return $item['is_answered'] && ! $item['is_header'];
+                }));
+
+                $totalQuestionsCount = count(array_filter($subpertanyaansList, function ($item) {
+                    return ! $item['is_header'];
                 }));
 
                 $sectionsWithAnswers[] = [
@@ -151,7 +163,10 @@ class DetailAlumniSuperAdminController extends Controller
                     'title' => $section->title ?: $section->section,
                     'order' => $section->order,
                     'subpertanyaans' => $subpertanyaansList,
-                    'unanswered_mandatory_count' => $unansweredCount,
+                    'unanswered_mandatory_count' => $unansweredMandatoryCount,
+                    'unanswered_optional_count' => $unansweredOptionalCount,
+                    'answered_count' => $answeredCount,
+                    'total_questions_count' => $totalQuestionsCount,
                 ];
             }
         }

@@ -2,6 +2,8 @@
 
 Dokumen ini merupakan spesifikasi lengkap Use Case (*Use Case Specification*) untuk sistem informasi **Tracer Study / SERU (Sistem Ekosistem Rekam Jejak Alumni)** pada **Universitas Kristen Duta Wacana (UKDW)**. Seluruh aktor, use case, alur kejadian (*flow of events*), prakondisi, pascakondisi, dan relasi disusun secara akurat berdasarkan arsitektur, rute, pengendali (*controller*), model, dan basis data aktual yang aktif pada aplikasi.
 
+Sesuai prinsip pemodelan UML standar, proses bisnis yang identik antar-peran (seperti **Sinkronisasi Profil LinkedIn**, **Verifikasi Perusahaan Baru**, **Manajemen Akun & Reset Kata Sandi**, serta **Direktori Alumni**) dikonsolidasikan ke dalam **1 Use Case terpadu** dengan pembagian wewenang data (*data authorization scope*) yang terdefinisi secara presisi, serta dipresentasikan dalam **1 diagram proses tunggal yang utuh (tanpa terpisah)**.
+
 ---
 
 ## 1. Landasan Teori & Komponen UML Use Case
@@ -45,39 +47,44 @@ Sistem Tracer Study UKDW melibatkan 7 (tujuh) kategori aktor riil:
 3. **Pengguna Lulusan / Atasan Langsung (Employer/Supervisor)**  
    Pimpinan atau atasan langsung di tempat alumni bekerja. Mengisi instrumen survei evaluasi kinerja lulusan secara aman melalui tautan khusus ber-token 64-karakter unik tanpa perlu proses pendaftaran akun.
 4. **Admin Program Studi (Admin Prodi)**  
-   Pengelola akademik pada masing-masing Program Studi. Bertugas mengelola instrumen kuesioner khusus prodi (bagian, butir pertanyaan, opsi), memantau capaian alumni prodi, memverifikasi usulan perusahaan dari alumni prodi, dan mengelola akun mahasiswa se-prodi.
+   Pengelola akademik pada masing-masing Program Studi. Bertugas mengelola instrumen kuesioner khusus prodi, memantau capaian alumni prodi, memverifikasi usulan perusahaan dari alumni prodi, mengelola akun mahasiswa se-prodi, dan menjalankan sinkronisasi profil LinkedIn untuk alumni prodinya.
 5. **Admin Fakultas**  
-   Pengelola tingkat Dekanat / Gugus Kendali Mutu Fakultas. Bertugas memantau statistik kelengkapan tracer study lintas program studi dalam fakultas, mengaudit direktori alumni fakultas, memverifikasi perusahaan se-fakultas, dan mengelola akun mahasiswa tingkat fakultas.
+   Pengelola tingkat Dekanat / Gugus Kendali Mutu Fakultas. Bertugas memantau statistik kelengkapan tracer study lintas program studi dalam fakultas, mengaudit direktori alumni fakultas, memverifikasi perusahaan se-fakultas, mengelola akun mahasiswa tingkat fakultas, dan menjalankan sinkronisasi profil LinkedIn untuk alumni se-fakultas.
 6. **Admin Biro III (Kemahasiswaan, Alumni & Pengembangan Karir)**  
-   Pengelola eksekutif universitas. Memantau KPI partisipasi dan *response rate* kampus, mengaudit data alumni se-universitas, mengekspor laporan, serta menjalankan integrasi sinkronisasi data karir alumni dari LinkedIn.
+   Pengelola eksekutif universitas. Memantau KPI partisipasi dan *response rate* kampus, mengaudit data alumni se-universitas, mengekspor laporan, serta menjalankan integrasi sinkronisasi data karir alumni dari LinkedIn pada detail profil alumni.
 7. **Superadmin**  
-   Administrator sistem teknis tertinggi. Mengendalikan instrumen kuesioner universitas (Kemdikbudristek), kuesioner prodi, kuesioner evaluasi atasan, verifikasi perusahaan seluruh universitas, sinkronisasi massal (*batch*) LinkedIn, manajemen akun seluruh peran, dan audit *log activities*.
+   Administrator sistem teknis tertinggi. Mengendalikan instrumen kuesioner universitas (Kemdikbudristek), kuesioner prodi, kuesioner evaluasi atasan, verifikasi perusahaan seluruh universitas, sinkronisasi massal (*batch*) LinkedIn se-kampus, manajemen akun seluruh peran, dan audit *log activities*.
 
 ---
 
 ## 3. Diagram UML Use Case Sistem
 
-### 3.1 Visual Diagram UML Use Case (Standar Notasi UML & Komponen Lengkap)
+### 3.1 Visual Diagram UML Use Case Tunggal (Single Process Diagram)
 
-Berikut adalah gambar visual UML Use Case Diagram sistem Tracer Study UKDW (SERU) yang memuat batas sistem (*system boundary*), aktor (*stick figure*), use case (*ellipse*), relasi (*association, include, extend, generalization*), dan catatan callout (*notes*) sesuai standar referensi:
+Berikut adalah gambar visual UML Use Case Diagram sistem Tracer Study UKDW (SERU) dalam **1 gambar proses utuh**, yang memuat batas sistem (*system boundary*), aktor (*stick figure*), use case (*ellipse*), relasi (*association, include, extend, dependency*), dan catatan callout (*notes*) sesuai standar referensi:
 
 ![UML Use Case Diagram Tracer Study UKDW](docs/images/use_case_diagram.png)
 
 > **File Asset Gambar Diagram**:
-> - Format Gambar PNG (Resolusi Tinggi): [docs/images/use_case_diagram.png](file:///c:/study/tracerstudy/docs/images/use_case_diagram.png)
+> - Format Gambar PNG (Resolusi Tinggi / Retina 2x): [docs/images/use_case_diagram.png](file:///c:/study/tracerstudy/docs/images/use_case_diagram.png)
 > - Format Vektor SVG (Scalable Vector Graphics): [docs/images/use_case_diagram.svg](file:///c:/study/tracerstudy/docs/images/use_case_diagram.svg)
 
 ---
 
 ### 3.2 Diagram Use Case Interaktif (Mermaid Code Representation)
 
+Diagram proses interaktif berikut memodelkan seluruh fungsionalitas sistem dalam **1 diagram alur tunggal**:
+
 ```mermaid
 flowchart LR
     %% Actors
-    subgraph Actors [Aktor Sistem]
-        A_Guest["Publik / Tamu"]
+    subgraph ActorsLeft [Aktor Eksternal / Pengguna Umum]
+        A_Guest["Publik / Tamu (Guest)"]
         A_Alumni["Alumni / Lulusan"]
         A_Atasan["Atasan Langsung (Employer)"]
+    end
+
+    subgraph ActorsRight [Aktor Administrator Sistem]
         A_Prodi["Admin Program Studi"]
         A_Fakultas["Admin Fakultas"]
         A_Biro3["Admin Biro III"]
@@ -103,31 +110,25 @@ flowchart LR
         %% Employer
         UC11(["UC-11: Mengisi Evaluasi Kinerja Lulusan (Token-Based)"])
 
-        %% Management Base (Generalization Parent)
-        UC_VCorp(["UC-GEN-01: Memverifikasi Pengajuan Perusahaan"])
-        UC_MgtUser(["UC-GEN-02: Mengelola Akun & Reset Password"])
-        UC_DirAlumni(["UC-GEN-03: Mengelola Direktori Alumni & Ekspor"])
+        %% Admin Shared Modules (Unified 1 Use Case untuk Multi-Role)
+        UC12(["UC-12: Mengakses Dashboard Monitoring & Analisis"])
+        UC13(["UC-13: Mengelola Direktori Alumni & Audit Detail"])
+        UC14(["UC-14: Mengekspor Rekapitulasi Data ke Excel"])
+        UC15(["UC-15: Memverifikasi Perusahaan Baru (3 Role)"])
+        UC16(["UC-16: Manajemen Akun & Reset Password (3 Role)"])
+        UC17(["UC-17: Sinkronisasi LinkedIn Alumni (3 Role Utama)"])
 
-        %% Monitoring Dashboards
-        UC12(["UC-12: Dashboard Kinerja Prodi"])
-        UC19(["UC-19: Dashboard Kinerja Fakultas"])
-        UC23(["UC-23: Dashboard KPI Biro III"])
-        UC26(["UC-26: Dashboard Pusat Superadmin"])
-
-        %% Instruments & Configuration
-        UC15(["UC-15: Mengelola Kuesioner Prodi (Section, Soal, Opsi)"])
-        UC27(["UC-27: Mengelola Kuesioner Universitas & Branching"])
-        UC29(["UC-29: Mengelola Instrumen Evaluasi Atasan"])
-        UC32(["UC-32: Melakukan Sinkronisasi Profil LinkedIn"])
-        UC34(["UC-34: Memantau Log Aktivitas & Audit Trail"])
+        %% Configuration & Audit
+        UC18(["UC-18: Mengelola Section Kuesioner Prodi"])
+        UC19(["UC-19: Mengelola Soal & Opsi Kuesioner Prodi"])
+        UC20(["UC-20: Mengelola Kuesioner Universitas & Branching"])
+        UC21(["UC-21: Mengelola Instrumen Evaluasi Atasan"])
+        UC22(["UC-22: Memantau Log Aktivitas & Audit Trail"])
     end
 
     %% Relationships - Guest
     A_Guest --> UC01
     A_Guest --> UC02
-
-    %% Relationships - Employer
-    A_Atasan --> UC11
 
     %% Relationships - Alumni
     A_Alumni --> UC02
@@ -137,90 +138,79 @@ flowchart LR
     A_Alumni --> UC09
     A_Alumni --> UC10
 
-    %% Relationships - Admin Prodi
-    A_Prodi --> UC02
-    A_Prodi --> UC05
+    %% Relationships - Employer
+    A_Atasan --> UC11
+
+    %% Relationships - Admin Program Studi
     A_Prodi --> UC12
+    A_Prodi --> UC13
     A_Prodi --> UC15
-    A_Prodi --> UC_DirAlumni
-    A_Prodi --> UC_VCorp
-    A_Prodi --> UC_MgtUser
+    A_Prodi --> UC16
+    A_Prodi --> UC17
+    A_Prodi --> UC18
 
     %% Relationships - Admin Fakultas
-    A_Fakultas --> UC02
-    A_Fakultas --> UC05
-    A_Fakultas --> UC19
-    A_Fakultas --> UC_DirAlumni
-    A_Fakultas --> UC_VCorp
-    A_Fakultas --> UC_MgtUser
+    A_Fakultas --> UC12
+    A_Fakultas --> UC13
+    A_Fakultas --> UC15
+    A_Fakultas --> UC16
+    A_Fakultas --> UC17
 
     %% Relationships - Admin Biro III
-    A_Biro3 --> UC02
-    A_Biro3 --> UC05
-    A_Biro3 --> UC23
-    A_Biro3 --> UC_DirAlumni
-    A_Biro3 --> UC32
+    A_Biro3 --> UC12
+    A_Biro3 --> UC13
+    A_Biro3 --> UC17
 
     %% Relationships - Superadmin
-    A_Super --> UC02
-    A_Super --> UC05
-    A_Super --> UC26
-    A_Super --> UC27
+    A_Super --> UC12
+    A_Super --> UC13
     A_Super --> UC15
-    A_Super --> UC29
-    A_Super --> UC_DirAlumni
-    A_Super --> UC_VCorp
-    A_Super --> UC_MgtUser
-    A_Super --> UC32
-    A_Super --> UC34
+    A_Super --> UC16
+    A_Super --> UC17
+    A_Super --> UC18
+    A_Super --> UC20
+    A_Super --> UC21
+    A_Super --> UC22
 
-    %% Include & Extend
+    %% Include, Extend & Dependency Relationships
     UC03 -.->|"<<extend>>"| UC02
     UC04 -.->|"<<include>>"| UC02
     UC08 -.->|"<<extend>>"| UC07
-    UC07 -.->|"<<extend: memicu token>>"| UC11
+    UC14 -.->|"<<extend>>"| UC13
+    UC19 -.->|"<<include>>"| UC18
+    UC07 -.->|"<<memicu token>>"| UC11
 ```
 
 ---
 
 ## 4. Daftar Ringkasan Use Case (*Use Case Master Index*)
 
-| ID Use Case | Nama Use Case | Aktor Terlibat | Relasi UML |
+Sistem Tracer Study UKDW merangkum **22 Use Case diskret** yang mencakup seluruh alur bisnis aplikasi:
+
+| ID Use Case | Nama Use Case | Aktor Terlibat | Catatan & Relasi UML |
 | :--- | :--- | :--- | :--- |
 | **UC-01** | Mengakses Beranda Publik (*Landing Page*) | Publik / Tamu, Seluruh Pengguna | Association |
-| **UC-02** | Melakukan Autentikasi Pengguna (*Login*) | Alumni, Admin Prodi, Admin Fak, Biro III, Superadmin | Association |
+| **UC-02** | Melakukan Autentikasi Pengguna (*Login*) | Alumni, Seluruh Staf Admin | Association |
 | **UC-03** | Memulihkan Kata Sandi (*Forgot & Reset Password*) | Alumni, Seluruh Staf Admin | `<<extend>>` ke UC-02 |
-| **UC-04** | Mengubah Kata Sandi Bawaan Wajib (*Must Change Password*) | Alumni (Password Default Lahir) | `<<include>>` dari UC-02 |
+| **UC-04** | Mengubah Kata Sandi Bawaan Wajib (*Must Change Password*) | Alumni (Sandi Bawaan Tanggal Lahir) | `<<include>>` dari UC-02 |
 | **UC-05** | Mengakhiri Sesi Akun (*Logout*) | Seluruh Pengguna Terautentikasi | Association |
 | **UC-06** | Mengakses Dashboard Alumni | Alumni | Association |
-| **UC-07** | Mengelola Profil Biodata & Riwayat Karir | Alumni | Association |
-| **UC-08** | Mendaftarkan Entitas Perusahaan Baru | Alumni | `<<extend>>` ke UC-07 |
+| **UC-07** | Mengelola Profil Biodata & Riwayat Karir | Alumni | Memicu Token Evaluasi ke UC-11 |
+| **UC-08** | Mendaftarkan Instansi Perusahaan Baru | Alumni | `<<extend>>` ke UC-07 |
 | **UC-09** | Mengisi Kuesioner Tracer Study Universitas (Kemdikbud) | Alumni | Association |
 | **UC-10** | Mengisi Kuesioner Khusus Program Studi | Alumni | Association |
-| **UC-11** | Mengisi Evaluasi Kinerja Lulusan (Token-Based) | Pengguna Lulusan / Atasan Langsung | Dependency dari UC-07 |
-| **UC-12** | Mengakses Dashboard Kinerja Program Studi | Admin Program Studi | Association |
-| **UC-13** | Mengelola Direktori & Detail Alumni Prodi | Admin Program Studi | Generalization dari UC-GEN-03 |
-| **UC-14** | Mengekspor Rekapitulasi Data Alumni ke Excel | Admin Prodi, Fak, Biro III, Superadmin | `<<extend>>` ke Direktori Alumni |
-| **UC-15** | Mengelola Bagian (*Section*) Kuesioner Prodi | Admin Prodi, Superadmin | Association |
-| **UC-16** | Mengelola Pertanyaan & Opsi Kuesioner Prodi | Admin Prodi, Superadmin | `<<include>>` ke UC-15 |
-| **UC-17** | Memverifikasi Perusahaan Lingkup Program Studi | Admin Program Studi | Generalization dari UC-GEN-01 |
-| **UC-18** | Mengelola Akun Alumni & Reset Sandi Lingkup Prodi | Admin Program Studi | Generalization dari UC-GEN-02 |
-| **UC-19** | Mengakses Dashboard Statistik Fakultas | Admin Fakultas | Association |
-| **UC-20** | Mengelola Direktori & Detail Alumni Fakultas | Admin Fakultas | Generalization dari UC-GEN-03 |
-| **UC-21** | Memverifikasi Perusahaan Lingkup Fakultas | Admin Fakultas | Generalization dari UC-GEN-01 |
-| **UC-22** | Mengelola Akun Alumni & Reset Sandi Se-Fakultas | Admin Fakultas | Generalization dari UC-GEN-02 |
-| **UC-23** | Mengakses Dashboard Eksekutif Tracer Biro III | Admin Biro III | Association |
-| **UC-24** | Mengelola Direktori Alumni Universitas (Biro III) | Admin Biro III | Generalization dari UC-GEN-03 |
-| **UC-25** | Melakukan Sinkronisasi Profil LinkedIn Alumni (Biro III) | Admin Biro III | Generalization dari UC-32 |
-| **UC-26** | Mengakses Dashboard Pusat Superadmin | Superadmin | Association |
-| **UC-27** | Mengelola Kuesioner Universitas, Section, Soal & Branching | Superadmin | Association |
-| **UC-28** | Mengelola Kuesioner Prodi Terpusat (*Override*) | Superadmin | Generalization dari UC-15 / UC-16 |
-| **UC-29** | Mengelola Instrumen Evaluasi Pengguna Lulusan | Superadmin | Association |
-| **UC-30** | Mengelola Direktori & Audit Seluruh Alumni Universitas | Superadmin | Generalization dari UC-GEN-03 |
-| **UC-31** | Memverifikasi Pengajuan Perusahaan Terpusat | Superadmin | Generalization dari UC-GEN-01 |
-| **UC-32** | Melakukan Sinkronisasi LinkedIn Terpusat (Batch/Single) | Superadmin | Association |
-| **UC-33** | Mengelola Akun Multi-Peran & Reset Sandi Terpadu | Superadmin | Generalization dari UC-GEN-02 |
-| **UC-34** | Memantau Log Aktivitas & Audit Trail Sistem | Superadmin | Association |
+| **UC-11** | Mengisi Evaluasi Kinerja Lulusan (Token-Based) | Pengguna Lulusan / Atasan Langsung | Dependency dari UC-07 (Tanpa Login) |
+| **UC-12** | Mengakses Dashboard Monitoring & Analisis Kinerja | Admin Prodi, Fak, Biro III, Superadmin | Association (Multi-Role Scope) |
+| **UC-13** | Mengelola Direktori Alumni & Audit Detail | Admin Prodi, Fak, Biro III, Superadmin | Association (Multi-Role Scope) |
+| **UC-14** | Mengekspor Rekapitulasi Data Alumni ke Excel | Admin Prodi, Fak, Biro III, Superadmin | `<<extend>>` ke UC-13 |
+| **UC-15** | Memverifikasi Pengajuan Perusahaan Baru | **Admin Prodi, Admin Fakultas, Superadmin** | Association (**1 Proses untuk 3 Role**) |
+| **UC-16** | Mengelola Akun Alumni & Reset Sandi Default | **Admin Prodi, Admin Fakultas, Superadmin** | Association (**1 Proses untuk 3 Role**) |
+| **UC-17** | Melakukan Sinkronisasi Profil LinkedIn Alumni | **Admin Prodi, Admin Fakultas, Superadmin**, Biro III | Association (**1 Proses untuk 3 Role Utama**) |
+| **UC-18** | Mengelola Bagian (*Section*) Kuesioner Prodi | Admin Program Studi, Superadmin | Association |
+| **UC-19** | Mengelola Butir Pertanyaan & Opsi Kuesioner Prodi | Admin Program Studi, Superadmin | `<<include>>` ke UC-18 |
+| **UC-20** | Mengelola Kuesioner Universitas, Section & Branching | Superadmin | Association |
+| **UC-21** | Mengelola Instrumen Evaluasi Atasan Langsung | Superadmin | Association |
+| **UC-22** | Memantau Log Aktivitas & Audit Trail Sistem | Superadmin | Association |
 
 ---
 
@@ -299,33 +289,30 @@ flowchart LR
 - **Description**: Memaksa alumni yang baru pertama kali login menggunakan password bawaan tanggal lahir (`DDMMYYYY`) atau setelah direset oleh admin untuk menentukan kata sandi pribadi yang aman sebelum dapat mengakses fitur aplikasi.
 - **Preconditions**: Alumni berhasil login, namun atribut `must_change_password` pada akun bernilai `true`.
 - **Main Flow (Basic Flow)**:
-  1. *Middleware* `must_change_password` mencegat navigasi dan mengarahkan alumni ke halaman `/change-password`.
-  2. Alumni memasukkan kata sandi saat ini (*current password*), kata sandi baru minimal 8 karakter, dan konfirmasi kata sandi baru.
-  3. Alumni menekan tombol "Simpan Kata Sandi".
-  4. Sistem memvalidasi kesesuaian sandi lama dan kecocokan konfirmasi sandi baru.
-  5. Sistem memperbarui hash password di tabel `users` dan menyetel `must_change_password = false`.
-  6. Sistem mengalihkan pengguna langsung ke Dashboard Alumni (`/alumni/dashboard`).
+  1. Sistem mencegat akses alumni via middleware `must_change_password` dan mengarahkan ke form `/change-password`.
+  2. Alumni memasukkan kata sandi saat ini (*current password*), kata sandi baru (*minimal 8 karakter*), dan konfirmasi kata sandi baru.
+  3. Sistem memvalidasi kesesuaian input.
+  4. Sistem memperbarui hash password baru di tabel `users` dan mengubah flag `must_change_password` menjadi `false`.
+  5. Sistem mengarahkan alumni ke halaman `/alumni/dashboard`.
 - **Alternate Flow (Alternative Flow)**:
-  - **A1. Kata Sandi Baru Lemah atau Konfirmasi Tidak Sama**: Sistem menampilkan pesan validasi dan meminta alumni memperbaiki isian.
-- **Post Conditions**: Atribut `must_change_password` berubah menjadi `false`, kata sandi baru tersimpan, dan alumni memperoleh akses penuh ke fitur tracer study.
+  - Jika kata sandi saat ini keliru atau konfirmasi kata sandi tidak cocok, sistem menampilkan pesan peringatan dan formulir tetap terbuka.
+- **Post Conditions**: Kata sandi akun alumni berubah menjadi kata sandi pribadi yang aman dan batasan middleware dihilangkan.
 
 ---
 
 ### UC-05. Mengakhiri Sesi Akun (Logout)
 - **Usecase ID**: UC-05
 - **Usecase Name**: Mengakhiri Sesi Akun (*Logout*)
-- **Actors Involved**: Alumni, Admin Prodi, Admin Fakultas, Admin Biro III, Superadmin
-- **Description**: Menutup sesi pengguna yang sedang aktif, menghapus token autentikasi, serta mencegah akses kembali tanpa proses login ulang.
-- **Preconditions**: Pengguna dalam kondisi login (*authenticated*).
+- **Actors Involved**: Seluruh Pengguna Terautentikasi (Alumni, Admin Prodi, Fak, Biro III, Superadmin)
+- **Description**: Menutup sesi autentikasi pengguna secara aman, membatalkan token sesi, meregenerasi CSRF token, dan mengembalikan pengguna ke halaman beranda publik.
+- **Preconditions**: Pengguna dalam keadaan login aktif.
 - **Main Flow (Basic Flow)**:
-  1. Pengguna menekan tombol "Logout" pada navigasi bar atas.
-  2. Dialog konfirmasi SweetAlert2 muncul meminta persetujuan keluar.
-  3. Pengguna mengonfirmasi tindakan logout.
-  4. Sistem mengeksekusi rute `POST /logout`, menghapus sesi server, meregenerasi token CSRF, dan memusnahkan sesi autentikasi.
-  5. Pengguna dialihkan kembali ke Landing Page Beranda (`/`).
-- **Alternate Flow (Alternative Flow)**:
-  - Pengguna membatalkan konfirmasi SweetAlert2; sistem tetap mempertahankan sesi login pada halaman saat ini.
-- **Post Conditions**: Sesi pengguna hancur di server dan hak akses terhadap seluruh menu privat dicabut.
+  1. Pengguna menekan tombol "Keluar / Logout" pada menu navigasi.
+  2. Sistem menerima permintaan (`POST` / `GET /logout`).
+  3. Sistem menghapus data sesi pengguna (`Auth::logout()`), membatalkan sesi (`$request->session()->invalidate()`), dan meregenerasi token CSRF (`$request->session()->regenerateToken()`).
+  4. Sistem mengarahkan pengguna kembali ke halaman utama publik (`/`).
+- **Alternate Flow (Alternative Flow)**: Tidak ada alur alternatif.
+- **Post Conditions**: Sesi pengguna berakhir sepenuhnya dan hak akses ke menu internal dicabut.
 
 ---
 
@@ -333,79 +320,78 @@ flowchart LR
 - **Usecase ID**: UC-06
 - **Usecase Name**: Mengakses Dashboard Alumni
 - **Actors Involved**: Alumni / Lulusan
-- **Description**: Menyajikan ringkasan visual mengenai status pengisian tracer study alumni melalui tiga indikator utama: kelengkapan profil, kuesioner universitas, dan kuesioner program studi.
-- **Preconditions**: Alumni telah login dan menyelesaikan kewajiban ganti password.
+- **Description**: Menyajikan ringkasan status kelengkapan pengisian tracer study alumni: persentase pengisian kuesioner universitas, kuesioner program studi, riwayat pekerjaan, status evaluasi atasan, serta tautan cepat ke modul yang belum lengkap.
+- **Preconditions**: Alumni telah login dan menyelesaikan perubahan kata sandi bawaan (`/alumni/dashboard`).
 - **Main Flow (Basic Flow)**:
-  1. Alumni membuka menu Dashboard (`GET /alumni/dashboard`).
-  2. Sistem menghitung persentase progres dari tabel `biodata`, `tracer`, dan `prodi_response`.
-  3. Sistem menampilkan 3 kartu progres:
-     - Kartu Kelengkapan Biodata & Profil Karir (persentase & jumlah atribut terisi).
-     - Kartu Kuesioner Universitas Kemdikbudristek (persentase butir terjawab).
-     - Kartu Kuesioner Program Studi (persentase butir terjawab).
-  4. Alumni dapat mengklik tombol navigasi langsung menuju instrumen yang belum selesai.
+  1. Alumni membuka dashboard.
+  2. Sistem menghitung status kelengkapan data via `KelengkapanTracerService`:
+     - Kuesioner Universitas (persentase & status selesai/belum).
+     - Kuesioner Prodi (status selesai/belum).
+     - Kelengkapan Profil & Data Karir.
+     - Status konfirmasi atasan (apakah sudah mengisi evaluasi).
+  3. Sistem menampilkan kartu status dan tombol aksi cepat (*call-to-action*) menuju pengisian formulir.
 - **Alternate Flow (Alternative Flow)**:
-  - Dari dashboard, alumni dapat memilih menuju Profil [UC-07], Kuesioner Univ [UC-09], atau Kuesioner Prodi [UC-10].
-- **Post Conditions**: Alumni memahami status kelengkapan data survei yang harus diselesaikannya.
+  - Jika seluruh kuesioner telah lengkap 100%, sistem menampilkan badge "Tracer Study Selesai" dan pesan apresiasi.
+- **Post Conditions**: Alumni memahami status kontribusinya pada tracer study kampus.
 
 ---
 
-### UC-07. Mengelola Profil Biodata dan Riwayat Pekerjaan Alumni
+### UC-07. Mengelola Profil Biodata & Riwayat Karir
 - **Usecase ID**: UC-07
-- **Usecase Name**: Mengelola Profil Biodata dan Riwayat Pekerjaan Alumni
+- **Usecase Name**: Mengelola Profil Biodata & Riwayat Karir
 - **Actors Involved**: Alumni / Lulusan
-- **Description**: Fitur untuk mengisi dan memperbarui kontak aktif, alamat tempat tinggal, tautan media sosial/LinkedIn, bidang keahlian, status pekerjaan saat ini, detail instansi, serta data atasan langsung.
-- **Preconditions**: Alumni telah login ke sistem.
+- **Description**: Memutakhirkan data identitas pribadi (email aktif, nomor HP, kontak darurat, alamat domisili), riwayat jabatan, instansi tempat bekerja, profil media sosial/LinkedIn, serta memasukkan nama dan email atasan langsung.
+- **Preconditions**: Alumni berada pada menu `/alumni/profile`.
 - **Main Flow (Basic Flow)**:
-  1. Alumni membuka halaman `/alumni/profile`.
-  2. Sistem menampilkan data profil yang tersimpan pada tabel `biodata` dan referensi `data_akademik`.
-  3. Alumni memperbarui nomor telepon/WhatsApp, email korespondensi, alamat, media sosial, keahlian (*skills*), dan pengalaman kerja (*experience*).
-  4. Alumni memilih kategori status saat ini (Bekerja, Wiraswasta, atau Melanjutkan Pendidikan).
-  5. Jika bekerja: Alumni memilih instansi dari daftar master `perusahaan` yang sudah terverifikasi, memasukkan jabatan, besaran gaji, dan mengisi nama serta email atasan langsung.
-  6. Alumni menekan tombol "Simpan Perubahan".
-  7. Sistem menyimpan data ke tabel `biodata` dan `atasan`.
-  8. Jika data email atasan baru diisi, sistem menerbitkan record `evaluasi_atasan` ber-token 64 karakter dan memicu pengiriman email undangan evaluasi [Memicu UC-11].
-  9. Sistem menampilkan notifikasi berhasil (SweetAlert2).
+  1. Sistem menampilkan form profil biodata yang memuat data akademik (NIM, Nama, IPK, Tahun Lulus - *readonly*) dan data kontak/karir (*editable*).
+  2. Alumni mengisi kontak terkini, tautan profil LinkedIn, status pekerjaan saat ini, memilih perusahaan dari daftar master, posisi jabatan, serta mengisi nama & email atasan langsung.
+  3. Alumni menekan tombol "Simpan Perubahan" (`POST /alumni/profile`).
+  4. Sistem memvalidasi kelengkapan data.
+  5. Sistem memperbarui tabel `biodata` dan riwayat pekerjaan.
+  6. **Pemicu Evaluasi Atasan**: Jika email atasan diisi dan instansi terdaftar, sistem membuat token evaluasi unik 64-karakter pada tabel `evaluasi_atasan` dan mengirimkan email undangan survei evaluasi kinerja ke atasan langsung [Memicu UC-11].
+  7. Sistem menampilkan notifikasi sukses pembaruan profil.
 - **Alternate Flow (Alternative Flow)**:
-  - **A1. Perusahaan Belum Terdaftar**: Jika perusahaan alumni belum ada di daftar pilihan master, alumni mengklik opsi "Tambah Perusahaan Baru" [Menuju UC-08].
-- **Post Conditions**: Data biodata, riwayat pekerjaan, dan kontak alumni diperbarui di database.
+  - **A1. Perusahaan Belum Ada di Master**: Alumni memilih opsi "Tambah Perusahaan Baru" [Menuju UC-08].
+- **Post Conditions**: Data profil dan pekerjaan alumni terbarui di basis data; token evaluasi atasan tercipta.
 
 ---
 
-### UC-08. Mendaftarkan Entitas Perusahaan Baru
+### UC-08. Mendaftarkan Instansi Perusahaan Baru
 - **Usecase ID**: UC-08
-- **Usecase Name**: Mendaftarkan Entitas Perusahaan Baru
+- **Usecase Name**: Mendaftarkan Instansi Perusahaan Baru
 - **Actors Involved**: Alumni / Lulusan
-- **Description**: Memungkinkan alumni mengajukan tempat kerja baru yang belum terdaftar di basis data master universitas, lengkap dengan alamat, provinsi, skala usaha, dan kontak instansi.
-- **Preconditions**: Alumni berada pada form profil (`/alumni/profile`) dan tidak menemukan nama instansi kerjanya di daftar master.
+- **Description**: Fasilitas bagi alumni untuk mengusulkan nama instansi/perusahaan tempat ia bekerja jika belum tersedia pada basis data master perusahaan kampus.
+- **Preconditions**: Alumni sedang membuka form profil pekerjaan dan perusahaan tidak ditemukan pada daftar pilihan.
 - **Main Flow (Basic Flow)**:
-  1. Alumni membuka modal form tambah perusahaan baru.
-  2. Alumni mengisi nama perusahaan, jenis lokasi (Dalam/Luar Negeri), negara, provinsi, kabupaten, alamat kantor, kode pos, situs web/homepage, nomor telepon/fax, skala (Lokal/Nasional/Internasional), bentuk badan usaha (PT, CV, BUMN, dll.), serta jumlah pegawai.
-  3. Alumni menekan tombol "Simpan Perusahaan" (`POST /alumni/company`).
-  4. Sistem menyimpan record ke tabel `perusahaan` dengan status `Menunggu Verifikasi`, mencatat `created_by_user_id` dan `created_by_prodi_id`.
-  5. Sistem secara otomatis memilih perusahaan baru tersebut sebagai tempat kerja aktif di profil alumni.
+  1. Alumni menekan tombol "Tambah Perusahaan Baru".
+  2. Sistem menampilkan modal pop-up pendaftaran perusahaan baru.
+  3. Alumni mengisi: Nama Perusahaan, Sektor Usaha (BUMN, Swasta, Pendidikan, Wirausaha, dll), Alamat, Kota/Kabupaten, Provinsi, dan Negara.
+  4. Alumni menekan tombol "Kirim Pengajuan" (`POST /alumni/company`).
+  5. Sistem menyimpan entitas baru ke tabel `perusahaan` dengan status `Menunggu Verifikasi` dan mengaitkan `created_by_prodi_id` sesuai prodi alumni.
+  6. Sistem otomatis memilih perusahaan tersebut pada form profil alumni.
+  7. Sistem menampilkan notifikasi bahwa pengajuan instansi berhasil dan akan diverifikasi oleh admin.
 - **Alternate Flow (Alternative Flow)**:
-  - Form gagal divalidasi jika nama instansi kosong; sistem menampilkan pesan kesalahan input.
-- **Post Conditions**: Entitas perusahaan baru tercatat di tabel `perusahaan` dengan status `Menunggu Verifikasi` untuk ditinjau oleh Admin Prodi / Fakultas / Superadmin.
+  - Jika nama instansi mirip dengan yang sudah ada di master, sistem menyarankan nama instansi yang sudah terverifikasi.
+- **Post Conditions**: Entitas perusahaan baru tercipta dengan status `Menunggu Verifikasi` dan masuk ke antrean verifikasi admin [UC-15].
 
 ---
 
 ### UC-09. Mengisi Kuesioner Tracer Study Universitas (Kemdikbudristek)
 - **Usecase ID**: UC-09
-- **Usecase Name**: Mengisi Kuesioner Tracer Study Universitas (Kemdikbudristek)
+- **Usecase Name**: Mengisi Kuesioner Tracer Study Universitas (Kemdikbud)
 - **Actors Involved**: Alumni / Lulusan
-- **Description**: Pengisian instrumen survei standar pelacakan jejak alumni tingkat universitas (mengacu pada standar Ditjen Diktiristek Kemdikbudristek) yang mencakup masa tunggu, relevansi kurikulum, metode pencarian kerja, dan pendapatan.
-- **Preconditions**: Alumni telah login dan mengakses rute `/alumni/kuesioner`.
+- **Description**: Menjawab rangkaian butir pertanyaan kuesioner pelacakan jejak alumni standar nasional (Kemdikbudristek) dengan mekanisme otomatis percabangan alur logika (*dynamic branching logic*).
+- **Preconditions**: Alumni membuka rute `/alumni/kuesioner`.
 - **Main Flow (Basic Flow)**:
-  1. Sistem memuat kuesioner aktif (`kuesioner.is_active = true`), grup section (`kelompok_pertanyaan`), daftar soal (`ref_subpertanyaan2021`), serta opsi jawaban (`ref_subpertanyaan_detil`).
-  2. Sistem menampilkan pertanyaan secara berurutan sesuai konfigurasi `order`.
-  3. Alumni memilih jawaban (pilihan ganda, checkbox, teks, skala likert, atau nominal angka).
-  4. Jika butir memiliki logika percabangan (*branching jump_to*), antarmuka secara dinamis menyembunyikan atau menampilkan pertanyaan turunan yang relevan.
-  5. Alumni menekan tombol "Simpan Jawaban Kuesioner" (`POST /alumni/kuesioner`).
-  6. Sistem memvalidasi kewajiban isian (*required fields*), lalu memperbarui atau menginsert respon ke tabel `tracer`.
-  7. Sistem menampilkan notifikasi sukses dan memperbarui persentase keterisian di dashboard alumni.
+  1. Sistem memuat kuesioner universitas aktif beserta seksi-seksi pertanyaan (`kelompok_pertanyaan`).
+  2. Alumni menjawab pertanyaan per bagian (pilihan tunggal, pilihan ganda, isian teks, angka gaji/penghasilan, waktu tunggu kerja, dan skala keselarasan).
+  3. **Logika Branching**: Jika alumni memilih opsi tertentu (misal: "Belum Bekerja"), sistem secara dinamis melompati (*jump to*) pertanyaan mengenai detail instansi pekerjaan sesuai konfigurasi `jump_to`.
+  4. Alumni menekan tombol "Simpan Jawaban" (`POST /alumni/kuesioner`).
+  5. Sistem memvalidasi isian wajib (*is_required*), menyimpan jawaban ke tabel `jawaban`, dan memperbarui status kelengkapan kuesioner nasional.
+  6. Sistem menampilkan pesan terima kasih dan memperbarui persentase dashboard alumni.
 - **Alternate Flow (Alternative Flow)**:
-  - **A1. Butir Wajib Terlewat**: Sistem menahan pengiriman form dan menandai butir pertanyaan wajib yang belum diisi.
-- **Post Conditions**: Respon kuesioner universitas tersimpan di database `tracer` dan status keterisian alumni diperbarui.
+  - Jika terdapat pertanyaan wajib yang terlewat, sistem memfokuskan layar ke butir pertanyaan bersangkutan dan menampilkan peringatan validasi.
+- **Post Conditions**: Respon kuesioner nasional tersimpan secara permanen di database dan siap diolah untuk pelaporan Dikti.
 
 ---
 
@@ -413,78 +399,84 @@ flowchart LR
 - **Usecase ID**: UC-10
 - **Usecase Name**: Mengisi Kuesioner Khusus Program Studi
 - **Actors Involved**: Alumni / Lulusan
-- **Description**: Pengisian instrumen kuesioner evaluasi kurikulum, kompetensi capaian pembelajaran, fasilitas lab, dan kepuasan akademik yang dirancang secara mandiri oleh Program Studi tempat alumni lulus.
-- **Preconditions**: Alumni telah login dan prodi asal alumni telah mengonfigurasi minimal satu butir pertanyaan kuesioner prodi aktif.
+- **Description**: Menjawab butir-butir instrumen survei mandiri yang dirancang khusus oleh program studi asal alumni untuk mengukur relevansi kurikulum, fasilitas lab, dan kompetensi spesifik prodi.
+- **Preconditions**: Program studi alumni memiliki paket kuesioner aktif (`/alumni/kuesioner-prodi`).
 - **Main Flow (Basic Flow)**:
-  1. Alumni membuka menu Kuesioner Prodi (`GET /alumni/kuesioner-prodi`).
-  2. Sistem mendeteksi `prodi_id` alumni dari tabel `biodata`, lalu mengambil data dari `prodi_question_section` dan `prodi_question` milik prodi tersebut.
-  3. Alumni mengisi tanggapan untuk setiap butir pertanyaan yang disajikan.
-  4. Alumni mengklik tombol "Simpan Kuesioner Prodi" (`POST /alumni/kuesioner-prodi`).
-  5. Sistem memvalidasi kelengkapan respon dan menyimpan jawaban ke tabel `prodi_response`.
-  6. Sistem memberikan umpan balik notifikasi berhasil dan memperbarui progres kuesioner prodi di dashboard.
+  1. Sistem mengambil konfigurasi bagian (`prodi_question_section`) dan butir pertanyaan (`prodi_question`) khusus untuk `prodi_id` alumni yang login.
+  2. Alumni mengisi respon kuesioner (pilihan ganda, skala likert kepuasan, masukan esai kurikulum).
+  3. Alumni menekan tombol "Kirim Kuesioner Prodi" (`POST /alumni/kuesioner-prodi`).
+  4. Sistem menyimpan respon ke tabel `prodi_response` dan detail pilihan ke `prodi_response_answer`.
+  5. Sistem menandai status penyelesaian kuesioner prodi alumni menjadi selesai.
 - **Alternate Flow (Alternative Flow)**:
-  - Jika Program Studi belum menyusun kuesioner khusus, sistem menampilkan status informasi bahwa instrumen belum dibuka atau tidak ada pertanyaan prodi.
-- **Post Conditions**: Jawaban evaluasi prodi tersimpan aman pada tabel `prodi_response`.
+  - Jika prodi alumni belum merilis pertanyaan kuesioner khusus, sistem menampilkan notifikasi ramah bahwa kuesioner prodi belum tersedia dan langsung menandai statusnya valid.
+- **Post Conditions**: Respon survei prodi tersimpan rapi untuk kebutuhan evaluasi kurikulum dan akreditasi prodi (LAM Infokom, LAM Teknik, dll).
 
 ---
 
-### UC-11. Mengisi Evaluasi Kinerja Lulusan oleh Atasan Langsung (Token-Based)
+### UC-11. Mengisi Evaluasi Kinerja Lulusan (Token-Based Employer Survey)
 - **Usecase ID**: UC-11
-- **Usecase Name**: Mengisi Evaluasi Kinerja Lulusan oleh Atasan Langsung (Token-Based)
-- **Actors Involved**: Pengguna Lulusan / Atasan Langsung (*Employer*)
-- **Description**: Mengisi instrumen evaluasi kinerja, etika, dan kompetensi alumni di dunia kerja secara langsung melalui tautan publik ber-token unik 64 karakter tanpa memerlukan akun atau login.
-- **Preconditions**: Alumni telah menginput data nama & email atasan di profilnya, dan atasan menerima email resmi berisi tautan unik `/evaluasi-atasan/{token}`.
+- **Usecase Name**: Mengisi Evaluasi Kinerja Lulusan (*Token-Based*)
+- **Actors Involved**: Pengguna Lulusan / Atasan Langsung (Employer/Supervisor)
+- **Description**: Pengisian instrumen survei evaluasi kepuasan pengguna lulusan oleh pimpinan/atasan tempat alumni bekerja melalui tautan token acak 64-karakter tanpa perlu melakukan registrasi akun atau login ke sistem.
+- **Preconditions**: Atasan menerima email resmi berisi URL ber-token unik (`/evaluasi-atasan/{token}`).
 - **Main Flow (Basic Flow)**:
-  1. Atasan mengklik tautan token dari email (`GET /evaluasi-atasan/{token}`).
-  2. Sistem memverifikasi validitas token pada tabel `evaluasi_atasan`:
-     - Token ditemukan dan belum pernah disubmit (`is_submitted = false`).
-  3. Sistem merender halaman survei lengkap dengan identitas nama alumni dan instansi yang dinilai.
-  4. **Bagian I (Profil Instansi)**: Atasan melengkapi atau mengonfirmasi profil perusahaan (alamat, sektor, skala, jumlah lulusan UKDW, dan standar gaji lulusan baru).
-  5. **Bagian II (Penilaian Kinerja)**: Atasan menilai tingkat kesiapan alumni dalam bekerja serta memberikan skor pada butir matriks evaluasi (integritas, keahlian bidang, bahasa asing, kerja tim, komunikasi, pemanfaatan TI, dll.) yang dimuat dari tabel `pertanyaan_evaluasi_atasan`.
-  6. Atasan dapat menuliskan saran perbaikan kurikulum pada kolom saran terbuka.
-  7. Atasan menekan tombol "Kirim Evaluasi Kinerja" (`POST /evaluasi-atasan/{token}`).
-  8. Sistem memvalidasi kelengkapan data, memperbarui data perusahaan/atasan, menyimpan jawaban ke tabel `respon_evaluasi_atasan`, serta menandai `is_submitted = true` dan mencatat `submitted_at = now()`.
-  9. Sistem menampilkan halaman ucapan terima kasih resmi UKDW.
+  1. Atasan mengklik tautan evaluasi dari email.
+  2. Sistem memvalidasi token terhadap tabel `evaluasi_atasan`:
+     - Token valid, belum kedaluwarsa, dan belum pernah disubmit (`status_pengisian = false`).
+  3. Sistem menampilkan formulir evaluasi yang menyajikan nama alumni, instansi, serta butir penilaian kinerja (etika, keahlian bidang ilmu, komunikasi, kerjasama tim, kepemimpinan, dan pengembangan diri).
+  4. Atasan mengisi penilaian skala likert serta masukan kualitatif.
+  5. Atasan menekan tombol "Kirim Evaluasi" (`POST /evaluasi-atasan/{token}`).
+  6. Sistem menyimpan jawaban ke tabel `jawaban_evaluasi_atasan`, mengubah status token menjadi `true` (*closed*), dan mencatat stempel waktu pengisian.
+  7. Sistem menampilkan ucapan terima kasih resmi dari Rektorat UKDW.
 - **Alternate Flow (Alternative Flow)**:
-  - **A1. Token Tidak Ditemukan / Salah**: Sistem menampilkan halaman error 404.
-  - **A2. Survei Sudah Pernah Diisi**: Sistem menampilkan pesan bahwa kuesioner untuk alumni tersebut sudah selesai diserahkan sebelumnya.
-  - **A3. Butir Penilaian Terlewat**: Sistem memberikan alert SweetAlert2 yang menandai butir matriks yang belum terisi.
-- **Post Conditions**: Evaluasi tersimpan di `respon_evaluasi_atasan`, status kuesioner terkunci (`is_submitted = true`), dan pimpinan instansi selesai mengevaluasi.
+  - **A1. Token Tidak Ditemukan**: Sistem menampilkan halaman error 404 (Token Tidak Valid).
+  - **A2. Formulir Sudah Pernah Diisi**: Sistem menampilkan halaman informasi bahwa survei untuk alumni tersebut telah selesai diisi sebelumnya.
+- **Post Conditions**: Hasil evaluasi atasan tersimpan aman dan token dinonaktifkan sehingga tidak dapat disubmit ulang.
 
 ---
 
-### UC-12. Mengakses Dashboard Kinerja Program Studi
+### UC-12. Mengakses Dashboard Monitoring & Analisis Kinerja (Multi-Role Scope)
 - **Usecase ID**: UC-12
-- **Usecase Name**: Mengakses Dashboard Kinerja Program Studi
-- **Actors Involved**: Admin Program Studi
-- **Description**: Menampilkan statistik partisipasi tracer study spesifik untuk mahasiswa/alumni pada program studi yang dikelola.
-- **Preconditions**: Admin Prodi telah terotentikasi dan memiliki peran `admin_prodi`.
+- **Usecase Name**: Mengakses Dashboard Monitoring & Analisis Kinerja
+- **Actors Involved**: Admin Program Studi, Admin Fakultas, Admin Biro III, Superadmin
+- **Description**: Pusat analisis data visual dan pemantauan Indikator Kinerja Utama (KPI) Tracer Study kampus, menampilkan metrik keterisian responden, rasio respon (*response rate*), status alumni tersinkron LinkedIn, serta perbandingan kinerja antar-unit sesuai hak akses peran.
+- **Scope & Role Authorization**:
+  - **Admin Prodi** (`/prodi/dashboard`): Menampilkan total alumni prodi, jumlah alumni mengisi, persentase kelengkapan prodi, dan daftar kuesioner prodi aktif.
+  - **Admin Fakultas** (`/fakultas/dashboard`): Menampilkan total agregat alumni fakultas, persentase keterisian fakultas, dan tabel komparasi capaian partisipasi per program studi dalam fakultas.
+  - **Admin Biro III** (`/biro3/dashboard`): Menampilkan KPI Tracer Study universitas, total responden unik nasional, response rate kampus, dan status tautan LinkedIn alumni.
+  - **Superadmin** (`/superadmin/dashboard`): Menampilkan ringkasan global universitas, status keaktifan paket kuesioner Kemdikbud, antrean verifikasi perusahaan se-kampus, dan log audit aktivitas terbaru.
+- **Preconditions**: Aktor telah terautentikasi dan memiliki hak akses peran administrator terkait.
 - **Main Flow (Basic Flow)**:
-  1. Admin Prodi membuka URL `/prodi/dashboard`.
-  2. Sistem menghitung data agregat khusus prodi: Total Alumni Prodi, Responden Kuesioner Prodi, Responden Kuesioner Universitas, dan Persentase Partisipasi (*Response Rate*).
-  3. Sistem menyajikan tabel 5 alumni terbaru beserta status kelengkapan kuesioner masing-masing.
+  1. Aktor mengakses rute dashboard perannya.
+  2. Pengendali dashboard menghitung metrik agregat data secara otomatis dari database dengan membatasi cakupan filter peran (*role scoping*).
+  3. Sistem menyajikan kartu metrik, grafik perkembangan, dan tabel perbandingan capaian.
 - **Alternate Flow (Alternative Flow)**:
-  - Admin Prodi dapat mengklik pintasan menuju menu Kelola Alumni [UC-13], Kuesioner Prodi [UC-15/UC-16], atau Verifikasi Perusahaan [UC-17].
-- **Post Conditions**: Admin Prodi memperoleh wawasan data real-time mengenai ketercapaian target tracer study di tingkat prodinya.
+  - Pengguna dapat mengklik kartu metrik untuk berpindah langsung ke direktori alumni atau antrean verifikasi perusahaan.
+- **Post Conditions**: Administrator memperoleh visualisasi analitik kinerja pelacakan alumni yang akurat dan *real-time*.
 
 ---
 
-### UC-13. Mengelola Direktori dan Detail Alumni Program Studi
+### UC-13. Mengelola Direktori Alumni & Audit Detail (Multi-Role Scope)
 - **Usecase ID**: UC-13
-- **Usecase Name**: Mengelola Direktori dan Detail Alumni Program Studi
-- **Actors Involved**: Admin Program Studi
-- **Description**: Menelusuri daftar alumni prodi, memfilter berdasarkan tahun lulus/status kerja, melihat rincian riwayat jawaban kuesioner, serta membantu mengoreksi profil alumni jika diperlukan.
-- **Preconditions**: Admin Prodi login ke sistem (`/prodi/alumni`).
+- **Usecase Name**: Mengelola Direktori Alumni & Audit Detail
+- **Actors Involved**: Admin Program Studi, Admin Fakultas, Admin Biro III, Superadmin
+- **Description**: Menelusuri seluruh data alumni, melakukan pencarian dan penyaringan berjenjang (angkatan, prodi, status kerja), meninjau rincian biodata, riwayat karir (keahlian & pengalaman), lembar respon kuesioner nasional, respon kuesioner prodi, kuesioner atasan, serta navigasi terarah (*deep link*) ke modul sinkronisasi LinkedIn.
+- **Scope & Role Authorization**:
+  - **Admin Prodi** (`/prodi/alumni`): Terbatas pada alumni program studinya sendiri.
+  - **Admin Fakultas** (`/fakultas/alumni`): Alumni seluruh prodi dalam naungan fakultasnya (disertai dropdown filter prodi fakultas).
+  - **Admin Biro III** (`/biro3/alumni`): Seluruh alumni universitas lintas fakultas dan prodi.
+  - **Superadmin** (`/superadmin/alumni`): Akses audit global seluruh alumni universitas dilengkapi deep link audit scraping LinkedIn.
+- **Preconditions**: Aktor membuka modul direktori alumni sesuai perannya.
 - **Main Flow (Basic Flow)**:
-  1. Admin Prodi membuka halaman direktori alumni prodi.
-  2. Sistem menampilkan tabel data alumni yang terikat pada `prodi_id` akun admin.
-  3. Admin dapat mencari berdasarkan nama/NIM atau memfilter status pekerjaan.
-  4. Admin mengklik salah satu baris alumni untuk membuka rincian lengkap (`/prodi/alumni/{id}`).
-  5. Sistem memuat profil biodata, riwayat pekerjaan, detail kuesioner universitas, dan kuesioner prodi.
-  6. Jika terdapat koreksi, Admin Prodi dapat memperbarui profil melalui `POST /prodi/alumni/{id}/profile`.
+  1. Sistem menyajikan daftar tabel alumni sesuai batasan hak akses peran.
+  2. Aktor menerapkan filter pencarian (NIM, Nama, Angkatan, Program Studi, Status Bekerja).
+  3. Aktor mengklik salah satu nama alumni untuk membuka halaman detail audit (`{base_route}/alumni/{id}`).
+  4. Sistem menampilkan tabulasi lengkap: Profil Biodata, Riwayat Karir (`skills` & `experience`), Lembar Jawaban Kuesioner Universitas, Jawaban Kuesioner Prodi, dan Evaluasi Atasan.
+  5. Aktor dapat mengoreksi data profil jika ditemukan ketidaksesuaian (`POST {base_route}/alumni/{id}/profile`).
+  6. **Deep Link ke LinkedIn Sync**: Pada halaman detail alumni, admin dapat mengklik logo LinkedIn / tombol sinkronisasi untuk langsung membuka modul sinkronisasi LinkedIn dengan parameter `alumni_id` dan `search` otomatis.
 - **Alternate Flow (Alternative Flow)**:
-  - Admin Prodi dapat mengklik tombol "Ekspor Excel" [Menuju UC-14].
-- **Post Conditions**: Informasi alumni dapat ditinjau dan dikoreksi secara akurat.
+  - Aktor dapat mengunduh berkas laporan dalam format Excel [UC-14].
+- **Post Conditions**: Data direktori alumni terpantau, terverifikasi keabsahannya, dan siap diaudit.
 
 ---
 
@@ -492,27 +484,113 @@ flowchart LR
 - **Usecase ID**: UC-14
 - **Usecase Name**: Mengekspor Rekapitulasi Data Alumni ke Excel
 - **Actors Involved**: Admin Program Studi, Admin Fakultas, Admin Biro III, Superadmin
-- **Description**: Menghasilkan dan mengunduh berkas spreadsheet Microsoft Excel (`.xlsx`) yang merangkum data biodata, kontak, riwayat pekerjaan, dan hasil isian tracer study alumni sesuai lingkup wewenang aktor.
-- **Preconditions**: Pengguna berada pada halaman direktori/detail alumni dengan hak akses yang sesuai.
+- **Description**: Mengunduh rekapitulasi data tracer study alumni dalam berkas spreadsheet Excel (`.xlsx`) resmi sesuai batasan wewenang unit kerja untuk keperluan akreditasi prodi/institusi atau pelaporan Dikti.
+- **Preconditions**: Aktor berada pada direktori alumni atau detail alumni dan menekan tombol "Ekspor Excel".
 - **Main Flow (Basic Flow)**:
-  1. Pengguna menekan tombol "Export Excel".
-  2. Sistem memproses permintaan rute `/export-excel` sesuai filter dan otorisasi peran:
-     - Admin Prodi $\rightarrow$ Data alumni khusus prodi yang bersangkutan.
-     - Admin Fakultas $\rightarrow$ Data alumni seluruh prodi dalam fakultas.
-     - Admin Biro III / Superadmin $\rightarrow$ Data alumni komprehensif seluruh universitas.
-  3. Sistem mengompilasi lembar data Excel dan mengirimkannya sebagai unduhan biner berkas ke browser pengguna.
+  1. Aktor menekan tombol "Ekspor ke Excel" (`GET {base_route}/alumni/export-excel` atau per alumni `{id}/export-excel`).
+  2. Sistem melalui `AlumniTracerExcelExporter` menyaring data alumni sesuai cakupan peran:
+     - Admin Prodi $\rightarrow$ Rekap khusus prodi bersangkutan.
+     - Admin Fakultas $\rightarrow$ Rekap seluruh prodi se-fakultas.
+     - Admin Biro III / Superadmin $\rightarrow$ Rekap universitas menyeluruh.
+  3. Sistem mengompilasi baris data (data diri, pekerjaan, instansi, detail jawaban kuesioner) ke lembar kerja Excel berformat standar Dikti.
+  4. Browser mengunduh berkas file spreadsheet biner secara otomatis.
 - **Alternate Flow (Alternative Flow)**:
-  - Jika data kosong, file Excel yang terunduh berisi baris header tanpa baris data.
-- **Post Conditions**: File laporan Excel terunduh ke perangkat lokal pengguna untuk keperluan akreditasi atau pelaporan Dikti.
+  - Jika data kosong berdasarkan filter yang dipilih, berkas Excel yang diunduh hanya memuat baris header kolom.
+- **Post Conditions**: File rekapitulasi data Excel tersimpan di komputer lokal pengguna.
 
 ---
 
-### UC-15. Mengelola Bagian (Section) Kuesioner Program Studi
+### UC-15. Memverifikasi Pengajuan Perusahaan Baru (1 Proses untuk 3 Role)
 - **Usecase ID**: UC-15
+- **Usecase Name**: Memverifikasi Pengajuan Perusahaan Baru
+- **Actors Involved**: **Admin Program Studi, Admin Fakultas, Superadmin**
+- **Description**: Memvalidasi, mengoreksi, mengesahkan, menolak, atau mengalihkan pengajuan data entitas perusahaan baru dari alumni yang berstatus `Menunggu Verifikasi` agar basis data industri mitra kampus konsisten, valid, dan bebas dari duplikasi nama.
+- **Scope & Role Authorization (3 Role)**:
+  1. **Admin Program Studi** (`/prodi/perusahaan`): Memverifikasi pengajuan instansi dari alumni program studinya sendiri (`created_by_prodi_id = prodi admin`).
+  2. **Admin Fakultas** (`/fakultas/perusahaan`): Memverifikasi pengajuan instansi dari alumni seluruh prodi dalam fakultasnya.
+  3. **Superadmin** (`/superadmin/perusahaan`): Otoritas tertinggi verifikasi seluruh pengajuan instansi se-universitas dengan opsi filter per prodi.
+- **Preconditions**: Terdapat entitas perusahaan berstatus `Menunggu Verifikasi` pada database `perusahaan` sesuai cakupan wewenang peran yang login.
+- **Main Flow (Basic Flow)**:
+  1. Aktor membuka menu verifikasi perusahaan (`{base_route}/perusahaan`).
+  2. Sistem menampilkan daftar pengajuan instansi yang menunggu persetujuan (Nama, Sektor, Alamat, Alumni Pengaju).
+  3. Sistem melalui algoritma *string similarity* secara otomatis menampilkan skor kemiripan dan merekomendasikan perusahaan master terverifikasi yang mirip jika terdeteksi indikasi duplikasi.
+  4. Aktor memilih salah satu dari 4 opsi tindakan keputusan:
+     - **Opsi A - Setujui Baru (Verify)**: Mengesahkan perusahaan menjadi entitas master terverifikasi (`POST {base_route}/perusahaan/{id}/verify`).
+     - **Opsi B - Alihkan ke Master Terdaftar (Replace)**: Mengalihkan relasi tempat kerja alumni ke perusahaan master yang sudah ada, lalu menghapus data usulan duplikat (`POST {base_route}/perusahaan/{id}/replace`).
+     - **Opsi C - Koreksi & Verifikasi (Update & Verify)**: Memperbaiki ejaan nama, sektor usaha, atau alamat perusahaan lalu langsung memverifikasi (`PUT {base_route}/perusahaan/{id}`).
+     - **Opsi D - Tolak Pengajuan (Reject)**: Menolak pengajuan karena instansi fiktif atau tidak valid (`POST {base_route}/perusahaan/{id}/reject`).
+  5. Sistem memperbarui basis data dan mencatat tindakan pada log audit aktivitas (`log_activities`).
+  6. Sistem memunculkan notifikasi sukses keputusan verifikasi.
+- **Alternate Flow (Alternative Flow)**:
+  - Aktor menggunakan fitur pencarian master instansi (`GET {base_route}/perusahaan/search-verified`) untuk mencari nama perusahaan resmi sebelum menentukan aksi replace.
+- **Post Conditions**: Status pengajuan perusahaan diperbarui menjadi `Terverifikasi`, `Ditolak`, atau dialihkan ke master perusahaan sah.
+
+---
+
+### UC-16. Mengelola Akun Alumni & Reset Sandi Default (1 Proses untuk 3 Role)
+- **Usecase ID**: UC-16
+- **Usecase Name**: Mengelola Akun Alumni & Reset Sandi Default
+- **Actors Involved**: **Admin Program Studi, Admin Fakultas, Superadmin**
+- **Description**: Mengelola akun pengguna (memperbarui email, username, nama) dan memfasilitasi pemulihan akses akun alumni yang mengalami kendala login dengan mereset kata sandi secara aman kembali ke standar tanggal lahir bawaan (`DDMMYYYY`), mengaktifkan flag wajib ganti sandi, serta mengirimkan notifikasi email resmi.
+- **Scope & Role Authorization (3 Role)**:
+  1. **Admin Program Studi** (`/prodi/manajemen-akun`): Khusus mengelola dan mereset akun alumni di bawah prodi admin.
+  2. **Admin Fakultas** (`/fakultas/manajemen-akun`): Mengelola dan mereset akun alumni lintas prodi di bawah fakultas admin.
+  3. **Superadmin** (`/superadmin/manajemen-akun`): Mengelola akun dari seluruh peran (`admin_fakultas`, `admin_prodi`, `alumni`) se-universitas.
+- **Preconditions**: Aktor membuka menu manajemen akun pada rutenya masing-masing.
+- **Main Flow (Basic Flow)**:
+  1. Sistem menampilkan daftar akun pengguna sesuai cakupan filter peran.
+  2. Aktor mencari akun berdasarkan NIM, Nama, atau Email.
+  3. **Pembaruan Profil Akun**: Aktor dapat mengedit email atau nama pengguna lalu menyimpan (`PUT {base_route}/manajemen-akun/{id}`).
+  4. **Reset Sandi Bawaan**: Jika alumni lupa akses, aktor menekan tombol "Reset Default & Notify" (`POST {base_route}/manajemen-akun/{id}/reset-default-notify`).
+  5. Sistem mengambil tanggal lahir alumni dari tabel `data_akademik`, memformat menjadi `DDMMYYYY`, mengenkripsi menjadi hash password baru di tabel `users`, dan menyetel `must_change_password = true`.
+  6. Sistem mengirimkan surat elektronik resmi ke alamat email alumni berisi pemberitahuan reset sandi default dan instruksi login.
+  7. Sistem mencatat tindakan reset ke tabel `log_activities`.
+  8. Sistem memunculkan notifikasi sukses reset akun.
+- **Alternate Flow (Alternative Flow)**:
+  - Jika tanggal lahir di tabel data akademik kosong, sistem menampilkan peringatan validasi agar admin melengkapi tanggal lahir terlebih dahulu.
+- **Post Conditions**: Kata sandi akun alumni kembali ke tanggal lahir default, flag ganti sandi wajib aktif, dan alumni menerima notifikasi di email.
+
+---
+
+### UC-17. Melakukan Sinkronisasi Profil LinkedIn Alumni (1 Proses untuk 3 Role Utama)
+- **Usecase ID**: UC-17
+- **Usecase Name**: Melakukan Sinkronisasi Profil LinkedIn Alumni (Single & Batch Sync)
+- **Actors Involved**: **Admin Program Studi, Admin Fakultas, Superadmin** *(Didukung oleh Admin Biro III)*
+- **Description**: Mengambil data posisi jabatan terkini, nama instansi tempat bekerja, riwayat pengalaman kerja (*experience*), daftar keahlian (*skills*), dan foto profil fisik alumni dari LinkedIn secara otomatis menggunakan layanan scraper/provider terintegrasi (LinkedIn Profile Provider / Apify) secara satuan (*single sync*) maupun massal (*batch sync*), meninjau hasil ekstraksi pada modal peninjauan (*staging review*), menyetujui (*approve*) atau menolak (*reject*) hasil sinkronisasi, serta meninjau riwayat riil sinkronisasi (*history*).
+- **Scope & Role Authorization (3 Role Utama & Biro III)**:
+  1. **Admin Program Studi** (`/prodi/linkedin-sync`): Mengelola sinkronisasi direktori alumni khusus program studinya sendiri.
+  2. **Admin Fakultas** (`/fakultas/linkedin-sync`): Mengelola sinkronisasi alumni dari seluruh program studi dalam naungan fakultasnya.
+  3. **Superadmin** (`/superadmin/linkedin-sync`): Mengelola sinkronisasi alumni menyeluruh se-universitas lintas fakultas dan angkatan, lengkap dengan integrasi tombol aksi cepat buka audit alumni (`/superadmin/alumni/{id}`).
+  4. **Admin Biro III** (`/biro3/alumni/{id}/sync-linkedin`): Menjalankan sinkronisasi satuan pada saat memeriksa detail profil alumni universitas.
+- **Preconditions**: Alumni memiliki profil/username LinkedIn yang tersimpan di sistem, dan aktor membuka modul sinkronisasi LinkedIn pada rutenya masing-masing.
+- **Main Flow (Basic Flow)**:
+  1. Sistem menampilkan direktori alumni lengkap dengan filter Tahun Kelulusan, Target Periode, Semester, Prodi, dan Status Sinkronisasi (*Belum Sinkron, Menunggu Review, Disetujui, Ditolak, Gagal*).
+     - *Jika diakses dari tautan detail audit alumni, sistem otomatis mengaktifkan tahun lulus yang sesuai, menerapkan filter pencarian, memberi sorotan hijau "Profil Dipilih", dan melakukan auto-scroll ke baris profil tersebut.*
+  2. **Aksi Tombol Cepat Detail Alumni (Ikon Mata)**: Pada kolom Aksi di baris tabel, admin dapat mengklik tombol ikon mata untuk langsung membuka halaman detail profil lengkap alumni.
+  3. **Eksekusi Sinkronisasi**:
+     - **Alur Satuan (Single Sync)**: Aktor menekan tombol "Sinkronkan" pada salah satu baris alumni (`POST {base_route}/linkedin-sync/{id}`).
+     - **Alur Massal (Batch Sync)**: Aktor menekan tombol "Sinkronisasi Massal" untuk memproses seluruh antrean alumni pada filter aktif secara simultan (`POST {base_route}/linkedin-sync/batch`).
+  4. Sistem menghubungi penyedia penarikan data LinkedIn (Official API / Apify Third-Party Provider) untuk mengambil JSON profil karir publik alumni.
+  5. Sistem menyimpan hasil ekstraksi ke tabel perantara peninjauan (`linkedin_sync_results`) dengan status `pending_review`.
+  6. **Peninjauan Staging (Review Modal)**: Aktor mengklik tombol "Tinjau Hasil" (`GET {base_route}/linkedin-sync/results/{id}`). Sistem membuka modal pop-up yang menyajikan komparasi data saat ini vs data hasil LinkedIn: posisi jabatan, nama instansi kantor, periode bekerja, keahlian (*skills*), dan foto profil fisik alumni.
+  7. **Keputusan Persetujuan**:
+     - **Jika Disetujui**: Aktor menekan tombol "Setujui & Terapkan" (`POST {base_route}/linkedin-sync/results/{id}/approve`). Sistem otomatis memperbarui data jabatan, nama instansi, `skills`, `experience`, serta foto profil fisik pada tabel `biodata`, dan menandai status sinkronisasi sebagai `approved`.
+     - **Jika Ditolak**: Aktor menekan tombol "Tolak Hasil" (`POST {base_route}/linkedin-sync/results/{id}/reject`). Sistem mempertahankan data lama di database dan menandai status sinkronisasi sebagai `rejected`.
+  8. Aktor dapat melihat histori riil jejak sinkronisasi pada `{base_route}/linkedin-sync/alumni/{id}/history`.
+  9. Sistem mencatat seluruh operasi ke `log_activities`.
+- **Alternate Flow (Alternative Flow)**:
+  - **A1. URL LinkedIn Tidak Valid / Profil Privat**: Sistem mencatat pesan kegagalan pada tabel sinkronisasi, menyetel status `failed`, dan menampilkan notifikasi kesalahan yang deskriptif kepada admin.
+  - **A2. Kuota Provider Habis / Timeout**: Sistem menangani exception gracefully via `LinkedInSyncException` tanpa menghentikan aplikasi.
+- **Post Conditions**: Riwayat karir alumni terbarui dengan data faktual dari LinkedIn, tersimpan pada rekam histori, dan tersinkronisasi dua arah dengan modul audit direktori alumni.
+
+---
+
+### UC-18. Mengelola Bagian (Section) Kuesioner Program Studi
+- **Usecase ID**: UC-18
 - **Usecase Name**: Mengelola Bagian (*Section*) Kuesioner Program Studi
 - **Actors Involved**: Admin Program Studi, Superadmin
-- **Description**: Menyusun, mengubah nama, mendeskripsikan, menghapus, serta mengatur urutan (*reorder*) kelompok bagian pada kuesioner mandiri prodi.
-- **Preconditions**: Aktor membuka modul kelola section prodi (`/prodi/sections` atau `/superadmin/prodi-kuesioner`).
+- **Description**: Menyusun, mengubah judul, mendeskripsikan, menghapus, serta mengatur nomor urutan (*reorder*) kelompok seksi pada instrumen kuesioner khusus program studi.
+- **Preconditions**: Aktor membuka modul kelola section prodi (`/prodi/sections` untuk Admin Prodi, atau `/superadmin/prodi-kuesioner` untuk Superadmin).
 - **Main Flow (Basic Flow)**:
   1. Sistem menampilkan daftar section yang ada pada tabel `prodi_question_section`.
   2. Aktor dapat melakukan:
@@ -523,219 +601,38 @@ flowchart LR
   3. Sistem memperbarui database dan menampilkan notifikasi berhasil.
 - **Alternate Flow (Alternative Flow)**:
   - Hapus dibatalkan jika terdapat butir pertanyaan yang masih aktif di dalam section tersebut.
-- **Post Conditions**: Struktur seksi kuesioner prodi terorganisir di database.
+- **Post Conditions**: Struktur kelompok seksi kuesioner prodi terorganisasi dengan rapi di database.
 
 ---
 
-### UC-16. Mengelola Butir Pertanyaan dan Opsi Jawaban Kuesioner Prodi
-- **Usecase ID**: UC-16
+### UC-19. Mengelola Butir Pertanyaan dan Opsi Jawaban Kuesioner Prodi
+- **Usecase ID**: UC-19
 - **Usecase Name**: Mengelola Butir Pertanyaan dan Opsi Jawaban Kuesioner Prodi
 - **Actors Involved**: Admin Program Studi, Superadmin
-- **Description**: Mengelola butir-butir pertanyaan survei prodi (kode soal, teks soal, tipe respon: single choice, multiple choice, text, number, rating skala 5, radio) serta pilihan opsinya.
-- **Preconditions**: Section kuesioner prodi telah dibuat sebelumnya.
+- **Description**: Mengonfigurasi butir-butir pertanyaan survei mandiri prodi (kode unik soal, teks pertanyaan, tipe input: pilihan tunggal, pilihan ganda, isian teks, angka, rating skala 5) beserta pilihan opsinya.
+- **Preconditions**: Section kuesioner prodi telah dibuat sebelumnya (`/prodi/pertanyaan`).
 - **Main Flow (Basic Flow)**:
-  1. Aktor membuka menu `/prodi/pertanyaan`.
-  2. Aktor memilih section induk tempat pertanyaan bernaung.
-  3. Aktor menambahkan butir pertanyaan baru: mengisi kode unik, teks pertanyaan, memilih tipe input, status wajib diisi (*is_required*), dan urutan (`POST /prodi/pertanyaan`).
-  4. Untuk tipe pilihan ganda/checkbox: Aktor menambahkan pilihan opsi pada tabel `prodi_question_option` (`POST /prodi/opsi`).
-  5. Aktor dapat mengubah, menyusun ulang (*reorder*), atau menghapus butir pertanyaan.
-  6. Sistem menyimpan seluruh konfigurasi ke tabel `prodi_question` dan `prodi_question_option`.
+  1. Aktor memilih section induk tempat pertanyaan bernaung.
+  2. Aktor menambahkan butir pertanyaan baru: mengisi kode unik, teks pertanyaan, memilih tipe input, status wajib diisi (*is_required*), dan urutan (`POST /prodi/pertanyaan`).
+  3. Untuk tipe pilihan ganda/checkbox: Aktor menambahkan pilihan opsi pada tabel `prodi_question_option` (`POST /prodi/opsi`).
+  4. Aktor dapat mengubah, menyusun ulang (*reorder*), atau menghapus butir pertanyaan.
+  5. Sistem menyimpan seluruh konfigurasi ke tabel `prodi_question` dan `prodi_question_option`.
 - **Alternate Flow (Alternative Flow)**:
   - Penghapusan butir pertanyaan dicegah jika sudah memiliki relasi data pada `prodi_response`.
 - **Post Conditions**: Butir instrumen kuesioner prodi siap disajikan kepada alumni saat mengisi kuesioner prodi.
 
 ---
 
-### UC-17. Memverifikasi Pengajuan Perusahaan Lingkup Program Studi
-- **Usecase ID**: UC-17
-- **Usecase Name**: Memverifikasi Pengajuan Perusahaan Lingkup Program Studi
-- **Actors Involved**: Admin Program Studi
-- **Description**: Memvalidasi data instansi baru yang diajukan oleh alumni prodinya agar data tempat kerja konsisten dan bebas dari duplikasi nama perusahaan.
-- **Preconditions**: Terdapat entitas perusahaan berstatus `Menunggu Verifikasi` yang diajukan oleh alumni dengan `created_by_prodi_id` sama dengan prodi admin.
-- **Main Flow (Basic Flow)**:
-  1. Admin Prodi membuka menu `/prodi/perusahaan`.
-  2. Sistem menampilkan daftar usulan instansi yang berstatus `Menunggu Verifikasi`.
-  3. Admin memilih salah satu aksi verifikasi:
-     - **Setujui Baru (Verify)**: Mengesahkan perusahaan menjadi master terverifikasi (`POST /verify`).
-     - **Tolak (Reject)**: Menolak pengajuan karena tidak valid atau fiktif (`POST /reject`).
-     - **Hubungkan ke Master Terverifikasi (Replace)**: Mengalihkan relasi tempat kerja alumni ke perusahaan master yang sudah ada, lalu menghapus data usulan duplikat (`POST /replace`).
-     - **Koreksi Data (Update & Verify)**: Memperbaiki ejaan nama, sektor, atau alamat lalu memverifikasi (`PUT /perusahaan/{id}`).
-  4. Sistem memperbarui status perusahaan dan mencatat tindakan pada log aktivitas.
-- **Alternate Flow (Alternative Flow)**:
-  - Admin mencari daftar master terverifikasi via `/search-verified` sebelum memutuskan aksi *replace*.
-- **Post Conditions**: Status perusahaan berubah menjadi `Terverifikasi` atau `Ditolak`, atau dihubungkan ke data master yang sah.
-
----
-
-### UC-18. Mengelola Akun Alumni dan Reset Password Default (Lingkup Prodi)
-- **Usecase ID**: UC-18
-- **Usecase Name**: Mengelola Akun Alumni dan Reset Password Default (Lingkup Prodi)
-- **Actors Involved**: Admin Program Studi
-- **Description**: Mengelola akun pengguna mahasiswa/alumni pada program studi terkait, termasuk memutakhirkan email/username dan melakukan reset kata sandi ke tanggal lahir bawaan (`DDMMYYYY`) disertai notifikasi email otomatis.
-- **Preconditions**: Admin Prodi membuka menu `/prodi/manajemen-akun`.
-- **Main Flow (Basic Flow)**:
-  1. Sistem menampilkan daftar akun pengguna alumni yang berada di bawah naungan prodi admin.
-  2. Admin dapat mencari berdasarkan NIM, nama, atau email.
-  3. Jika akun diperbarui: Admin mengubah data nama/email lalu menyimpan (`PUT /manajemen-akun/{id}`).
-  4. Jika alumni lupa akses: Admin menekan tombol "Reset Default & Notify" (`POST /reset-default-notify`).
-  5. Sistem mengambil tanggal lahir alumni dari tabel `data_akademik`, memformatnya menjadi `DDMMYYYY`, mengenkripsinya sebagai password baru di tabel `users`, menyetel `must_change_password = true`, dan mengirimkan email pemberitahuan resmi ke email alumni.
-  6. Sistem mencatat aksi reset ke `log_activities`.
-- **Alternate Flow (Alternative Flow)**:
-  - Jika tanggal lahir di tabel data akademik kosong, sistem menampilkan peringatan agar tanggal lahir dilengkapi terlebih dahulu.
-- **Post Conditions**: Password alumni kembali ke tanggal lahir default, flag ganti sandi aktif, dan alumni menerima notifikasi di email.
-
----
-
-### UC-19. Mengakses Dashboard Statistik Tingkat Fakultas
-- **Usecase ID**: UC-19
-- **Usecase Name**: Mengakses Dashboard Statistik Tingkat Fakultas
-- **Actors Involved**: Admin Fakultas
-- **Description**: Menyajikan metrik agregat pelacakan alumni untuk seluruh program studi yang berada di bawah naungan fakultas bersangkutan.
-- **Preconditions**: Admin Fakultas telah terotentikasi dan memiliki peran `admin_fakultas`.
-- **Main Flow (Basic Flow)**:
-  1. Admin Fakultas mengakses `/fakultas/dashboard`.
-  2. Sistem menghitung: Total alumni se-fakultas, total alumni yang telah menyelesaikan seluruh kuesioner, dan persentase keterisian fakultas.
-  3. Sistem menyajikan tabel komparasi capaian partisipasi per program studi dalam fakultas.
-- **Alternate Flow (Alternative Flow)**:
-  - Admin Fakultas dapat beralih ke direktori alumni fakultas [UC-20] atau approval perusahaan [UC-21].
-- **Post Conditions**: Admin Fakultas memperoleh data komparatif kinerja tracer study antar-prodi di fakultasnya.
-
----
-
-### UC-20. Mengelola Direktori dan Detail Alumni Tingkat Fakultas
+### UC-20. Mengelola Kuesioner Universitas & Logika Percabangan (Branching)
 - **Usecase ID**: UC-20
-- **Usecase Name**: Mengelola Direktori dan Detail Alumni Tingkat Fakultas
-- **Actors Involved**: Admin Fakultas
-- **Description**: Meninjau daftar seluruh alumni di lingkungan fakultas, memfilter berdasarkan program studi tertentu, memeriksa detail respon kuesioner, dan mengekspor rekapitulasi data.
-- **Preconditions**: Admin Fakultas login ke sistem (`/fakultas/alumni`).
-- **Main Flow (Basic Flow)**:
-  1. Sistem menampilkan direktori alumni se-fakultas dengan opsi dropdown filter Program Studi.
-  2. Admin menyaring data berdasarkan prodi tertentu atau mencari kata kunci nama/NIM.
-  3. Admin membuka detail alumni (`/fakultas/alumni/{id}`) untuk memeriksa profil dan lembar jawaban tracer study.
-  4. Admin dapat memperbarui informasi profil jika ada kesalahan data (`POST /profile`).
-- **Alternate Flow (Alternative Flow)**:
-  - Admin Fakultas menekan tombol ekspor untuk mengunduh rekap se-fakultas ke Excel [UC-14].
-- **Post Conditions**: Direktori alumni tingkat fakultas terpantau dan terverifikasi dengan baik.
-
----
-
-### UC-21. Memverifikasi Pengajuan Perusahaan Lingkup Fakultas
-- **Usecase ID**: UC-21
-- **Usecase Name**: Memverifikasi Pengajuan Perusahaan Lingkup Fakultas
-- **Actors Involved**: Admin Fakultas
-- **Description**: Memeriksa dan memvalidasi pengajuan perusahaan baru dari alumni yang berasal dari seluruh program studi di bawah fakultas tersebut.
-- **Preconditions**: Terdapat perusahaan yang diajukan oleh alumni dalam cakupan fakultas admin.
-- **Main Flow (Basic Flow)**:
-  1. Admin Fakultas membuka menu `/fakultas/perusahaan`.
-  2. Sistem menyaring daftar pengajuan instansi berdasarkan fakultas pengguna pengaju.
-  3. Admin Fakultas mengeksekusi tindakan verifikasi: Setujui (`verify`), Tolak (`reject`), Ganti ke Master (`replace`), atau Koreksi (`update`).
-  4. Sistem menyimpan pembaruan status pada tabel `perusahaan`.
-- **Alternate Flow (Alternative Flow)**:
-  - Jika instansi sudah pernah diverifikasi oleh fakultas lain di master, admin memilih opsi *replace* untuk menghindari redundansi data.
-- **Post Conditions**: Data instansi perusahaan disahkan atau ditolak untuk skala fakultas.
-
----
-
-### UC-22. Mengelola Akun Alumni dan Reset Password Se-Fakultas
-- **Usecase ID**: UC-22
-- **Usecase Name**: Mengelola Akun Alumni dan Reset Password Se-Fakultas
-- **Actors Involved**: Admin Fakultas
-- **Description**: Mengelola akun alumni lintas program studi di fakultas terkait serta memfasilitasi reset kata sandi massal/satuan ke tanggal lahir bawaan (`DDMMYYYY`).
-- **Preconditions**: Admin Fakultas membuka menu `/fakultas/manajemen-akun`.
-- **Main Flow (Basic Flow)**:
-  1. Sistem menampilkan daftar akun alumni seluruh prodi di fakultas tersebut.
-  2. Admin memfilter prodi sasaran dan mencari akun yang membutuhkan bantuan login.
-  3. Admin melakukan update akun atau menekan tombol "Reset Default & Notify".
-  4. Sistem mereset kata sandi ke tanggal lahir bawaan dan mengirim notifikasi email resmi ke alumni.
-- **Alternate Flow (Alternative Flow)**:
-  - Tindakan dapat dibatalkan jika admin memilih opsi "Batal" pada dialog konfirmasi.
-- **Post Conditions**: Akun alumni diperbarui dan kata sandi berhasil direset ke standar tanggal lahir bawaan.
-
----
-
-### UC-23. Mengakses Dashboard Eksekutif Tracer Study Universitas (Admin Biro III)
-- **Usecase ID**: UC-23
-- **Usecase Name**: Mengakses Dashboard Eksekutif Tracer Study Universitas (Admin Biro III)
-- **Actors Involved**: Admin Biro III (Biro Kemahasiswaan, Alumni & Pengembangan Karir)
-- **Description**: Pusat pemantauan Indikator Kinerja Utama (KPI) Tracer Study tingkat universitas, termasuk respon rate kampus, cakupan instrumen, dan capaian tautan LinkedIn alumni.
-- **Preconditions**: Admin Biro III login dengan peran `admin_biro3`.
-- **Main Flow (Basic Flow)**:
-  1. Admin Biro III membuka rute `/biro3/dashboard`.
-  2. Sistem menghitung metrik universitas:
-     - Total keseluruhan alumni terdaftar di kampus.
-     - Total responden unik yang telah berpartisipasi.
-     - Rasio keterisian / *Response Rate* universitas (persentase).
-     - Total butir instrumen aktif dan total prodi.
-     - Total alumni yang profilnya telah tersinkronisasi dengan akun LinkedIn.
-  3. Sistem menyajikan grafik dan visualisasi ringkas capaian kampus.
-- **Alternate Flow (Alternative Flow)**:
-  - Admin Biro III dapat beralih ke direktori alumni universitas [UC-24].
-- **Post Conditions**: Pimpinan biro kemahasiswaan mendapatkan gambaran strategis capaian pelacakan lulusan kampus.
-
----
-
-### UC-24. Mengelola Direktori Alumni Universitas (Biro III)
-- **Usecase ID**: UC-24
-- **Usecase Name**: Mengelola Direktori Alumni Universitas (Biro III)
-- **Actors Involved**: Admin Biro III
-- **Description**: Mengelola dan mengaudit seluruh basis data alumni UKDW dari seluruh angkatan, fakultas, dan program studi, serta meninjau riwayat pekerjaan dan kuesioner tracer study.
-- **Preconditions**: Admin Biro III membuka rute `/biro3/alumni`.
-- **Main Flow (Basic Flow)**:
-  1. Sistem menyajikan basis data alumni universitas secara lengkap dengan fitur pencarian dan filter bertingkat (Fakultas, Prodi, Tahun Lulus, Status Kerja).
-  2. Admin Biro III membuka detail profil alumni (`/biro3/alumni/{id}`).
-  3. Admin meninjau data biodata, instansi bekerja, dan jawaban tracer study.
-  4. Admin dapat memperbarui profil atau mengekspor rekapitulasi data ke format Excel [UC-14].
-- **Alternate Flow (Alternative Flow)**:
-  - Pada halaman detail, Admin Biro III dapat menjalankan integrasi sinkronisasi LinkedIn [Menuju UC-25].
-- **Post Conditions**: Data alumni tingkat universitas terdata rapi dan siap dilaporkan.
-
----
-
-### UC-25. Melakukan Sinkronisasi Profil LinkedIn Alumni (Biro III)
-- **Usecase ID**: UC-25
-- **Usecase Name**: Melakukan Sinkronisasi Profil LinkedIn Alumni (Biro III)
-- **Actors Involved**: Admin Biro III
-- **Description**: Mengambil data posisi jabatan dan riwayat karir terkini alumni dari profil LinkedIn publik secara otomatis melalui layanan terintegrasi (LinkedIn Profile Provider / Apify) untuk memperbarui data rekam jejak.
-- **Preconditions**: Alumni memiliki URL/username LinkedIn yang valid di profilnya dan Admin Biro III membuka detail alumni (`/biro3/alumni/{id}`).
-- **Main Flow (Basic Flow)**:
-  1. Admin Biro III menekan tombol "Sinkronisasi LinkedIn" (`POST /biro3/alumni/{id}/sync-linkedin`).
-  2. Sistem menghubungi penyedia scraping LinkedIn (Apify / MCP service) untuk mengekstrak data profil karir, perusahaan tempat bekerja, dan periode waktu.
-  3. Sistem menampilkan hasil ekstraksi kepada admin untuk ditinjau (*review*).
-  4. Admin menekan tombol "Simpan Data LinkedIn" (`POST /biro3/alumni/{id}/save-linkedin`).
-  5. Sistem memperbarui atribut pekerjaan pada tabel `biodata` dan menyimpan riwayat sinkronisasi.
-  6. Sistem memunculkan notifikasi sukses pembaruan data dari LinkedIn.
-- **Alternate Flow (Alternative Flow)**:
-  - **A1. URL LinkedIn Tidak Valid atau Profil Privat**: Sistem menampilkan pesan bahwa profil tidak dapat dijangkau oleh provider.
-- **Post Conditions**: Profil riwayat karir alumni terbarui secara otomatis dengan data terkini dari LinkedIn.
-
----
-
-### UC-26. Mengakses Dashboard Pusat Superadmin
-- **Usecase ID**: UC-26
-- **Usecase Name**: Mengakses Dashboard Pusat Superadmin
+- **Usecase Name**: Mengelola Kuesioner Universitas & Logika Percabangan (*Branching*)
 - **Actors Involved**: Superadmin
-- **Description**: Pusat kendali dan pengawasan menyeluruh terhadap seluruh modul teknis: ringkasan survei, status instrumen kuesioner, antrean approval perusahaan, dan peringatan operasional sistem.
-- **Preconditions**: Pengguna login dengan hak akses `superadmin` (`/superadmin/dashboard`).
-- **Main Flow (Basic Flow)**:
-  1. Superadmin mengakses dashboard pusat.
-  2. Sistem menampilkan ringkasan metrik global: total responden, status keaktifan kuesioner universitas, total antrean verifikasi perusahaan se-kampus, dan log aktivitas terbaru.
-  3. Superadmin dapat menavigasi ke seluruh modul konfigurasi sistem.
-- **Alternate Flow (Alternative Flow)**:
-  - Superadmin memilih menu konfigurasi instrumen, manajemen akun, audit log, atau sinkronisasi LinkedIn.
-- **Post Conditions**: Superadmin memegang kendali operasional atas keseluruhan ekosistem Tracer Study.
-
----
-
-### UC-27. Mengelola Instrumen Kuesioner Universitas (Induk, Section, Pertanyaan, Opsi & Branching)
-- **Usecase ID**: UC-27
-- **Usecase Name**: Mengelola Instrumen Kuesioner Universitas
-- **Actors Involved**: Superadmin
-- **Description**: Pengelolaan menyeluruh kuesioner tracer study universitas: mengaktifkan paket kuesioner tahunan, mengelola grup bagian (*section*), butir pertanyaan, pilihan opsi, dan aturan logika percabangan (*branching jump_to*).
+- **Description**: Pengelolaan menyeluruh kuesioner tracer study universitas (standar Kemdikbudristek): mengaktifkan paket kuesioner tahunan, mengelola grup bagian (*section*), butir pertanyaan, pilihan opsi, dan aturan logika percabangan loncat soal (*branching jump_to*).
 - **Preconditions**: Superadmin membuka modul kuesioner universitas (`/superadmin/sections`, `/superadmin/kuesioner`, `/superadmin/pertanyaan`).
 - **Main Flow (Basic Flow)**:
-  1. **Kelola Paket Kuesioner Induk**: Superadmin dapat membuat paket kuesioner tahunan baru atau mengaktifkan/menonaktifkan kuesioner aktif (`PATCH /superadmin/kuesioner/{id}/toggle-active`).
+  1. **Kelola Paket Kuesioner Induk**: Superadmin membuat paket kuesioner tahunan baru atau mengaktifkan/menonaktifkan kuesioner aktif (`PATCH /superadmin/kuesioner/{id}/toggle-active`).
   2. **Kelola Section**: Superadmin membuat, mengedit, dan mengatur nomor urutan bagian kuesioner pada tabel `kelompok_pertanyaan`.
-  3. **Kelola Pertanyaan**: Superadmin menambah/mengubah pertanyaan pada tabel `ref_subpertanyaan2021` (kode unik, teks pertanyaan, tipe input, penanda wajib, tampil di profil/kuesioner, dan urutan).
+  3. **Kelola Pertanyaan**: Superadmin menambah/mengubah pertanyaan pada tabel `ref_subpertanyaan2021` (kode unik, teks pertanyaan, tipe input, penanda wajib, tampil di profil/kuesioner, dan nomor urut).
   4. **Kelola Opsi & Branching**: Superadmin memasukkan opsi jawaban pada tabel `ref_subpertanyaan_detil` dan menyetel kode pertanyaan tujuan percabangan (`jump_to`) jika responden memilih opsi tertentu.
   5. Sistem memvalidasi integritas relasi dan menyimpan perubahan.
 - **Alternate Flow (Alternative Flow)**:
@@ -744,25 +641,8 @@ flowchart LR
 
 ---
 
-### UC-28. Mengelola Kuesioner Program Studi Terpusat (Superadmin Override)
-- **Usecase ID**: UC-28
-- **Usecase Name**: Mengelola Kuesioner Program Studi Terpusat (*Superadmin Override*)
-- **Actors Involved**: Superadmin
-- **Description**: Otoritas superadmin untuk memilih Program Studi mana saja di lingkungan UKDW dan mengonfigurasi struktur section, butir pertanyaan, dan opsi kuesioner prodi tersebut secara terpusat.
-- **Preconditions**: Superadmin membuka menu `/superadmin/prodi-kuesioner`.
-- **Main Flow (Basic Flow)**:
-  1. Superadmin memilih Program Studi dari daftar dropdown prodi.
-  2. Sistem memuat seluruh struktur kuesioner khusus prodi yang dipilih (`prodi_question_section` dan `prodi_question`).
-  3. Superadmin dapat menambah, mengedit, mengatur urutan (*reorder*), atau menghapus section, butir pertanyaan, serta opsi jawaban untuk prodi tersebut.
-  4. Sistem menyimpan pembaruan ke database kuesioner prodi terkait.
-- **Alternate Flow (Alternative Flow)**:
-  - Superadmin dapat beralih ke prodi lain sewaktu-waktu melalui dropdown pemilih prodi.
-- **Post Conditions**: Instrumen kuesioner khusus program studi yang dipilih berhasil diperbarui oleh superadmin.
-
----
-
-### UC-29. Mengelola Instrumen Evaluasi Pengguna Lulusan / Atasan Langsung
-- **Usecase ID**: UC-29
+### UC-21. Mengelola Instrumen Evaluasi Pengguna Lulusan / Atasan Langsung
+- **Usecase ID**: UC-21
 - **Usecase Name**: Mengelola Instrumen Evaluasi Pengguna Lulusan / Atasan Langsung
 - **Actors Involved**: Superadmin
 - **Description**: Mengelola butir-butir pertanyaan survei penilaian kinerja lulusan yang akan dijawab oleh pimpinan/atasan tempat alumni bekerja melalui tautan token publik.
@@ -782,88 +662,11 @@ flowchart LR
 
 ---
 
-### UC-30. Mengelola Direktori dan Audit Jawaban Alumni Seluruh Universitas
-- **Usecase ID**: UC-30
-- **Usecase Name**: Mengelola Direktori dan Audit Jawaban Alumni Seluruh Universitas
-- **Actors Involved**: Superadmin
-- **Description**: Modul audit menyeluruh terhadap data alumni se-universitas, mencakup pemeriksaan konsistensi data yudisium, riwayat karir, respon kuesioner nasional, respon kuesioner prodi, kuesioner evaluasi atasan, serta navigasi terarah (*deep link*) ke modul sinkronisasi LinkedIn.
-- **Preconditions**: Superadmin membuka menu `/superadmin/alumni`.
-- **Main Flow (Basic Flow)**:
-  1. Sistem menampilkan direktori seluruh alumni tanpa batasan fakultas atau prodi.
-  2. Superadmin mencari atau memfilter data alumni berdasarkan angkatan, tahun lulus, fakultas, atau prodi.
-  3. Superadmin membuka halaman detail alumni (`/superadmin/alumni/{id}`).
-  4. Superadmin dapat mengaudit profil alumni (termasuk riwayat keahlian `skills` dan pengalaman `experience`), lembar jawaban kuesioner universitas, kuesioner prodi, dan kuesioner atasan, atau mengunduh laporan Excel (`/superadmin/alumni/{id}/export-excel`).
-  5. **Tautan Terarah ke LinkedIn Sync**: Pada banner/kartu "Audit & Trace Hasil Scraping LinkedIn", Superadmin dapat mengklik logo LinkedIn atau tombol "Buka Menu LinkedIn Sync &rarr;".
-  6. Sistem otomatis mengarahkan ke `/superadmin/linkedin-sync?alumni_id={id}&search={nim}` dengan memilih tahun kelulusan yang sesuai, memfilter data, memberi sorotan visual (*ring highlight*) "Profil Dipilih", dan melakukan *auto-scroll* tepat ke baris profil alumni tersebut.
-- **Alternate Flow (Alternative Flow)**:
-  - Superadmin dapat berpindah ke modul manajemen akun jika alumni mengalami kendala login [UC-33].
-- **Post Conditions**: Audit kualitas data tracer alumni se-universitas terlaksana dengan transparan dan terhubung langsung secara presisi dengan modul sinkronisasi LinkedIn.
-
----
-
-### UC-31. Memverifikasi Pengajuan Perusahaan Terpusat (Superadmin)
-- **Usecase ID**: UC-31
-- **Usecase Name**: Memverifikasi Pengajuan Perusahaan Terpusat (Superadmin)
-- **Actors Involved**: Superadmin
-- **Description**: Otoritas tertinggi verifikasi dan konsolidasi data perusahaan baru dari seluruh program studi dan fakultas untuk menjaga standarisasi master data industri universitas.
-- **Preconditions**: Superadmin membuka menu `/superadmin/perusahaan`.
-- **Main Flow (Basic Flow)**:
-  1. Sistem menyajikan seluruh daftar pengajuan perusahaan berstatus `Menunggu Verifikasi`.
-  2. Superadmin meninjau nama instansi, wilayah, bentuk usaha, dan pengguna pengaju.
-  3. Superadmin mengambil keputusan: Setujui Baru (`POST /verify`), Tolak (`POST /reject`), Alihkan ke Master Terdaftar (`POST /replace`), atau Koreksi Data (`PUT /update`).
-  4. Sistem mengeksekusi operasi basis data dan mencatat audit log.
-- **Alternate Flow (Alternative Flow)**:
-  - Superadmin menggunakan fitur pencarian master terverifikasi (`/search-verified`) untuk mendeteksi potensi duplikasi sebelum menyetujui.
-- **Post Conditions**: Status master perusahaan terverifikasi secara terpusat di tabel `perusahaan`.
-
----
-
-### UC-32. Melakukan Sinkronisasi LinkedIn Terpusat (Single & Batch)
-- **Usecase ID**: UC-32
-- **Usecase Name**: Melakukan Sinkronisasi LinkedIn Terpusat (Single & Batch)
-- **Actors Involved**: Superadmin
-- **Description**: Menjalankan sinkronisasi data profil karir alumni dari LinkedIn secara satuan (*single sync*) maupun secara massal (*batch sync*), meninjau hasil ekstraksi (*review*), menyetujui (*approve*) atau menolak (*reject*) hasil sinkronisasi, serta mengakses detail profil alumni via tombol aksi cepat ikon mata.
-- **Preconditions**: Superadmin membuka modul `/superadmin/linkedin-sync`.
-- **Main Flow (Basic Flow)**:
-  1. Superadmin meninjau daftar alumni yang memiliki tautan LinkedIn. Jika diakses dengan parameter `alumni_id` atau `search`, sistem secara otomatis mengaktifkan tahun lulus alumni terkait, memfilter pencarian, memberikan sorotan hijau pada baris tabel ("Profil Dipilih"), dan menggulirkan layar ke baris alumni tersebut.
-  2. **Navigasi Cepat Detail Alumni (Ikon Mata)**: Pada kolom Aksi di tabel alumni, Superadmin dapat mengklik tombol ikon mata (*Lihat Detail Alumni*) untuk langsung membuka halaman detail audit lengkap alumni pada rute `/superadmin/alumni/{id}`.
-  3. **Sinkronisasi Satuan**: Superadmin menekan tombol sinkron pada salah satu alumni (`POST /linkedin-sync/{id}`).
-  4. **Sinkronisasi Massal (Batch)**: Superadmin menekan tombol "Sinkronisasi Massal" untuk memproses antrean alumni sekaligus (`POST /linkedin-sync/batch`).
-  5. Sistem mengambil data pengalaman kerja via LinkedIn Provider API/MCP.
-  6. Superadmin membuka modal hasil ekstraksi staging (`GET /linkedin-sync/results/{id}`).
-  7. Superadmin memeriksa jabatan, nama kantor, periode kerja, dan foto profil fisik yang didapat:
-     - Jika sesuai: Superadmin menekan "Setujui & Terapkan" (`POST /approve`). Data otomatis masuk ke tabel `biodata` (termasuk foto fisik, posisi jabatan, perusahaan, skills, dan experience).
-     - Jika tidak sesuai: Superadmin menekan "Tolak" (`POST /reject`).
-  8. Superadmin dapat melihat riwayat riil sinkronisasi pada `/linkedin-sync/alumni/{id}/history`.
-- **Alternate Flow (Alternative Flow)**:
-  - **A1. Kuota API Habis / Error Provider**: Sistem mencatat pesan kesalahan pada log dan menandai status sinkronisasi sebagai gagal.
-- **Post Conditions**: Riwayat karir alumni terbarui dengan data valid dari LinkedIn, tercatat pada histori sinkronisasi, dan terhubung dua arah dengan halaman detail alumni.
-
----
-
-### UC-33. Mengelola Akun Multi-Peran dan Reset Kata Sandi Terpadu
-- **Usecase ID**: UC-33
-- **Usecase Name**: Mengelola Akun Multi-Peran dan Reset Kata Sandi Terpadu
-- **Actors Involved**: Superadmin
-- **Description**: Mengelola seluruh akun pengguna dalam sistem (Admin Fakultas, Admin Prodi, dan Mahasiswa/Alumni se-kampus), memutakhirkan data akun, serta melakukan reset sandi ke tanggal lahir bawaan disertai notifikasi email.
-- **Preconditions**: Superadmin membuka rute `/superadmin/manajemen-akun`.
-- **Main Flow (Basic Flow)**:
-  1. Sistem menampilkan daftar akun pengguna dari seluruh peran (`admin_fakultas`, `admin_prodi`, `alumni`).
-  2. Superadmin dapat memfilter berdasarkan peran atau prodi.
-  3. Superadmin dapat memperbarui informasi nama, email, username, dan peran akun (`PUT /manajemen-akun/{id}`).
-  4. Untuk akun mahasiswa/alumni yang terkendala: Superadmin menekan tombol "Reset Default & Notify" (`POST /reset-default-notify`).
-  5. Sistem mengubah kata sandi menjadi tanggal lahir `DDMMYYYY`, mengaktifkan flag `must_change_password`, mengirim email notifikasi resmi, dan mencatat log aktivitas.
-- **Alternate Flow (Alternative Flow)**:
-  - Superadmin membatalkan operasi pada modal konfirmasi; tidak ada perubahan akun yang terjadi.
-- **Post Conditions**: Akun pengguna diperbarui atau kata sandinya direset secara aman ke default tanggal lahir.
-
----
-
-### UC-34. Memantau Log Aktivitas & Audit Trail Sistem
-- **Usecase ID**: UC-34
+### UC-22. Memantau Log Aktivitas & Audit Trail Sistem
+- **Usecase ID**: UC-22
 - **Usecase Name**: Memantau Log Aktivitas & Audit Trail Sistem
 - **Actors Involved**: Superadmin
-- **Description**: Meninjau rekaman jejak audit sistem (*system audit logs*) terhadap seluruh aksi kritis pengguna (seperti verifikasi perusahaan, reset sandi, pembaruan kuesioner, dan aktivitas autentikasi) untuk akuntabilitas dan keamanan sistem.
+- **Description**: Meninjau rekaman jejak audit sistem (*system audit logs*) terhadap seluruh aksi kritis pengguna (seperti verifikasi perusahaan, reset sandi default, persetujuan sinkronisasi LinkedIn, pembaruan kuesioner, dan aktivitas autentikasi) untuk akuntabilitas dan keamanan sistem.
 - **Preconditions**: Superadmin membuka rute `/superadmin/logs`.
 - **Main Flow (Basic Flow)**:
   1. Sistem mengambil catatan dari tabel `log_activities`.
@@ -892,29 +695,17 @@ Matriks berikut mengonfirmasi pemetaan antara use case yang dimodelkan dengan ha
 | **UC-09** | Isi Kuesioner Universitas | - | **X** | - | - | - | - | - |
 | **UC-10** | Isi Kuesioner Prodi | - | **X** | - | - | - | - | - |
 | **UC-11** | Evaluasi Kinerja Lulusan (Atasan) | - | - | **X** | - | - | - | - |
-| **UC-12** | Dashboard Kinerja Prodi | - | - | - | **X** | - | - | - |
-| **UC-13** | Direktori Alumni Prodi | - | - | - | **X** | - | - | - |
-| **UC-14** | Ekspor Alumni ke Excel | - | - | - | **X** | **X** | **X** | **X** |
-| **UC-15** | Kelola Section Kuesioner Prodi | - | - | - | **X** | - | - | **X** |
-| **UC-16** | Kelola Soal & Opsi Prodi | - | - | - | **X** | - | - | **X** |
-| **UC-17** | Verifikasi Perusahaan Prodi | - | - | - | **X** | - | - | - |
-| **UC-18** | Manajemen Akun Alumni Prodi | - | - | - | **X** | - | - | - |
-| **UC-19** | Dashboard Kinerja Fakultas | - | - | - | - | **X** | - | - |
-| **UC-20** | Direktori Alumni Fakultas | - | - | - | - | **X** | - | - |
-| **UC-21** | Verifikasi Perusahaan Fakultas | - | - | - | - | **X** | - | - |
-| **UC-22** | Manajemen Akun Alumni Fakultas | - | - | - | - | **X** | - | - |
-| **UC-23** | Dashboard KPI Biro III | - | - | - | - | - | **X** | - |
-| **UC-24** | Direktori Alumni Universitas | - | - | - | - | - | **X** | - |
-| **UC-25** | Sinkronisasi LinkedIn (Biro III) | - | - | - | - | - | **X** | - |
-| **UC-26** | Dashboard Pusat Superadmin | - | - | - | - | - | - | **X** |
-| **UC-27** | Kelola Kuesioner Universitas | - | - | - | - | - | - | **X** |
-| **UC-28** | Kelola Kuesioner Prodi Terpusat | - | - | - | - | - | - | **X** |
-| **UC-29** | Kelola Soal Evaluasi Atasan | - | - | - | - | - | - | **X** |
-| **UC-30** | Audit Alumni Se-Universitas | - | - | - | - | - | - | **X** |
-| **UC-31** | Verifikasi Perusahaan Terpusat | - | - | - | - | - | - | **X** |
-| **UC-32** | Sinkronisasi LinkedIn Terpusat | - | - | - | - | - | - | **X** |
-| **UC-33** | Manajemen Akun Multi-Peran | - | - | - | - | - | - | **X** |
-| **UC-34** | Log Aktivitas & Audit Trail | - | - | - | - | - | - | **X** |
+| **UC-12** | Dashboard Monitoring & Analisis Kinerja | - | - | - | **X** | **X** | **X** | **X** |
+| **UC-13** | Kelola Direktori Alumni & Audit Detail | - | - | - | **X** | **X** | **X** | **X** |
+| **UC-14** | Ekspor Rekap Alumni ke Excel | - | - | - | **X** | **X** | **X** | **X** |
+| **UC-15** | Verifikasi Perusahaan Baru (3 Role) | - | - | - | **X** | **X** | - | **X** |
+| **UC-16** | Manajemen Akun & Reset Sandi (3 Role) | - | - | - | **X** | **X** | - | **X** |
+| **UC-17** | Sinkronisasi Profil LinkedIn Alumni | - | - | - | **X** | **X** | **X** | **X** |
+| **UC-18** | Kelola Section Kuesioner Prodi | - | - | - | **X** | - | - | **X** |
+| **UC-19** | Kelola Soal & Opsi Prodi | - | - | - | **X** | - | - | **X** |
+| **UC-20** | Kelola Kuesioner Universitas & Branching | - | - | - | - | - | - | **X** |
+| **UC-21** | Kelola Soal Evaluasi Atasan | - | - | - | - | - | - | **X** |
+| **UC-22** | Log Aktivitas & Audit Trail | - | - | - | - | - | - | **X** |
 
 ---
 

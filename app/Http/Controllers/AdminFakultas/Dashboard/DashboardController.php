@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\AdminFakultas\Dashboard;
 
 use App\Http\Controllers\Controller;
+use App\Models\Biodata;
+use App\Models\Perusahaan;
 use App\Models\Prodi;
 use App\Models\RefFakultas;
 use Illuminate\Http\Request;
@@ -52,6 +54,16 @@ class DashboardController extends Controller
         $totalSelesai = $alumniView->where('is_complete_total', 1)->count();
         $persentaseSelesai = $totalAlumni > 0 ? (int) round(($totalSelesai / $totalAlumni) * 100) : 0;
 
+        $totalPendingPerusahaan = Perusahaan::whereIn('created_by_prodi_id', $prodiIds)
+            ->where('status_verifikasi', 'Menunggu Verifikasi')
+            ->count();
+
+        $alumniLinkedIn = Biodata::whereIn('prodi_id', $prodiIds)
+            ->where(function ($q) {
+                $q->whereNotNull('linkedin_url')->where('linkedin_url', '!=', '')
+                    ->orWhereNotNull('linkedin_username')->where('linkedin_username', '!=', '');
+            })->count();
+
         // Hitung distribusi partisipasi per program studi dalam fakultas
         $prodiSummaries = $prodisFakultas->map(function ($p) use ($alumniView) {
             $alumniProdi = $alumniView->where('prodi_id', $p->id);
@@ -69,8 +81,8 @@ class DashboardController extends Controller
             ];
         });
 
-        // 5 data alumni terbaru dalam fakultas
-        $recentAlumni = $alumniView->sortByDesc('biodata_id')->take(5)->map(function ($item) {
+        // 8 data alumni terbaru dalam fakultas
+        $recentAlumni = $alumniView->sortByDesc('biodata_id')->take(8)->map(function ($item) {
             return [
                 'id' => $item->biodata_id,
                 'nim' => $item->nim,
@@ -78,6 +90,7 @@ class DashboardController extends Controller
                 'prodi' => $item->nama_prodi ?? '-',
                 'is_complete' => (bool) $item->is_complete_total,
                 'tahun_lulus' => $item->tahun_lulus ?? '-',
+                'has_linkedin' => ! empty($item->linkedin_url) || ! empty($item->linkedin_username),
             ];
         })->values()->all();
 
@@ -93,6 +106,8 @@ class DashboardController extends Controller
                 'total_belum_selesai' => max(0, $totalAlumni - $totalSelesai),
                 'persentase_selesai' => $persentaseSelesai,
                 'total_prodi' => $prodisFakultas->count(),
+                'total_pending_perusahaan' => $totalPendingPerusahaan,
+                'alumni_linkedin' => $alumniLinkedIn,
             ],
         ]);
     }

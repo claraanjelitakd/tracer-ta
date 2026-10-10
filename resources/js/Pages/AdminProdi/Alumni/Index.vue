@@ -7,6 +7,7 @@
 <script setup>
 import { Head, Link, router } from '@inertiajs/vue3';
 import { ref, computed, watch } from 'vue';
+import Swal from 'sweetalert2';
 import Sidebar from '../Components/Sidebar.vue';
 
 const props = defineProps({
@@ -125,6 +126,246 @@ const resetFilters = () => {
     currentPage.value = 1;
     router.get('/prodi/alumni', { tahun: tahun.value }, { preserveState: true });
 };
+
+// =========================================================================
+// FITUR AKSI: WHATSAPP, EMAIL FLASH, & SINKRONISASI LINKEDIN IN-PLACE
+// =========================================================================
+
+// 1. WhatsApp Personal Modal
+const showWaModal = ref(false);
+const activeWaAlumni = ref(null);
+const waRecipientPhone = ref('');
+const waMessageText = ref('');
+
+const formatPhoneForWA = (rawPhone) => {
+    if (!rawPhone) return '';
+    let cleaned = String(rawPhone).replace(/\D/g, '');
+    if (cleaned.startsWith('0')) {
+        cleaned = '62' + cleaned.slice(1);
+    } else if (cleaned.startsWith('8')) {
+        cleaned = '62' + cleaned;
+    }
+    return cleaned;
+};
+
+const openWhatsAppModal = (alumni) => {
+    activeWaAlumni.value = alumni;
+    waRecipientPhone.value = alumni.nomor_telepon || '';
+    
+    const baseUrl = window.location.origin;
+    const loginUrl = `${baseUrl}/login`;
+
+    waMessageText.value = `Halo Sdr/i ${alumni.nama},\n\nSalam hangat dari Program Studi Universitas Kristen Duta Wacana (UKDW).\n\nKami mengundang Anda untuk melengkapi instrumen kuesioner Tracer Study UKDW melalui portal resmi kami:\n👉 ${loginUrl}\n\n*Panduan Masuk ke Portal:*\n• Username: *${alumni.nim}* (NIM Anda)\n• Password: Kata sandi akun Tracer Study Anda\n\nPartisipasi Anda sangat berarti bagi pengembangan kurikulum dan peningkatan mutu program studi almamater tercinta. Jika memerlukan bantuan, silakan hubungi kami.\n\nTerima kasih banyak atas dukungannya!\nSalam,\nAdmin Program Studi UKDW`;
+
+    showWaModal.value = true;
+};
+
+const executeSendWa = () => {
+    const formatted = formatPhoneForWA(waRecipientPhone.value);
+    if (!formatted) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'Nomor WhatsApp Tidak Ditemukan',
+            text: 'Nomor telepon/WhatsApp alumni ini belum terdaftar di sistem. Silakan masukkan nomor terlebih dahulu.',
+            confirmButtonColor: '#0D542B',
+        });
+        return;
+    }
+    const url = `https://wa.me/${formatted}?text=${encodeURIComponent(waMessageText.value)}`;
+    window.open(url, '_blank');
+    showWaModal.value = false;
+};
+
+// 2. Kirim Email Pengingat Satuan (Flash Direct)
+const handleSendSingleEmail = (alumni) => {
+    if (!alumni.email) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'Email Tidak Terdaftar',
+            text: `Alumni ${alumni.nama} (${alumni.nim}) belum memiliki alamat email yang tersimpan di sistem.`,
+            confirmButtonColor: '#0D542B',
+        });
+        return;
+    }
+
+    Swal.fire({
+        title: 'Kirim Email Pengingat?',
+        html: `<p class="text-xs text-slate-600">Kirim email resmi pengingat pengisian tracer study beserta panduan login ke <b>${alumni.nama}</b> (<span class="font-mono text-emerald-800">${alumni.email}</span>)?</p>`,
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#0D542B',
+        cancelButtonColor: '#94a3b8',
+        confirmButtonText: 'Ya, Kirim Email',
+        cancelButtonText: 'Batal',
+    }).then((res) => {
+        if (res.isConfirmed) {
+            Swal.fire({
+                title: 'Mengirim Email...',
+                text: 'Mohon tunggu sebentar, sistem sedang memproses pengiriman.',
+                allowOutsideClick: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                },
+            });
+
+            router.post(`/prodi/alumni/${alumni.id}/send-email`, {}, {
+                preserveScroll: true,
+                onSuccess: () => {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Email Terkirim',
+                        text: `Email pengingat berhasil dikirimkan ke ${alumni.nama} (${alumni.email}).`,
+                        confirmButtonColor: '#0D542B',
+                    });
+                },
+                onError: () => {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Gagal Mengirim Email',
+                        text: 'Terjadi kendala pada server saat memproses pengiriman email.',
+                        confirmButtonColor: '#0D542B',
+                    });
+                },
+            });
+        }
+    });
+};
+
+// 3. Sinkronisasi LinkedIn Direct & History Modal
+const showLinkedInHistoryModal = ref(false);
+const activeLinkedInAlumni = ref(null);
+const linkedInHistoryList = ref([]);
+const isLoadingHistory = ref(false);
+
+const handleSyncLinkedIn = async (alumni) => {
+    if (!alumni.linkedin_url) {
+        Swal.fire({
+            title: 'URL LinkedIn Belum Diisi',
+            html: `<p class="text-xs text-slate-600">Alumni <b>${alumni.nama}</b> (${alumni.nim}) belum memiliki URL profil LinkedIn di database.</p>
+                   <p class="text-xs text-slate-500 mt-2">Masukkan URL profil LinkedIn untuk memulai sinkronisasi:</p>`,
+            icon: 'info',
+            input: 'url',
+            inputPlaceholder: 'https://www.linkedin.com/in/username',
+            showCancelButton: true,
+            confirmButtonText: 'Simpan & Sinkronkan',
+            cancelButtonText: 'Batal',
+            confirmButtonColor: '#0077B5',
+            inputValidator: (val) => {
+                if (!val || !val.includes('linkedin.com')) {
+                    return 'Harap masukkan tautan profil LinkedIn yang valid!';
+                }
+            }
+        }).then(async (res) => {
+            if (res.isConfirmed && res.value) {
+                try {
+                    await fetch(`/prodi/alumni/${alumni.id}/profile`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+                        },
+                        body: JSON.stringify({ linkedin_url: res.value })
+                    });
+                    alumni.linkedin_url = res.value;
+                    executeLinkedInSync(alumni);
+                } catch (e) {
+                    executeLinkedInSync(alumni);
+                }
+            }
+        });
+        return;
+    }
+
+    Swal.fire({
+        title: 'Sinkronkan LinkedIn?',
+        html: `<p class="text-xs text-slate-600">Jalankan sinkronisasi profil LinkedIn untuk alumni <b>${alumni.nama}</b>?</p>
+               <div class="mt-2 text-xs font-mono text-blue-700 bg-blue-50 p-2 rounded-lg break-all border border-blue-200/60">${alumni.linkedin_url}</div>`,
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#0077B5',
+        cancelButtonColor: '#94a3b8',
+        confirmButtonText: 'Ya, Sinkronkan Sekarang',
+        cancelButtonText: 'Batal',
+    }).then((res) => {
+        if (res.isConfirmed) {
+            executeLinkedInSync(alumni);
+        }
+    });
+};
+
+const executeLinkedInSync = async (alumni) => {
+    Swal.fire({
+        title: 'Menyinkronkan LinkedIn...',
+        html: '<p class="text-xs text-slate-600">Sistem sedang menghubungi LinkedIn untuk memperbarui data karir alumni. Mohon tunggu...</p>',
+        allowOutsideClick: false,
+        didOpen: () => {
+            Swal.showLoading();
+        },
+    });
+
+    try {
+        const response = await fetch(`/prodi/linkedin-sync/${alumni.id}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+            },
+        });
+
+        const data = await response.json();
+        Swal.close();
+
+        if (response.ok && data.success) {
+            await Swal.fire({
+                icon: 'success',
+                title: 'Sinkronisasi Berhasil!',
+                text: data.message || 'Data LinkedIn alumni berhasil diperbarui.',
+                confirmButtonColor: '#0D542B',
+            });
+            router.reload({ preserveScroll: true });
+        } else {
+            Swal.fire({
+                icon: 'error',
+                title: 'Sinkronisasi Gagal',
+                text: data.message || 'Gagal menyinkronkan profil LinkedIn.',
+                confirmButtonColor: '#0D542B',
+            });
+        }
+    } catch (err) {
+        Swal.close();
+        Swal.fire({
+            icon: 'warning',
+            title: 'Koneksi Terputus / Waktu Habis',
+            text: err.message || 'Koneksi ke server terputus saat sinkronisasi LinkedIn.',
+            confirmButtonColor: '#0D542B',
+        });
+    }
+};
+
+const handleOpenLinkedInHistory = async (alumni) => {
+    activeLinkedInAlumni.value = alumni;
+    showLinkedInHistoryModal.value = true;
+    isLoadingHistory.value = true;
+    linkedInHistoryList.value = [];
+
+    try {
+        const response = await fetch(`/prodi/linkedin-sync/alumni/${alumni.id}/history`, {
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+            },
+        });
+        const data = await response.json();
+        if (data.success) {
+            linkedInHistoryList.value = data.history || [];
+        }
+    } catch (err) {
+        console.error('Error fetching history:', err);
+    } finally {
+        isLoadingHistory.value = false;
+    }
+};
 </script>
 
 <template>
@@ -166,9 +407,9 @@ const resetFilters = () => {
                     <!-- Total Mahasiswa -->
                     <div class="bg-white rounded-2xl p-5 sm:p-6 border border-slate-200/80 shadow-xs flex items-center justify-between gap-4">
                         <div>
-                            <p class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Total Alumni</p>
+                            <p class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Total Mahasiswa</p>
                             <p class="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight mt-1.5">{{ stats.total_alumni }}</p>
-                            <p class="text-xs text-slate-400 mt-0.5">Tahun lulus {{ tahun }}</p>
+                            <p class="text-xs text-slate-400 mt-0.5">Tahun Kelulusan {{ tahun }}</p>
                         </div>
                         <div class="w-12 h-12 rounded-xl bg-slate-100 text-slate-700 flex items-center justify-center shrink-0">
                             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -180,9 +421,9 @@ const resetFilters = () => {
                     <!-- Responden Selesai -->
                     <div class="bg-white rounded-2xl p-5 sm:p-6 border border-slate-200/80 shadow-xs flex items-center justify-between gap-4">
                         <div>
-                            <p class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Kuesioner Selesai</p>
-                            <p class="text-2xl sm:text-3xl font-extrabold text-emerald-600 tracking-tight mt-1.5">{{ stats.total_selesai }}</p>
-                            <p class="text-xs text-slate-400 mt-0.5">Kelengkapan 100%</p>
+                            <p class="text-[11px] font-bold text-[#0D542B] uppercase tracking-wider">Kuesioner Selesai</p>
+                            <p class="text-2xl sm:text-3xl font-extrabold text-[#0D542B] tracking-tight mt-1.5">{{ stats.total_selesai }}</p>
+                            <p class="text-xs text-slate-400 mt-0.5">Lengkap 100%</p>
                         </div>
                         <div class="w-12 h-12 rounded-xl bg-emerald-50 text-[#0D542B] flex items-center justify-center shrink-0">
                             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -373,10 +614,8 @@ const resetFilters = () => {
                                     <th class="py-3.5 px-5">Mahasiswa / Alumni</th>
                                     <th class="py-3.5 px-4">Program Studi</th>
                                     <th class="py-3.5 px-4">Target Kelulusan</th>
-                                    <th class="py-3.5 px-4 text-center">Profil</th>
-                                    <th class="py-3.5 px-4 text-center">Kuesioner</th>
-                                    <th class="py-3.5 px-4 text-center">Evaluasi Atasan</th>
-                                    <th class="py-3.5 px-4 text-center w-16">Aksi</th>
+                                    <th class="py-3.5 px-4 text-center min-w-[210px]">Status & Progres Tracer</th>
+                                    <th class="py-3.5 px-4 text-center min-w-[160px]">Aksi & Kontak</th>
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-slate-100">
@@ -434,79 +673,58 @@ const resetFilters = () => {
                                         </div>
                                     </td>
 
-                                    <!-- Kelengkapan Profil (%) + Mini Progress Bar -->
-                                    <td class="py-4 px-4 text-center">
-                                        <div class="inline-flex flex-col items-center">
-                                            <span 
-                                                class="font-extrabold text-xs" 
-                                                :class="alumni.kelengkapan.profile.is_complete ? 'text-[#0D542B]' : 'text-slate-700'"
-                                            >
-                                                {{ alumni.kelengkapan.profile.percentage }}%
-                                            </span>
-                                            <div class="w-14 h-1.5 bg-slate-100 rounded-full mt-1 overflow-hidden border border-slate-200/50">
-                                                <div 
-                                                    class="h-full rounded-full transition-all duration-300"
-                                                    :class="alumni.kelengkapan.profile.is_complete ? 'bg-[#0D542B]' : 'bg-amber-500'"
-                                                    :style="{ width: `${alumni.kelengkapan.profile.percentage}%` }"
-                                                ></div>
+                                    <!-- Kolom Terpadu: Status & Progres Tracer (Profil, Kuesioner Univ, Evaluasi Atasan) -->
+                                    <td class="py-4 px-4">
+                                        <div class="flex flex-col gap-1.5 min-w-[190px] max-w-[220px] mx-auto text-[11px]">
+                                            <!-- 1. Kelengkapan Profil -->
+                                            <div class="flex items-center justify-between px-2 py-1 rounded-md border" :class="alumni.kelengkapan.profile.is_complete ? 'bg-emerald-50/70 border-emerald-200/60 text-emerald-800' : 'bg-rose-50/70 border-rose-200/60 text-rose-700'">
+                                                <span class="font-medium flex items-center gap-1.5">
+                                                    <span class="w-1.5 h-1.5 rounded-full" :class="alumni.kelengkapan.profile.is_complete ? 'bg-emerald-600' : 'bg-rose-500'"></span>
+                                                    Profil
+                                                </span>
+                                                <span class="font-extrabold font-mono text-[10px]">
+                                                    {{ alumni.kelengkapan.profile.percentage }}% {{ alumni.kelengkapan.profile.is_complete ? 'Lengkap' : 'Belum' }}
+                                                </span>
+                                            </div>
+
+                                            <!-- 2. Kuesioner Universitas -->
+                                            <div class="flex items-center justify-between px-2 py-1 rounded-md border" :class="alumni.kelengkapan.questionnaire.is_complete ? 'bg-emerald-50/70 border-emerald-200/60 text-emerald-800' : 'bg-amber-50/70 border-amber-200/60 text-amber-800'">
+                                                <span class="font-medium flex items-center gap-1.5">
+                                                    <span class="w-1.5 h-1.5 rounded-full" :class="alumni.kelengkapan.questionnaire.is_complete ? 'bg-emerald-600' : 'bg-amber-500'"></span>
+                                                    Kuesioner
+                                                </span>
+                                                <span class="font-extrabold font-mono text-[10px]">
+                                                    {{ alumni.kelengkapan.questionnaire.percentage }}% {{ alumni.kelengkapan.questionnaire.is_complete ? 'Selesai' : 'Wajib' }}
+                                                </span>
+                                            </div>
+
+                                            <!-- 3. Evaluasi Atasan -->
+                                            <div class="flex items-center justify-between px-2 py-1 rounded-md border" 
+                                                 :class="alumni.evaluasi_atasan?.is_submitted 
+                                                     ? 'bg-emerald-50/70 border-emerald-200/60 text-emerald-800' 
+                                                     : (alumni.evaluasi_atasan?.has_evaluasi ? 'bg-amber-50/70 border-amber-200/60 text-amber-800' : 'bg-slate-50 border-slate-200/60 text-slate-500')">
+                                                <span class="font-medium flex items-center gap-1.5">
+                                                    <span class="w-1.5 h-1.5 rounded-full" 
+                                                          :class="alumni.evaluasi_atasan?.is_submitted 
+                                                              ? 'bg-emerald-600' 
+                                                              : (alumni.evaluasi_atasan?.has_evaluasi ? 'bg-amber-500' : 'bg-slate-400')"></span>
+                                                    Atasan
+                                                </span>
+                                                <span class="font-extrabold text-[10px]">
+                                                    {{ alumni.evaluasi_atasan?.is_submitted ? 'Sudah Diisi' : (alumni.evaluasi_atasan?.has_evaluasi ? 'Menunggu' : 'Belum Ada') }}
+                                                </span>
                                             </div>
                                         </div>
                                     </td>
 
-                                    <!-- Kuesioner Wajib (%) + Mini Progress Bar -->
+                                    <!-- Kolom Aksi Terpadu (Detail, WA, Email Flash, LinkedIn Sync & History) -->
                                     <td class="py-4 px-4 text-center">
-                                        <div class="inline-flex flex-col items-center">
-                                            <span 
-                                                class="font-extrabold text-xs" 
-                                                :class="alumni.kelengkapan.questionnaire.is_complete ? 'text-[#0D542B]' : 'text-slate-700'"
-                                            >
-                                                {{ alumni.kelengkapan.questionnaire.percentage }}%
-                                            </span>
-                                            <div class="w-14 h-1.5 bg-slate-100 rounded-full mt-1 overflow-hidden border border-slate-200/50">
-                                                <div 
-                                                    class="h-full rounded-full transition-all duration-300"
-                                                    :class="alumni.kelengkapan.questionnaire.is_complete ? 'bg-[#0D542B]' : 'bg-amber-500'"
-                                                    :style="{ width: `${alumni.kelengkapan.questionnaire.percentage}%` }"
-                                                ></div>
-                                            </div>
-                                        </div>
-                                    </td>
-
-                                    <!-- Evaluasi Atasan -->
-                                    <td class="py-4 px-4 text-center">
-                                        <span 
-                                            v-if="alumni.evaluasi_atasan?.is_submitted"
-                                            class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-50 text-[#0D542B] border border-emerald-200/60"
-                                            :title="`Telah diisi pada ${alumni.evaluasi_atasan.submitted_at}`"
-                                        >
-                                            <svg class="w-3 h-3 text-[#0D542B]" fill="currentColor" viewBox="0 0 20 20">
-                                                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
-                                            </svg>
-                                            <span>Sudah Diisi</span>
-                                        </span>
-                                        <span 
-                                            v-else-if="alumni.evaluasi_atasan?.has_evaluasi"
-                                            class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-amber-50 text-amber-800 border border-amber-200/60"
-                                            title="Menunggu pengisian dari atasan tempat bekerja"
-                                        >
-                                            <span class="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
-                                            <span>Menunggu</span>
-                                        </span>
-                                        <span 
-                                            v-else
-                                            class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-slate-100 text-slate-500 border border-slate-200/50"
-                                        >
-                                            <span>Belum Ada</span>
-                                        </span>
-                                    </td>
-
-                                    <!-- Tombol Aksi Detail dengan Icon Mata Berukuran Pasti 32x32 -->
-                                    <td class="py-4 px-4 text-center">
-                                        <div class="inline-flex items-center justify-center">
+                                        <div class="inline-flex items-center justify-center gap-1.5">
+                                            <!-- 1. Detail (👁️) -->
                                             <Link 
                                                 :href="`/prodi/alumni/${alumni.id}`" 
                                                 class="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 bg-[#0D542B] hover:bg-[#08381c] text-white transition-all shadow-2xs hover:shadow-xs active:scale-95 cursor-pointer"
-                                                title="Lihat rincian kuesioner dan data alumni"
+                                                title="Lihat Detail Alumni & Kuesioner"
                                                 aria-label="Lihat Detail Alumni"
                                             >
                                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -514,6 +732,57 @@ const resetFilters = () => {
                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                                                 </svg>
                                             </Link>
+
+                                            <!-- 2. WhatsApp (💬) -->
+                                            <button 
+                                                type="button"
+                                                @click="openWhatsAppModal(alumni)"
+                                                class="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 bg-[#25D366] hover:bg-[#1faa52] text-white transition-all shadow-2xs hover:shadow-xs active:scale-95 cursor-pointer"
+                                                title="Hubungi via WhatsApp (Undangan Kuesioner)"
+                                                aria-label="Hubungi via WhatsApp"
+                                            >
+                                                <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24">
+                                                    <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981z"/>
+                                                </svg>
+                                            </button>
+
+                                            <!-- 3. Kirim Email Pengingat Flash (✉️) -->
+                                            <button 
+                                                type="button"
+                                                @click="handleSendSingleEmail(alumni)"
+                                                class="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 bg-blue-600 hover:bg-blue-700 text-white transition-all shadow-2xs hover:shadow-xs active:scale-95 cursor-pointer"
+                                                title="Kirim Email Pengingat Kuesioner Langsung"
+                                                aria-label="Kirim Email Pengingat"
+                                            >
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                                                </svg>
+                                            </button>
+
+                                            <!-- 4. Sinkronisasi LinkedIn Direct & History (🔗) -->
+                                            <div class="relative inline-flex items-center">
+                                                <button 
+                                                    type="button"
+                                                    @click="handleSyncLinkedIn(alumni)"
+                                                    class="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 bg-[#0077B5] hover:bg-[#005e93] text-white transition-all shadow-2xs hover:shadow-xs active:scale-95 cursor-pointer"
+                                                    :title="alumni.linkedin_url ? `Sinkronkan LinkedIn: ${alumni.linkedin_url}` : 'Sinkronkan LinkedIn Alumni'"
+                                                    aria-label="Sinkronkan LinkedIn"
+                                                >
+                                                    <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24">
+                                                        <path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/>
+                                                    </svg>
+                                                </button>
+                                                <!-- Tombol Mini Riwayat Log LinkedIn -->
+                                                <button 
+                                                    type="button"
+                                                    @click="handleOpenLinkedInHistory(alumni)"
+                                                    class="w-4 h-4 rounded-full bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 absolute -top-1.5 -right-1.5 flex items-center justify-center text-[8px] font-bold shadow-2xs cursor-pointer"
+                                                    title="Riwayat Scraping LinkedIn"
+                                                    aria-label="Riwayat LinkedIn"
+                                                >
+                                                    H
+                                                </button>
+                                            </div>
                                         </div>
                                     </td>
                                 </tr>
@@ -586,5 +855,141 @@ const resetFilters = () => {
 
             </div>
         </main>
+        <!-- ================================================================= -->
+        <!-- MODAL HUBUNGI VIA WHATSAPP PERSONAL                               -->
+        <!-- ================================================================= -->
+        <div v-if="showWaModal" class="fixed inset-0 z-50 overflow-y-auto bg-black/60 flex items-center justify-center p-4 backdrop-blur-xs">
+            <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-gray-200 relative animate-in fade-in zoom-in-95 duration-150">
+                <div class="flex items-center justify-between border-b border-gray-100 pb-3 mb-4">
+                    <div class="flex items-center gap-2">
+                        <span class="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-800 flex items-center justify-center">
+                            <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981z"/></svg>
+                        </span>
+                        <div>
+                            <h3 class="text-sm font-extrabold text-gray-900">Hubungi Alumni via WhatsApp</h3>
+                            <p class="text-[11px] text-gray-500">{{ activeWaAlumni?.nama }} ({{ activeWaAlumni?.nim }})</p>
+                        </div>
+                    </div>
+                    <button @click="showWaModal = false" class="text-gray-400 hover:text-gray-600 p-1 text-lg leading-none cursor-pointer">
+                        &times;
+                    </button>
+                </div>
+
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Nomor Tujuan WhatsApp:</label>
+                        <input 
+                            v-model="waRecipientPhone" 
+                            type="text" 
+                            placeholder="Contoh: 08123456789 atau 628123456789" 
+                            class="w-full text-xs font-mono bg-gray-50 border border-gray-300 rounded-xl px-3 py-2 text-gray-900 focus:ring-2 focus:ring-[#0D542B] focus:outline-none"
+                        />
+                        <p class="text-[10px] text-gray-500 mt-1">Nomor otomatis diformat ke kode negara 62 saat membuka WhatsApp.</p>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Pesan WhatsApp (Termasuk Link & Info Login):</label>
+                        <textarea 
+                            v-model="waMessageText" 
+                            rows="9"
+                            class="w-full text-xs bg-gray-50 border border-gray-300 rounded-xl p-3 text-gray-800 leading-relaxed font-sans focus:ring-2 focus:ring-[#0D542B] focus:outline-none"
+                        ></textarea>
+                    </div>
+                </div>
+
+                <div class="mt-6 flex items-center justify-end gap-2.5 border-t border-gray-100 pt-3">
+                    <button 
+                        @click="showWaModal = false"
+                        class="px-4 py-2 text-xs font-bold text-gray-600 hover:bg-gray-100 rounded-xl transition-colors cursor-pointer"
+                    >
+                        Batal
+                    </button>
+                    <button 
+                        @click="executeSendWa"
+                        class="px-5 py-2 text-xs font-extrabold bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl shadow-xs transition-all flex items-center gap-1.5 cursor-pointer"
+                    >
+                        <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981z"/></svg>
+                        <span>Buka WhatsApp Web / App</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================================================================= -->
+        <!-- MODAL RIWAYAT (HISTORY) SINKRONISASI LINKEDIN                     -->
+        <!-- ================================================================= -->
+        <div v-if="showLinkedInHistoryModal" class="fixed inset-0 z-50 overflow-y-auto bg-black/60 flex items-center justify-center p-4 backdrop-blur-xs">
+            <div class="bg-white rounded-2xl max-w-2xl w-full p-6 shadow-2xl border border-gray-200 relative animate-in fade-in zoom-in-95 duration-150 max-h-[85vh] flex flex-col">
+                <div class="flex items-center justify-between border-b border-gray-100 pb-3 mb-4">
+                    <div class="flex items-center gap-2">
+                        <span class="w-8 h-8 rounded-xl bg-blue-100 text-[#0077B5] flex items-center justify-center font-bold">
+                            in
+                        </span>
+                        <div>
+                            <h3 class="text-sm font-extrabold text-gray-900">Riwayat Sinkronisasi LinkedIn</h3>
+                            <p class="text-[11px] text-gray-500">{{ activeLinkedInAlumni?.nama }} ({{ activeLinkedInAlumni?.nim }})</p>
+                        </div>
+                    </div>
+                    <button @click="showLinkedInHistoryModal = false" class="text-gray-400 hover:text-gray-600 p-1 text-lg leading-none cursor-pointer">
+                        &times;
+                    </button>
+                </div>
+
+                <div class="flex-1 overflow-y-auto pr-1">
+                    <div v-if="isLoadingHistory" class="py-12 text-center text-slate-500 text-xs">
+                        <div class="inline-block w-6 h-6 border-2 border-slate-300 border-t-[#0077B5] rounded-full animate-spin mb-2"></div>
+                        <p>Memuat riwayat sinkronisasi...</p>
+                    </div>
+
+                    <div v-else-if="linkedInHistoryList.length === 0" class="py-12 text-center text-slate-400 text-xs">
+                        <p class="font-bold text-slate-600">Belum Ada Riwayat Sinkronisasi</p>
+                        <p class="mt-1">Alumni ini belum pernah disinkronkan melalui provider LinkedIn.</p>
+                    </div>
+
+                    <div v-else class="space-y-3">
+                        <div 
+                            v-for="item in linkedInHistoryList" 
+                            :key="item.id"
+                            class="p-4 rounded-xl border bg-slate-50/70 border-slate-200 flex flex-col gap-2"
+                        >
+                            <div class="flex items-center justify-between">
+                                <span class="text-xs font-mono text-slate-500 font-semibold">{{ item.scraped_at || '-' }}</span>
+                                <span 
+                                    class="text-[10px] uppercase font-extrabold px-2 py-0.5 rounded-full"
+                                    :class="{
+                                        'bg-emerald-100 text-emerald-800': item.status === 'approved',
+                                        'bg-amber-100 text-amber-800': item.status === 'pending',
+                                        'bg-rose-100 text-rose-800': item.status === 'rejected',
+                                    }"
+                                >
+                                    {{ item.status }}
+                                </span>
+                            </div>
+
+                            <div v-if="item.preview" class="text-xs bg-white p-3 rounded-lg border border-slate-200/80 space-y-1">
+                                <div class="font-bold text-slate-800">{{ item.preview.posisi || 'Posisi / Jabatan tidak terdeteksi' }}</div>
+                                <div class="text-slate-600 font-medium">{{ item.preview.perusahaan || 'Perusahaan tidak terdeteksi' }}</div>
+                                <div v-if="item.preview.lokasi" class="text-[11px] text-slate-400">📍 {{ item.preview.lokasi }}</div>
+                            </div>
+
+                            <div v-if="item.reviewed_at" class="text-[10px] text-slate-500 flex items-center justify-between pt-1 border-t border-slate-200/60">
+                                <span>Ditinjau oleh: <b>{{ item.reviewer_name }}</b></span>
+                                <span>Waktu tinjau: {{ item.reviewed_at }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-4 pt-3 border-t border-gray-100 flex justify-end">
+                    <button 
+                        @click="showLinkedInHistoryModal = false"
+                        class="px-4 py-2 text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors cursor-pointer"
+                    >
+                        Tutup
+                    </button>
+                </div>
+            </div>
+        </div>
+
     </div>
 </template>

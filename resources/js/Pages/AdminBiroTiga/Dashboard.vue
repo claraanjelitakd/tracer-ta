@@ -1,15 +1,6 @@
-<!--
-  Halaman: Dashboard Utama Admin Biro 3
-  File: resources/js/Pages/AdminBiroTiga/Dashboard.vue
-  
-  Warna Resmi Solid UKDW (Identik dengan Super Admin):
-  - Hijau: #0D542B (Solid, tanpa gradasi berlebih)
-  - Kuning: #FDC700 (Kuning UKDW murni)
-  - Putih: #FFFFFF
-  Desain profesional, bersih, konsisten di seluruh stakeholder.
--->
 <script setup>
 import { Head, Link } from '@inertiajs/vue3';
+import { ref, computed } from 'vue';
 import Sidebar from './Components/Sidebar.vue';
 
 const props = defineProps({
@@ -23,6 +14,7 @@ const props = defineProps({
             total_pertanyaan: 0,
             total_prodi: 0,
             alumni_linkedin: 0,
+            total_pending_perusahaan: 0,
         }),
     },
     prodiSummaries: {
@@ -33,6 +25,62 @@ const props = defineProps({
         type: Array,
         default: () => [],
     },
+});
+
+// State Tab Interaktif
+const activeTab = ref('prodi'); // 'prodi' | 'alumni'
+
+// State Pencarian & Sorting Prodi
+const searchProdiQuery = ref('');
+const sortByRate = ref(true); // true = desc, false = asc
+
+// State Pencarian & Filter Alumni
+const searchAlumniQuery = ref('');
+const filterStatus = ref('all'); // 'all' | 'responded' | 'not_responded' | 'linkedin'
+
+// Filter & Sort Prodi Universitas
+const filteredProdis = computed(() => {
+    let list = [...props.prodiSummaries];
+
+    if (searchProdiQuery.value.trim() !== '') {
+        const q = searchProdiQuery.value.toLowerCase();
+        list = list.filter(p => 
+            (p.nama_prodi && p.nama_prodi.toLowerCase().includes(q)) ||
+            (p.kode_prodi && String(p.kode_prodi).toLowerCase().includes(q))
+        );
+    }
+
+    list.sort((a, b) => {
+        return sortByRate.value 
+            ? (b.response_rate - a.response_rate) 
+            : (a.response_rate - b.response_rate);
+    });
+
+    return list;
+});
+
+// Filter Alumni Universitas
+const filteredAlumni = computed(() => {
+    let list = props.recentAlumni;
+
+    if (filterStatus.value === 'responded') {
+        list = list.filter(a => a.has_responded);
+    } else if (filterStatus.value === 'not_responded') {
+        list = list.filter(a => !a.has_responded);
+    } else if (filterStatus.value === 'linkedin') {
+        list = list.filter(a => a.has_linkedin);
+    }
+
+    if (searchAlumniQuery.value.trim() !== '') {
+        const q = searchAlumniQuery.value.toLowerCase();
+        list = list.filter(a => 
+            (a.nama && a.nama.toLowerCase().includes(q)) ||
+            (a.nim && a.nim.toLowerCase().includes(q)) ||
+            (a.prodi && a.prodi.toLowerCase().includes(q))
+        );
+    }
+
+    return list;
 });
 </script>
 
@@ -48,24 +96,25 @@ const props = defineProps({
         <div class="flex-1 flex flex-col min-w-0 lg:pl-72">
             
             <!-- Header Solid Hijau Resmi UKDW #0D542B -->
-            <header class="bg-[#0D542B] text-white pt-8 pb-16 px-4 sm:px-6 lg:px-8">
+            <header class="bg-[#0D542B] text-white pt-8 pb-16 px-4 sm:px-6 lg:px-8 shadow-xs">
                 <div class="w-full max-w-[1400px] mx-auto flex flex-col md:flex-row md:items-center justify-between gap-4">
                     <div>
-                        <div class="inline-flex items-center px-3 py-1 bg-black/20 text-white rounded-md text-xs font-bold uppercase tracking-wider mb-2">
-                            Biro 3 Kemahasiswaan & Alumni
+                        <div class="inline-flex items-center gap-2 px-3 py-1 bg-white/15 text-green-100 rounded-md text-xs font-bold uppercase tracking-wider mb-2">
+                            <span class="w-2 h-2 rounded-full bg-[#FDC700]"></span>
+                            <span>Biro 3 Kemahasiswaan & Alumni UKDW</span>
                         </div>
-                        <h1 class="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
-                            Dashboard Admin Biro 3
+                        <h1 class="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
+                            Dashboard Eksekutif Biro III
                         </h1>
-                        <p class="text-white/90 text-sm sm:text-base font-normal mt-1 max-w-2xl leading-relaxed">
-                            Pusat pemantauan capaian tracer study universitas, verifikasi basis data alumni, dan audit kelengkapan kuesioner UKDW.
+                        <p class="text-green-100 text-xs sm:text-sm font-normal mt-1 max-w-2xl leading-relaxed">
+                            Pusat pemantauan Indikator Kinerja Utama (KPI) Tracer Study universitas, audit keterisian kuesioner Dikti, dan jejaring karir LinkedIn.
                         </p>
                     </div>
 
-                    <div class="bg-black/15 border border-white/20 px-5 py-3 rounded-2xl text-left md:text-right text-white">
-                        <span class="text-xs text-white/80 font-semibold uppercase tracking-wider block">Partisipasi Universitas</span>
-                        <span class="text-base font-extrabold block text-[#FDC700]">{{ stats?.persentase_respon || 0 }}% Respon</span>
-                        <span class="text-xs text-white/80">{{ stats?.total_responden || 0 }} dari {{ stats?.total_alumni || 0 }} Alumni</span>
+                    <div class="bg-black/20 border border-white/20 px-5 py-3.5 rounded-2xl text-left md:text-right text-white backdrop-blur-xs">
+                        <span class="text-xs text-green-100 font-semibold uppercase tracking-wider block">Partisipasi Kampus</span>
+                        <span class="text-xl font-extrabold block text-[#FDC700]">{{ stats?.persentase_respon || 0 }}% Respon</span>
+                        <span class="text-xs text-green-100 font-medium">{{ stats?.total_responden || 0 }} dari {{ stats?.total_alumni || 0 }} Alumni Terdata</span>
                     </div>
                 </div>
             </header>
@@ -73,222 +122,368 @@ const props = defineProps({
             <!-- Main Body Area -->
             <main class="w-full max-w-[1400px] mx-auto -mt-10 px-4 sm:px-6 lg:px-8 space-y-6 pb-16">
                 
-                <!-- Grid 4 Kartu KPI Metrik (Identik dengan Super Admin) -->
+                <!-- Grid 4 Kartu KPI Metrik Eksekutif -->
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
                     
-                    <!-- KPI 1: Total Alumni -->
-                    <div class="bg-white rounded-lg p-5 border border-slate-200 shadow-2xs">
+                    <!-- KPI 1: Total Alumni Universitas -->
+                    <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-2xs hover:shadow-xs transition-shadow">
                         <div class="flex items-center justify-between">
-                            <span class="text-xs font-bold text-gray-500 uppercase tracking-wider">
-                                Total Alumni
-                            </span>
-                            <span class="px-2.5 py-0.5 rounded-md text-xs font-bold bg-gray-100 text-gray-700">
-                                Database
-                            </span>
+                            <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Total Alumni</span>
+                            <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-700">Database</span>
                         </div>
-                        <div class="text-3xl font-extrabold text-gray-900 tracking-tight mt-3">
+                        <div class="text-3xl font-extrabold text-slate-900 tracking-tight mt-3">
                             {{ stats?.total_alumni || 0 }}
                         </div>
-                        <p class="mt-1 text-xs text-gray-400">
-                            Dari {{ stats?.total_prodi || 0 }} Program Studi
+                        <p class="mt-2 text-xs text-slate-400">
+                            Tersebar di {{ stats?.total_prodi || 0 }} Program Studi
                         </p>
                     </div>
 
                     <!-- KPI 2: Responden Masuk -->
-                    <div class="bg-white rounded-lg p-5 border border-slate-200 shadow-2xs">
+                    <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-2xs hover:shadow-xs transition-shadow">
                         <div class="flex items-center justify-between">
-                            <span class="text-xs font-bold text-gray-500 uppercase tracking-wider">
-                                Responden Masuk
-                            </span>
-                            <span class="px-2.5 py-0.5 rounded-md text-xs font-bold bg-[#0D542B] text-white">
-                                Respon
-                            </span>
+                            <span class="text-xs font-bold text-[#0D542B] uppercase tracking-wider">Responden Masuk</span>
+                            <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-[#0D542B] border border-emerald-200">Respon</span>
                         </div>
                         <div class="text-3xl font-extrabold text-[#0D542B] tracking-tight mt-3">
                             {{ stats?.total_responden || 0 }}
                         </div>
-                        <p class="mt-1 text-xs text-gray-400">
-                            {{ stats?.persentase_respon || 0 }}% tingkat respon
-                        </p>
+                        <div class="mt-2 flex items-center justify-between text-xs text-slate-400">
+                            <span>Tingkat respon:</span>
+                            <span class="font-bold text-[#0D542B]">{{ stats?.persentase_respon || 0 }}%</span>
+                        </div>
                     </div>
 
                     <!-- KPI 3: LinkedIn Terdata -->
-                    <div class="bg-white rounded-lg p-5 border border-slate-200 shadow-2xs">
+                    <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-2xs hover:shadow-xs transition-shadow">
                         <div class="flex items-center justify-between">
-                            <span class="text-xs font-bold text-gray-500 uppercase tracking-wider">
-                                Profil LinkedIn
-                            </span>
-                            <span class="px-2.5 py-0.5 rounded-md text-xs font-bold bg-gray-100 text-gray-700">
-                                Karir
-                            </span>
+                            <span class="text-xs font-bold text-blue-700 uppercase tracking-wider">Profil LinkedIn</span>
+                            <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200">Karier</span>
                         </div>
-                        <div class="text-3xl font-extrabold text-gray-900 tracking-tight mt-3">
+                        <div class="text-3xl font-extrabold text-blue-700 tracking-tight mt-3">
                             {{ stats?.alumni_linkedin || 0 }}
                         </div>
-                        <p class="mt-1 text-xs text-gray-400">
-                            Tersinkronisasi karir
+                        <p class="mt-2 text-xs text-slate-400">
+                            Alumni memiliki akun LinkedIn
                         </p>
                     </div>
 
-                    <!-- KPI 4: Total Pertanyaan -->
-                    <div class="bg-white rounded-lg p-5 border border-slate-200 shadow-2xs">
+                    <!-- KPI 4: Butir Instrumen Kuesioner -->
+                    <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-2xs hover:shadow-xs transition-shadow">
                         <div class="flex items-center justify-between">
-                            <span class="text-xs font-bold text-gray-500 uppercase tracking-wider">
-                                Butir Instrumen
-                            </span>
-                            <span class="px-2.5 py-0.5 rounded-md text-xs font-bold bg-gray-100 text-gray-700">
-                                Instrumen
-                            </span>
+                            <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Instrumen Nasional</span>
+                            <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-700">Dikti</span>
                         </div>
-                        <div class="text-3xl font-extrabold text-gray-900 tracking-tight mt-3">
+                        <div class="text-3xl font-extrabold text-slate-900 tracking-tight mt-3">
                             {{ stats?.total_pertanyaan || 0 }}
                         </div>
-                        <p class="mt-1 text-xs text-gray-400">
-                            Pertanyaan kuesioner aktif
+                        <p class="mt-2 text-xs text-slate-400">
+                            Butir pertanyaan aktif universitas
                         </p>
                     </div>
 
                 </div>
 
-                <!-- Grid 2 Modul Navigasi Utama -->
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    
-                    <!-- Modul 1: Data Alumni & Audit Tracer -->
-                    <div class="bg-white rounded-lg p-6 border border-slate-200 shadow-2xs flex flex-col justify-between">
-                        <div>
-                            <div class="flex items-center justify-between mb-3">
-                                <span class="px-3 py-1 bg-[#0D542B] text-white text-xs font-bold rounded-lg uppercase tracking-wider">
-                                    Direktori Mahasiswa
-                                </span>
-                                <span class="text-xs font-semibold text-gray-400">
-                                    DataTables & Audit Tracer
-                                </span>
-                            </div>
-                            <h2 class="text-xl font-bold text-gray-900 tracking-tight mb-2">
-                                Data Alumni & Kelengkapan Kuesioner
-                            </h2>
-                            <p class="text-sm text-gray-600 leading-relaxed">
-                                Pantau seluruh mahasiswa berdasarkan tahun dan semester kelulusan. Tinjau status kelengkapan kuesioner wajib, persentase data profil, serta verifikasi profil LinkedIn.
-                            </p>
-                        </div>
-
-                        <div class="mt-8 pt-4 border-t border-gray-100 flex items-center justify-between">
-                            <span class="text-xs text-gray-500 font-medium">
-                                Filter Tahun, Semester, Status & Prodi
-                            </span>
-                            <Link 
-                                href="/biro3/alumni" 
-                                class="inline-flex items-center px-6 py-3 bg-[#0D542B] hover:bg-[#08381c] text-white text-xs font-bold rounded-lg shadow-xs transition-all cursor-pointer"
-                            >
-                                <span>Buka Data Alumni</span>
-                                <span class="ml-1.5">&rarr;</span>
-                            </Link>
-                        </div>
+                <!-- Modul Pintasan Aksi Cepat Biro 3 -->
+                <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-2xs">
+                    <div class="flex items-center justify-between mb-3.5">
+                        <span class="text-xs font-bold text-slate-900 uppercase tracking-wider">Pintasan Menu Cepat Biro III</span>
+                        <span class="text-xs text-slate-400">Aksi Pengelolaan</span>
                     </div>
-
-                    <!-- Modul 2: Rekapitulasi per Program Studi -->
-                    <div class="bg-white rounded-lg p-6 border border-slate-200 shadow-2xs flex flex-col justify-between">
-                        <div>
-                            <div class="flex items-center justify-between mb-3">
-                                <span class="px-3 py-1 bg-[#FDC700] text-black text-xs font-bold rounded-lg uppercase tracking-wider">
-                                    Capaian Prodi
-                                </span>
-                                <span class="text-xs font-semibold text-gray-400">
-                                    {{ prodiSummaries?.length || 0 }} Program Studi
-                                </span>
-                            </div>
-                            <h2 class="text-xl font-bold text-gray-900 tracking-tight mb-2">
-                                Distribusi Responden per Program Studi
-                            </h2>
-                            <p class="text-sm text-gray-600 leading-relaxed">
-                                Evaluasi tingkat keterisian kuesioner Tracer Study pada masing-masing program studi untuk memastikan tercapainya target IKU universitas.
-                            </p>
-                        </div>
-
-                        <div class="mt-8 pt-4 border-t border-gray-100 flex items-center justify-between">
-                            <span class="text-xs font-medium text-gray-500">
-                                Tingkat Partisipasi: <strong class="text-[#0D542B]">{{ stats?.persentase_respon || 0 }}%</strong>
-                            </span>
-                            <Link 
-                                href="/biro3/alumni" 
-                                class="inline-flex items-center px-6 py-3 bg-[#0D542B] hover:bg-[#08381c] text-white text-xs font-bold rounded-lg shadow-xs transition-all cursor-pointer"
-                            >
-                                <span>Lihat Laporan Lengkap</span>
-                                <span class="ml-1.5">&rarr;</span>
-                            </Link>
-                        </div>
-                    </div>
-
-                </div>
-
-                <!-- Tabel Distribusi Partisipasi per Program Studi -->
-                <div v-if="prodiSummaries && prodiSummaries.length > 0" class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-                    <div class="p-6 border-b border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                        <div>
-                            <h3 class="text-sm font-black uppercase tracking-wider text-gray-900">
-                                Rekapitulasi Partisipasi Program Studi
-                            </h3>
-                            <p class="text-xs text-gray-500">Tingkat respons kuesioner per program studi di lingkungan UKDW.</p>
-                        </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
                         <Link 
                             href="/biro3/alumni" 
-                            class="text-xs font-bold text-[#0D542B] hover:underline"
+                            class="p-3.5 rounded-xl bg-slate-50 hover:bg-emerald-50/70 border border-slate-200 hover:border-emerald-200 transition-all flex items-center gap-3 group cursor-pointer"
                         >
-                            Lihat Semua Alumni &rarr;
+                            <div class="w-9 h-9 rounded-lg bg-emerald-100 text-[#0D542B] flex items-center justify-center shrink-0">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
+                            </div>
+                            <div class="text-left">
+                                <span class="text-xs font-bold text-slate-800 group-hover:text-[#0D542B] block">Direktori Alumni Universitas</span>
+                                <span class="text-[11px] text-slate-500">Audit & telusuri data seluruh alumni</span>
+                            </div>
+                        </Link>
+
+                        <Link 
+                            href="/biro3/alumni" 
+                            class="p-3.5 rounded-xl bg-slate-50 hover:bg-emerald-50/70 border border-slate-200 hover:border-emerald-200 transition-all flex items-center gap-3 group cursor-pointer"
+                        >
+                            <div class="w-9 h-9 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center shrink-0">
+                                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M19 3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14m-.5 15.5v-5.3a3.26 3.26 0 0 0-3.26-3.26c-.85 0-1.84.52-2.28 1.3v-1.11h-2.79v8.37h2.79v-4.93c0-.77.62-1.4 1.39-1.4a1.4 1.4 0 0 1 1.4 1.4v4.93h2.75M6.46 10.9v8.37H9.2V10.9H6.46M7.83 6.45a1.62 1.62 0 1 0 0 3.24 1.62 1.62 0 0 0 0-3.24Z"/></svg>
+                            </div>
+                            <div class="text-left">
+                                <span class="text-xs font-bold text-slate-800 group-hover:text-[#0D542B] block">Audit Tautan LinkedIn</span>
+                                <span class="text-[11px] text-slate-500">Sinkronisasi karir publik alumni</span>
+                            </div>
+                        </Link>
+
+                        <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between">
+                            <div>
+                                <span class="text-xs font-bold text-slate-800 block">Antrean Verifikasi Instansi</span>
+                                <span class="text-[11px] text-slate-500">
+                                    {{ stats?.total_pending_perusahaan || 0 }} usulan perusahaan baru
+                                </span>
+                            </div>
+                            <span 
+                                v-if="stats?.total_pending_perusahaan > 0"
+                                class="px-2.5 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-900 border border-amber-300"
+                            >
+                                {{ stats.total_pending_perusahaan }} Pending
+                            </span>
+                            <span v-else class="text-xs font-bold text-emerald-800">Clear</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Area Panel Interaktif: Tab Switcher Capaian Seluruh Prodi vs Alumni Terbaru -->
+                <div class="bg-white rounded-2xl border border-slate-200 shadow-2xs overflow-hidden">
+                    
+                    <!-- Tab Header Bar -->
+                    <div class="px-6 pt-5 pb-0 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-slate-50/50">
+                        <div class="flex items-center gap-2">
+                            <button 
+                                type="button"
+                                @click="activeTab = 'prodi'"
+                                :class="[
+                                    'px-4 py-2.5 text-xs font-bold rounded-t-xl transition-all cursor-pointer border-b-2',
+                                    activeTab === 'prodi'
+                                        ? 'border-[#0D542B] text-[#0D542B] bg-white shadow-2xs'
+                                        : 'border-transparent text-slate-500 hover:text-slate-900'
+                                ]"
+                            >
+                                Partisipasi Seluruh Program Studi ({{ prodiSummaries.length }})
+                            </button>
+                            <button 
+                                type="button"
+                                @click="activeTab = 'alumni'"
+                                :class="[
+                                    'px-4 py-2.5 text-xs font-bold rounded-t-xl transition-all cursor-pointer border-b-2',
+                                    activeTab === 'alumni'
+                                        ? 'border-[#0D542B] text-[#0D542B] bg-white shadow-2xs'
+                                        : 'border-transparent text-slate-500 hover:text-slate-900'
+                                ]"
+                            >
+                                Pratinjau Alumni Terdaftar ({{ recentAlumni.length }})
+                            </button>
+                        </div>
+
+                        <Link 
+                            href="/biro3/alumni"
+                            class="text-xs font-bold text-[#0D542B] hover:underline mb-2 sm:mb-0"
+                        >
+                            Buka Seluruh Data Alumni &rarr;
                         </Link>
                     </div>
 
-                    <div class="overflow-x-auto">
-                        <table class="min-w-full divide-y divide-gray-100 text-left text-xs">
-                            <thead class="bg-gray-50 text-gray-600 font-bold uppercase tracking-wider text-[11px]">
-                                <tr>
-                                    <th class="px-6 py-3.5 w-20">Kode</th>
-                                    <th class="px-6 py-3.5">Nama Program Studi</th>
-                                    <th class="px-6 py-3.5 text-center">Total Alumni</th>
-                                    <th class="px-6 py-3.5 text-center">Responden Masuk</th>
-                                    <th class="px-6 py-3.5 text-left w-52">Tingkat Partisipasi</th>
-                                </tr>
-                            </thead>
-                            <tbody class="divide-y divide-gray-100 bg-white">
-                                <tr v-for="prodi in prodiSummaries" :key="prodi.id" class="hover:bg-gray-50 transition-colors">
-                                    <td class="px-6 py-4 font-mono font-bold text-gray-900">
-                                        {{ prodi.kode_prodi }}
-                                    </td>
-                                    <td class="px-6 py-4 font-bold text-gray-900">
-                                        {{ prodi.nama_prodi }}
-                                    </td>
-                                    <td class="px-6 py-4 text-center font-bold text-gray-700">
-                                        {{ prodi.total_alumni }}
-                                    </td>
-                                    <td class="px-6 py-4 text-center font-bold text-[#0D542B]">
-                                        {{ prodi.total_responden }}
-                                    </td>
-                                    <td class="px-6 py-4">
-                                        <div class="flex items-center gap-3">
-                                            <div class="flex-1 bg-gray-200 rounded-md h-2 overflow-hidden">
-                                                <div 
-                                                    class="bg-[#0D542B] h-2 rounded-md transition-all"
-                                                    :style="{ width: `${Math.min(prodi.response_rate, 100)}%` }"
-                                                ></div>
+                    <!-- TAB KONTEN 1: MATRIKS PARTISIPASI SELURUH PRODI UNIVERSITAS -->
+                    <div v-if="activeTab === 'prodi'" class="p-6 space-y-4">
+                        
+                        <!-- Filter & Sorting Bar -->
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                            <div class="flex items-center gap-2">
+                                <button 
+                                    @click="sortByRate = !sortByRate" 
+                                    type="button"
+                                    class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-300 text-xs font-bold text-slate-700 hover:bg-slate-50 cursor-pointer"
+                                >
+                                    <span>Urutkan Response Rate:</span>
+                                    <span class="text-[#0D542B]">{{ sortByRate ? 'Tertinggi ↓' : 'Terendah ↑' }}</span>
+                                </button>
+                            </div>
+
+                            <div class="relative max-w-xs w-full">
+                                <input 
+                                    v-model="searchProdiQuery" 
+                                    type="text" 
+                                    placeholder="Cari program studi..." 
+                                    class="w-full pl-8 pr-3 py-1.5 text-xs rounded-xl border border-slate-300 focus:outline-hidden focus:ring-1 focus:ring-[#0D542B] focus:border-[#0D542B] bg-white"
+                                />
+                                <svg class="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+                            </div>
+                        </div>
+
+                        <!-- Tabel Partisipasi Prodi Interaktif -->
+                        <div class="overflow-x-auto rounded-xl border border-slate-200">
+                            <table class="w-full text-left text-xs">
+                                <thead class="bg-slate-50 text-slate-600 font-bold border-b border-slate-200 uppercase tracking-wider text-[11px]">
+                                    <tr>
+                                        <th class="py-3 px-4">Kode</th>
+                                        <th class="py-3 px-4">Program Studi</th>
+                                        <th class="py-3 px-4 text-center">Total Alumni</th>
+                                        <th class="py-3 px-4 text-center">Responden</th>
+                                        <th class="py-3 px-4">Tingkat Partisipasi</th>
+                                        <th class="py-3 px-4 text-right">Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-100">
+                                    <tr 
+                                        v-for="p in filteredProdis" 
+                                        :key="p.id" 
+                                        class="hover:bg-slate-50/80 transition-colors"
+                                    >
+                                        <td class="py-3 px-4 font-mono font-bold text-slate-600">
+                                            {{ p.kode_prodi }}
+                                        </td>
+                                        <td class="py-3 px-4 font-bold text-slate-900">
+                                            {{ p.nama_prodi }}
+                                        </td>
+                                        <td class="py-3 px-4 text-center font-semibold text-slate-700">
+                                            {{ p.total_alumni }}
+                                        </td>
+                                        <td class="py-3 px-4 text-center font-bold text-[#0D542B]">
+                                            {{ p.total_responden }}
+                                        </td>
+                                        <td class="py-3 px-4 min-w-[160px]">
+                                            <div class="flex items-center gap-2">
+                                                <div class="flex-1 bg-slate-200 rounded-full h-2 overflow-hidden">
+                                                    <div 
+                                                        class="bg-[#0D542B] h-2 rounded-full transition-all duration-500" 
+                                                        :style="{ width: `${p.response_rate}%` }"
+                                                    ></div>
+                                                </div>
+                                                <span class="font-extrabold text-xs text-slate-800 w-12 text-right">{{ p.response_rate }}%</span>
                                             </div>
-                                            <span class="font-mono font-bold text-gray-700 text-xs w-12 text-right">
-                                                {{ prodi.response_rate }}%
-                                            </span>
-                                        </div>
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
+                                        </td>
+                                        <td class="py-3 px-4 text-right">
+                                            <Link 
+                                                :href="`/biro3/alumni?prodi_id=${p.id}`" 
+                                                class="inline-flex items-center px-2.5 py-1 text-[11px] font-bold rounded-lg border border-slate-300 text-[#0D542B] hover:bg-emerald-50 transition-colors"
+                                            >
+                                                Filter Alumni &rarr;
+                                            </Link>
+                                        </td>
+                                    </tr>
+                                    <tr v-if="filteredProdis.length === 0">
+                                        <td colspan="6" class="py-8 text-center text-slate-400">
+                                            Tidak ada program studi yang cocok dengan pencarian.
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
+
+                    <!-- TAB KONTEN 2: PRATINJAU ALUMNI TERBARU -->
+                    <div v-else class="p-6 space-y-4">
+                        
+                        <!-- Toolbar Filter Alumni -->
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                            <div class="flex items-center gap-1.5 flex-wrap">
+                                <button 
+                                    @click="filterStatus = 'all'" 
+                                    :class="['px-3 py-1.5 text-xs font-bold rounded-lg cursor-pointer transition-colors', filterStatus === 'all' ? 'bg-[#0D542B] text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200']"
+                                >
+                                    Semua
+                                </button>
+                                <button 
+                                    @click="filterStatus = 'responded'" 
+                                    :class="['px-3 py-1.5 text-xs font-bold rounded-lg cursor-pointer transition-colors', filterStatus === 'responded' ? 'bg-[#0D542B] text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200']"
+                                >
+                                    Sudah Mengisi
+                                </button>
+                                <button 
+                                    @click="filterStatus = 'not_responded'" 
+                                    :class="['px-3 py-1.5 text-xs font-bold rounded-lg cursor-pointer transition-colors', filterStatus === 'not_responded' ? 'bg-[#0D542B] text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200']"
+                                >
+                                    Belum Mengisi
+                                </button>
+                                <button 
+                                    @click="filterStatus = 'linkedin'" 
+                                    :class="['px-3 py-1.5 text-xs font-bold rounded-lg cursor-pointer transition-colors', filterStatus === 'linkedin' ? 'bg-blue-700 text-white' : 'bg-blue-50 text-blue-700 hover:bg-blue-100']"
+                                >
+                                    Ada LinkedIn
+                                </button>
+                            </div>
+
+                            <div class="relative max-w-xs w-full">
+                                <input 
+                                    v-model="searchAlumniQuery" 
+                                    type="text" 
+                                    placeholder="Cari NIM, Nama, atau Prodi..." 
+                                    class="w-full pl-8 pr-3 py-1.5 text-xs rounded-xl border border-slate-300 focus:outline-hidden focus:ring-1 focus:ring-[#0D542B] focus:border-[#0D542B] bg-white"
+                                />
+                                <svg class="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+                            </div>
+                        </div>
+
+                        <!-- Tabel Alumni Interaktif -->
+                        <div class="overflow-x-auto rounded-xl border border-slate-200">
+                            <table class="w-full text-left text-xs">
+                                <thead class="bg-slate-50 text-slate-600 font-bold border-b border-slate-200 uppercase tracking-wider text-[11px]">
+                                    <tr>
+                                        <th class="py-3 px-4">NIM & Mahasiswa</th>
+                                        <th class="py-3 px-4">Program Studi</th>
+                                        <th class="py-3 px-4 text-center">Tahun Lulus</th>
+                                        <th class="py-3 px-4 text-center">Status Respon</th>
+                                        <th class="py-3 px-4 text-center">LinkedIn</th>
+                                        <th class="py-3 px-4 text-right">Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-100">
+                                    <tr 
+                                        v-for="alumni in filteredAlumni" 
+                                        :key="alumni.id" 
+                                        class="hover:bg-slate-50/80 transition-colors"
+                                    >
+                                        <td class="py-3 px-4">
+                                            <div class="font-bold text-slate-900">{{ alumni.nama }}</div>
+                                            <div class="text-[11px] text-slate-500 font-mono">{{ alumni.nim }}</div>
+                                        </td>
+                                        <td class="py-3 px-4 font-semibold text-slate-700">
+                                            {{ alumni.prodi }}
+                                        </td>
+                                        <td class="py-3 px-4 text-center font-medium text-slate-700">
+                                            {{ alumni.tahun_lulus }}
+                                        </td>
+                                        <td class="py-3 px-4 text-center">
+                                            <span 
+                                                v-if="alumni.has_responded" 
+                                                class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-[#0D542B] border border-emerald-200"
+                                            >
+                                                Sudah Respon
+                                            </span>
+                                            <span 
+                                                v-else 
+                                                class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-900 border border-amber-200"
+                                            >
+                                                Belum Mengisi
+                                            </span>
+                                        </td>
+                                        <td class="py-3 px-4 text-center">
+                                            <span 
+                                                v-if="alumni.has_linkedin" 
+                                                class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200"
+                                            >
+                                                Terhubung
+                                            </span>
+                                            <span v-else class="text-slate-400 text-[11px]">-</span>
+                                        </td>
+                                        <td class="py-3 px-4 text-right">
+                                            <Link 
+                                                :href="`/biro3/alumni/${alumni.id}`" 
+                                                class="inline-flex items-center px-2.5 py-1 text-[11px] font-bold rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-100 transition-colors"
+                                            >
+                                                Audit Profil &rarr;
+                                            </Link>
+                                        </td>
+                                    </tr>
+                                    <tr v-if="filteredAlumni.length === 0">
+                                        <td colspan="6" class="py-8 text-center text-slate-400">
+                                            Tidak ada data alumni yang cocok dengan kriteria pencarian.
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
                 </div>
 
             </main>
 
-            <!-- Footer Elegan & Minimalis -->
-            <footer class="text-gray-400 text-xs text-center mt-16 py-6 border-t border-gray-100">
-                <div class="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">
-                    &copy; {{ new Date().getFullYear() }} Universitas Kristen Duta Wacana. Hak Cipta Dilindungi.
-                </div>
+            <!-- Footer -->
+            <footer class="text-slate-400 text-xs text-center py-5 border-t border-slate-100">
+                &copy; {{ new Date().getFullYear() }} Universitas Kristen Duta Wacana. Hak Cipta Dilindungi.
             </footer>
 
         </div>

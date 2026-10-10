@@ -4,6 +4,7 @@ namespace App\Http\Controllers\AdminProdi\Dashboard;
 
 use App\Http\Controllers\Controller;
 use App\Models\Biodata;
+use App\Models\Perusahaan;
 use App\Models\ProdiQuestion;
 use App\Models\ProdiQuestionSection;
 use App\Models\ProdiResponse;
@@ -59,8 +60,33 @@ class DashboardController extends Controller
         $persentasePartisipasi = $totalAlumni > 0 ? round(($totalRespondenProdi / $totalAlumni) * 100, 1) : 0;
         $persentaseUniv = $totalAlumni > 0 ? round(($totalUnivSelesai / $totalAlumni) * 100, 1) : 0;
 
-        // Ringkasan 5 alumni terbaru untuk tabel cepat di dashboard
-        $recentAlumnis = $alumnis->take(5)->map(function ($alumni) use ($prodiQuestionIds, $totalPertanyaan) {
+        $totalPendingPerusahaan = $prodiId
+            ? Perusahaan::where('created_by_prodi_id', $prodiId)->where('status_verifikasi', 'Menunggu Verifikasi')->count()
+            : 0;
+
+        $totalLinkedIn = $prodiId
+            ? Biodata::where('prodi_id', $prodiId)->where(function ($q) {
+                $q->whereNotNull('linkedin_url')->where('linkedin_url', '!=', '')
+                    ->orWhereNotNull('linkedin_username')->where('linkedin_username', '!=', '');
+            })->count()
+            : 0;
+
+        // Daftar Sections beserta jumlah pertanyaan
+        $sectionsList = $prodiId
+            ? ProdiQuestionSection::where('prodi_id', $prodiId)
+                ->withCount('questions')
+                ->orderBy('order', 'asc')
+                ->get()
+                ->map(fn ($s) => [
+                    'id' => $s->id,
+                    'title' => $s->title,
+                    'order' => $s->order,
+                    'questions_count' => $s->questions_count,
+                ])
+            : [];
+
+        // Ringkasan 8 alumni terbaru untuk tabel interaktif di dashboard
+        $recentAlumnis = $alumnis->take(8)->map(function ($alumni) use ($prodiQuestionIds, $totalPertanyaan) {
             $eval = KelengkapanTracerService::evaluasiKelengkapanTotal($alumni);
             $prodiAnswers = ProdiResponse::where('biodata_id', $alumni->id)
                 ->whereIn('prodi_question_id', $prodiQuestionIds)
@@ -73,6 +99,7 @@ class DashboardController extends Controller
                 'tahun_lulus' => $alumni->tahun_lulus ?? $alumni->yudisium?->tahun_lulus ?? $alumni->dataAkademik?->tahun_akademik_lulus ?? '-',
                 'is_univ_complete' => $eval['questionnaire']['is_complete'] ?? false,
                 'is_prodi_complete' => ($totalPertanyaan > 0 && $prodiAnswers >= $totalPertanyaan),
+                'has_linkedin' => ! empty($alumni->linkedin_url) || ! empty($alumni->linkedin_username),
             ];
         });
 
@@ -87,7 +114,10 @@ class DashboardController extends Controller
                 'persentasePartisipasi' => $persentasePartisipasi,
                 'totalUnivSelesai' => $totalUnivSelesai,
                 'persentaseUniv' => $persentaseUniv,
+                'totalPendingPerusahaan' => $totalPendingPerusahaan,
+                'totalLinkedIn' => $totalLinkedIn,
             ],
+            'sectionsList' => $sectionsList,
             'recentAlumnis' => $recentAlumnis,
         ]);
     }

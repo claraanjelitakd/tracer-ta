@@ -4,6 +4,7 @@ namespace App\Http\Controllers\AdminBiroTiga\Dashboard;
 
 use App\Http\Controllers\Controller;
 use App\Models\Biodata;
+use App\Models\Perusahaan;
 use App\Models\Prodi;
 use App\Models\RefSubpertanyaan2021;
 use App\Models\Tracer;
@@ -97,10 +98,12 @@ class DashboardController extends Controller
         // 3. Data Alumni Terbaru untuk Pratinjau Cepat (Tabel 5 Teratas)
         // -----------------------------------------------------------------
 
-        // $recentAlumni: Mengambil 5 alumni terbaru yang baru terdaftar atau diimpor
+        $totalPendingPerusahaan = Perusahaan::where('status_verifikasi', 'Menunggu Verifikasi')->count();
+
+        // $recentAlumni: Mengambil 8 alumni terbaru yang baru terdaftar atau diimpor
         $recentAlumni = Biodata::with(['prodi', 'dataAkademik', 'user']) // Eager loading relasi agar database tidak lambat
             ->latest() // Urutkan dari yang paling baru didaftarkan
-            ->take(5)  // Ambil 5 baris saja
+            ->take(8)  // Ambil 8 baris
             ->get()
             ->map(function ($alumni) {
                 // Merapikan data alumni untuk ditampilkan di tabel ringkasan dashboard Vue
@@ -109,6 +112,7 @@ class DashboardController extends Controller
                     'nim' => $alumni->user?->username ?? $alumni->nim,                         // NIM alumni
                     'nama' => $alumni->nama ?? $alumni->dataAkademik?->nama ?? $alumni->user?->name ?? 'Belum terisi', // Nama lengkap alumni
                     'prodi' => $alumni->prodi?->nama_prodi ?? '-',                               // Nama prodi
+                    'tahun_lulus' => $alumni->tahun_lulus ?? $alumni->dataAkademik?->tahun_akademik_lulus ?? '-',
                     'has_linkedin' => ! empty($alumni->linkedin_url) || ! empty($alumni->linkedin_username),  // Status LinkedIn (true/false)
                     'has_responded' => $alumni->tracers()->exists(),                                  // Status sudah isi kuesioner (true/false)
                 ];
@@ -127,9 +131,10 @@ class DashboardController extends Controller
                 'total_pertanyaan' => $totalPertanyaan,
                 'total_prodi' => $totalProdi,
                 'alumni_linkedin' => $alumniLinkedIn,
+                'total_pending_perusahaan' => $totalPendingPerusahaan,
             ],
             'prodiSummaries' => $prodiSummaries, // Props: Data untuk tabel statistik partisipasi per prodi
-            'recentAlumni' => $recentAlumni,   // Props: Data untuk tabel 5 alumni terbaru
+            'recentAlumni' => $recentAlumni,   // Props: Data untuk tabel alumni terbaru
         ]);
     }
 }

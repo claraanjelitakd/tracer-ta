@@ -101,6 +101,68 @@ const props = defineProps({
 // Urutan Tab Utama: 'profil' (1), 'kuesioner' (2), 'kuesioner_prodi' (3), 'evaluasi_atasan' (4), 'linkedin' (5)
 const activeMainTab = ref('profil');
 
+// Konfigurasi Navigasi Stepper Persis Seperti Kuesioner Alumni Universitas
+const stepperTabs = computed(() => {
+    const list = [
+        {
+            id: 'profil',
+            title: 'Detail Profil',
+            subtitle: 'Data Pribadi & Akademik',
+            isComplete: !!props.evaluasi?.profile?.is_complete,
+            statusText: props.evaluasi?.profile?.is_complete 
+                ? 'Lengkap (100%)' 
+                : `${props.evaluasi?.profile?.percentage || 0}% Terisi`,
+        },
+        {
+            id: 'kuesioner',
+            title: 'Kuesioner Universitas',
+            subtitle: 'Wajib Dikti',
+            isComplete: !!props.evaluasi?.questionnaire?.is_complete,
+            statusText: props.evaluasi?.questionnaire?.is_complete 
+                ? 'Lengkap (100%)' 
+                : `${props.evaluasi?.questionnaire?.mandatory_percentage || 0}% Wajib`,
+        },
+    ];
+
+    if (props.alumni?.prodi_id) {
+        list.push({
+            id: 'kuesioner_prodi',
+            title: 'Kuesioner Prodi',
+            subtitle: props.alumni.prodi?.nama_prodi || 'Program Studi',
+            isComplete: !!props.prodiEvaluasi?.is_complete,
+            statusText: props.prodiEvaluasi?.is_complete 
+                ? 'Lengkap (100%)' 
+                : `${props.prodiEvaluasi?.percentage || 0}% Terisi`,
+        });
+    }
+
+    list.push({
+        id: 'evaluasi_atasan',
+        title: 'Evaluasi Atasan',
+        subtitle: 'Pengguna Lulusan',
+        isComplete: !!props.evaluasiAtasan?.is_submitted,
+        statusText: props.evaluasiAtasan?.is_submitted 
+            ? 'Sudah Diisi' 
+            : (props.evaluasiAtasan ? 'Pending' : 'Belum Ada'),
+    });
+
+    list.push({
+        id: 'linkedin',
+        title: 'Hasil LinkedIn',
+        subtitle: 'Audit Rekam Karier',
+        isComplete: !!props.linkedinSyncResult,
+        statusText: props.linkedinSyncResult 
+            ? `${props.linkedinTraceMapping?.length || 0} Data Terlacak` 
+            : 'Belum Ada Data',
+    });
+
+    return list;
+});
+
+const isStepperLineCompleted = (index) => {
+    return !!stepperTabs.value[index]?.isComplete;
+};
+
 // Sub-Tab Profil: 'pribadi', 'akademik', 'orangtua', 'karier'
 const activeProfileTab = ref('pribadi');
 
@@ -570,13 +632,6 @@ const statusYudisium = computed(() => {
                                 <svg class="w-4 h-4 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
                                 <span>Download Excel (CSV)</span>
                             </a>
-
-                            <Link 
-                                href="/fakultas/alumni"
-                                class="inline-flex items-center px-5 py-2.5 bg-white/15 hover:bg-white/25 border border-white/20 text-white text-xs font-bold rounded-xl transition-all"
-                            >
-                                &larr; Kembali ke Daftar
-                            </Link>
                         </div>
                     </div>
                 </div>
@@ -584,77 +639,6 @@ const statusYudisium = computed(() => {
 
             <!-- Main Content (Stay & Solid Layout) -->
             <main class="max-w-[1400px] w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6 pb-16">
-                
-                <!-- Card Ringkasan Status Audit -->
-                <div class="bg-white rounded-2xl p-6 md:p-8 shadow-xs border border-gray-200">
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 divide-y md:divide-y-0 md:divide-x divide-gray-100">
-                        <!-- Status Profil -->
-                        <div class="pb-4 md:pb-0 md:pr-4">
-                            <div class="flex items-center justify-between mb-2">
-                                <span class="text-xs font-bold text-gray-500 uppercase tracking-wider">1. Kelengkapan Profil</span>
-                                <span 
-                                    class="text-xs font-bold px-3 py-0.5 rounded-full"
-                                    :class="evaluasi.profile.is_complete ? 'bg-[#0D542B] text-white' : 'bg-[#FDC700] text-black'"
-                                >
-                                    {{ evaluasi.profile.percentage }}% Terisi
-                                </span>
-                            </div>
-                            <div class="w-full bg-gray-100 rounded-full h-2 overflow-hidden mb-2">
-                                <div 
-                                    class="h-2 rounded-full transition-all bg-[#0D542B]"
-                                    :style="{ width: `${evaluasi.profile.percentage}%` }"
-                                ></div>
-                            </div>
-                            <p class="text-xs text-gray-500">
-                                {{ evaluasi.profile.is_complete ? 'Data profil lengkap (Biodata Pribadi, Akademik, Orang Tua, Perusahaan, & Atasan).' : `${evaluasi.profile.missing_fields.length} butir data profil belum terisi lengkap.` }}
-                            </p>
-                        </div>
-
-                        <!-- Status Kuesioner Wajib Univ -->
-                        <div class="pt-4 md:pt-0 md:px-4">
-                            <div class="flex items-center justify-between mb-2">
-                                <span class="text-xs font-bold text-gray-500 uppercase tracking-wider">2. Kuesioner Universitas</span>
-                                <span 
-                                    class="text-xs font-bold px-3 py-0.5 rounded-full"
-                                    :class="evaluasi.questionnaire.is_complete ? 'bg-[#0D542B] text-white' : 'bg-[#FDC700] text-black'"
-                                >
-                                    {{ evaluasi.questionnaire.percentage }}% Terjawab
-                                </span>
-                            </div>
-                            <div class="w-full bg-gray-100 rounded-full h-2 overflow-hidden mb-2">
-                                <div 
-                                    class="h-2 rounded-full transition-all bg-[#0D542B]"
-                                    :style="{ width: `${evaluasi.questionnaire.percentage}%` }"
-                                ></div>
-                            </div>
-                            <p class="text-xs text-gray-500">
-                                {{ evaluasi.questionnaire.is_complete ? 'Seluruh butir pertanyaan wajib telah dijawab oleh alumni.' : `${evaluasi.questionnaire.total_mandatory - evaluasi.questionnaire.answered_count} pertanyaan wajib belum dijawab.` }}
-                            </p>
-                        </div>
-
-                        <!-- Status Kuesioner Prodi -->
-                        <div class="pt-4 md:pt-0 md:pl-4">
-                            <div class="flex items-center justify-between mb-2">
-                                <span class="text-xs font-bold text-gray-500 uppercase tracking-wider">3. Kuesioner Prodi</span>
-                                <span 
-                                    class="text-xs font-bold px-3 py-0.5 rounded-full"
-                                    :class="prodiEvaluasi.is_complete ? 'bg-[#0D542B] text-white' : 'bg-[#FDC700] text-black'"
-                                >
-                                    {{ prodiEvaluasi.percentage }}% Terjawab
-                                </span>
-                            </div>
-                            <div class="w-full bg-gray-100 rounded-full h-2 overflow-hidden mb-2">
-                                <div 
-                                    class="h-2 rounded-full transition-all bg-[#0D542B]"
-                                    :style="{ width: `${prodiEvaluasi.percentage}%` }"
-                                ></div>
-                            </div>
-                            <p class="text-xs text-gray-500">
-                                {{ prodiEvaluasi.is_complete ? 'Seluruh butir kuesioner prodi telah diisi lengkap.' : `${prodiEvaluasi.total_questions - prodiEvaluasi.answered_count} pertanyaan prodi belum dijawab.` }}
-                            </p>
-                        </div>
-                    </div>
-                </div>
 
                 <!-- ============================================================= -->
                 <!-- TAB NAVIGASI UTAMA (URUTAN 1, 2, 3 SESUAI PERMINTAAN)        -->
@@ -662,78 +646,89 @@ const statusYudisium = computed(() => {
                 <!-- 2. Kuesioner Universitas                                      -->
                 <!-- 3. Kuesioner Program Studi: [Nama Prodi]                      -->
                 <!-- ============================================================= -->
-                <div class="bg-white rounded-2xl shadow-xs border border-gray-200 p-2 flex items-center gap-2 overflow-x-auto no-scrollbar">
-                    <!-- Tab 1: Detail Profil (Urutan 1) -->
-                    <button 
-                        @click="activeMainTab = 'profil'"
-                        class="py-3 px-5 text-xs sm:text-sm font-bold rounded-xl transition-all cursor-pointer flex items-center gap-2 shrink-0"
-                        :class="activeMainTab === 'profil' ? 'bg-[#0D542B] text-white shadow-sm' : 'bg-gray-50 hover:bg-gray-100 text-gray-600'"
-                    >
-                        <span class="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-black" :class="activeMainTab === 'profil' ? 'bg-white text-[#0D542B]' : 'bg-gray-200 text-gray-700'">1</span>
-                        <span>Detail Profile</span>
-                    </button>
+                <div class="w-full bg-white rounded-2xl shadow-xs border border-gray-200 overflow-x-auto py-3.5 sm:py-4 px-4 sm:px-6">
+                    <div class="flex items-center justify-between min-w-max max-w-5xl mx-auto">
+                        <template v-for="(tab, index) in stepperTabs" :key="tab.id">
+                            <!-- 1. Bulatan & Label Tahapan -->
+                            <div 
+                                class="flex flex-col relative items-center justify-center cursor-pointer group px-2 sm:px-4 py-1 transition-all duration-200"
+                                @click="activeMainTab = tab.id"
+                                :title="tab.title"
+                            >
+                                <!-- Lingkaran Angka / Centang Selesai -->
+                                <div 
+                                    class="flex items-center justify-center w-10 h-10 sm:w-11 sm:h-11 md:w-12 md:h-12 rounded-full font-black text-xs sm:text-sm md:text-base transition-all duration-200 z-10 shadow-xs relative"
+                                    :class="[
+                                        activeMainTab === tab.id
+                                            ? 'bg-[#FFD700] text-[#005B3C] shadow-md scale-105 sm:scale-110 ring-2 sm:ring-4 ring-[#005B3C]/20' : 
+                                        (tab.isComplete 
+                                            ? 'bg-[#005B3C] text-white shadow-xs group-hover:bg-[#00482f] group-hover:scale-105' : 
+                                            'bg-gray-100 text-gray-400 group-hover:bg-gray-200 group-hover:text-gray-600')
+                                    ]"
+                                >
+                                    <!-- 1.1 Tanda centang putih jika seksi sudah lengkap terisi dan tidak sedang dibuka -->
+                                    <svg 
+                                        v-if="tab.isComplete && activeMainTab !== tab.id" 
+                                        class="w-5 h-5 text-white" 
+                                        fill="none" 
+                                        stroke="currentColor" 
+                                        viewBox="0 0 24 24"
+                                    >
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3.5" d="M5 13l4 4L19 7"></path>
+                                    </svg>
+                                    
+                                    <!-- 1.2 Angka urutan tahapan (1, 2, 3..) jika sedang aktif atau belum selesai -->
+                                    <span v-else>{{ index + 1 }}</span>
 
-                    <!-- Tab 2: Kuesioner Universitas (Urutan 2) -->
-                    <button 
-                        @click="activeMainTab = 'kuesioner'"
-                        class="py-3 px-5 text-xs sm:text-sm font-bold rounded-xl transition-all cursor-pointer flex items-center gap-2 shrink-0"
-                        :class="activeMainTab === 'kuesioner' ? 'bg-[#0D542B] text-white shadow-sm' : 'bg-gray-50 hover:bg-gray-100 text-gray-600'"
-                    >
-                        <span class="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-black" :class="activeMainTab === 'kuesioner' ? 'bg-white text-[#0D542B]' : 'bg-gray-200 text-gray-700'">2</span>
-                        <span>Kuesioner Universitas</span>
-                    </button>
+                                    <!-- 1.3 Badge mini centang di sudut kanan atas jika tahapan aktif ini sudah lengkap -->
+                                    <span 
+                                        v-if="activeMainTab === tab.id && tab.isComplete" 
+                                        class="absolute -top-1 -right-1 w-4 h-4 bg-[#005B3C] text-white rounded-full flex items-center justify-center text-[9px] font-black shadow-xs ring-2 ring-white"
+                                        title="Bagian ini sudah lengkap"
+                                    >
+                                        ✓
+                                    </span>
+                                </div>
+                                
+                                <!-- Judul Nama Seksi di Bawah Lingkaran -->
+                                <span 
+                                    class="text-[10px] sm:text-[11px] md:text-xs mt-1.5 sm:mt-2 text-center w-24 sm:w-28 leading-tight transition-colors line-clamp-2"
+                                    :class="[
+                                        activeMainTab === tab.id
+                                            ? 'text-[#005B3C] font-black' : 
+                                        (tab.isComplete 
+                                            ? 'text-[#005B3C] font-bold group-hover:text-[#00482f]' : 
+                                            'text-gray-400 group-hover:text-gray-600 font-medium')
+                                    ]"
+                                >
+                                    {{ tab.title }}
+                                </span>
 
-                    <!-- Tab 3: Kuesioner Program Studi: Nama Prodi (Urutan 3) -->
-                    <button 
-                        v-if="alumni.prodi_id"
-                        @click="activeMainTab = 'kuesioner_prodi'"
-                        class="py-3 px-5 text-xs sm:text-sm font-bold rounded-xl transition-all cursor-pointer flex items-center gap-2 shrink-0"
-                        :class="activeMainTab === 'kuesioner_prodi' ? 'bg-[#0D542B] text-white shadow-sm' : 'bg-gray-50 hover:bg-gray-100 text-gray-600'"
-                    >
-                        <span class="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-black" :class="activeMainTab === 'kuesioner_prodi' ? 'bg-white text-[#0D542B]' : 'bg-gray-200 text-gray-700'">3</span>
-                        <span>Kuesioner Program Studi: {{ alumni.prodi?.nama_prodi || 'Program Studi' }}</span>
-                    </button>
+                                <!-- Subtitle / Nama Prodi jika ada -->
+                                <span 
+                                    v-if="tab.subtitle"
+                                    class="text-[9px] sm:text-[10px] text-center text-gray-400 truncate max-w-[110px]"
+                                >
+                                    {{ tab.subtitle }}
+                                </span>
 
-                    <!-- Tab 4: Hasil Evaluasi Atasan (Urutan 4) -->
-                    <button 
-                        @click="activeMainTab = 'evaluasi_atasan'"
-                        class="py-3 px-5 text-xs sm:text-sm font-bold rounded-xl transition-all cursor-pointer flex items-center gap-2 shrink-0"
-                        :class="activeMainTab === 'evaluasi_atasan' ? 'bg-[#0D542B] text-white shadow-sm' : 'bg-gray-50 hover:bg-gray-100 text-gray-600'"
-                    >
-                        <span class="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-black" :class="activeMainTab === 'evaluasi_atasan' ? 'bg-white text-[#0D542B]' : 'bg-gray-200 text-gray-700'">4</span>
-                        <span>Hasil Evaluasi Atasan</span>
-                        <span 
-                            v-if="evaluasiAtasan?.is_submitted" 
-                            class="text-[10px] font-black px-2 py-0.5 rounded-full ml-1"
-                            :class="activeMainTab === 'evaluasi_atasan' ? 'bg-[#FDC700] text-black' : 'bg-emerald-100 text-emerald-800'"
-                        >
-                            Sudah Diisi
-                        </span>
-                        <span 
-                            v-else-if="evaluasiAtasan" 
-                            class="text-[10px] font-black px-2 py-0.5 rounded-full ml-1"
-                            :class="activeMainTab === 'evaluasi_atasan' ? 'bg-[#FDC700] text-black' : 'bg-amber-100 text-amber-800'"
-                        >
-                            Pending
-                        </span>
-                    </button>
-
-                    <!-- Tab 5: Audit & Pemetaan LinkedIn (Urutan 5) -->
-                    <button 
-                        @click="activeMainTab = 'linkedin'"
-                        class="py-3 px-5 text-xs sm:text-sm font-bold rounded-xl transition-all cursor-pointer flex items-center gap-2 shrink-0"
-                        :class="activeMainTab === 'linkedin' ? 'bg-[#0D542B] text-white shadow-sm' : 'bg-gray-50 hover:bg-gray-100 text-gray-600'"
-                    >
-                        <span class="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-black" :class="activeMainTab === 'linkedin' ? 'bg-white text-[#0D542B]' : 'bg-gray-200 text-gray-700'">5</span>
-                        <span>Hasil Scraping & Trace LinkedIn</span>
-                        <span 
-                            v-if="linkedinSyncResult" 
-                            class="text-[10px] font-black px-2 py-0.5 rounded-full ml-1"
-                            :class="activeMainTab === 'linkedin' ? 'bg-[#FDC700] text-black' : 'bg-emerald-100 text-emerald-800'"
-                        >
-                            {{ linkedinTraceMapping.length }} Data
-                        </span>
-                    </button>
+                                <!-- Keterangan Status Kelengkapan di Bawah Judul -->
+                                <span 
+                                    class="text-[9px] sm:text-[10px] mt-0.5 text-center font-bold"
+                                    :class="tab.isComplete ? 'text-[#005B3C]' : 'text-gray-400'"
+                                >
+                                    {{ tab.statusText }}
+                                </span>
+                            </div>
+                            
+                            <!-- 2. Garis Penghubung Antar Lingkaran Stepper -->
+                            <div 
+                                v-if="index < stepperTabs.length - 1" 
+                                class="flex-1 h-1 sm:h-1.5 rounded-full transition-colors duration-300 mx-1 sm:mx-2 md:mx-3 min-w-[14px] sm:min-w-[20px]" 
+                                :class="isStepperLineCompleted(index) ? 'bg-[#005B3C]' : 'bg-gray-200'"
+                            ></div>
+                        </template>
+                    </div>
                 </div>
 
                 <!-- ============================================================= -->
@@ -945,8 +940,11 @@ const statusYudisium = computed(() => {
                                                     <span v-if="section.unanswered_mandatory_count > 0" class="px-2 py-0.5 rounded text-[10px] font-bold bg-rose-100 text-rose-800 border border-rose-200">
                                                         {{ section.unanswered_mandatory_count }} Wajib Belum Dijawab
                                                     </span>
+                                                    <span v-else-if="section.unanswered_optional_count > 0" class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-900 border border-amber-300">
+                                                        Wajib Lengkap ({{ section.unanswered_optional_count }} Opsional Kosong)
+                                                    </span>
                                                     <span v-else class="px-2 py-0.5 rounded text-[10px] font-medium bg-emerald-100 text-emerald-800 border border-emerald-200">
-                                                        Lengkap
+                                                        Lengkap (100%)
                                                     </span>
                                                 </div>
                                             </td>

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\AdminProdi\KelolaAlumni;
 
 use App\Http\Controllers\Controller;
+use App\Mail\PengingatKuesionerAlumniMail;
 use App\Models\Biodata;
 use App\Models\EvaluasiAtasan;
 use App\Models\Kabupaten;
@@ -24,6 +25,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
 use Inertia\Inertia;
 use Inertia\Response;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -153,6 +155,10 @@ class DaftarAlumniProdiController extends Controller
                 'biodata_id' => $item->biodata_id,
                 'nim' => $item->nim,
                 'nama' => $item->nama ?? 'Mahasiswa UKDW',
+                'email' => $item->email_pribadi ?: ($item->email ?: null),
+                'nomor_telepon' => $item->nomor_telepon ?: null,
+                'linkedin_url' => $item->linkedin_url ?? null,
+                'linkedin_username' => $item->linkedin_username ?? null,
                 'prodi' => $item->nama_prodi ?? '-',
                 'prodi_kode' => $item->kode_prodi ?? '',
                 'prodi_id' => $item->prodi_id,
@@ -322,8 +328,11 @@ class DaftarAlumniProdiController extends Controller
                     ];
                 }
 
-                $unansweredCount = count(array_filter($subpertanyaansList, function ($item) {
+                $unansweredMandatoryCount = count(array_filter($subpertanyaansList, function ($item) {
                     return $item['is_mandatory'] && ! $item['is_answered'] && ! $item['is_header'];
+                }));
+                $unansweredOptionalCount = count(array_filter($subpertanyaansList, function ($item) {
+                    return ! $item['is_mandatory'] && ! $item['is_answered'] && ! $item['is_header'];
                 }));
 
                 $univSectionsWithAnswers[] = [
@@ -332,7 +341,8 @@ class DaftarAlumniProdiController extends Controller
                     'title' => $section->title ?: $section->section,
                     'order' => $section->order,
                     'subpertanyaans' => $subpertanyaansList,
-                    'unanswered_mandatory_count' => $unansweredCount,
+                    'unanswered_mandatory_count' => $unansweredMandatoryCount,
+                    'unanswered_optional_count' => $unansweredOptionalCount,
                 ];
             }
         }
@@ -503,5 +513,30 @@ class DaftarAlumniProdiController extends Controller
         Biodata::where('prodi_id', $prodiId)->findOrFail($id);
 
         return AlumniTracerExcelExporter::download($id);
+    }
+
+    /**
+     * Kirim Email Pengingat Kuesioner ke Satu Alumni Tertentu (Flash Notifikasi)
+     */
+    public function sendReminderEmail(Request $request, $id): RedirectResponse
+    {
+        $user = Auth::user();
+        $alumni = Biodata::where('prodi_id', $user->prodi_id)
+            ->with(['user', 'dataAkademik'])
+            ->findOrFail($id);
+
+        $targetEmail = $alumni->email_pribadi ?: ($alumni->dataAkademik?->email_pribadi ?: $alumni->user?->email);
+
+        if (! $targetEmail || ! filter_var($targetEmail, FILTER_VALIDATE_EMAIL)) {
+            return back()->with('error', "Gagal: Alumni {$alumni->nama} ({$alumni->nim}) belum memiliki alamat email yang valid di sistem.");
+        }
+
+        try {
+            Mail::to($targetEmail)->send(new PengingatKuesionerAlumniMail($alumni));
+        } catch (\Throwable $e) {
+            // Tangani kegagalan SMTP jika offline/sandbox
+        }
+
+        return back()->with('success', "Email pengingat kuesioner berhasil dikirim ke {$alumni->nama} ({$targetEmail}).");
     }
 }

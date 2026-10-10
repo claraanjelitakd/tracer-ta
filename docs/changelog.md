@@ -1,5 +1,24 @@
 # Update Log Tracer Study
 
+## 11 Oktober 2026
+- **Penyelarasan Tampilan & Navigasi Stepper Detail Alumni Multi-Role (Super Admin, Fakultas, Prodi, Biro 3)**:
+  - Mengganti navigasi tab lama pada `SuperAdmin/Alumni/Show.vue`, `AdminProdi/Alumni/Show.vue`, `AdminFakultas/Alumni/Show.vue`, dan `AdminBiroTiga/AlumniShow.vue` dengan komponen Stepper horizontal terpadu sesuai standar pengisian kuesioner universitas alumni (`Stepper.vue`).
+  - Palet warna identitas UKDW: Tahapan aktif emas (`#FFD700`) dan teks hijau (`#005B3C`), tahapan lengkap hijau almamater (`#005B3C`) dengan centang putih (`✓`), tahapan belum lengkap abu-abu netral dengan angka urut tahapan, badge mini centang di atas bulatan aktif jika 100% lengkap, serta garis penghubung hijau/abu-abu.
+  - Menghapus Card Ringkasan Status Audit berulang (3 kolom progress bar) dan tombol `&larr; Kembali ke Daftar` di header agar tampilan lebih ringkas, elegan, dan lega. Navigasi kembali tetap mudah diakses via Breadcrumbs.
+  - Menyatukan data profil alumni pada Biro 3 dalam format 1 tabel kontinu terpadu per seksi tanpa sub-tab bertingkat berulang.
+- **Standardisasi Kolom Status & Aksi Direktori Mahasiswa (Index)**:
+  - Kolom status terpadu 3-in-1 (Kelengkapan Profil, Kuesioner Universitas, Evaluasi Atasan) dengan persentase dan label status ringkas pada seluruh role (`SuperAdmin`, `AdminBiroTiga`, `AdminFakultas`, `AdminProdi`).
+  - Kolom aksi baris terpadu: Tombol Detail (`👁️`), Hubungi via WhatsApp (`💬`) dengan template resmi, tautan portal & panduan login, Kirim Email Pengingat Kuesioner Langsung (`✉️`), serta Sinkronisasi LinkedIn Direct & Riwayat Scraping (`🔗` / `H`).
+- **Mailable & Fitur Kirim Email Pengingat Kuesioner Alumni**:
+  - Pembuatan Mailable `App\Mail\PengingatKuesionerAlumniMail` dan template email Blade responsif `resources/views/emails/pengingat_kuesioner_alumni.blade.php`.
+  - Integrasi endpoint kirim email langsung per alumni di semua controller direktori alumni dengan pop-up notifikasi SweetAlert2.
+- **Penyelarasan Filter Tahun Kelulusan & Konsistensi Dashboard**:
+  - Menyamakan kalkulasi dan filter tahun kelulusan mahasiswa/alumni antara dashboard rekapitulasi, direktori alumni, dan service kelengkapan tracer study di seluruh tingkatan peran.
+- **Automated Feature Testing & Standar Kode**:
+  - Penambahan feature test suite `tests/Feature/BiroTigaDaftarAlumniTest.php` dan pembaruan `tests/Feature/SuperAdminDaftarAlumniTest.php` (seluruh pengujian lulus 100%).
+  - Lolos pemformatan kode Laravel Pint (`vendor/bin/pint --dirty --format agent`).
+  - Vite production bundle dikompilasi sukses tanpa peringatan galat.
+
 ## 09 Oktober 2026
 - **Penyelarasan Desain & Fitur Alumni Multi-Role (Super Admin, Fakultas, Prodi)**:
   - Mengeliminasi kolom Status yang redundan pada tabel direktori alumni di Super Admin, Admin Fakultas, dan Admin Prodi untuk tampilan yang lebih bersih, konsisten, dan fokus pada data inti lulusan.

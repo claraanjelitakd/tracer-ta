@@ -142,8 +142,11 @@ class DetailAlumniFakultasController extends Controller
                     ];
                 }
 
-                $unansweredCount = count(array_filter($subpertanyaansList, function ($item) {
+                $unansweredMandatoryCount = count(array_filter($subpertanyaansList, function ($item) {
                     return $item['is_mandatory'] && ! $item['is_answered'] && ! $item['is_header'];
+                }));
+                $unansweredOptionalCount = count(array_filter($subpertanyaansList, function ($item) {
+                    return ! $item['is_mandatory'] && ! $item['is_answered'] && ! $item['is_header'];
                 }));
 
                 $univSectionsWithAnswers[] = [
@@ -152,7 +155,8 @@ class DetailAlumniFakultasController extends Controller
                     'title' => $section->title ?: $section->section,
                     'order' => $section->order,
                     'subpertanyaans' => $subpertanyaansList,
-                    'unanswered_mandatory_count' => $unansweredCount,
+                    'unanswered_mandatory_count' => $unansweredMandatoryCount,
+                    'unanswered_optional_count' => $unansweredOptionalCount,
                 ];
             }
         }

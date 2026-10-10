@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Mail\PengingatKuesionerAlumniMail;
 use App\Models\Biodata;
 use App\Models\DataAkademik;
 use App\Models\KelompokPertanyaan;
@@ -11,6 +12,7 @@ use App\Models\RefSubpertanyaan2021;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Mail;
 use Inertia\Testing\AssertableInertia as Assert;
 use Tests\TestCase;
 
@@ -280,5 +282,21 @@ class SuperAdminDaftarAlumniTest extends TestCase
             ->has('evaluasiAtasan')
             ->has('pertanyaanEvaluasiAtasan')
         );
+    }
+
+    /**
+     * Test superadmin dapat mengirimkan email pengingat kuesioner ke alumni.
+     */
+    public function test_superadmin_can_send_reminder_email(): void
+    {
+        Mail::fake();
+
+        $response = $this->actingAs($this->superadmin)
+            ->post(route('superadmin.alumni.send-email', $this->alumni->id));
+
+        $response->assertRedirect();
+        $response->assertSessionHas('success');
+
+        Mail::assertSent(PengingatKuesionerAlumniMail::class);
     }
 }

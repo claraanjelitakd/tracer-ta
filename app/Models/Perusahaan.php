@@ -73,4 +73,9 @@ class Perusahaan extends Model
     {
         return $this->belongsTo(Prodi::class, 'created_by_prodi_id');
     }
+
+    public function creatorProdi()
+    {
+        return $this->createdProdi();
+    }
 }

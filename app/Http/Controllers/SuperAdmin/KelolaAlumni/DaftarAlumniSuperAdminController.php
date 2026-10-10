@@ -3,12 +3,15 @@
 namespace App\Http\Controllers\SuperAdmin\KelolaAlumni;
 
 use App\Http\Controllers\Controller;
+use App\Mail\PengingatKuesionerAlumniMail;
 use App\Models\Biodata;
 use App\Models\EvaluasiAtasan;
 use App\Models\Prodi;
 use App\Services\Export\AlumniTracerExcelExporter;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -86,13 +89,12 @@ class DaftarAlumniSuperAdminController extends Controller
             });
         }
 
-        // Filter Tahun Kelulusan (Mendukung tahun 4-digit maupun format akademik seperti '2024/2025')
+        // Filter Tahun Kelulusan (Pencocokan eksak kolom tahun_lulus agar selaras dengan seluruh role)
         if ($tahunTerpilih && $tahunTerpilih !== 'all') {
             $tahunNormalized = preg_match('/(\d{4})/', (string) $tahunTerpilih, $m) ? $m[1] : $tahunTerpilih;
             $query->where(function ($q) use ($tahunTerpilih, $tahunNormalized) {
                 $q->where('tahun_lulus', $tahunNormalized)
-                    ->orWhere('tahun_lulus', $tahunTerpilih)
-                    ->orWhere('tahun_akademik_lulus', 'like', "%{$tahunNormalized}%");
+                    ->orWhere('tahun_lulus', $tahunTerpilih);
             });
         }
 
@@ -149,6 +151,10 @@ class DaftarAlumniSuperAdminController extends Controller
                 'biodata_id' => $item->biodata_id,
                 'nim' => $item->nim,
                 'nama' => $item->nama ?? 'Mahasiswa UKDW',
+                'email' => $item->email_pribadi ?: ($item->email ?: null),
+                'nomor_telepon' => $item->nomor_telepon ?: null,
+                'linkedin_url' => $item->linkedin_url ?? null,
+                'linkedin_username' => $item->linkedin_username ?? null,
                 'prodi' => $item->nama_prodi ?? '-',
                 'prodi_kode' => $item->kode_prodi ?? '',
                 'prodi_id' => $item->prodi_id,
@@ -325,5 +331,26 @@ class DaftarAlumniSuperAdminController extends Controller
             'Content-Type' => 'application/zip',
             'Cache-Control' => 'no-cache, no-store, must-revalidate',
         ])->deleteFileAfterSend(true);
+    }
+
+    /**
+     * Kirim Email Pengingat Kuesioner ke Satu Alumni Tertentu (Flash Notifikasi)
+     */
+    public function sendReminderEmail(Request $request, $id): RedirectResponse
+    {
+        $alumni = Biodata::with(['user', 'dataAkademik'])->findOrFail($id);
+        $targetEmail = $alumni->email_pribadi ?: ($alumni->dataAkademik?->email_pribadi ?: $alumni->user?->email);
+
+        if (! $targetEmail || ! filter_var($targetEmail, FILTER_VALIDATE_EMAIL)) {
+            return back()->with('error', "Gagal: Alumni {$alumni->nama} ({$alumni->nim}) belum memiliki alamat email yang valid di sistem.");
+        }
+
+        try {
+            Mail::to($targetEmail)->send(new PengingatKuesionerAlumniMail($alumni));
+        } catch (\Throwable $e) {
+            // Tangani kegagalan SMTP jika offline/sandbox
+        }
+
+        return back()->with('success', "Email pengingat kuesioner berhasil dikirim ke {$alumni->nama} ({$targetEmail}).");
     }
 }

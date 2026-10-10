@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Alumni\Dashboard;
 
 use App\Http\Controllers\Controller;
 use App\Models\Biodata;
+use App\Models\EvaluasiAtasan;
 use App\Models\ProdiQuestion;
 use App\Models\ProdiResponse;
 use App\Services\Kuesioner\KelengkapanTracerService;
@@ -90,6 +91,10 @@ class DashboardController extends Controller
             }
         }
 
+        $evaluasiAtasan = $biodata ? EvaluasiAtasan::where('biodata_id', $biodata->id)->first() : null;
+        $hasSupervisor = ! empty($biodata?->email_atasan);
+        $evaluasiSubmitted = (bool) ($evaluasiAtasan?->is_submitted ?? false);
+
         return Inertia::render('Alumni/Dashboard', [
             'user' => $user,
             'biodata' => $biodata,
@@ -107,6 +112,10 @@ class DashboardController extends Controller
             'prodiQuestionsCount' => $prodiQuestionsCount,
             'prodiAnsweredCount' => $prodiAnsweredCount,
             'prodiCompleted' => $prodiCompleted,
+            'hasSupervisor' => $hasSupervisor,
+            'evaluasiSubmitted' => $evaluasiSubmitted,
+            'supervisorEmail' => $biodata?->email_atasan,
+            'supervisorName' => $biodata?->nama_atasan,
         ]);
     }
 }

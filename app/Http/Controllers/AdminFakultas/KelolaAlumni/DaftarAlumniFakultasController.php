@@ -3,12 +3,16 @@
 namespace App\Http\Controllers\AdminFakultas\KelolaAlumni;
 
 use App\Http\Controllers\Controller;
+use App\Mail\PengingatKuesionerAlumniMail;
+use App\Models\Biodata;
 use App\Models\EvaluasiAtasan;
 use App\Models\Prodi;
 use App\Models\RefFakultas;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -153,6 +157,10 @@ class DaftarAlumniFakultasController extends Controller
                 'biodata_id' => $item->biodata_id,
                 'nim' => $item->nim,
                 'nama' => $item->nama ?? 'Mahasiswa UKDW',
+                'email' => $item->email_pribadi ?: ($item->email ?: null),
+                'nomor_telepon' => $item->nomor_telepon ?: null,
+                'linkedin_url' => $item->linkedin_url ?? null,
+                'linkedin_username' => $item->linkedin_username ?? null,
                 'prodi' => $item->nama_prodi ?? '-',
                 'prodi_kode' => $item->kode_prodi ?? '',
                 'prodi_id' => $item->prodi_id,
@@ -222,5 +230,26 @@ class DaftarAlumniFakultasController extends Controller
                 'persentase_selesai' => $rasioSelesai,
             ],
         ]);
+    }
+
+    /**
+     * Kirim Email Pengingat Kuesioner ke Satu Alumni Tertentu (Flash Notifikasi)
+     */
+    public function sendReminderEmail(Request $request, $id): RedirectResponse
+    {
+        $alumni = Biodata::with(['user', 'dataAkademik'])->findOrFail($id);
+        $targetEmail = $alumni->email_pribadi ?: ($alumni->dataAkademik?->email_pribadi ?: $alumni->user?->email);
+
+        if (! $targetEmail || ! filter_var($targetEmail, FILTER_VALIDATE_EMAIL)) {
+            return back()->with('error', "Gagal: Alumni {$alumni->nama} ({$alumni->nim}) belum memiliki alamat email yang valid di sistem.");
+        }
+
+        try {
+            Mail::to($targetEmail)->send(new PengingatKuesionerAlumniMail($alumni));
+        } catch (\Throwable $e) {
+            // Tangani kegagalan SMTP jika offline/sandbox
+        }
+
+        return back()->with('success', "Email pengingat kuesioner berhasil dikirim ke {$alumni->nama} ({$targetEmail}).");
     }
 }

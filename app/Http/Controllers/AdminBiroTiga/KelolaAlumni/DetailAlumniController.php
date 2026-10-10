@@ -4,8 +4,11 @@ namespace App\Http\Controllers\AdminBiroTiga\KelolaAlumni;
 
 use App\Http\Controllers\Controller;
 use App\Models\Biodata;
+use App\Models\EvaluasiAtasan;
 use App\Models\Kabupaten;
 use App\Models\Kuesioner;
+use App\Models\LinkedinSyncResult;
+use App\Models\PertanyaanEvaluasiAtasan;
 use App\Models\Perusahaan;
 use App\Models\ProdiQuestionSection;
 use App\Models\ProdiResponse;
@@ -13,6 +16,7 @@ use App\Models\Propinsi;
 use App\Models\RefNegara;
 use App\Models\Tracer;
 use App\Services\Alumni\AdminAlumniProfileService;
+use App\Services\Alumni\LinkedinTraceHelper;
 use App\Services\Export\AlumniTracerExcelExporter;
 use App\Services\Kuesioner\KelengkapanTracerService;
 use App\Services\Kuesioner\KuesionerSyncService;
@@ -127,8 +131,20 @@ class DetailAlumniController extends Controller
                     ];
                 }
 
-                $unansweredCount = count(array_filter($subpertanyaansList, function ($item) {
+                $unansweredMandatoryCount = count(array_filter($subpertanyaansList, function ($item) {
                     return $item['is_mandatory'] && ! $item['is_answered'] && ! $item['is_header'];
+                }));
+
+                $unansweredOptionalCount = count(array_filter($subpertanyaansList, function ($item) {
+                    return ! $item['is_mandatory'] && ! $item['is_answered'] && ! $item['is_header'];
+                }));
+
+                $answeredCount = count(array_filter($subpertanyaansList, function ($item) {
+                    return $item['is_answered'] && ! $item['is_header'];
+                }));
+
+                $totalQuestionsCount = count(array_filter($subpertanyaansList, function ($item) {
+                    return ! $item['is_header'];
                 }));
 
                 $sectionsWithAnswers[] = [
@@ -137,7 +153,10 @@ class DetailAlumniController extends Controller
                     'title' => $section->title ?: $section->section,
                     'order' => $section->order,
                     'subpertanyaans' => $subpertanyaansList,
-                    'unanswered_mandatory_count' => $unansweredCount,
+                    'unanswered_mandatory_count' => $unansweredMandatoryCount,
+                    'unanswered_optional_count' => $unansweredOptionalCount,
+                    'answered_count' => $answeredCount,
+                    'total_questions_count' => $totalQuestionsCount,
                 ];
             }
         }
@@ -220,8 +239,17 @@ class DetailAlumniController extends Controller
                     ];
                 }
 
-                $unansweredProdiCount = count(array_filter($pQuestionsList, function ($item) {
+                $unansweredProdiMandatory = count(array_filter($pQuestionsList, function ($item) {
                     return $item['is_mandatory'] && ! $item['is_answered'] && ! $item['is_header'];
+                }));
+                $unansweredProdiOptional = count(array_filter($pQuestionsList, function ($item) {
+                    return ! $item['is_mandatory'] && ! $item['is_answered'] && ! $item['is_header'];
+                }));
+                $answeredProdiCount = count(array_filter($pQuestionsList, function ($item) {
+                    return $item['is_answered'] && ! $item['is_header'];
+                }));
+                $totalProdiCountInSec = count(array_filter($pQuestionsList, function ($item) {
+                    return ! $item['is_header'];
                 }));
 
                 $prodiSectionsWithAnswers[] = [
@@ -230,7 +258,10 @@ class DetailAlumniController extends Controller
                     'description' => $pSection->description,
                     'order' => $pSection->order,
                     'questions' => $pQuestionsList,
-                    'unanswered_mandatory_count' => $unansweredProdiCount,
+                    'unanswered_mandatory_count' => $unansweredProdiMandatory,
+                    'unanswered_optional_count' => $unansweredProdiOptional,
+                    'answered_count' => $answeredProdiCount,
+                    'total_questions_count' => $totalProdiCountInSec,
                 ];
             }
 
@@ -252,10 +283,30 @@ class DetailAlumniController extends Controller
         $refOptions = AdminAlumniProfileService::getRefOptions();
         $perusahaans = Perusahaan::select('id', 'nama_perusahaan', 'jenis_lokasi', 'negara', 'propinsi_id', 'kabupaten_id', 'alamat', 'kode_pos', 'skala', 'jenis_perusahaan', 'jenis_perusahaan_lainnya', 'status_verifikasi')->get();
 
+        $latestSync = $alumni->latestLinkedinSyncResult;
+        $linkedinTraceMapping = LinkedinTraceHelper::buildTraceMapping($alumni, $latestSync);
+        $linkedinHistory = LinkedinSyncResult::where('biodata_id', $alumni->id)
+            ->with('reviewer')
+            ->orderByDesc('id')
+            ->take(10)
+            ->get();
+
+        // Ambil Data Evaluasi Atasan (Pengguna Lulusan)
+        $evaluasiAtasan = EvaluasiAtasan::where('biodata_id', $alumni->id)
+            ->with(['atasan', 'perusahaan', 'respons.pertanyaan'])
+            ->latest('updated_at')
+            ->first();
+
+        $pertanyaanEvaluasiAtasan = PertanyaanEvaluasiAtasan::where('is_active', true)
+            ->orderBy('order', 'asc')
+            ->get();
+
         return Inertia::render('AdminBiroTiga/AlumniShow', [
             'biodata' => $alumni,
             'alumni' => $alumni,
             'evaluasi' => $evaluasi,
+            'evaluasiAtasan' => $evaluasiAtasan,
+            'pertanyaanEvaluasiAtasan' => $pertanyaanEvaluasiAtasan,
             'sections' => $sectionsWithAnswers,
             'prodiSections' => $prodiSectionsWithAnswers,
             'prodiEvaluasi' => $prodiEvaluasi,
@@ -267,18 +318,18 @@ class DetailAlumniController extends Controller
             'refOptions' => $refOptions,
             'perusahaans' => $perusahaans,
             'companies' => $perusahaans,
+            'linkedinSyncResult' => $latestSync,
+            'linkedinTraceMapping' => $linkedinTraceMapping,
+            'linkedinHistory' => $linkedinHistory,
         ]);
     }
 
     /**
-     * Update Data Profil Alumni oleh Admin Biro 3
+     * Update Data Profil Alumni oleh Admin Biro 3 (Read-Only Guard)
      */
     public function updateProfile(Request $request, $id): RedirectResponse
     {
-        $biodata = Biodata::findOrFail($id);
-        AdminAlumniProfileService::updateProfile($biodata, $request->all());
-
-        return redirect()->back()->with('success', 'Data profil mahasiswa berhasil diperbarui.');
+        return redirect()->back()->with('warning', 'Akses ditolak: Admin Biro 3 hanya memiliki hak akses baca (analisis dan komunikasi), tidak memiliki wewenang untuk mengubah data profil alumni.');
     }
 
     /**
