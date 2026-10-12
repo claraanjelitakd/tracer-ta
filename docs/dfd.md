@@ -155,7 +155,7 @@ flowchart TD
     E3 -->|Permintaan Sinkronisasi LinkedIn Prodi| P0
     E3 -->|Perintah Reset Sandi Mahasiswa Prodi| P0
     P0 -->|Dashboard & Statistik Capaian Prodi| E3
-    P0 -->|Rekap Data Lulusan Prodi (Excel)| E3
+    P0 -->|Rekap Data Lulusan Prodi Format Excel| E3
 
     %% Data Flows E4 (Admin Fakultas)
     E4 -->|Kredensial Login Admin Fakultas| P0
@@ -163,13 +163,13 @@ flowchart TD
     E4 -->|Permintaan Sinkronisasi LinkedIn Fakultas| P0
     E4 -->|Perintah Reset Sandi Mahasiswa Fakultas| P0
     P0 -->|Dashboard Monitoring Capaian Fakultas| E4
-    P0 -->|Rekap Data Lulusan Fakultas (Excel)| E4
+    P0 -->|Rekap Data Lulusan Fakultas Format Excel| E4
 
     %% Data Flows E5 (Admin Biro III)
     E5 -->|Kredensial Login Admin Biro III| P0
     E5 -->|Permintaan Sinkronisasi LinkedIn Universitas| P0
     P0 -->|Dashboard Eksekutif Partisipasi Kampus| E5
-    P0 -->|Laporan Agregat Tracer Study Nasional (Excel)| E5
+    P0 -->|Laporan Agregat Tracer Study Nasional Format Excel| E5
 
     %% Data Flows E6 (Superadmin)
     E6 -->|Kredensial Login Superadmin| P0
@@ -803,7 +803,7 @@ Berdasarkan Kendall & Kendall (pp. 238–240), partisi membagi DFD menjadi modul
 flowchart TB
     subgraph P_Public ["Partisi 1: Antarmuka Publik & Token Evaluasi (Tanpa Login / Secure URL)"]
         LandingPage["Landing Page & Info Tracer"]
-        TokenSurvey["Evaluasi Kinerja Atasan: /evaluasi/{token} (64-Char Hash)"]
+        TokenSurvey["Evaluasi Kinerja Atasan: /evaluasi/:token (64-Char Hash)"]
     end
 
     subgraph P_Auth ["Partisi 2: Layanan Keamanan & Autentikasi (Bcrypt + Rate Limiter)"]
@@ -836,8 +836,8 @@ flowchart TB
         TablesAuth[("Tabel: users, password_reset_tokens")]
         TablesAlumni[("Tabel: biodata, atasan, linkedin_sync_results")]
         TablesCompany[("Tabel: perusahaan, ref_wilayah, ref_negara")]
-        TablesSurvey[("Tabel: kuesioner, kelompok_pertanyaan, ref_subpertanyaan*, tracer")]
-        TablesProdiSurvey[("Tabel: prodi_question_section, prodi_question*, prodi_response")]
+        TablesSurvey[("Tabel: kuesioner, kelompok_pertanyaan, ref_subpertanyaan, tracer")]
+        TablesProdiSurvey[("Tabel: prodi_question_section, prodi_question, prodi_response")]
         TablesEmployer[("Tabel: pertanyaan_evaluasi_atasan, evaluasi_atasan, respon_evaluasi_atasan")]
         TablesAudit[("Tabel: log_activities")]
     end
