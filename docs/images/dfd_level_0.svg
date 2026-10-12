@@ -1,0 +1,243 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2240 1580" width="2240" height="1580" style="background-color: #ffffff; font-family: 'Segoe UI', Arial, Helvetica, sans-serif;">
+  <defs>
+    <!-- Arrow marker Kendall style (crimson red) -->
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M 0 1 L 9 5 L 0 9 z" fill="#991b1b"/>
+    </marker>
+    <filter id="entity-shadow" x="-5%" y="-5%" width="115%" height="115%">
+      <feDropShadow dx="6" dy="6" stdDeviation="0" flood-color="#111827" flood-opacity="1"/>
+    </filter>
+    <filter id="card-shadow" x="-5%" y="-5%" width="110%" height="110%">
+      <feDropShadow dx="2" dy="3" stdDeviation="3" flood-color="#000000" flood-opacity="0.08"/>
+    </filter>
+  </defs>
+
+  <style>
+    .title { font-size: 25px; font-weight: 800; fill: #0f172a; letter-spacing: 0.5px; }
+    .subtitle { font-size: 14px; fill: #475569; }
+    .entity-title { font-size: 13.5px; font-weight: 700; fill: #0f172a; text-anchor: middle; }
+    .entity-sub { font-size: 11px; fill: #64748b; text-anchor: middle; }
+    .proc-num { font-size: 17px; font-weight: 800; fill: #0f172a; text-anchor: middle; dominant-baseline: middle; }
+    .proc-name { font-size: 13.5px; font-weight: 700; fill: #0f172a; text-anchor: middle; }
+    .ds-badge { font-size: 13.5px; font-weight: 800; fill: #ffffff; text-anchor: middle; dominant-baseline: middle; }
+    .ds-name { font-size: 12.5px; font-weight: 700; fill: #0f172a; dominant-baseline: middle; }
+    .flow-line { stroke: #991b1b; stroke-width: 1.8; fill: none; marker-end: url(#arrow); }
+    .flow-lbl { font-size: 11px; font-weight: 600; fill: #1e293b; text-anchor: middle; dominant-baseline: middle; }
+    .lbl-bg { fill: #ffffff; stroke: #cbd5e1; stroke-width: 0.8; rx: 3; ry: 3; }
+    .banner-box { fill: #f0fdf4; stroke: #86efac; stroke-width: 1.5; rx: 6; ry: 6; }
+    .banner-text { font-size: 12px; fill: #166534; }
+  </style>
+
+  <!-- Document Header -->
+  <rect x="0" y="0" width="2240" height="78" fill="#f8fafc" stroke="#e2e8f0" stroke-width="1"/>
+  <text x="50" y="36" class="title">DIAGRAM 0 (LEVEL 0 DFD LOGIS) - SISTEM TRACER STUDY (SERU - UKDW)</text>
+  <text x="50" y="60" class="subtitle">Dekomposisi Lengkap Berdasarkan Standar Kenneth E. Kendall &amp; Julie E. Kendall (10th Edition) - 7 Proses Utama &amp; 11 Simpanan Data</text>
+<rect x="56" y="116" width="240" height="85" fill="#1e293b"/>
+  <rect x="50" y="110" width="240" height="85" fill="#ffffff" stroke="#0f172a" stroke-width="2.2"/>
+  <text x="170" y="137" class="entity-title">SISTEM AKADEMIK</text>
+  <text x="170" y="155" class="entity-title">(SIAKAD UKDW)</text>
+  <text x="170" y="173" class="entity-sub">[Master Akademik &amp; Yudisium]</text><rect x="56" y="426" width="240" height="130" fill="#1e293b"/>
+  <rect x="50" y="420" width="240" height="130" fill="#ffffff" stroke="#0f172a" stroke-width="2.2"/>
+  <text x="170" y="470" class="entity-title">ALUMNI / LULUSAN</text>
+  <text x="170" y="488" class="entity-title">UKDW</text>
+  <text x="170" y="506" class="entity-sub">[Pengisi Kuesioner &amp; Karir]</text><rect x="56" y="776" width="240" height="85" fill="#1e293b"/>
+  <rect x="50" y="770" width="240" height="85" fill="#ffffff" stroke="#0f172a" stroke-width="2.2"/>
+  <text x="170" y="797" class="entity-title">LAYANAN LINKEDIN</text>
+  <text x="170" y="815" class="entity-title">(APIFY API)</text>
+  <text x="170" y="833" class="entity-sub">[Penyedia Data Profil Publik]</text><rect x="1186" y="976" width="250" height="95" fill="#1e293b"/>
+  <rect x="1180" y="970" width="250" height="95" fill="#ffffff" stroke="#0f172a" stroke-width="2.2"/>
+  <text x="1305" y="1002" class="entity-title">PENGGUNA LULUSAN</text>
+  <text x="1305" y="1020" class="entity-title">(ATASAN LANGSUNG)</text>
+  <text x="1305" y="1038" class="entity-sub">[Penilai Kinerja Lulusan]</text><rect x="1906" y="116" width="260" height="95" fill="#1e293b"/>
+  <rect x="1900" y="110" width="260" height="95" fill="#ffffff" stroke="#0f172a" stroke-width="2.2"/>
+  <text x="2030" y="151" class="entity-title">ADMIN PROGRAM STUDI</text>
+  <text x="2030" y="169" class="entity-sub">[Kelola Kuesioner &amp; Akun Prodi]</text><rect x="1906" y="396" width="260" height="95" fill="#1e293b"/>
+  <rect x="1900" y="390" width="260" height="95" fill="#ffffff" stroke="#0f172a" stroke-width="2.2"/>
+  <text x="2030" y="431" class="entity-title">ADMIN FAKULTAS</text>
+  <text x="2030" y="449" class="entity-sub">[Monitoring Lintas Prodi Fak]</text><rect x="1906" y="676" width="260" height="95" fill="#1e293b"/>
+  <rect x="1900" y="670" width="260" height="95" fill="#ffffff" stroke="#0f172a" stroke-width="2.2"/>
+  <text x="2030" y="702" class="entity-title">ADMIN BIRO III</text>
+  <text x="2030" y="720" class="entity-title">(KEMAHASISWAAN)</text>
+  <text x="2030" y="738" class="entity-sub">[Monitoring Eksekutif Kampus]</text><rect x="1906" y="956" width="260" height="100" fill="#1e293b"/>
+  <rect x="1900" y="950" width="260" height="100" fill="#ffffff" stroke="#0f172a" stroke-width="2.2"/>
+  <text x="2030" y="994" class="entity-title">SUPERADMIN</text>
+  <text x="2030" y="1012" class="entity-sub">[Pengendali Penuh Sistem]</text><rect x="440" y="110" width="240" height="105" rx="16" ry="16" fill="#f8fafc" stroke="#0284c7" stroke-width="2.4" filter="url(#card-shadow)"/>
+  <line x1="440" y1="144" x2="680" y2="144" stroke="#0284c7" stroke-width="1.8"/>
+  <text x="560" y="129" class="proc-num">1.0</text>
+  <text x="560" y="174" class="proc-name">Kelola Autentikasi dan</text>
+  <text x="560" y="192" class="proc-name">Akun Pengguna</text><rect x="440" y="430" width="250" height="125" rx="16" ry="16" fill="#f8fafc" stroke="#0284c7" stroke-width="2.4" filter="url(#card-shadow)"/>
+  <line x1="440" y1="464" x2="690" y2="464" stroke="#0284c7" stroke-width="1.8"/>
+  <text x="565" y="449" class="proc-num">2.0</text>
+  <text x="565" y="504" class="proc-name">Kelola Profil Biodata</text>
+  <text x="565" y="522" class="proc-name">dan Karir Alumni</text><rect x="440" y="760" width="240" height="105" rx="16" ry="16" fill="#f8fafc" stroke="#0284c7" stroke-width="2.4" filter="url(#card-shadow)"/>
+  <line x1="440" y1="794" x2="680" y2="794" stroke="#0284c7" stroke-width="1.8"/>
+  <text x="560" y="779" class="proc-num">3.0</text>
+  <text x="560" y="824" class="proc-name">Kelola dan Verifikasi</text>
+  <text x="560" y="842" class="proc-name">Data Perusahaan</text><rect x="1180" y="110" width="250" height="105" rx="16" ry="16" fill="#f8fafc" stroke="#0284c7" stroke-width="2.4" filter="url(#card-shadow)"/>
+  <line x1="1180" y1="144" x2="1430" y2="144" stroke="#0284c7" stroke-width="1.8"/>
+  <text x="1305" y="129" class="proc-num">4.0</text>
+  <text x="1305" y="174" class="proc-name">Kelola Kuesioner Tracer</text>
+  <text x="1305" y="192" class="proc-name">Study Universitas</text><rect x="1180" y="430" width="250" height="105" rx="16" ry="16" fill="#f8fafc" stroke="#0284c7" stroke-width="2.4" filter="url(#card-shadow)"/>
+  <line x1="1180" y1="464" x2="1430" y2="464" stroke="#0284c7" stroke-width="1.8"/>
+  <text x="1305" y="449" class="proc-num">5.0</text>
+  <text x="1305" y="494" class="proc-name">Kelola Kuesioner Khusus</text>
+  <text x="1305" y="512" class="proc-name">Program Studi</text><rect x="1180" y="750" width="250" height="115" rx="16" ry="16" fill="#f8fafc" stroke="#0284c7" stroke-width="2.4" filter="url(#card-shadow)"/>
+  <line x1="1180" y1="784" x2="1430" y2="784" stroke="#0284c7" stroke-width="1.8"/>
+  <text x="1305" y="769" class="proc-num">6.0</text>
+  <text x="1305" y="819" class="proc-name">Kelola Evaluasi Kinerja</text>
+  <text x="1305" y="837" class="proc-name">Lulusan oleh Atasan</text><rect x="780" y="1200" width="310" height="120" rx="16" ry="16" fill="#f8fafc" stroke="#0284c7" stroke-width="2.4" filter="url(#card-shadow)"/>
+  <line x1="780" y1="1234" x2="1090" y2="1234" stroke="#0284c7" stroke-width="1.8"/>
+  <text x="935" y="1219" class="proc-num">7.0</text>
+  <text x="935" y="1272" class="proc-name">Sajikan Analisis Data dan</text>
+  <text x="935" y="1290" class="proc-name">Laporan Eksekutif</text><rect x="750" y="140" width="42" height="34" fill="#0369a1"/>
+  <text x="771" y="158" class="ds-badge">D1</text>
+  <line x1="792" y1="140" x2="990" y2="140" stroke="#0369a1" stroke-width="2"/>
+  <line x1="792" y1="174" x2="990" y2="174" stroke="#0369a1" stroke-width="2"/>
+  <rect x="792" y="141" width="198" height="32" fill="#f0f9ff" fill-opacity="0.6"/>
+  <text x="802" y="158" class="ds-name">Master Akun Pengguna</text><rect x="760" y="440" width="42" height="34" fill="#0369a1"/>
+  <text x="781" y="458" class="ds-badge">D2</text>
+  <line x1="802" y1="440" x2="1015" y2="440" stroke="#0369a1" stroke-width="2"/>
+  <line x1="802" y1="474" x2="1015" y2="474" stroke="#0369a1" stroke-width="2"/>
+  <rect x="802" y="441" width="213" height="32" fill="#f0f9ff" fill-opacity="0.6"/>
+  <text x="812" y="458" class="ds-name">Profil Biodata &amp; Karir Alumni</text><rect x="760" y="505" width="42" height="34" fill="#0369a1"/>
+  <text x="781" y="523" class="ds-badge">D10</text>
+  <line x1="802" y1="505" x2="1015" y2="505" stroke="#0369a1" stroke-width="2"/>
+  <line x1="802" y1="539" x2="1015" y2="539" stroke="#0369a1" stroke-width="2"/>
+  <rect x="802" y="506" width="213" height="32" fill="#f0f9ff" fill-opacity="0.6"/>
+  <text x="812" y="523" class="ds-name">Staging Integrasi LinkedIn</text><rect x="750" y="790" width="42" height="34" fill="#0369a1"/>
+  <text x="771" y="808" class="ds-badge">D3</text>
+  <line x1="792" y1="790" x2="990" y2="790" stroke="#0369a1" stroke-width="2"/>
+  <line x1="792" y1="824" x2="990" y2="824" stroke="#0369a1" stroke-width="2"/>
+  <rect x="792" y="791" width="198" height="32" fill="#f0f9ff" fill-opacity="0.6"/>
+  <text x="802" y="808" class="ds-name">Data Perusahaan</text><rect x="1500" y="115" width="42" height="34" fill="#0369a1"/>
+  <text x="1521" y="133" class="ds-badge">D4</text>
+  <line x1="1542" y1="115" x2="1745" y2="115" stroke="#0369a1" stroke-width="2"/>
+  <line x1="1542" y1="149" x2="1745" y2="149" stroke="#0369a1" stroke-width="2"/>
+  <rect x="1542" y="116" width="203" height="32" fill="#f0f9ff" fill-opacity="0.6"/>
+  <text x="1552" y="133" class="ds-name">Instrumen Kuesioner Univ</text><rect x="1500" y="165" width="42" height="34" fill="#0369a1"/>
+  <text x="1521" y="183" class="ds-badge">D5</text>
+  <line x1="1542" y1="165" x2="1745" y2="165" stroke="#0369a1" stroke-width="2"/>
+  <line x1="1542" y1="199" x2="1745" y2="199" stroke="#0369a1" stroke-width="2"/>
+  <rect x="1542" y="166" width="203" height="32" fill="#f0f9ff" fill-opacity="0.6"/>
+  <text x="1552" y="183" class="ds-name">Respon Kuesioner Univ</text><rect x="1500" y="435" width="42" height="34" fill="#0369a1"/>
+  <text x="1521" y="453" class="ds-badge">D6</text>
+  <line x1="1542" y1="435" x2="1745" y2="435" stroke="#0369a1" stroke-width="2"/>
+  <line x1="1542" y1="469" x2="1745" y2="469" stroke="#0369a1" stroke-width="2"/>
+  <rect x="1542" y="436" width="203" height="32" fill="#f0f9ff" fill-opacity="0.6"/>
+  <text x="1552" y="453" class="ds-name">Instrumen Kuesioner Prodi</text><rect x="1500" y="485" width="42" height="34" fill="#0369a1"/>
+  <text x="1521" y="503" class="ds-badge">D7</text>
+  <line x1="1542" y1="485" x2="1745" y2="485" stroke="#0369a1" stroke-width="2"/>
+  <line x1="1542" y1="519" x2="1745" y2="519" stroke="#0369a1" stroke-width="2"/>
+  <rect x="1542" y="486" width="203" height="32" fill="#f0f9ff" fill-opacity="0.6"/>
+  <text x="1552" y="503" class="ds-name">Respon Kuesioner Prodi</text><rect x="1500" y="755" width="42" height="34" fill="#0369a1"/>
+  <text x="1521" y="773" class="ds-badge">D8</text>
+  <line x1="1542" y1="755" x2="1745" y2="755" stroke="#0369a1" stroke-width="2"/>
+  <line x1="1542" y1="789" x2="1745" y2="789" stroke="#0369a1" stroke-width="2"/>
+  <rect x="1542" y="756" width="203" height="32" fill="#f0f9ff" fill-opacity="0.6"/>
+  <text x="1552" y="773" class="ds-name">Instrumen Evaluasi Atasan</text><rect x="1500" y="805" width="42" height="34" fill="#0369a1"/>
+  <text x="1521" y="823" class="ds-badge">D9</text>
+  <line x1="1542" y1="805" x2="1745" y2="805" stroke="#0369a1" stroke-width="2"/>
+  <line x1="1542" y1="839" x2="1745" y2="839" stroke="#0369a1" stroke-width="2"/>
+  <rect x="1542" y="806" width="203" height="32" fill="#f0f9ff" fill-opacity="0.6"/>
+  <text x="1552" y="823" class="ds-name">Respon Evaluasi Atasan</text><rect x="815" y="1080" width="42" height="34" fill="#0369a1"/>
+  <text x="836" y="1098" class="ds-badge">D11</text>
+  <line x1="857" y1="1080" x2="1055" y2="1080" stroke="#0369a1" stroke-width="2"/>
+  <line x1="857" y1="1114" x2="1055" y2="1114" stroke="#0369a1" stroke-width="2"/>
+  <rect x="857" y="1081" width="198" height="32" fill="#f0f9ff" fill-opacity="0.6"/>
+  <text x="867" y="1098" class="ds-name">Log Aktivitas Sistem</text><path d="M 290 135 L 360 135 L 360 450 L 440 450" class="flow-line"/>
+  <rect x="272.25" y="280.5" width="165.5" height="19" class="lbl-bg"/>
+  <text x="355" y="291" class="flow-lbl" text-anchor="middle">Data Akademik Mahasiswa</text><path d="M 290 155 L 380 155 L 380 475 L 440 475" class="flow-line"/>
+  <rect x="297.25" y="315.5" width="165.5" height="19" class="lbl-bg"/>
+  <text x="380" y="326" class="flow-lbl" text-anchor="middle">Data Kelulusan Yudisium</text><path d="M 290 175 L 400 175 L 400 500 L 440 500" class="flow-line"/>
+  <rect x="323.75" y="350.5" width="152.5" height="19" class="lbl-bg"/>
+  <text x="400" y="361" class="flow-lbl" text-anchor="middle">Data Kontak Orang Tua</text><path d="M 290 435 L 340 435 L 340 175 L 440 175" class="flow-line"/>
+  <rect x="232.75" y="220.5" width="204.5" height="19" class="lbl-bg"/>
+  <text x="335" y="231" class="flow-lbl" text-anchor="middle">Kredensial Login &amp; Sandi Baru</text><path d="M 440 195 L 320 195 L 320 455 L 290 455" class="flow-line"/>
+  <rect x="237.25" y="240.5" width="165.5" height="19" class="lbl-bg"/>
+  <text x="320" y="251" class="flow-lbl" text-anchor="middle">Status Sesi &amp; Hak Akses</text><path d="M 680 145 L 750 145" class="flow-line"/>
+  <rect x="655.0" y="125.5" width="120.0" height="19" class="lbl-bg"/>
+  <text x="715" y="136" class="flow-lbl" text-anchor="middle">Verif Kredensial</text><path d="M 750 160 L 680 160" class="flow-line"/>
+  <rect x="661.5" y="162.5" width="107.0" height="19" class="lbl-bg"/>
+  <text x="715" y="173" class="flow-lbl" text-anchor="middle">Data Akun User</text><path d="M 560 215 L 560 260 L 730 260 L 730 1090 L 815 1090" class="flow-line"/>
+  <rect x="581.75" y="240.5" width="126.5" height="19" class="lbl-bg"/>
+  <text x="645" y="251" class="flow-lbl" text-anchor="middle">Log Login / Reset</text><path d="M 290 480 L 440 480" class="flow-line"/>
+  <rect x="279.0" y="460.5" width="172.0" height="19" class="lbl-bg"/>
+  <text x="365" y="471" class="flow-lbl" text-anchor="middle">Pembaruan Kontak &amp; Karir</text><path d="M 440 535 L 290 535" class="flow-line"/>
+  <rect x="288.75" y="535.5" width="152.5" height="19" class="lbl-bg"/>
+  <text x="365" y="546" class="flow-lbl" text-anchor="middle">Tampilan Profil Karir</text><path d="M 690 450 L 760 450" class="flow-line"/>
+  <rect x="678.0" y="430.5" width="94.0" height="19" class="lbl-bg"/>
+  <text x="725" y="441" class="flow-lbl" text-anchor="middle">Simpan Karir</text><path d="M 760 465 L 690 465" class="flow-line"/>
+  <rect x="671.5" y="465.5" width="107.0" height="19" class="lbl-bg"/>
+  <text x="725" y="476" class="flow-lbl" text-anchor="middle">Profil Terkini</text><path d="M 690 515 L 760 515" class="flow-line"/>
+  <rect x="678.0" y="495.5" width="94.0" height="19" class="lbl-bg"/>
+  <text x="725" y="506" class="flow-lbl" text-anchor="middle">Staging Data</text><path d="M 440 545 L 370 545 L 370 790 L 290 790" class="flow-line"/>
+  <rect x="287.0" y="670.5" width="146.0" height="19" class="lbl-bg"/>
+  <text x="360" y="681" class="flow-lbl" text-anchor="middle">Request Scraping URL</text><path d="M 290 815 L 390 815 L 390 550 L 440 550" class="flow-line"/>
+  <rect x="320.25" y="690.5" width="139.5" height="19" class="lbl-bg"/>
+  <text x="390" y="701" class="flow-lbl" text-anchor="middle">Data Karir LinkedIn</text><path d="M 565 555 L 565 670 L 1305 670 L 1305 750" class="flow-line"/>
+  <rect x="764.5" y="650.5" width="341.0" height="19" class="lbl-bg"/>
+  <text x="935" y="661" class="flow-lbl" text-anchor="middle">Pemicu Token Evaluasi Atasan (Data Atasan Lengkap)</text><path d="M 290 510 L 330 510 L 330 780 L 440 780" class="flow-line"/>
+  <rect x="245.75" y="630.5" width="178.5" height="19" class="lbl-bg"/>
+  <text x="335" y="641" class="flow-lbl" text-anchor="middle">Pengajuan Perusahaan Baru</text><path d="M 440 805 L 310 805 L 310 525 L 290 525" class="flow-line"/>
+  <rect x="211.0" y="650.5" width="198.0" height="19" class="lbl-bg"/>
+  <text x="310" y="661" class="flow-lbl" text-anchor="middle">Status Verifikasi Perusahaan</text><path d="M 680 795 L 750 795" class="flow-line"/>
+  <rect x="664.75" y="775.5" width="100.5" height="19" class="lbl-bg"/>
+  <text x="715" y="786" class="flow-lbl" text-anchor="middle">Simpan Usulan</text><path d="M 750 810 L 680 810" class="flow-line"/>
+  <rect x="651.75" y="812.5" width="126.5" height="19" class="lbl-bg"/>
+  <text x="715" y="823" class="flow-lbl" text-anchor="middle">Master Perusahaan</text><path d="M 290 425 L 320 425 L 320 80 L 1220 80 L 1220 110" class="flow-line"/>
+  <rect x="667.75" y="60.5" width="204.5" height="19" class="lbl-bg"/>
+  <text x="770" y="71" class="flow-lbl" text-anchor="middle">Jawaban Kuesioner Universitas</text><path d="M 1280 110 L 1280 95 L 305 95 L 305 440 L 290 440" class="flow-line"/>
+  <rect x="677.5" y="95.5" width="185.0" height="19" class="lbl-bg"/>
+  <text x="770" y="106" class="flow-lbl" text-anchor="middle">Lembar Soal Kuesioner Univ</text><path d="M 1430 135 L 1500 135" class="flow-line"/>
+  <rect x="1414.75" y="115.5" width="100.5" height="19" class="lbl-bg"/>
+  <text x="1465" y="126" class="flow-lbl" text-anchor="middle">Soal &amp; Branch</text><path d="M 1430 185 L 1500 185" class="flow-line"/>
+  <rect x="1414.75" y="165.5" width="100.5" height="19" class="lbl-bg"/>
+  <text x="1465" y="176" class="flow-lbl" text-anchor="middle">Simpan Respon</text><path d="M 290 465 L 340 465 L 340 370 L 1220 370 L 1220 430" class="flow-line"/>
+  <rect x="664.5" y="350.5" width="211.0" height="19" class="lbl-bg"/>
+  <text x="770" y="361" class="flow-lbl" text-anchor="middle">Jawaban Kuesioner Khusus Prodi</text><path d="M 1280 430 L 1280 385 L 325 385 L 325 450 L 290 450" class="flow-line"/>
+  <rect x="706.75" y="385.5" width="126.5" height="19" class="lbl-bg"/>
+  <text x="770" y="396" class="flow-lbl" text-anchor="middle">Lembar Soal Prodi</text><path d="M 1430 455 L 1500 455" class="flow-line"/>
+  <rect x="1401.75" y="435.5" width="126.5" height="19" class="lbl-bg"/>
+  <text x="1465" y="446" class="flow-lbl" text-anchor="middle">Master Soal Prodi</text><path d="M 1430 505 L 1500 505" class="flow-line"/>
+  <rect x="1395.25" y="485.5" width="139.5" height="19" class="lbl-bg"/>
+  <text x="1465" y="496" class="flow-lbl" text-anchor="middle">Simpan Respon Prodi</text><path d="M 1230 865 L 1230 970" class="flow-line"/>
+  <rect x="1070.5" y="905.5" width="159.0" height="19" class="lbl-bg"/>
+  <text x="1150" y="916" class="flow-lbl" text-anchor="middle">Undangan Email &amp; Token</text><path d="M 1305 970 L 1305 865" class="flow-line"/>
+  <rect x="1219.0" y="905.5" width="172.0" height="19" class="lbl-bg"/>
+  <text x="1305" y="916" class="flow-lbl" text-anchor="middle">Jawaban Evaluasi Kinerja</text><path d="M 1380 865 L 1380 970" class="flow-line"/>
+  <rect x="1378.75" y="905.5" width="152.5" height="19" class="lbl-bg"/>
+  <text x="1455" y="916" class="flow-lbl" text-anchor="middle">Tanda Terima Evaluasi</text><path d="M 1430 775 L 1500 775" class="flow-line"/>
+  <rect x="1408.25" y="755.5" width="113.5" height="19" class="lbl-bg"/>
+  <text x="1465" y="766" class="flow-lbl" text-anchor="middle">Aspek Penilaian</text><path d="M 1430 825 L 1500 825" class="flow-line"/>
+  <rect x="1395.25" y="805.5" width="139.5" height="19" class="lbl-bg"/>
+  <text x="1465" y="816" class="flow-lbl" text-anchor="middle">Simpan Nilai Respon</text><path d="M 790 190 L 710 190 L 710 1220 L 780 1220" class="flow-line"/>
+  <rect x="659.75" y="700.5" width="100.5" height="19" class="lbl-bg"/>
+  <text x="710" y="711" class="flow-lbl" text-anchor="middle">Agregasi Akun</text><path d="M 860 540 L 860 1200" class="flow-line"/>
+  <rect x="774.0" y="860.5" width="172.0" height="19" class="lbl-bg"/>
+  <text x="860" y="871" class="flow-lbl" text-anchor="middle">Agregasi Biodata &amp; Karir</text><path d="M 1745 822 L 1780 822 L 1780 1160 L 1090 1160 L 1090 1220" class="flow-line"/>
+  <rect x="1349.0" y="1140.5" width="172.0" height="19" class="lbl-bg"/>
+  <text x="1435" y="1151" class="flow-lbl" text-anchor="middle">Agregasi Evaluasi Atasan</text><path d="M 1745 182 L 1810 182 L 1810 1140 L 1060 1140 L 1060 1200" class="flow-line"/>
+  <rect x="1355.5" y="1120.5" width="159.0" height="19" class="lbl-bg"/>
+  <text x="1435" y="1131" class="flow-lbl" text-anchor="middle">Agregasi Respon Tracer</text><path d="M 935 1200 L 935 1114" class="flow-line"/>
+  <rect x="878.25" y="1145.5" width="113.5" height="19" class="lbl-bg"/>
+  <text x="935" y="1156" class="flow-lbl" text-anchor="middle">Audit Log Trail</text><path d="M 1090 1240 L 1860 1240 L 1860 175 L 1900 175" class="flow-line"/>
+  <rect x="1527.75" y="1220.5" width="204.5" height="19" class="lbl-bg"/>
+  <text x="1630" y="1231" class="flow-lbl" text-anchor="middle">Dashboard &amp; Rekap Excel Prodi</text><path d="M 1090 1260 L 1875 1260 L 1875 450 L 1900 450" class="flow-line"/>
+  <rect x="1538.0" y="1240.5" width="224.0" height="19" class="lbl-bg"/>
+  <text x="1650" y="1251" class="flow-lbl" text-anchor="middle">Dashboard &amp; Rekap Excel Fakultas</text><path d="M 1090 1280 L 1890 1280 L 1890 730 L 1900 730" class="flow-line"/>
+  <rect x="1548.25" y="1260.5" width="243.5" height="19" class="lbl-bg"/>
+  <text x="1670" y="1271" class="flow-lbl" text-anchor="middle">Dashboard Eksekutif &amp; Lap. Nasional</text><path d="M 1090 1300 L 1895 1300 L 1895 1010 L 1900 1010" class="flow-line"/>
+  <rect x="1558.5" y="1280.5" width="263.0" height="19" class="lbl-bg"/>
+  <text x="1690" y="1291" class="flow-lbl" text-anchor="middle">Audit Trail Log &amp; Status Sistem Global</text><path d="M 1900 135 L 1765 135 L 1765 280 L 1380 280 L 1380 430" class="flow-line"/>
+  <rect x="1490.5" y="260.5" width="159.0" height="19" class="lbl-bg"/>
+  <text x="1570" y="271" class="flow-lbl" text-anchor="middle">Konfigurasi Soal Prodi</text><path d="M 1900 155 L 1795 155 L 1795 620 L 590 620 L 590 760" class="flow-line"/>
+  <rect x="1061.75" y="600.5" width="256.5" height="19" class="lbl-bg"/>
+  <text x="1190" y="611" class="flow-lbl" text-anchor="middle">Verifikasi Perusahaan Prodi/Fak/Super</text><path d="M 1900 685 L 1835 685 L 1835 60 L 1380 60 L 1380 110" class="flow-line"/>
+  <rect x="1494.75" y="40.5" width="230.5" height="19" class="lbl-bg"/>
+  <text x="1610" y="51" class="flow-lbl" text-anchor="middle">Konfigurasi Instrumen Tracer Univ</text>
+  <!-- ================= KENDALL NOTE BANNER ================= -->
+  <rect x="250" y="1500" width="1740" height="52" class="banner-box"/>
+  <text x="1120" y="1522" text-anchor="middle" class="banner-text" font-weight="700">Penerapan Kaidah DFD Kenneth E. Kendall &amp; Julie E. Kendall (Chapter 7):</text>
+  <text x="1120" y="1540" text-anchor="middle" class="banner-text">1) Proses 1.0 s.d. 7.0 memiliki nomor urut dan nama terstruktur. 2) Simpanan Data (D1 s.d. D11) digambar terbuka di sisi kanan. 3) Data Akademik, Yudisium &amp; Orang Tua dialirkan dari SIAKAD UKDW langsung ke Proses 2.0 tanpa Data Store internal.</text>
+</svg>

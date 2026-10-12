@@ -105,7 +105,19 @@ Pengembangan DFD ini mengikuti tahapan bertingkat (*top-down explosion*):
 
 Diagram Konteks menggambarkan batas luar sistem informasi Tracer Study UKDW dengan **Proses 0** di pusat diagram, berinteraksi dengan 8 Entitas Eksternal, tanpa ada satupun *Data Store*.
 
-### 3.1 Visual Diagram Konteks (Mermaid Representation)
+### 3.1 Gambar Diagram Konteks (Standar Visual Kenneth E. Kendall)
+
+Berikut adalah diagram grafis visual utuh sesuai konvensi notasi baku Kenneth E. Kendall & Julie E. Kendall (simbol *Double Square* berbayang untuk entitas luar, *Rounded Rectangle* proses tunggal `0`, dan aliran data eksplisit):
+
+![Diagram Konteks Sistem Informasi Tracer Study (SERU UKDW)](images/dfd_context_diagram.png)
+
+> **File Vektor Asli (Resolusi Tinggi)**:  
+> Format SVG: [`docs/images/dfd_context_diagram.svg`](images/dfd_context_diagram.svg)  
+> Format PNG Retina: [`docs/images/dfd_context_diagram.png`](images/dfd_context_diagram.png)
+
+---
+
+### 3.2 Representasi Kode Diagram Konteks (Mermaid Representation)
 
 ```mermaid
 flowchart TD
@@ -199,7 +211,23 @@ Diagram 0 merupakan hasil dekomposisi (*explosion*) dari Proses 0 menjadi **7 Pr
 
 ---
 
-### 4.2 Visual Diagram 0 (Mermaid Representation)
+### 4.2 Gambar Diagram 0 / Level 0 DFD (Standar Visual Kenneth E. Kendall)
+
+Berikut adalah diagram grafis visual utuh untuk **Diagram 0 (Level 0 DFD)** sesuai konvensi notasi baku Kenneth E. Kendall & Julie E. Kendall (Figure 7.21):
+- Menampilkan **7 Proses Transformasi Utama** (`1.0` s.d. `7.0`) dengan penomoran dan nama terstruktur (*Verb–Adjective–Noun*).
+- Menampilkan **11 Simpanan Data** (`D1` s.d. `D11`) dengan simbol *open-ended rectangle* (garis sejajar terbuka ke kanan).
+- Menampilkan penerapan **Ketentuan Khusus**: data `Data Akademik`, `Data Yudisium`, dan `Data Kontak Orang Tua` mengalir langsung dari entitas eksternal `Sistem Akademik (SIAKAD UKDW)` ke `Proses 2.0` tanpa melalui Data Store internal.
+- Menampilkan entitas eksternal `Pengguna Lulusan (Atasan Langsung)` yang diletakkan berdekatan dengan `Proses 6.0` guna mencegah tabrakan garis data (*avoid crossing data flow lines*).
+
+![Diagram 0 (Level 0 DFD) Sistem Informasi Tracer Study (SERU UKDW)](images/dfd_level_0.png)
+
+> **File Vektor Asli (Resolusi Tinggi)**:  
+> Format SVG: [`docs/images/dfd_level_0.svg`](images/dfd_level_0.svg)  
+> Format PNG Retina: [`docs/images/dfd_level_0.png`](images/dfd_level_0.png)
+
+---
+
+### 4.3 Representasi Kode Diagram 0 (Mermaid Representation)
 
 ```mermaid
 flowchart TD

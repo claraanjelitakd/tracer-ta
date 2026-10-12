@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1750 1100" width="1750" height="1100" style="background-color: #ffffff; font-family: 'Segoe UI', Arial, Helvetica, sans-serif;">
+  <defs>
+    <!-- Arrow marker Kendall style (crimson red) -->
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M 0 1 L 9 5 L 0 9 z" fill="#991b1b"/>
+    </marker>
+    <filter id="entity-shadow" x="-5%" y="-5%" width="115%" height="115%">
+      <feDropShadow dx="6" dy="6" stdDeviation="0" flood-color="#111827" flood-opacity="1"/>
+    </filter>
+    <filter id="card-shadow" x="-5%" y="-5%" width="110%" height="110%">
+      <feDropShadow dx="2" dy="3" stdDeviation="3" flood-color="#000000" flood-opacity="0.08"/>
+    </filter>
+  </defs>
+
+  <style>
+    .title { font-size: 23px; font-weight: 800; fill: #0f172a; letter-spacing: 0.5px; }
+    .subtitle { font-size: 13.5px; fill: #475569; }
+    .entity-title { font-size: 13px; font-weight: 700; fill: #0f172a; text-anchor: middle; }
+    .entity-sub { font-size: 10.5px; fill: #64748b; text-anchor: middle; }
+    .proc-num { font-size: 22px; font-weight: 800; fill: #0f172a; text-anchor: middle; dominant-baseline: middle; }
+    .proc-name { font-size: 14.5px; font-weight: 700; fill: #0f172a; text-anchor: middle; }
+    .flow-line { stroke: #991b1b; stroke-width: 1.8; fill: none; marker-end: url(#arrow); }
+    .flow-lbl { font-size: 11px; font-weight: 600; fill: #1e293b; text-anchor: middle; dominant-baseline: middle; }
+    .lbl-bg { fill: #ffffff; stroke: #cbd5e1; stroke-width: 0.8; rx: 3; ry: 3; }
+    .banner-box { fill: #f8fafc; stroke: #cbd5e1; stroke-width: 1.2; rx: 6; ry: 6; }
+    .banner-text { font-size: 12px; fill: #334155; }
+  </style>
+
+  <!-- Document Header -->
+  <rect x="0" y="0" width="1750" height="75" fill="#f8fafc" stroke="#e2e8f0" stroke-width="1"/>
+  <text x="45" y="34" class="title">DIAGRAM KONTEKS (CONTEXT DIAGRAM) - SISTEM TRACER STUDY (SERU - UKDW)</text>
+  <text x="45" y="58" class="subtitle">Berdasarkan Teori DFD Kenneth E. Kendall &amp; Julie E. Kendall (10th Edition) - Proses Tunggal (0) dengan 8 Entitas Eksternal</text>
+  <!-- ================= PROCESS 0 ================= --><rect x="710" y="440" width="330" height="165" rx="18" ry="18" fill="#f0f9ff" stroke="#0284c7" stroke-width="2.5" filter="url(#card-shadow)"/>
+  <line x1="710" y1="480" x2="1040" y2="480" stroke="#0284c7" stroke-width="2"/>
+  <text x="875" y="462" class="proc-num">0</text>
+  <text x="875" y="528" class="proc-name">SISTEM INFORMASI</text>
+  <text x="875" y="547" class="proc-name">TRACER STUDY UKDW</text>
+  <text x="875" y="566" class="proc-name">(SERU - UKDW)</text>
+  <!-- ================= ENTITY SIAKAD ================= --><rect x="741" y="121" width="280" height="90" fill="#1e293b"/>
+  <rect x="735" y="115" width="280" height="90" fill="#ffffff" stroke="#0f172a" stroke-width="2.2"/>
+  <text x="875" y="145" class="entity-title">SISTEM AKADEMIK</text>
+  <text x="875" y="163" class="entity-title">(SIAKAD UKDW)</text>
+  <text x="875" y="181" class="entity-sub">[Penyedia Data Master Kampus]</text><path d="M 780 205 L 780 440" class="flow-line"/>
+  <rect x="697.25" y="265.5" width="165.5" height="19" class="lbl-bg"/>
+  <text x="780" y="276" class="flow-lbl" text-anchor="middle">Data Akademik Mahasiswa</text><path d="M 875 205 L 875 440" class="flow-line"/>
+  <rect x="792.25" y="315.5" width="165.5" height="19" class="lbl-bg"/>
+  <text x="875" y="326" class="flow-lbl" text-anchor="middle">Data Kelulusan Yudisium</text><path d="M 970 205 L 970 440" class="flow-line"/>
+  <rect x="893.75" y="365.5" width="152.5" height="19" class="lbl-bg"/>
+  <text x="970" y="376" class="flow-lbl" text-anchor="middle">Data Kontak Orang Tua</text>
+  <!-- ================= ENTITY ALUMNI ================= --><rect x="66" y="246" width="220" height="130" fill="#1e293b"/>
+  <rect x="60" y="240" width="220" height="130" fill="#ffffff" stroke="#0f172a" stroke-width="2.2"/>
+  <text x="170" y="290" class="entity-title">ALUMNI / LULUSAN</text>
+  <text x="170" y="308" class="entity-title">UKDW</text>
+  <text x="170" y="326" class="entity-sub">[Pengguna Alumni]</text><path d="M 280 270 L 550 270 L 710 470" class="flow-line"/>
+  <rect x="367.75" y="250.5" width="204.5" height="19" class="lbl-bg"/>
+  <text x="470" y="261" class="flow-lbl" text-anchor="middle">Kredensial Login &amp; Sandi Baru</text><path d="M 280 300 L 530 300 L 710 495" class="flow-line"/>
+  <rect x="334.75" y="280.5" width="230.5" height="19" class="lbl-bg"/>
+  <text x="450" y="291" class="flow-lbl" text-anchor="middle">Pembaruan Biodata &amp; Riwayat Karir</text><path d="M 280 330 L 510 330 L 710 520" class="flow-line"/>
+  <rect x="340.75" y="310.5" width="178.5" height="19" class="lbl-bg"/>
+  <text x="430" y="321" class="flow-lbl" text-anchor="middle">Pengajuan Perusahaan Baru</text><path d="M 280 360 L 490 360 L 710 545" class="flow-line"/>
+  <rect x="298.0" y="340.5" width="224.0" height="19" class="lbl-bg"/>
+  <text x="410" y="351" class="flow-lbl" text-anchor="middle">Jawaban Kuesioner (Univ &amp; Prodi)</text><path d="M 710 455 L 520 230 L 280 230" class="flow-line"/>
+  <rect x="324.5" y="210.5" width="211.0" height="19" class="lbl-bg"/>
+  <text x="430" y="221" class="flow-lbl" text-anchor="middle">Status Sesi &amp; Dashboard Alumni</text><path d="M 710 570 L 500 400 L 280 400" class="flow-line"/>
+  <rect x="327.75" y="400.5" width="204.5" height="19" class="lbl-bg"/>
+  <text x="430" y="411" class="flow-lbl" text-anchor="middle">Lembar Kuesioner Univ &amp; Prodi</text><path d="M 710 590 L 470 440 L 280 440" class="flow-line"/>
+  <rect x="285.0" y="440.5" width="250.0" height="19" class="lbl-bg"/>
+  <text x="410" y="451" class="flow-lbl" text-anchor="middle">Status Verifikasi Karir &amp; Perusahaan</text>
+  <!-- ================= ENTITY ATASAN ================= --><rect x="66" y="726" width="220" height="115" fill="#1e293b"/>
+  <rect x="60" y="720" width="220" height="115" fill="#ffffff" stroke="#0f172a" stroke-width="2.2"/>
+  <text x="170" y="762" class="entity-title">PENGGUNA LULUSAN</text>
+  <text x="170" y="780" class="entity-title">(ATASAN LANGSUNG)</text>
+  <text x="170" y="798" class="entity-sub">[Employer / Supervisor]</text><path d="M 720 605 L 520 710 L 280 710" class="flow-line"/>
+  <rect x="308.75" y="690.5" width="282.5" height="19" class="lbl-bg"/>
+  <text x="450" y="701" class="flow-lbl" text-anchor="middle">Undangan Email &amp; Token Evaluasi (64-Char)</text><path d="M 280 760 L 530 760 L 750 605" class="flow-line"/>
+  <rect x="318.5" y="760.5" width="263.0" height="19" class="lbl-bg"/>
+  <text x="450" y="771" class="flow-lbl" text-anchor="middle">Token Akses &amp; Jawaban Evaluasi Kinerja</text><path d="M 770 605 L 550 810 L 280 810" class="flow-line"/>
+  <rect x="328.25" y="810.5" width="243.5" height="19" class="lbl-bg"/>
+  <text x="450" y="821" class="flow-lbl" text-anchor="middle">Bukti Konfirmasi Pengisian Evaluasi</text>
+  <!-- ================= ENTITY ADMIN PRODI ================= --><rect x="1446" y="146" width="250" height="95" fill="#1e293b"/>
+  <rect x="1440" y="140" width="250" height="95" fill="#ffffff" stroke="#0f172a" stroke-width="2.2"/>
+  <text x="1565" y="181" class="entity-title">ADMIN PROGRAM STUDI</text>
+  <text x="1565" y="199" class="entity-sub">[Pengelola Tingkat Prodi]</text><path d="M 1440 170 L 1220 170 L 1040 465" class="flow-line"/>
+  <rect x="1102.5" y="150.5" width="315.0" height="19" class="lbl-bg"/>
+  <text x="1260" y="161" class="flow-lbl" text-anchor="middle">Kredensial, Kuesioner Prodi &amp; Verif Perusahaan</text><path d="M 1040 480 L 1230 205 L 1440 205" class="flow-line"/>
+  <rect x="1131.75" y="205.5" width="256.5" height="19" class="lbl-bg"/>
+  <text x="1260" y="216" class="flow-lbl" text-anchor="middle">Dashboard Capaian &amp; Rekap Excel Prodi</text>
+  <!-- ================= ENTITY ADMIN FAKULTAS ================= --><rect x="1446" y="336" width="250" height="95" fill="#1e293b"/>
+  <rect x="1440" y="330" width="250" height="95" fill="#ffffff" stroke="#0f172a" stroke-width="2.2"/>
+  <text x="1565" y="371" class="entity-title">ADMIN FAKULTAS</text>
+  <text x="1565" y="389" class="entity-sub">[Pengelola Tingkat Dekanat]</text><path d="M 1440 360 L 1210 360 L 1040 495" class="flow-line"/>
+  <rect x="1089.25" y="340.5" width="321.5" height="19" class="lbl-bg"/>
+  <text x="1250" y="351" class="flow-lbl" text-anchor="middle">Kredensial, Verif Perusahaan &amp; Sinkron LinkedIn</text><path d="M 1040 510 L 1220 395 L 1440 395" class="flow-line"/>
+  <rect x="1102.25" y="395.5" width="295.5" height="19" class="lbl-bg"/>
+  <text x="1250" y="406" class="flow-lbl" text-anchor="middle">Dashboard Monitoring &amp; Rekap Excel Fakultas</text>
+  <!-- ================= ENTITY BIRO III ================= --><rect x="1446" y="526" width="250" height="95" fill="#1e293b"/>
+  <rect x="1440" y="520" width="250" height="95" fill="#ffffff" stroke="#0f172a" stroke-width="2.2"/>
+  <text x="1565" y="552" class="entity-title">ADMIN BIRO III</text>
+  <text x="1565" y="570" class="entity-title">(KEMAHASISWAAN &amp; ALUMNI)</text>
+  <text x="1565" y="588" class="entity-sub">[Pengelola Tingkat Universitas]</text><path d="M 1440 550 L 1210 550 L 1040 530" class="flow-line"/>
+  <rect x="1112.0" y="530.5" width="276.0" height="19" class="lbl-bg"/>
+  <text x="1250" y="541" class="flow-lbl" text-anchor="middle">Kredensial Login &amp; Sinkronisasi LinkedIn</text><path d="M 1040 545 L 1220 585 L 1440 585" class="flow-line"/>
+  <rect x="1092.5" y="585.5" width="315.0" height="19" class="lbl-bg"/>
+  <text x="1250" y="596" class="flow-lbl" text-anchor="middle">Dashboard Eksekutif &amp; Laporan Agregat Nasional</text>
+  <!-- ================= ENTITY SUPERADMIN ================= --><rect x="1446" y="716" width="250" height="105" fill="#1e293b"/>
+  <rect x="1440" y="710" width="250" height="105" fill="#ffffff" stroke="#0f172a" stroke-width="2.2"/>
+  <text x="1565" y="756" class="entity-title">SUPERADMIN</text>
+  <text x="1565" y="774" class="entity-sub">[Administrator Teknis Sistem]</text><path d="M 1440 740 L 1200 740 L 1040 570" class="flow-line"/>
+  <rect x="1092.5" y="720.5" width="315.0" height="19" class="lbl-bg"/>
+  <text x="1250" y="731" class="flow-lbl" text-anchor="middle">Instrumen Soal Global, Reset Akun &amp; Verifikasi</text><path d="M 1040 585 L 1210 780 L 1440 780" class="flow-line"/>
+  <rect x="1108.75" y="780.5" width="282.5" height="19" class="lbl-bg"/>
+  <text x="1250" y="791" class="flow-lbl" text-anchor="middle">Audit Trail Log Aktivitas &amp; Status Sistem</text>
+  <!-- ================= ENTITY LINKEDIN ================= --><rect x="751" y="906" width="260" height="90" fill="#1e293b"/>
+  <rect x="745" y="900" width="260" height="90" fill="#ffffff" stroke="#0f172a" stroke-width="2.2"/>
+  <text x="875" y="930" class="entity-title">LAYANAN LINKEDIN</text>
+  <text x="875" y="948" class="entity-title">(APIFY API EXTERNAL)</text>
+  <text x="875" y="966" class="entity-sub">[Layanan Eksternal Integrasi]</text><path d="M 810 605 L 810 900" class="flow-line"/>
+  <rect x="638.0" y="745.5" width="224.0" height="19" class="lbl-bg"/>
+  <text x="750" y="756" class="flow-lbl" text-anchor="middle">Permintaan Scraping Profil (URL)</text><path d="M 940 900 L 940 605" class="flow-line"/>
+  <rect x="908.0" y="745.5" width="224.0" height="19" class="lbl-bg"/>
+  <text x="1020" y="756" class="flow-lbl" text-anchor="middle">Data Profil, Pengalaman &amp; Skills</text>
+  <!-- ================= KENDALL NOTE BANNER ================= -->
+  <rect x="250" y="1030" width="1250" height="48" class="banner-box"/>
+  <text x="875" y="1051" text-anchor="middle" class="banner-text" font-weight="700">Kaidah Teori Kendall &amp; Kendall (Chapter 7):</text>
+  <text x="875" y="1067" text-anchor="middle" class="banner-text">1) Diagram Konteks HANYA memiliki 1 Proses (0) tanpa satupun Data Store. 2) Data Akademik, Yudisium &amp; Orang Tua bersumber dari SIAKAD UKDW mengalir langsung tanpa Data Store internal.</text>
+</svg>
