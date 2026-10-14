@@ -1,9 +1,11 @@
 # Dokumentasi UML Activity Diagram Sistem Tracer Study UKDW
 
-Dokumen ini memuat spesifikasi dan pemodelan **UML Activity Diagram** untuk 3 (tiga) proses unik pada sistem Tracer Study Universitas Kristen Duta Wacana (UKDW), yaitu:
-1. **Sinkronisasi Profil LinkedIn (Apify Scraper & Staging Review)**
-2. **Pengiriman Token ke Email Pengguna Atasan untuk Isi Evaluasi Kinerja (Employer Survey)**
-3. **Rekomendasi Kecocokan Perusahaan (Multi-Level Similarity Matching & Auto-Replace)**
+Dokumen ini memuat spesifikasi dan pemodelan **UML Activity Diagram** untuk proses-proses pada sistem Tracer Study Universitas Kristen Duta Wacana (UKDW) yang distandarisasi secara ketat mengikuti konvensi baku 2-Swimlane (*Actor* vs *System*) sesuai buku teks rujukan:
+
+1. **Proses Umum: Edit Profil & Ganti Password Akun Alumni** *(Format Baku Acuan Buku Teks Sundaramoorthy)*
+2. **Proses 1: Sinkronisasi Profil LinkedIn (Apify Scraper & Staging Review)**
+3. **Proses 2: Pengiriman Token ke Email Pengguna Atasan untuk Isi Evaluasi Kinerja (Employer Survey)**
+4. **Proses 3: Rekomendasi Kecocokan Perusahaan (Multi-Level Similarity Matching & Auto-Replace)**
 
 ---
 
@@ -13,23 +15,96 @@ Penyusunan diagram dan alur sistem ini mengacu pada literatur akademik:
 > **Referensi Buku:**  
 > Sundaramoorthy, S. (2022). *UML Diagramming: A Case Study Approach* (1st ed.). CRC Press, Taylor & Francis Group. DOI: [10.1201/9781003287124](https://doi.org/10.1201/9781003287124).
 
-### Komponen Standar UML Activity Diagram (Sundaramoorthy, 2022, Bab 1.1.3 & Tabel 1.4):
-1. **Initial State (`●`)**: Titik awal (*start state*) yang memulai eksekusi alur aktivitas dalam sistem.
-2. **Final State (`◉`)**: Titik penghentian akhir (*termination state*) yang menandai penyelesaian skenario secara sukses.
-3. **Swimlanes (Partisi)**: Pembagian jalur kolom vertikal (*vertical swimlane*) atau horizontal yang merepresentasikan entitas, aktor pengguna (*Actor*), kelas kontrol (*Controller/Service*), maupun sistem eksternal (*External Cloud/Gateway*).
-4. **Action State**: Operasi komputasi atau aktivitas bisnis diskret yang dilakukan oleh sistem atau aktor.
-5. **Decision Node (`◇`)**: Titik percabangan logika (*conditional branch*) dengan satu masukan dan dua atau lebih keluaran berbasis *guard conditions* (`[kondisi]`, `[else]`).
-6. **Merge Node (`◇`)**: Titik penggabungan beberapa aliran alternatif menjadi satu aliran tanpa sinkronisasi waktu tunggu.
-7. **Synchronization (Fork & Join)**: 
-   - **Fork**: Membagi satu aliran menjadi dua atau lebih aktivitas konkuren/paralel.
-   - **Join**: Menggabungkan beberapa aktivitas konkuren menjadi satu aliran kembali setelah seluruh aktivitas pendahulunya selesai.
-8. **Signal Send State**: Aksi pengiriman sinyal/pesan keluar dari sistem (contoh: transmisi HTTP POST ke API pihak ketiga atau pengiriman email via SMTP).
-9. **Signal Accept State**: Aksi penerimaan sinyal eksternal yang memicu aktivitas baru (contoh: penerimaan respons webhook atau klik tautan bertoken oleh atasan).
-10. **Flow Final (`⨂`)**: Penghentian abnormal pada cabang tertentu tanpa menghentikan eksekusi keseluruhan sistem.
+### Komponen & Notasi Standar UML Activity Diagram (Sundaramoorthy, 2022, Bab 1.1.3 & Tabel 1.4):
+
+| Komponen Notasi | Simbol Grafis | Nama Komponen | Deskripsi & Kaidah Menurut Sundaramoorthy |
+| :---: | :---: | :--- | :--- |
+| **Initial State** | `●` | *Initial State (Start)* | Lingkaran solid gelap menandai titik mula eksekusi aktivitas pengguna/sistem. Diletakkan pada kolom Aktor. |
+| **Final State** | `◉` | *Activity Final State* | Simbol *bullseye* (lingkaran ganda dengan titik pusat solid) menandai keberhasilan seluruh aliran proses bisnis. |
+| **Flow Final** | `⨂` | *Flow Final Node* | Lingkaran berisi tanda silang (`X`) menandai penghentian abnormal/kegagalan pada cabang tertentu tanpa mematikan sistem secara menyeluruh (misal: validasi gagal / token kadaluarsa). |
+| **Action State** | `( Nama Aksi )` | *Action State* | Persegi panjang dengan sudut membulat (*pill/stadium*) berisi kata kerja aktif operasi bisnis diskret yang dilakukan aktor atau sistem. |
+| **Vertical Swimlanes** | `[Aktor] \| [System]` | *Partitions (Swimlanes)* | Pembagian 2 kolom vertikal dengan kotak header di bagian atas: kolom kiri merepresentasikan **Aktor/Pengguna**, dan kolom kanan merepresentasikan **System (Sistem Tracer Study UKDW)**. |
+| **Fork Node** | `━━━━━` (Tebal) | *Fork (Split Parallel)* | Batang horizontal tebal yang memecah satu aliran input menjadi dua atau lebih aliran aktivitas alternatif/konkuren. |
+| **Join Node** | `━━━━━` (Tebal) | *Join (Synchronization)* | Batang horizontal tebal yang menyatukan kembali aliran dari sisi aktor menyeberang masuk ke batas sistem (*crossing swimlane boundary*). |
+| **Decision Node** | `◇` | *Decision Diamond* | Belah ketupat percabangan logika dengan satu masukan dan dua atau lebih keluaran berbasis *guard conditions* eksplisit (`[valid]`, `[invalid]`). |
+| **Merge Node** | `◇` | *Merge Diamond* | Belah ketupat penggabungan alternatif aliran tanpa sinkronisasi waktu tunggu. |
+| **Guard Condition** | `[ kondisi ]` | *Guard Condition* | Teks kondisi pembatas di dalam kurung siku yang harus terpenuhi agar aliran transisi dapat dilalui. |
 
 ---
 
-## 2. PROSES 1: Sinkronisasi Profil LinkedIn (Apify Scraper & Staging Review)
+## 2. PROSES UMUM: Edit Profil & Ganti Password Akun Alumni
+
+### A. Deskripsi Alur & Logika Bisnis
+Alur ini mengadopsi struktur baku *Case Study* dari buku Dr. Suriya Sundaramoorthy (2022) pada modul manajemen akun pengguna (klien/alumni):
+1. Alumni masuk (*start state*) dan berada pada menu pengaturan akun.
+2. Melalui percabangan/fork, alumni dapat memilih melakukan **Ganti Password** atau **Edit Profil & Karir**.
+3. **Cabang Ganti Password**:
+   - Memilih menu ganti password.
+   - Memasukkan password lama.
+   - Memasukkan password baru beserta konfirmasi.
+4. **Cabang Edit Profil**:
+   - Membuka formulir data biodata.
+   - Memasukkan pembaruan data kontak, riwayat pekerjaan, dan perusahaan.
+5. Kedua cabang transisi diarahkan masuk (*join bar*) menyeberang ke kolom **System**.
+6. Sistem memeriksa keabsahan masukan dengan *guard condition* `[ check validity of details ]`:
+   - Jika **`[invalid]`** (format data salah atau password lama tidak cocok): aliran diarahkan ke **Flow Final (`⨂`)**.
+   - Jika **`[valid]`**: sistem menjalankan aksi **`Update Database`** ke tabel `users` / `biodatas`.
+7. Sistem memberikan notifikasi konfirmasi sukses dan mencapai **Final State (`◉`)**.
+
+---
+
+### B. Gambar Visual UML Activity Diagram (Standar Sundaramoorthy 2022)
+
+![UML Activity Diagram: Edit Profil & Ganti Password](images/activity_edit_profile_password.png)
+
+> **File Resolusi Tinggi**:  
+> Format Vektor SVG: [`docs/images/activity_edit_profile_password.svg`](images/activity_edit_profile_password.svg)  
+> Format Raster Retina PNG: [`docs/images/activity_edit_profile_password.png`](images/activity_edit_profile_password.png)
+
+---
+
+### C. Representasi Kode Diagram (Mermaid 2-Swimlane)
+
+```mermaid
+flowchart TD
+    %% SWIMLANE 1: ALUMNI UKDW
+    subgraph Alumni_Lane["SWIMLANE: Alumni UKDW"]
+        Start1((●)) --> DecChoice{"Pilih Aksi Akun"}
+        DecChoice --> Fork1[/"━━━━ FORK ━━━━"/]
+        
+        %% Cabang Ganti Password
+        Fork1 --> Act_Pwd["Change Password"]
+        Act_Pwd --> Act_OldPwd["Enter Old Password"]
+        Act_OldPwd --> Act_NewPwd["Enter New Password & Konfirmasi"]
+        
+        %% Cabang Edit Profil
+        Fork1 --> Act_EditProf["Edit Profile Details"]
+        Act_EditProf --> Act_NewDetails["Enter New Details (Karir & Kontak)"]
+    end
+
+    %% SWIMLANE 2: SYSTEM
+    subgraph System_Lane["SWIMLANE: System (Sistem Tracer Study UKDW)"]
+        Join1[\"━━━━ JOIN ━━━━"\]
+        DecVal{"Validasi Detail"}
+        Act_UpdateDB["Update Database (users / biodatas)"]
+        Act_Success["Tampilkan Konfirmasi Sukses"]
+        EndSuccess(((◉)))
+        FlowInvalid((⨂))
+    end
+
+    %% TRANSISI LINTAS SWIMLANE
+    Act_NewPwd --> Join1
+    Act_NewDetails --> Join1
+    Join1 --> DecVal
+    DecVal -- "[invalid]" --> FlowInvalid
+    DecVal -- "[valid]" --> Act_UpdateDB
+    Act_UpdateDB --> Act_Success
+    Act_Success --> EndSuccess
+```
+
+---
+
+## 3. PROSES 1: Sinkronisasi Profil LinkedIn (Apify Scraper & Staging Review)
 
 ### A. Deskripsi Alur & Logika Bisnis
 Fitur sinkronisasi LinkedIn memanfaatkan pihak ketiga **Apify Cloud Actor (`data_forge_org~linkedin-scraper`)** untuk menarik data riwayat pekerjaan dan posisi alumni secara terstruktur.
@@ -41,72 +116,68 @@ Fitur sinkronisasi LinkedIn memanfaatkan pihak ketiga **Apify Cloud Actor (`data
 
 ---
 
-### B. Visualisasi UML Activity Diagram
+### B. Gambar Visual UML Activity Diagram (Standar Sundaramoorthy 2022)
+
+![UML Activity Diagram: Sinkronisasi LinkedIn Apify](images/activity_linkedin_sync.png)
+
+> **File Resolusi Tinggi**:  
+> Format Vektor SVG: [`docs/images/activity_linkedin_sync.svg`](images/activity_linkedin_sync.svg)  
+> Format Raster Retina PNG: [`docs/images/activity_linkedin_sync.png`](images/activity_linkedin_sync.png)
+
+---
+
+### C. Representasi Kode Diagram (Mermaid 2-Swimlane)
 
 ```mermaid
 flowchart TD
-    %% SWIMLANES DEFINITION
-    subgraph Admin_Actor["SWIMLANE: Administrator (Super Admin / Prodi)"]
-        A_Start((●)) --> A_SelectAlumni["Pilih Alumni & Klik 'Sinkronkan LinkedIn'"]
-        A_Wait["Menunggu Hasil Scraping"]
-        A_ReviewModal["Buka Modal Review Perbandingan Data"]
+    %% SWIMLANE 1: ADMINISTRATOR
+    subgraph Admin_Lane["SWIMLANE: Administrator (Super Admin / Admin Prodi)"]
+        A_Start((●)) --> A_SelectAlumni["Pilih Profil Alumni & Verifikasi URL"]
+        A_SelectAlumni --> A_ClickSync["Klik 'Sinkronkan LinkedIn'"]
+        
+        A_OpenModal["Buka Modal Review Perbandingan (Diff View)"]
         A_DecisionReview{"Keputusan Review?"}
-        A_Approve["Klik 'Setujui (Approve)'"]
-        A_Reject["Klik 'Tolak (Reject)'"]
+        A_Reject["Set REJECTED & Simpan Log Penolakan"]
+        FlowReject((⨂))
     end
 
-    subgraph Backend_System["SWIMLANE: Backend System (Controller & Provider)"]
-        B_ValUrl{"Validasi URL LinkedIn?"}
-        B_ThrowUrlErr["Kirim Respons HTTP 422 (URL Invalid)"]
-        B_PreparePayload["Siapkan Payload JSON & Header Authorization"]
-        B_SendReq[["Kirim Request HTTP Sinkron ke Apify"]]
-        B_ReceiveResp["Terima HTTP Response Apify"]
-        B_EvalStatus{"Status Respon Apify?"}
-        B_HandleErr["Catat Log Error (404/401/429/500)"]
-        B_SaveStaging["Simpan Payload JSON ke 'linkedin_sync_results' (Status: PENDING)"]
-        B_AuditPending["Catat Log Audit 'linkedin_sync_apify'"]
-        B_ApplyData["Ekstrak & Perbarui 'biodatas', Link Perusahaan Terkait"]
-        B_MarkApproved["Ubah Status Staging menjadi 'APPROVED'"]
-        B_MarkRejected["Ubah Status Staging menjadi 'REJECTED'"]
-        B_AuditFinal["Catat Log Audit Reviewer"]
+    %% SWIMLANE 2: SYSTEM
+    subgraph System_Lane["SWIMLANE: System (Backend Tracer Study & Apify Provider)"]
+        S_ValUrl{"Validasi URL LinkedIn"}
+        FlowUrlErr((⨂))
+        S_ExecApify["Siapkan Payload & Kirim HTTP POST ke Apify"]
+        S_ReceiveApify["Terima JSON Dataset Apify"]
+        S_EvalApify{"Status Dataset Apify"}
+        FlowApifyErr((⨂))
+        S_SaveStaging["Simpan ke 'linkedin_sync_results' (Status: PENDING)"]
+        S_SignalModal["Kirim Sinyal Payload Staging Siap Ditinjau"]
+        
+        S_UpdateDB["Update Database Biodata & Link Perusahaan Terkait"]
+        S_SetApproved["Set Status APPROVED & Catat Audit Trail"]
+        EndSyncSuccess(((◉)))
     end
 
-    subgraph Apify_Service["SWIMLANE: External Service (Apify Cloud Actor)"]
-        C_ExecActor["Jalankan Headless Scraper LinkedIn"]
-        C_ReturnDataset[["Kirim JSON Dataset Kembali ke Tracer Study"]]
-    end
-
-    %% FLOW TRANSITIONS
-    A_SelectAlumni --> B_ValUrl
-    B_ValUrl -- "[URL Kosong / Format Tidak Valid]" --> B_ThrowUrlErr --> FlowFinal1((⨂))
-    B_ValUrl -- "[URL Valid]" --> B_PreparePayload
-    B_PreparePayload --> B_SendReq
-    B_SendReq -.-> C_ExecActor
-    C_ExecActor --> C_ReturnDataset
-    C_ReturnDataset -.-> B_ReceiveResp
-    B_ReceiveResp --> B_EvalStatus
-
-    B_EvalStatus -- "[Gagal / Not Found / Kuota Habis]" --> B_HandleErr --> FlowFinal2((⨂))
-    B_EvalStatus -- "[HTTP 200 OK & Data Ada]" --> B_SaveStaging
-    B_SaveStaging --> B_AuditPending
-    B_AuditPending --> A_ReviewModal
-    A_ReviewModal --> A_DecisionReview
-
-    A_DecisionReview -- "[Setujui Data]" --> A_Approve
-    A_Approve --> B_ApplyData
-    B_ApplyData --> B_MarkApproved
-    B_MarkApproved --> B_AuditFinal
-
-    A_DecisionReview -- "[Tolak Data]" --> A_Reject
-    A_Reject --> B_MarkRejected
-    B_MarkRejected --> B_AuditFinal
-
-    B_AuditFinal --> EndSuccess(((◉)))
+    %% TRANSISI LINTAS SWIMLANE
+    A_ClickSync --> S_ValUrl
+    S_ValUrl -- "[URL invalid]" --> FlowUrlErr
+    S_ValUrl -- "[URL valid]" --> S_ExecApify
+    S_ExecApify --> S_ReceiveApify
+    S_ReceiveApify --> S_EvalApify
+    S_EvalApify -- "[gagal / privat]" --> FlowApifyErr
+    S_EvalApify -- "[sukses 200 OK]" --> S_SaveStaging
+    S_SaveStaging --> S_SignalModal
+    S_SignalModal --> A_OpenModal
+    A_OpenModal --> A_DecisionReview
+    
+    A_DecisionReview -- "[Tolak / Reject]" --> A_Reject --> FlowReject
+    A_DecisionReview -- "[Setujui / Approve]" --> S_UpdateDB
+    S_UpdateDB --> S_SetApproved
+    S_SetApproved --> EndSyncSuccess
 ```
 
 ---
 
-### C. Perintah & Routing Backend
+### D. Perintah & Routing Backend
 
 #### 1. Endpoint Eksekusi Sinkronisasi Staging
 - **Method**: `POST`
@@ -120,7 +191,7 @@ flowchart TD
 
 ---
 
-### D. Struktur Data & Payload JSON
+### E. Struktur Data & Payload JSON
 
 #### Request JSON ke Apify API:
 ```http
@@ -190,7 +261,7 @@ Content-Type: application/json
 
 ---
 
-### E. Pseudocode Implementasi Backend
+### F. Pseudocode Implementasi Backend
 ```text
 FUNCTION SyncLinkedInProfile(biodataId, currentUser):
     biodata = Query("SELECT * FROM biodatas WHERE id = :id", biodataId)
@@ -249,7 +320,7 @@ END FUNCTION
 
 ---
 
-## 3. PROSES 2: Token ke Email Pengguna Atasan untuk Isi Evaluasi Kinerja
+## 4. PROSES 2: Token ke Email Pengguna Atasan untuk Isi Evaluasi Kinerja (Employer Survey)
 
 ### A. Deskripsi Alur & Logika Bisnis
 Evaluasi pengguna lulusan (*Employer Survey*) dirancang untuk memverifikasi kesesuaian dan kompetensi lulusan langsung oleh atasan tempat kerja alumni tanpa mewajibkan atasan membuat akun atau memasukkan kata sandi (*passwordless token-based authentication*).
@@ -271,71 +342,70 @@ Evaluasi pengguna lulusan (*Employer Survey*) dirancang untuk memverifikasi kese
 
 ---
 
-### B. Visualisasi UML Activity Diagram
+### B. Gambar Visual UML Activity Diagram (Standar Sundaramoorthy 2022)
+
+![UML Activity Diagram: Token Evaluasi Atasan](images/activity_evaluasi_atasan.png)
+
+> **File Resolusi Tinggi**:  
+> Format Vektor SVG: [`docs/images/activity_evaluasi_atasan.svg`](images/activity_evaluasi_atasan.svg)  
+> Format Raster Retina PNG: [`docs/images/activity_evaluasi_atasan.png`](images/activity_evaluasi_atasan.png)
+
+---
+
+### C. Representasi Kode Diagram (Mermaid 2-Swimlane)
 
 ```mermaid
 flowchart TD
-    %% SWIMLANES DEFINITION
-    subgraph Alumni_Actor["SWIMLANE: Alumni UKDW"]
-        Al_Start((●)) --> Al_InputKarier["Input Data Pekerjaan, Perusahaan, & Email Atasan"]
-        Al_Submit["Klik 'Simpan Profil'"]
+    %% SWIMLANE 1: USER (ALUMNI & ATASAN)
+    subgraph User_Lane["SWIMLANE: Pengguna (Alumni UKDW / Atasan Kerja)"]
+        U_Start((●)) --> Al_InputKarier["Alumni Input Profil Pekerjaan & Email Atasan"]
+        Al_InputKarier --> Al_Submit["Klik Tombol 'Simpan Profil'"]
+        
+        At_OpenEmail["Atasan Buka Email & Klik Tautan Bertoken"]
+        At_FillSurvey["Atasan Isi 12 Butir Penilaian & Masukan Kinerja"]
+        At_SubmitEval["Klik 'Kirim Evaluasi'"]
+        At_ShowThankYou["Lihat Konfirmasi Selesai & Ucapan Terima Kasih"]
+        EndEvalSuccess(((◉)))
     end
 
-    subgraph Backend_App["SWIMLANE: Backend Application & DB"]
-        B_ValProfile{"Email Atasan Valid?"}
-        B_SaveBio["Simpan Profil Biodata Alumni"]
-        B_GenToken["Generate Token Kriptografis 40 Karakter Str::random(40)"]
-        B_SaveEval["Simpan / Update Record ke Tabel 'evaluasi_atasans'"]
-        B_DispatchMail[["Dispatch Mailable: UndanganEvaluasiAtasanMail"]]
-        B_TokenCheck{"EvaluasiAtasan::where('token', token) Ada?"}
-        B_RenderNotFound["Tampilkan Halaman 'EvaluasiAtasanNotFound'"]
-        B_LoadSurvey["Ambil Master 12 Pertanyaan Evaluasi & Render Form"]
-        B_SaveResponses["Simpan Jawaban ke 'respons_evaluasi_atasan'"]
-        B_UpdateCo["Update Data Perusahaan & Atasan"]
-        B_LockForm["Set is_submitted = true, submitted_at = now()"]
+    %% SWIMLANE 2: SYSTEM
+    subgraph System_Lane["SWIMLANE: System (Sistem Tracer Study UKDW & SMTP Engine)"]
+        S_ValEmail{"Validasi Email Atasan"}
+        FlowEmailInvalid((⨂))
+        S_SaveBio["Simpan Data Biodata Alumni ke 'biodatas'"]
+        S_GenToken["Generate Token Kriptografis 40 Karakter Str::random(40)"]
+        S_SendMail["Kirim Email Undangan via SMTP ke Inbox Atasan"]
+        
+        S_ValToken{"Cek Integritas Token"}
+        FlowTokenInvalid((⨂))
+        S_LoadSurvey["Muat Data Profil Alumni & 12 Butir Instrumen Evaluasi"]
+        
+        S_UpdateDB["Update Database Respon ke 'respons_evaluasi_atasan'"]
+        S_LockForm["Kunci Formulir (is_submitted = true, submitted_at = now())"]
     end
 
-    subgraph Mail_Gateway["SWIMLANE: Mail Server / SMTP"]
-        M_Send[["Kirim Email Berisi URL Akses Bertoken ke Inbox"]]
-    end
-
-    subgraph Atasan_Actor["SWIMLANE: Atasan / Pengguna Lulusan"]
-        At_OpenEmail["Terima Email & Klik Tautan Evaluasi"]
-        At_FillSurvey["Isi 12 Aspek Penilaian Kinerja Alumni & Saran"]
-        At_SubmitEval["Klik Tombol 'Kirim Evaluasi'"]
-        At_ShowThankYou["Lihat Halaman Konfirmasi Selesai"]
-    end
-
-    %% FLOW TRANSITIONS
-    Al_InputKarier --> Al_Submit
-    Al_Submit --> B_SaveBio
-    B_SaveBio --> B_ValProfile
-
-    B_ValProfile -- "[Tidak / Kosong]" --> FlowSkipMail((⨂))
-    B_ValProfile -- "[Ya, Format Email Valid]" --> B_GenToken
-
-    B_GenToken --> B_SaveEval
-    B_SaveEval --> B_DispatchMail
-    B_DispatchMail -.-> M_Send
-    M_Send -.-> At_OpenEmail
-
-    At_OpenEmail --> B_TokenCheck
-    B_TokenCheck -- "[Token Tidak Ditemukan]" --> B_RenderNotFound --> FlowFinalNotFound((⨂))
-    B_TokenCheck -- "[Token Valid]" --> B_LoadSurvey
-
-    B_LoadSurvey --> At_FillSurvey
+    %% TRANSISI LINTAS SWIMLANE
+    Al_Submit --> S_ValEmail
+    S_ValEmail -- "[email invalid/kosong]" --> FlowEmailInvalid
+    S_ValEmail -- "[email valid]" --> S_SaveBio
+    S_SaveBio --> S_GenToken
+    S_GenToken --> S_SendMail
+    S_SendMail --> At_OpenEmail
+    
+    At_OpenEmail --> S_ValToken
+    S_ValToken -- "[token invalid/not found]" --> FlowTokenInvalid
+    S_ValToken -- "[token valid]" --> S_LoadSurvey
+    S_LoadSurvey --> At_FillSurvey
     At_FillSurvey --> At_SubmitEval
-    At_SubmitEval --> B_SaveResponses
-
-    B_SaveResponses --> B_UpdateCo
-    B_UpdateCo --> B_LockForm
-    B_LockForm --> At_ShowThankYou
-    At_ShowThankYou --> EndEval(((◉)))
+    At_SubmitEval --> S_UpdateDB
+    S_UpdateDB --> S_LockForm
+    S_LockForm --> At_ShowThankYou
+    At_ShowThankYou --> EndEvalSuccess
 ```
 
 ---
 
-### C. Perintah & Routing Backend
+### D. Perintah & Routing Backend
 
 #### 1. Pemicu Pembuatan Token & Pengiriman Email
 - **Method**: `POST`
@@ -354,7 +424,7 @@ flowchart TD
 
 ---
 
-### D. Struktur Data & Payload JSON
+### E. Struktur Data & Payload JSON
 
 #### Record Token di Database (`evaluasi_atasans`):
 ```json
@@ -407,7 +477,7 @@ https://tracerstudy.ukdw.ac.id/evaluasi-atasan/4a7b9c1d8e2f0a1b2c3d4e5f6a7b8c9d0
 
 ---
 
-### E. Pseudocode Implementasi Backend
+### F. Pseudocode Implementasi Backend
 ```text
 FUNCTION HandleSimpanProfil(request, alumniUser):
     validated = Validate(request.all())
@@ -475,7 +545,7 @@ END FUNCTION
 
 ---
 
-## 4. PROSES 3: Rekomendasi Kecocokan Perusahaan (Similarity Matching & Auto-Replace)
+## 5. PROSES 3: Rekomendasi Kecocokan Perusahaan (Similarity Matching & Auto-Replace)
 
 ### A. Deskripsi Alur & Logika Bisnis
 Modul ini bertugas menyelesaikan redundansi data perusahaan yang diinput secara bebas oleh alumni (misalnya alumni mengetik *"PT. BCA"*, *"Bank Central Asia"*, atau salah ketik *"Bank Centrl Asia"*). Sistem menggunakan algoritma pencocokan kemiripan bertingkat (*Multi-level String Similarity Matching + Geographic Location Scoring*) pada domain service `PerusahaanVerificationService`.
@@ -507,94 +577,78 @@ Modul ini bertugas menyelesaikan redundansi data perusahaan yang diinput secara 
 
 ---
 
-### B. Visualisasi UML Activity Diagram
+### B. Gambar Visual UML Activity Diagram (Standar Sundaramoorthy 2022)
+
+![UML Activity Diagram: Rekomendasi Perusahaan](images/activity_verifikasi_perusahaan.png)
+
+> **File Resolusi Tinggi**:  
+> Format Vektor SVG: [`docs/images/activity_verifikasi_perusahaan.svg`](images/activity_verifikasi_perusahaan.svg)  
+> Format Raster Retina PNG: [`docs/images/activity_verifikasi_perusahaan.png`](images/activity_verifikasi_perusahaan.png)
+
+---
+
+### C. Representasi Kode Diagram (Mermaid 2-Swimlane)
 
 ```mermaid
 flowchart TD
-    %% SWIMLANES DEFINITION
-    subgraph Admin_Actor["SWIMLANE: Administrator Verifikator"]
-        Admin_Start((●)) --> Admin_OpenList["Buka Halaman Verifikasi Perusahaan"]
-        Admin_ViewCard["Lihat Pengajuan Alumni & 5 Rekomendasi Kemiripan"]
-        Admin_DecisionChoice{"Pilihan Aksi Admin?"}
-        Admin_ClickReplace["Klik 'Gunakan Data Ini (Auto Replace)'"]
-        Admin_ClickVerify["Klik 'Verifikasi Langsung'"]
-        Admin_ClickReject["Klik 'Tolak Pengajuan'"]
-    end
-
-    subgraph Service_Engine["SWIMLANE: PerusahaanVerificationService"]
-        S_FetchPending["Ambil Data Perusahaan Pending (Status: Menunggu Verifikasi)"]
-        S_CleanText["Tahap 1: Text Preprocessing & Filter Stopwords Legalitas"]
-        S_Tokenize["Tahap 2: Ekstraksi Token Kata & Generator Akronim Otomatis"]
-        S_LoopMasters["Tahap 3: Loop Perbandingan ke Semua Master Terverifikasi"]
+    %% SWIMLANE 1: ADMINISTRATOR VERIFIKATOR
+    subgraph Admin_Lane["SWIMLANE: Administrator Verifikator (Super Admin / Fakultas / Prodi)"]
+        V_Start((●)) --> V_OpenList["Buka Menu Verifikasi Perusahaan Pengajuan Alumni"]
+        V_OpenList --> V_SelectPending["Pilih Perusahaan Status 'Pending'"]
         
-        S_EvalMatch{"Multi-Level Matching Evaluator"}
-        S_ScoreExact["Level 1: Exact Match (95 Poin)"]
-        S_ScoreAcr["Level 2: Akronim Cocok (88 Poin)"]
-        S_ScoreSub["Level 3: Substring Terkandung (75-90 Poin)"]
-        S_ScoreAcrPart["Level 3B: Akronim Parsial (70-80 Poin)"]
-        S_ScoreToken["Level 4: Token Intersect Valid (50-75 Poin)"]
-        S_ScoreFuzzy["Level 5: Ratcliff Typo Matching (similar_text)"]
-
-        S_GeoBonus["Tahap 4: Tambah Bobot Geografis (Kota +20, Prov +10)"]
-        S_FilterRank["Tahap 5: Filter Threshold >= 45 & Urutkan Top-5 Rekomendasi"]
+        V_ViewCards["Tinjau Kartu Rekomendasi & Skor Kemiripan"]
+        V_DecisionChoice{"Pilihan Aksi Verifikasi"}
+        
+        V_DirectVerify["Verifikasi Langsung (Data Baru Valid)"]
+        EndDirectVerify(((◉)))
+        
+        V_Reject["Tolak Pengajuan (Perusahaan Fiktif)"]
+        FlowRejectCo((⨂))
     end
 
-    subgraph Database_Storage["SWIMLANE: Database Transaction & Audit Trail"]
-        DB_BeginTx["Mulai DB::beginTransaction()"]
-        DB_MigrateAlumni["Alihkan Foreign Key 'biodata.perusahaan_id' ke Master"]
-        DB_DeletePending["Hapus Record Pending Duplikat"]
-        DB_WriteAudit["Tulis Riwayat ke 'log_activities'"]
-        DB_CommitTx["Eksekusi DB::commit()"]
-        DB_UpdateDirect["Ubah Status Perusahaan Menjadi 'Terverifikasi'"]
-        DB_UpdateReject["Ubah Status Menjadi 'Ditolak' & Simpan Alasan"]
+    %% SWIMLANE 2: SYSTEM
+    subgraph System_Lane["SWIMLANE: System (PerusahaanVerificationService & Database)"]
+        S_FetchData["Ambil Data Master & Input Baru Pengajuan"]
+        ForkSim[/"━━━━ FORK ━━━━"/]
+        S_CleanText["Tahap 1: Clean Company Name & Filter Legalitas"]
+        S_TokenAcronym["Tahap 2: Tokenize & Generate Akronim Singkatan"]
+        JoinSim[\"━━━━ JOIN ━━━━"\]
+        
+        S_MultiMatch["Tahap 3: Multi-Level String Matching"]
+        S_GeoScoring["Tahap 4: Pembobotan Geografis (Kota +20, Prov +10)"]
+        S_FilterTop5["Tahap 5: Filter Threshold >= 45 & Urutkan Top-5 Rekomendasi"]
+        
+        S_BeginTx["Mulai Transaksi DB::beginTransaction()"]
+        S_MigrateAlumni["Alihkan Seluruh Relasi biodata.perusahaan_id ke Master"]
+        S_CommitTx["Commit DB & Catat Log Audit ke 'log_activities'"]
+        EndReplaceSuccess(((◉)))
     end
 
-    %% FLOW TRANSITIONS
-    Admin_OpenList --> S_FetchPending
-    S_FetchPending --> S_CleanText
-    S_CleanText --> S_Tokenize
-    S_Tokenize --> S_LoopMasters
-
-    S_LoopMasters --> S_EvalMatch
-    S_EvalMatch -- "[Identik 100%]" --> S_ScoreExact
-    S_EvalMatch -- "[Akronim Sama]" --> S_ScoreAcr
-    S_EvalMatch -- "[Frasa Terkandung]" --> S_ScoreSub
-    S_EvalMatch -- "[Akronim Majemuk]" --> S_ScoreAcrPart
-    S_EvalMatch -- "[Irisan Kata >= 33%]" --> S_ScoreToken
-    S_EvalMatch -- "[Typo / Mirip Huruf]" --> S_ScoreFuzzy
-
-    S_ScoreExact --> S_GeoBonus
-    S_ScoreAcr --> S_GeoBonus
-    S_ScoreSub --> S_GeoBonus
-    S_ScoreAcrPart --> S_GeoBonus
-    S_ScoreToken --> S_GeoBonus
-    S_ScoreFuzzy --> S_GeoBonus
-
-    S_GeoBonus --> S_FilterRank
-    S_FilterRank --> Admin_ViewCard
-
-    Admin_ViewCard --> Admin_DecisionChoice
-
-    Admin_DecisionChoice -- "[Pilih Rekomendasi]" --> Admin_ClickReplace
-    Admin_ClickReplace --> DB_BeginTx
-    DB_BeginTx --> DB_MigrateAlumni
-    DB_MigrateAlumni --> DB_DeletePending
-    DB_DeletePending --> DB_WriteAudit
-    DB_WriteAudit --> DB_CommitTx
-    DB_CommitTx --> EndReplace(((◉)))
-
-    Admin_DecisionChoice -- "[Benar-benar Baru]" --> Admin_ClickVerify
-    Admin_ClickVerify --> DB_UpdateDirect
-    DB_UpdateDirect --> EndVerify(((◉)))
-
-    Admin_DecisionChoice -- "[Perusahaan Fiktif]" --> Admin_ClickReject
-    Admin_ClickReject --> DB_UpdateReject
-    DB_UpdateReject --> EndReject(((◉)))
+    %% TRANSISI LINTAS SWIMLANE
+    V_SelectPending --> S_FetchData
+    S_FetchData --> ForkSim
+    ForkSim --> S_CleanText
+    ForkSim --> S_TokenAcronym
+    S_CleanText --> JoinSim
+    S_TokenAcronym --> JoinSim
+    JoinSim --> S_MultiMatch
+    S_MultiMatch --> S_GeoScoring
+    S_GeoScoring --> S_FilterTop5
+    S_FilterTop5 --> V_ViewCards
+    
+    V_ViewCards --> V_DecisionChoice
+    V_DecisionChoice -- "[Pilih Auto-Replace]" --> S_BeginTx
+    S_BeginTx --> S_MigrateAlumni
+    S_MigrateAlumni --> S_CommitTx
+    S_CommitTx --> EndReplaceSuccess
+    
+    V_DecisionChoice -- "[Data Baru Valid]" --> V_DirectVerify --> EndDirectVerify
+    V_DecisionChoice -- "[Tolak / Fiktif]" --> V_Reject --> FlowRejectCo
 ```
 
 ---
 
-### C. Perintah & Routing Backend
+### D. Perintah & Routing Backend
 
 #### 1. Endpoint Tampilan Daftar Verifikasi & Rekomendasi
 - **Super Admin**: `GET /superadmin/perusahaan`
@@ -620,7 +674,7 @@ flowchart TD
 
 ---
 
-### D. Struktur Data & Payload JSON
+### E. Struktur Data & Payload JSON
 
 #### Output Rekomendasi Kemiripan Sistem:
 ```json
@@ -682,7 +736,7 @@ flowchart TD
 
 ---
 
-### E. Pseudocode Implementasi Algoritma
+### F. Pseudocode Implementasi Algoritma
 ```text
 FUNCTION GetSimilarRecommendations(pendingCompany, limit = 5):
     cleanPending = CleanCompanyName(pendingCompany.nama_perusahaan)
@@ -770,12 +824,13 @@ END FUNCTION
 
 ---
 
-## 5. Ringkasan Matriks Perbandingan 3 Proses
+## 6. Ringkasan Matriks Perbandingan & Standarisasi Notasi UML
 
-| Parameter | Proses 1: Sinkronisasi LinkedIn | Proses 2: Token Evaluasi Atasan | Proses 3: Rekomendasi Perusahaan |
-| :--- | :--- | :--- | :--- |
-| **Aktor Utama** | Super Admin / Admin Prodi | Alumni UKDW & Atasan Kerja | Admin Verifikator (Pusat/Fakultas/Prodi) |
-| **Sifat Integrasi** | External Cloud API (Apify Actor) | SMTP Mail Server & Passwordless Token | Internal Intelligent String Algorithm |
-| **Pola Arsitektur** | Staging Review Pattern (Pending $\rightarrow$ Approved) | Secure One-Time Token (Public Webhook) | Multi-Level Similarity with Geospatial Scoring |
-| **Tabel Basis Data** | `linkedin_sync_results`, `biodatas` | `evaluasi_atasans`, `respons_evaluasi_atasan` | `perusahaans`, `biodatas`, `log_activities` |
-| **Audit Trail** | Dicatat ke `log_activities` saat sync & review | Ditandai status `is_submitted` & `submitted_at` | Dicatat saat verifikasi langsung & auto-replace |
+| Parameter | Proses Acuan: Edit Profil & Password | Proses 1: Sinkronisasi LinkedIn | Proses 2: Token Evaluasi Atasan | Proses 3: Rekomendasi Perusahaan |
+| :--- | :--- | :--- | :--- | :--- |
+| **Aktor Utama (Lane 1)** | Alumni UKDW | Super Admin / Admin Prodi | Alumni UKDW & Atasan Kerja | Admin Verifikator (Pusat/Fakultas/Prodi) |
+| **Sistem Eksekusi (Lane 2)** | System (Tracer Study) | Backend App & Apify Provider | System & SMTP Mail Server | Service Matching & Database |
+| **Penerapan Fork / Join** | Fork cabang Pwd/Profil & Join ke System | Sequential Request & Review | Multi-part Event Flow | Fork Tokenize/Cleaning & Join Matching |
+| **Penanganan Invalid (`⨂`)** | Flow Final saat password lama salah | Flow Final saat URL/Dataset invalid | Flow Final saat Token/Email invalid | Flow Final saat Pengajuan Ditolak |
+| **Aksi Basis Data** | Update tabel `users` & `biodatas` | Update staging & `biodatas` | Insert token & `respons_evaluasi` | Transactional Auto-Replace / Direct Verify |
+| **Status Sukses (`◉`)** | Final State konfirmasi profil/sandi | Final State status `APPROVED` | Final State konfirmasi terima kasih | Final State status `Terverifikasi` |
