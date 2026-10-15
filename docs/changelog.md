@@ -1,5 +1,29 @@
 # Update Log Tracer Study
 
+## 15 Oktober 2026
+- **Penyelarasan Opsi Default Otomatis Instrumen Kuesioner (Prodi & Universitas)**:
+  - Pembuatan service terpusat [`app/Services/Kuesioner/QuestionDefaultOptionsService.php`](file:///c:/study/tracerstudy/app/Services/Kuesioner/QuestionDefaultOptionsService.php) untuk mengenerate opsi pilihan secara otomatis saat pertanyaan baru dibuat oleh Admin Prodi (`SimpanPertanyaanProdiController`), Super Admin Prodi (`KelolaKuesionerProdiSuperAdminController`), maupun Super Admin Universitas (`SimpanPertanyaanController`).
+  - Pemetaan opsi default terstandarisasi:
+    - `radio_text` (Pilihan Ganda + Lainnya): 2 opsi default (`Pilihan 1`, `Pilihan 2`) + 1 opsi kustom isian teks mandiri (`Lainnya (Tuliskan)`).
+    - `rating_5` (Skala Rating 1-5): 5 opsi skala terurut (`1 - Sangat Rendah`, `2 - Rendah`, `3 - Cukup`, `4 - Tinggi`, `5 - Sangat Tinggi`). Opsi ini tetap dapat disesuaikan bunyinya oleh admin/superadmin via modal Kelola Opsi.
+    - `radio_input` (Radio + Angka Bulan): 1 opsi pilihan numerik (`Kira-kira ... bulan`) + 1 opsi penolakan tanpa isian (`Tidak`).
+    - `single_choice`, `multiple_choice`, `dropdown`, `searchable_select`: Otomatis 2 opsi default (`Pilihan 1`, `Pilihan 2`).
+- **Pembersihan Tipe Pertanyaan Redundan & Membingungkan**:
+  - Menghilangkan pilihan duplikat pada modal tambah pertanyaan Super Admin ([`SuperAdmin/Pertanyaan/Index.vue`](file:///c:/study/tracerstudy/resources/js/Pages/SuperAdmin/Pertanyaan/Index.vue)) dan Prodi ([`AdminProdi/Pertanyaan/Index.vue`](file:///c:/study/tracerstudy/resources/js/Pages/AdminProdi/Pertanyaan/Index.vue)): duplikasi `radio` vs `single_choice`, serta `checkbox` vs `multiple_choice`.
+  - Mengeliminasi tipe matriks skala yang sudah tidak relevan/usang (`matrix`, `matrix_dual`, `multiple_textbox`) dari antarmuka dropdown penambahan soal.
+  - Memperjelas penamaan label tipe `multiple_number` menjadi **"Rincian Nominal / Gaji (Take Home Pay)"**.
+- **Perbaikan Rendering Frontend Kuesioner Prodi Alumni ([`KuesionerProdi.vue`](file:///c:/study/tracerstudy/resources/js/Pages/Alumni/KuesionerProdi.vue))**:
+  - Menambahkan template kartu interaktif untuk tipe `radio_text` (dengan input isian dinamis saat opsi "Lainnya" dipilih), `radio_input` (dengan kolom input angka dan satuan bulan), `dropdown`, `searchable_select`, `textarea`, dan `time`.
+  - Membersihkan deklarasi duplikat pada helper `isCheckboxChecked` dan `toggleCheckboxOption` sehingga kompilasi Vite SFC berjalan bersih tanpa error.
+  - Memperbaiki ekspresi reguler stripping label pada matriks skala `rating_5` (`replace(/^\d+\s*[-=:]\s*/, '')`) agar teks tidak menduplikasi angka indeks skor (contoh: `1` tidak lagi menjadi `1 - Sangat Rendah`).
+- **Perbaikan Otorisasi & Penjagaan Profil Tambah Perusahaan Multi-Role**:
+  - Memperluas middleware otorisasi rute `POST /alumni/company` pada [`routes/web.php`](file:///c:/study/tracerstudy/routes/web.php) dari semula khusus `role:alumni` menjadi multi-role: `role:alumni,admin_prodi,admin_fakultas,admin_biro3,superadmin`.
+  - Menambahkan pengondisian peran pada [`SimpanProfilController.php`](file:///c:/study/tracerstudy/app/Http/Controllers/Alumni/Profil/SimpanProfilController.php) agar asosiasi `biodata->update(['perusahaan_id' => ...])` hanya dijalankan untuk alumni, mencegah terjadinya manipulasi relasi profil ketika admin menambah perusahaan dari modal verifikasi/detail.
+- **Automated Feature Testing & Standar Kode**:
+  - Pembaruan unit & feature test suites: `tests/Feature/AdminProdiKuesionerTest.php`, `tests/Feature/SuperAdminKelolaPertanyaanTest.php`, `tests/Feature/BiroTigaKelolaPertanyaanTest.php`, dan `tests/Feature/VerifikasiPerusahaanTest.php` (seluruh tes lulus 100%).
+  - Lolos pemformatan kode Laravel Pint (`vendor/bin/pint --dirty --format agent`).
+  - Vite production bundle dikompilasi sukses tanpa peringatan galat.
+
 ## 11 Oktober 2026
 - **Penyelarasan Tampilan & Navigasi Stepper Detail Alumni Multi-Role (Super Admin, Fakultas, Prodi, Biro 3)**:
   - Mengganti navigasi tab lama pada `SuperAdmin/Alumni/Show.vue`, `AdminProdi/Alumni/Show.vue`, `AdminFakultas/Alumni/Show.vue`, dan `AdminBiroTiga/AlumniShow.vue` dengan komponen Stepper horizontal terpadu sesuai standar pengisian kuesioner universitas alumni (`Stepper.vue`).

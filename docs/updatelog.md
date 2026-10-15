@@ -2,6 +2,33 @@
 
 Semua perubahan besar pada sistem dicatat dalam dokumen ini.
 
+## [2026-10-15]
+- **Standardisasi & Otomasi Pembuatan Opsi Default Butir Pertanyaan (Prodi & Universitas)**:
+  - Mengembangkan service terpusat [`app/Services/Kuesioner/QuestionDefaultOptionsService.php`](file:///c:/study/tracerstudy/app/Services/Kuesioner/QuestionDefaultOptionsService.php) untuk mengotomasi penambahan pilihan opsi awal saat butir pertanyaan baru dibuat:
+    - `radio_text` (Pilihan Ganda + Lainnya): 2 opsi baku (`Pilihan 1`, `Pilihan 2`) + 1 opsi bertrik khusus input teks bebas (`Lainnya (Tuliskan)`).
+    - `rating_5` (Skala Rating 1-5): 5 opsi skala terurut (`1 - Sangat Rendah`, `2 - Rendah`, `3 - Cukup`, `4 - Tinggi`, `5 - Sangat Tinggi`). Admin dan Super Admin dapat mengkustomisasi kalimat/skor via modal kelola opsi.
+    - `radio_input` (Radio + Angka Bulan): 1 opsi berkolom numerik bertitik (`Kira-kira ... bulan`) + 1 opsi non-aktif/penolakan (`Tidak`).
+    - `single_choice`, `multiple_choice`, `dropdown`, `searchable_select`: 2 opsi pilihan default (`Pilihan 1`, `Pilihan 2`).
+  - Terintegrasi langsung pada controller:
+    - [`SimpanPertanyaanProdiController.php`](file:///c:/study/tracerstudy/app/Http/Controllers/AdminProdi/KelolaPertanyaan/SimpanPertanyaanProdiController.php) (Admin Prodi)
+    - [`KelolaKuesionerProdiSuperAdminController.php`](file:///c:/study/tracerstudy/app/Http/Controllers/SuperAdmin/KelolaPertanyaan/KelolaKuesionerProdiSuperAdminController.php) (Super Admin Prodi)
+    - [`SimpanPertanyaanController.php`](file:///c:/study/tracerstudy/app/Http/Controllers/SuperAdmin/KelolaPertanyaan/SimpanPertanyaanController.php) (Super Admin Universitas)
+- **Pembersihan & Eliminasi Tipe Pertanyaan Redundan**:
+  - Menghilangkan entri bertingkat/duplikat pada antarmuka dropdown modal tambah/edit pertanyaan di Super Admin ([`Index.vue`](file:///c:/study/tracerstudy/resources/js/Pages/SuperAdmin/Pertanyaan/Index.vue)) dan Prodi ([`Index.vue`](file:///c:/study/tracerstudy/resources/js/Pages/AdminProdi/Pertanyaan/Index.vue)).
+  - Menyembunyikan tipe matriks skala yang sudah tidak relevan/usang (`matrix`, `matrix_dual`, `multiple_textbox`).
+  - Memperjelas penamaan label tipe `multiple_number` menjadi **"Rincian Nominal / Gaji (Take Home Pay)"**.
+- **Refactoring & Pemulihan Frontend Kuesioner Prodi ([`KuesionerProdi.vue`](file:///c:/study/tracerstudy/resources/js/Pages/Alumni/KuesionerProdi.vue))**:
+  - Menambahkan template kartu interaktif responsif untuk tipe `radio_text` (dilengkapi input teks isian langsung saat opsi 'Lainnya' dipilih), `radio_input` (dengan kolom angka dan label 'Bulan'), `dropdown`, `searchable_select`, `textarea`, dan `time`.
+  - Mengeliminasi duplikasi deklarasi fungsi helper `isCheckboxChecked` dan `toggleCheckboxOption` yang memicu kegagalan build Vite SFC.
+  - Memperbaiki regex pemotongan prefix skor pada header matriks skala 1-5 (`replace(/^\d+\s*[-=:]\s*/, '')`), sehingga teks opsi seperti `1 - Sangat Rendah` tidak lagi menduplikasi angka indeks `1`.
+- **Perluasan Otorisasi Penambahan Perusahaan Multi-Role (`SimpanProfilController.php` & `routes/web.php`)**:
+  - Memperluas middleware otorisasi rute `POST /alumni/company` pada [`routes/web.php`](file:///c:/study/tracerstudy/routes/web.php) menjadi `role:alumni,admin_prodi,admin_fakultas,admin_biro3,superadmin`.
+  - Memperbaiki pengondisian mutasi relasi `biodata->update(['perusahaan_id' => ...])` pada [`SimpanProfilController.php`](file:///c:/study/tracerstudy/app/Http/Controllers/Alumni/Profil/SimpanProfilController.php) agar khusus dijalankan bagi akun alumni, menjaga integritas relasi profil alumni ketika staf/admin menambah instansi perusahaan dari antarmuka verifikasi.
+- **Automated Feature Testing & Standar Mutu**:
+  - Pengujian fitur lengkap lulus 100%: `tests/Feature/AdminProdiKuesionerTest.php`, `tests/Feature/SuperAdminKelolaPertanyaanTest.php`, `tests/Feature/BiroTigaKelolaPertanyaanTest.php`, dan `tests/Feature/VerifikasiPerusahaanTest.php`.
+  - Pemformatan kode PSR-12/Laravel Pint berhasil (`vendor/bin/pint --dirty --format agent`).
+  - Kompilasi Vite production bundle (`npm run build`) berjalan bersih tanpa galat.
+
 ## [2026-10-11]
 - **Standardisasi Desain Stepper Horizontal Kuesioner Alumni pada Detail Alumni Multi-Role**:
   - Mengimplementasikan komponen Stepper horizontal terpadu (mengadopsi estetika kuesioner universitas alumni `Stepper.vue`) pada seluruh antarmuka detail alumni:

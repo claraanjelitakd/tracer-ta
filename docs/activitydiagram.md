@@ -6,6 +6,7 @@ Dokumen ini memuat spesifikasi dan pemodelan **UML Activity Diagram** untuk pros
 2. **Proses 1: Sinkronisasi Profil LinkedIn (Apify Scraper & Staging Review)**
 3. **Proses 2: Pengiriman Token ke Email Pengguna Atasan untuk Isi Evaluasi Kinerja (Employer Survey)**
 4. **Proses 3: Rekomendasi Kecocokan Perusahaan (Multi-Level Similarity Matching & Auto-Replace)**
+5. **Proses 4: Pengelolaan Instrumen Kuesioner & Otomasi Opsi Default (Admin Prodi & Super Admin)**
 
 ---
 
@@ -824,13 +825,90 @@ END FUNCTION
 
 ---
 
-## 6. Ringkasan Matriks Perbandingan & Standarisasi Notasi UML
+## 6. PROSES 4: Pengelolaan Instrumen Kuesioner & Otomasi Opsi Default (Admin Prodi & Super Admin)
 
-| Parameter | Proses Acuan: Edit Profil & Password | Proses 1: Sinkronisasi LinkedIn | Proses 2: Token Evaluasi Atasan | Proses 3: Rekomendasi Perusahaan |
-| :--- | :--- | :--- | :--- | :--- |
-| **Aktor Utama (Lane 1)** | Alumni UKDW | Super Admin / Admin Prodi | Alumni UKDW & Atasan Kerja | Admin Verifikator (Pusat/Fakultas/Prodi) |
-| **Sistem Eksekusi (Lane 2)** | System (Tracer Study) | Backend App & Apify Provider | System & SMTP Mail Server | Service Matching & Database |
-| **Penerapan Fork / Join** | Fork cabang Pwd/Profil & Join ke System | Sequential Request & Review | Multi-part Event Flow | Fork Tokenize/Cleaning & Join Matching |
-| **Penanganan Invalid (`⨂`)** | Flow Final saat password lama salah | Flow Final saat URL/Dataset invalid | Flow Final saat Token/Email invalid | Flow Final saat Pengajuan Ditolak |
-| **Aksi Basis Data** | Update tabel `users` & `biodatas` | Update staging & `biodatas` | Insert token & `respons_evaluasi` | Transactional Auto-Replace / Direct Verify |
-| **Status Sukses (`◉`)** | Final State konfirmasi profil/sandi | Final State status `APPROVED` | Final State konfirmasi terima kasih | Final State status `Terverifikasi` |
+### A. Deskripsi Alur & Logika Bisnis
+Alur ini memodelkan proses penambahan butir instrumen kuesioner tracer study (baik Kuesioner Program Studi maupun Kuesioner Universitas) dengan integrasi pembuatan opsi default otomatis:
+1. Admin Prodi atau Super Admin mengakses modul kelola butir pertanyaan (`/prodi/pertanyaan` atau `/superadmin/pertanyaan`).
+2. Admin membuka modal tambah pertanyaan dan memasukkan atribut utama:
+   - Bagian bab/seksi (*Section*) tempat pertanyaan akan ditampilkan.
+   - Kode pertanyaan unik (contoh: `P01`, `F301`).
+   - Rumusan bunyi kalimat pertanyaan.
+   - Sifat pengisian (*Wajib* atau *Opsional*).
+   - Tipe input pertanyaan (contoh: `radio_text`, `rating_5`, `radio_input`, `single_choice`, `multiple_choice`, `dropdown`, `searchable_select`, `text`, `number`, dll).
+3. Data dikirimkan menyeberang ke kolom **System (Tracer Study)**.
+4. Sistem memvalidasi kelengkapan form dan keunikan kode pertanyaan:
+   - Jika **`[invalid]`** (kode pertanyaan sudah terdaftar atau field wajib kosong), sistem menampilkan pesan validasi dan aliran dihentikan pada **Flow Final (`⨂`)**.
+5. Jika **`[valid]`**, sistem menyimpan butir pertanyaan ke basis data (`prodi_questions` atau `ref_subpertanyaan2021`).
+6. Melalui percabangan logika (*Decision Node*), sistem memeriksa apakah tipe pertanyaan mendukung opsi respon (`canHaveOptions`):
+   - Jika **`[tipe tanpa opsi]`** (seperti `text`, `textarea`, `number`, `date`, `time`, `header`), sistem langsung menyajikan konfirmasi sukses.
+   - Jika **`[tipe mendukung opsi]`**, sistem mengeksekusi service terpusat `QuestionDefaultOptionsService`:
+     - Tipe `radio_text`: Membuat 2 opsi pilihan ganda + 1 opsi kustom isian teks bebas ("Lainnya (Tuliskan)").
+     - Tipe `rating_5`: Membuat 5 butir opsi berurutan skala 1 s/d 5 ("1 - Sangat Rendah" s/d "5 - Sangat Tinggi").
+     - Tipe `radio_input`: Membuat opsi radio bertitik angka ("Kira-kira ... bulan") + 1 opsi penolakan tanpa input ("Tidak").
+     - Tipe `single_choice`, `multiple_choice`, `dropdown`, `searchable_select`: Membuat 2 opsi baku awal ("Pilihan 1", "Pilihan 2").
+7. Seluruh opsi default disimpan ke tabel relasi (`prodi_question_options` atau `ref_subpertanyaan_detil`).
+8. Admin menerima konfirmasi sukses (`◉`), dan admin memiliki fleksibilitas penuh untuk menyunting (*edit*), menambah, atau menghapus opsi-opsi default tersebut kapan saja melalui antarmuka Kelola Opsi.
+
+### B. Diagram UML Mermaid (2-Swimlane)
+
+```mermaid
+flowchart TD
+    %% Initial State
+    Start4((●)) -->|Akses Kelola Pertanyaan| ActAdminInput["Admin: Buka Modal & Isi Kode, Kalimat, Sifat & Tipe Soal"]
+
+    %% Menyeberang ke Sistem
+    ActAdminInput --> ActSysValidate["System: Validasi Kelengkapan Data & Keunikan Kode"]
+    ActSysValidate --> DecValid{Validasi Data & Kode?}
+
+    DecValid -->|invalid| FlowFinalFail4((⨂))
+    DecValid -->|valid| ActSysSaveQuestion["System: Simpan Butir Pertanyaan Baru ke Basis Data"]
+
+    %% Pengecekan Dukungan Opsi Default
+    ActSysSaveQuestion --> DecHasOptions{Tipe Soal Butuh Opsi?}
+
+    DecHasOptions -->|Tidak: Text/Angka/Tanggal/Header| ActSysSuccess["System: Tampilkan Notifikasi Berhasil Simpan Soal"]
+    DecHasOptions -->|Ya: Radio/Checkbox/Rating/Dropdown| ActSysGenOptions["System: QuestionDefaultOptionsService Generate Opsi Baku"]
+
+    %% Percabangan Tipe Opsi Default
+    ActSysGenOptions --> DecType{Pola Tipe Soal?}
+
+    DecType -->|radio_text| ActOptRadioText["Generate: Opsi 1, Opsi 2 + 'Lainnya (Tuliskan)'"]
+    DecType -->|rating_5| ActOptRating5["Generate: 5 Skala ('1 - Sangat Rendah' s/d '5 - Sangat Tinggi')"]
+    DecType -->|radio_input| ActOptRadioInput["Generate: 'Kira-kira ... bulan' + 'Tidak'"]
+    DecType -->|pilihan_ganda/dropdown| ActOptStandard["Generate: 2 Opsi Baku ('Pilihan 1', 'Pilihan 2')"]
+
+    ActOptRadioText --> ActSysSaveOptions["System: Simpan Opsi Default ke Tabel Relasi Opsi"]
+    ActOptRating5 --> ActSysSaveOptions
+    ActOptRadioInput --> ActSysSaveOptions
+    ActOptStandard --> ActSysSaveOptions
+
+    ActSysSaveOptions --> ActSysSuccess
+    ActSysSuccess --> ActAdminCustomize["Admin: Tinjau & Kustomisasi Bunyi Opsi via Modal Opsi (Opsional)"]
+    ActAdminCustomize --> EndSuccess4(((◉)))
+
+    %% Styling 2-Swimlane
+    classDef actorStyle fill:#E8F5E9,stroke:#005B3C,stroke-width:2px,color:#003320;
+    classDef sysStyle fill:#E3F2FD,stroke:#1565C0,stroke-width:2px,color:#0D47A1;
+    classDef decisionStyle fill:#FFF9C4,stroke:#F57F17,stroke-width:2px,color:#E65100;
+    classDef stateStyle fill:#263238,stroke:#263238,stroke-width:2px,color:#ffffff;
+
+    class Start4,FlowFinalFail4,EndSuccess4 stateStyle;
+    class ActAdminInput,ActAdminCustomize actorStyle;
+    class ActSysValidate,ActSysSaveQuestion,ActSysSuccess,ActSysGenOptions,ActSysSaveOptions,ActOptRadioText,ActOptRating5,ActOptRadioInput,ActOptStandard sysStyle;
+    class DecValid,DecHasOptions,DecType decisionStyle;
+```
+
+---
+
+## 7. Ringkasan Matriks Perbandingan & Standarisasi Notasi UML
+
+| Parameter | Proses Acuan: Edit Profil & Password | Proses 1: Sinkronisasi LinkedIn | Proses 2: Token Evaluasi Atasan | Proses 3: Rekomendasi Perusahaan | Proses 4: Instrumen & Opsi Default |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **Aktor Utama (Lane 1)** | Alumni UKDW | Super Admin / Admin Prodi | Alumni UKDW & Atasan Kerja | Admin Verifikator (Pusat/Fakultas/Prodi) | Admin Prodi & Super Admin |
+| **Sistem Eksekusi (Lane 2)** | System (Tracer Study) | Backend App & Apify Provider | System & SMTP Mail Server | Service Matching & Database | Backend App & Options Service |
+| **Penerapan Fork / Join** | Fork cabang Pwd/Profil & Join ke System | Sequential Request & Review | Multi-part Event Flow | Fork Tokenize/Cleaning & Join Matching | Percabangan Tipe Opsi Default & Join |
+| **Penanganan Invalid (`⨂`)** | Flow Final saat password lama salah | Flow Final saat URL/Dataset invalid | Flow Final saat Token/Email invalid | Flow Final saat Pengajuan Ditolak | Flow Final saat Kode Duplikat / Form Kosong |
+| **Aksi Basis Data** | Update tabel `users` & `biodatas` | Update staging & `biodatas` | Insert token & `respons_evaluasi` | Transactional Auto-Replace / Direct Verify | Insert pertanyaan & opsi relasional |
+| **Status Sukses (`◉`)** | Final State konfirmasi profil/sandi | Final State status `APPROVED` | Final State konfirmasi terima kasih | Final State status `Terverifikasi` | Final State soal & opsi aktif tersimpan |
+

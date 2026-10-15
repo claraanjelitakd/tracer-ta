@@ -157,8 +157,8 @@ flowchart TD
    - Mengunduh rekap data alumni prodi ke format Excel (`/prodi/alumni/{id}/export-excel`).
 3. **Instrumen Kuesioner Khusus Prodi**:
    - **Section Kuesioner Prodi (`/prodi/sections`)**: Menambah, mengedit, menghapus, dan mengatur urutan tampilan bagian soal (*reorder*).
-   - **Pertanyaan Prodi (`/prodi/pertanyaan`)**: Menambah, mengedit, menghapus, dan mengatur urutan butir pertanyaan prodi.
-   - **Opsi Jawaban Prodi (`/prodi/opsi`)**: Mengelola pilihan opsi respon untuk tipe pertanyaan pilihan ganda atau checkbox.
+   - **Pertanyaan Prodi (`/prodi/pertanyaan`)**: Menambah, mengedit, menghapus, dan mengatur urutan butir pertanyaan prodi. Saat butir baru dibuat, sistem secara otomatis mengenerate opsi pilihan default melalui `QuestionDefaultOptionsService` (misal 2 opsi pilihan ganda, skala 1-5, atau pilihan ganda + kolom isian teks 'Lainnya (Tuliskan)').
+   - **Opsi Jawaban Prodi (`/prodi/opsi`)**: Mengelola, menyunting teks, menambah, atau menghapus pilihan opsi respon untuk tipe pertanyaan yang mendukung opsi.
 4. **Verifikasi Perusahaan (`/prodi/perusahaan`)**:
    - Memeriksa nama instansi/perusahaan baru yang dimasukkan alumni prodi saat memperbarui profil pekerjaan.
    - Aksi: Setujui perusahaan baru (`verify`), tolak (`reject`), edit lalu verifikasi (`update`), atau ganti/hubungkan ke data perusahaan master yang sudah terverifikasi sebelumnya (`replace`).
@@ -352,7 +352,7 @@ flowchart TD
 2. **Kelola Kuesioner Universitas (Kemdikbudristek)**:
    - **Section Kuesioner (`/superadmin/sections`)**: CRUD dan reorder bagian-bagian kuesioner.
    - **Kuesioner Induk (`/superadmin/kuesioner`)**: Mengatur instrumen kuesioner dan toggle status aktif/nonaktif.
-   - **Pertanyaan & Opsi (`/superadmin/pertanyaan`)**: CRUD pertanyaan, konfigurasi percabangan soal (*branching logic*), serta kelola opsi pilihan jawaban.
+   - **Pertanyaan & Opsi (`/superadmin/pertanyaan`)**: CRUD pertanyaan, konfigurasi percabangan soal (*branching logic*), pembersihan opsi duplikat, generate opsi default otomatis via `QuestionDefaultOptionsService`, serta kelola opsi pilihan jawaban.
 3. **Kelola Kuesioner Prodi Override (`/superadmin/prodi-kuesioner`)**:
    - Memilih prodi mana saja dan mengelola section, pertanyaan, dan opsi kuesioner spesifik prodi tersebut.
 4. **Kelola Instrumen Evaluasi Atasan (`/superadmin/evaluasi-atasan`)**:
