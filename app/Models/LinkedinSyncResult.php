@@ -48,6 +48,20 @@ class LinkedinSyncResult extends Model
         'scraped_at' => 'datetime',
     ];
 
+    protected $appends = [
+        'preview',
+    ];
+
+    /**
+     * Accessor untuk attribute 'preview'.
+     *
+     * @return array<string, mixed>
+     */
+    public function getPreviewAttribute(): array
+    {
+        return $this->getPreviewData();
+    }
+
     /**
      * Relasi ke data alumni (Biodata).
      */
@@ -167,7 +181,7 @@ class LinkedinSyncResult extends Model
         }
 
         // 7. Pengalaman Kerja (Experience / Experiences)
-        $rawExp = $item['experiences'] ?? $item['experience'] ?? $item['positions'] ?? [];
+        $rawExp = $item['experiences'] ?? $item['experience'] ?? $item['positions'] ?? $item['position'] ?? [];
         $experienceList = [];
         $currentJob = null;
         $currentCompany = null;
@@ -250,16 +264,48 @@ class LinkedinSyncResult extends Model
             }
         }
 
-        // 9. Keahlian (Skills)
-        $rawSkills = $item['skills'] ?? [];
+        // 9. Keahlian (Skills) - Mendukung berbagai skema key dan format data
+        $rawSkills = $item['skills']
+            ?? $item['skill']
+            ?? $item['all_skills']
+            ?? $item['skills_list']
+            ?? $item['featured_skills']
+            ?? $item['skill_list']
+            ?? [];
+
+        if (is_string($rawSkills) && ! empty($rawSkills)) {
+            $rawSkills = array_map('trim', explode(',', $rawSkills));
+        }
+
         $skillsList = [];
         if (is_array($rawSkills)) {
             foreach ($rawSkills as $skill) {
-                if (is_string($skill)) {
-                    $skillsList[] = $skill;
-                } elseif (is_array($skill) && ! empty($skill['name'])) {
-                    $skillsList[] = $skill['name'];
+                if (is_string($skill) && ! empty(trim($skill))) {
+                    $skillsList[] = trim($skill);
+                } elseif (is_array($skill)) {
+                    $skillName = $skill['name'] ?? $skill['title'] ?? $skill['skill'] ?? $skill['text'] ?? $skill['label'] ?? null;
+                    if (! empty($skillName)) {
+                        $skillsList[] = trim((string) $skillName);
+                    }
                 }
+            }
+        }
+
+        // 10. Pengalaman Sukarelawan (Volunteer Experiences) jika tersedia
+        $rawVol = $item['volunteer_experiences'] ?? $item['volunteering'] ?? [];
+        $volunteerList = [];
+        if (is_array($rawVol)) {
+            foreach ($rawVol as $vol) {
+                if (! is_array($vol)) {
+                    continue;
+                }
+                $volunteerList[] = [
+                    'role' => $vol['role'] ?? $vol['title'] ?? $vol['position'] ?? null,
+                    'organization' => $vol['organization'] ?? $vol['company_name'] ?? $vol['name'] ?? null,
+                    'cause' => $vol['cause'] ?? null,
+                    'date' => $vol['date'] ?? null,
+                    'description' => $vol['description'] ?? null,
+                ];
             }
         }
 
@@ -267,13 +313,20 @@ class LinkedinSyncResult extends Model
             'profile_url' => $profileUrl,
             'profile_picture' => $profilePicture,
             'name' => $name,
+            'first_name' => $item['first_name'] ?? $item['firstName'] ?? null,
+            'last_name' => $item['last_name'] ?? $item['lastName'] ?? null,
             'headline' => $headline,
             'about' => $about,
             'location' => $location,
+            'country' => $item['li_profile_country'] ?? null,
             'experience' => $experienceList,
             'experiences' => $experienceList,
             'education' => $educationList,
             'skills' => $skillsList,
+            'volunteer_experiences' => $volunteerList,
+            'past_job_title' => $item['past_job_title'] ?? null,
+            'past_company_name' => $item['past_company_name'] ?? null,
+            'past_company_url' => $item['past_li_company_url'] ?? null,
             'current_job' => $currentJob,
             'current_company' => $currentCompany,
             'current_company_location' => $currentCompanyLocation,
@@ -281,6 +334,8 @@ class LinkedinSyncResult extends Model
             'handle' => $item['li_profile_handle'] ?? null,
             'followers' => isset($item['li_number_followers']) ? (int) $item['li_number_followers'] : null,
             'connections' => isset($item['li_number_connections']) ? (int) $item['li_number_connections'] : null,
+            'scraped_at' => $item['scraped_at'] ?? null,
+            'operation' => $item['operation'] ?? null,
         ];
     }
 }

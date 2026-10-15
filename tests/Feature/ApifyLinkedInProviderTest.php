@@ -615,4 +615,58 @@ class ApifyLinkedInProviderTest extends TestCase
         $this->assertNotNull($fresh->posisi_jabatan);
         $this->assertNotNull($fresh->perusahaan);
     }
+
+    // -------------------------------------------------------------------------
+    // Test 24: Approve With Custom Skills and Experience Saves to Profile
+    // -------------------------------------------------------------------------
+    public function test_24_approve_with_custom_skills_saves_to_alumni_profile(): void
+    {
+        $alumni = $this->createAlumni('71190007', 'Benedictus Daniel');
+
+        $result = LinkedinSyncResult::create([
+            'biodata_id' => $alumni->id,
+            'linkedin_url' => $alumni->linkedin_url,
+            'scraped_data' => [
+                'first_name' => 'Benedictus',
+                'last_name' => 'Daniel',
+                'headline' => 'Software Engineer',
+                'summary' => 'Information Systems graduate with interest in IT Audit.',
+                'skills' => [
+                    ['name' => 'IT Audit'],
+                    ['name' => 'Business Process Management'],
+                ],
+                'position' => [
+                    [
+                        'title' => 'System Analyst Intern',
+                        'company_name' => 'PT K-24 INDONESIA OFFICIAL',
+                    ],
+                ],
+            ],
+            'status' => 'pending',
+            'scraped_at' => now(),
+        ]);
+
+        // Verifikasi skills diekstrak murni dari field yang disediakan LinkedIn
+        $preview = $result->preview;
+        $this->assertNotEmpty($preview['skills']);
+        $this->assertContains('IT Audit', $preview['skills']);
+        $this->assertContains('Business Process Management', $preview['skills']);
+
+        // Admin melakukan penyesuaian kustom pada modal review sebelum approve
+        $response = $this->actingAs($this->superadmin)
+            ->postJson("/superadmin/linkedin-sync/results/{$result->id}/approve", [
+                'posisi_jabatan' => 'System Analyst Intern',
+                'perusahaan_nama' => 'PT K-24 INDONESIA OFFICIAL',
+                'jenis_pekerjaan' => 'swasta',
+                'skills' => 'IT Audit, Business Process Management, Laravel, Vue.js',
+            ]);
+
+        $response->assertOk();
+        $response->assertJson(['success' => true]);
+
+        $fresh = $alumni->fresh();
+        $this->assertEquals('IT Audit, Business Process Management, Laravel, Vue.js', $fresh->skills);
+        $this->assertEquals('IT Audit, Business Process Management, Laravel, Vue.js', $fresh->expert);
+        $this->assertEquals('System Analyst Intern', $fresh->posisi_jabatan);
+    }
 }

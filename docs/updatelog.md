@@ -3,6 +3,14 @@
 Semua perubahan besar pada sistem dicatat dalam dokumen ini.
 
 ## [2026-10-15]
+- **Transparansi Hasil Sinkronisasi LinkedIn & Manajemen Keahlian (Skills) ([`Index.vue`](file:///c:/study/tracerstudy/resources/js/Pages/SuperAdmin/LinkedIn/Index.vue), [`LinkedinSyncResult.php`](file:///c:/study/tracerstudy/app/Models/LinkedinSyncResult.php), [`LinkedInSyncController.php`](file:///c:/study/tracerstudy/app/Http/Controllers/SuperAdmin/LinkedIn/LinkedInSyncController.php))**:
+  - Memperluas modal peninjauan hasil sinkronisasi LinkedIn (`max-w-5xl`) dengan tab switcher:
+    - **Ringkasan Terstruktur**: Menampilkan rincian riwayat pendidikan lengkap (dengan deteksi almamater UKDW), pengalaman kerja komprehensif, tautan langsung pembuktian ke profil asli LinkedIn, statistik koneksi/pengikut, ringkasan diri (*About*), dan riwayat sukarelawan (*volunteering*).
+    - **{ } JSON Mentah**: Menampilkan seluruh respons payload mentah Apify Dataset dalam penampil teks kode gelap (*syntax highlight*) dengan tombol salin cepat ke *clipboard*.
+  - Menambahkan kolom input **Keahlian (Skills)** pada form penyesuaian usulan sebelum data disetujui (*Approve*), dilengkapi tombol *Quick Add Pills* dan tombol *Gunakan Semua* dari keahlian hasil scraping LinkedIn.
+  - Memperbarui `approveResult` pada controller agar menyimpan keahlian kustom langsung ke kolom `biodata.skills` dan `biodata.expert`, serta pengalaman kerja ke `biodata.experience` dan `biodata.minat`.
+  - Memastikan integritas data murni: jika LinkedIn tidak menyediakan data keahlian (misal disembunyikan oleh setelan privasi profil alumni untuk guest), keahlian dibiarkan kosong apa adanya murni dari hasil scraping tanpa manipulasi tebakan sistem.
+  - Menambahkan feature test komprehensif `test_24_approve_with_custom_skills_saves_to_alumni_profile` pada [`ApifyLinkedInProviderTest.php`](file:///c:/study/tracerstudy/tests/Feature/ApifyLinkedInProviderTest.php) dengan seluruh 41 tes LinkedIn lulus (*100% Passed, 134 assertions*).
 - **Perbaikan & Penyederhanaan Antarmuka Dashboard Alumni & Navbar ([`Dashboard.vue`](file:///c:/study/tracerstudy/resources/js/Pages/Alumni/Dashboard.vue) & [`Navbar.vue`](file:///c:/study/tracerstudy/resources/js/Pages/Alumni/Components/Navbar.vue))**:
   - Menghapus badge decorative dengan titik kuning (`Portal Resmi Alumni Tracer Study UKDW`) dan kartu ringkasan progres kelengkapan 4 tahap dari header banner solid hijau UKDW agar tampilan lebih bersih, minimalis, dan elegan.
   - Menghapus kartu banner notifikasi aksi cepat (*Langkah Selanjutnya*) dan kartu survei atasan (*Tahap 4 Evaluasi Pengguna Lulusan*) dari dashboard.

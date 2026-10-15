@@ -643,7 +643,11 @@ class LinkedInSyncController extends Controller
             // Input kustom dari Super Admin (opsional jika diedit/disesuaikan di modal)
             $customJob = $request->filled('posisi_jabatan') ? trim($request->input('posisi_jabatan')) : null;
             $customWiraswasta = $request->filled('posisi_wiraswasta') ? trim($request->input('posisi_wiraswasta')) : null;
-            $customCompany = $request->filled('nama_perusahaan') ? trim($request->input('nama_perusahaan')) : null;
+            $customCompany = $request->filled('nama_perusahaan')
+                ? trim($request->input('nama_perusahaan'))
+                : ($request->filled('perusahaan_nama') ? trim($request->input('perusahaan_nama')) : null);
+            $customSkills = $request->filled('skills') ? trim($request->input('skills')) : null;
+            $customExperience = $request->filled('experience') ? trim($request->input('experience')) : null;
             $tipePekerjaan = $request->input('tipe_pekerjaan', 'pekerja'); // 'pekerja' atau 'wirausaha'
 
             // 1. Pemetaan Posisi Jabatan / Posisi Wiraswasta
@@ -743,39 +747,49 @@ class LinkedInSyncController extends Controller
                 }
             }
 
-            // 6. Pemetaan Keahlian (Skills) jika ada dan field skills di biodata masih kosong
-            if (! empty($preview['skills']) && empty($biodata->skills)) {
+            // 6. Pemetaan Keahlian (Skills) - Prioritas dari input modal peninjauan, fallback ke hasil scraping
+            $targetSkills = $customSkills;
+            if (empty($targetSkills) && ! empty($preview['skills'])) {
                 $skillsArray = is_array($preview['skills']) ? $preview['skills'] : explode(',', (string) $preview['skills']);
                 $skillsClean = array_map(function ($s) {
-                    return is_array($s) ? ($s['name'] ?? '') : trim((string) $s);
+                    return is_array($s) ? ($s['name'] ?? ($s['title'] ?? ($s['skill'] ?? ''))) : trim((string) $s);
                 }, $skillsArray);
                 $skillsClean = array_values(array_filter($skillsClean));
-                $skillsStr = implode(', ', array_slice($skillsClean, 0, 15));
-                if (! empty($skillsStr)) {
-                    $updates['skills'] = $skillsStr;
-                    $changesSummary[] = "Keahlian (Skills) diisi dari profil LinkedIn: {$skillsStr}";
+                $targetSkills = implode(', ', array_slice($skillsClean, 0, 15));
+            }
+
+            if (! empty($targetSkills)) {
+                $updates['skills'] = $targetSkills;
+                $updates['expert'] = $targetSkills;
+                $changesSummary[] = "Keahlian (Skills) disimpan: {$targetSkills}";
+            }
+
+            // 7. Pemetaan Pengalaman Kerja (Experience)
+            $targetExp = $customExperience;
+            if (empty($targetExp)) {
+                $rawExpList = ! empty($preview['experiences']) ? $preview['experiences'] : (! empty($preview['experience']) ? $preview['experience'] : []);
+                if (! empty($rawExpList) && empty($biodata->experience)) {
+                    $expLines = [];
+                    foreach (array_slice($rawExpList, 0, 5) as $exp) {
+                        $pos = $exp['position'] ?? ($exp['title'] ?? '');
+                        $comp = $exp['company'] ?? ($exp['company_name'] ?? '');
+                        $dt = $exp['date'] ?? ($exp['time_period'] ?? '');
+                        $loc = $exp['location'] ?? '';
+                        $line = trim("{$pos} di {$comp}".($dt ? " ({$dt})" : '').($loc ? " - {$loc}" : ''));
+                        if ($line) {
+                            $expLines[] = $line;
+                        }
+                    }
+                    if (! empty($expLines)) {
+                        $targetExp = implode("\n", $expLines);
+                    }
                 }
             }
 
-            // 7. Pemetaan Pengalaman Kerja (Experience) jika ada dan field experience di biodata masih kosong
-            $rawExpList = ! empty($preview['experiences']) ? $preview['experiences'] : (! empty($preview['experience']) ? $preview['experience'] : []);
-            if (! empty($rawExpList) && empty($biodata->experience)) {
-                $expLines = [];
-                foreach (array_slice($rawExpList, 0, 5) as $exp) {
-                    $pos = $exp['position'] ?? ($exp['title'] ?? '');
-                    $comp = $exp['company'] ?? ($exp['company_name'] ?? '');
-                    $dt = $exp['date'] ?? ($exp['time_period'] ?? '');
-                    $loc = $exp['location'] ?? '';
-                    $line = trim("{$pos} di {$comp}".($dt ? " ({$dt})" : '').($loc ? " - {$loc}" : ''));
-                    if ($line) {
-                        $expLines[] = $line;
-                    }
-                }
-                if (! empty($expLines)) {
-                    $expStr = implode("\n", $expLines);
-                    $updates['experience'] = $expStr;
-                    $changesSummary[] = 'Pengalaman Kerja (Experience) diisi dari profil LinkedIn ('.count($expLines).' entri)';
-                }
+            if (! empty($targetExp)) {
+                $updates['experience'] = $targetExp;
+                $updates['minat'] = $targetExp;
+                $changesSummary[] = 'Pengalaman Kerja (Experience) disimpan dari profil LinkedIn';
             }
 
             // 7. Perbarui data utama biodata jika ada perubahan

@@ -144,6 +144,7 @@ const isReviewLoading = ref(false);
 const isActionLoading = ref(false);
 const activeReview = ref(null);
 const activeAlumni = ref(null);
+const activeReviewTab = ref('structured'); // 'structured' | 'raw_json'
 
 // Form Approval Bersih (Bisa disesuaikan oleh admin sebelum disimpan)
 const approveForm = ref({
@@ -151,6 +152,7 @@ const approveForm = ref({
     posisi_jabatan: '',
     posisi_wiraswasta: '',
     nama_perusahaan: '',
+    skills: '',
     sync_foto: true,
 });
 
@@ -380,11 +382,27 @@ const syncSingle = async (alumni) => {
 // =========================================================================
 // PENINJAUAN & APPROVAL STAGING (PROVIDER APIFY) - BEBAS EMOTICON
 // =========================================================================
+const copyRawJson = (raw) => {
+    if (!raw) return;
+    navigator.clipboard.writeText(JSON.stringify(raw, null, 2));
+    showToast('success', 'Data JSON mentah berhasil disalin ke clipboard.');
+};
+
+const addSkillToForm = (skillName) => {
+    if (!skillName) return;
+    const current = approveForm.value.skills ? approveForm.value.skills.split(',').map(s => s.trim()).filter(Boolean) : [];
+    if (!current.includes(skillName)) {
+        current.push(skillName);
+        approveForm.value.skills = current.join(', ');
+    }
+};
+
 const openReviewModal = async (syncResultId, alumni) => {
     isReviewModalOpen.value = true;
     isReviewLoading.value = true;
     activeReview.value = null;
     activeAlumni.value = alumni;
+    activeReviewTab.value = 'structured';
 
     try {
         const response = await fetch(`${props.baseRoute}/results/${syncResultId}`, {
@@ -401,6 +419,19 @@ const openReviewModal = async (syncResultId, alumni) => {
             approveForm.value.posisi_wiraswasta = '';
             approveForm.value.nama_perusahaan = data.result.preview?.current_company || '';
             approveForm.value.sync_foto = !!data.result.preview?.profile_picture;
+
+            // Inisialisasi Skills: Prioritas dari preview.skills, lalu suggested_skills, lalu data saat ini
+            let initialSkills = '';
+            if (Array.isArray(data.result.preview?.skills) && data.result.preview.skills.length > 0) {
+                initialSkills = data.result.preview.skills.join(', ');
+            } else if (typeof data.result.preview?.skills === 'string' && data.result.preview.skills.trim()) {
+                initialSkills = data.result.preview.skills.trim();
+            } else if (Array.isArray(data.result.preview?.suggested_skills) && data.result.preview.suggested_skills.length > 0) {
+                initialSkills = data.result.preview.suggested_skills.join(', ');
+            } else if (data.result.current_data?.skills) {
+                initialSkills = data.result.current_data.skills;
+            }
+            approveForm.value.skills = initialSkills;
         } else {
             showToast('error', data.message || 'Gagal memuat rincian hasil sinkronisasi.');
             isReviewModalOpen.value = false;
@@ -421,6 +452,7 @@ const handleApprove = async () => {
         ? (approveForm.value.posisi_wiraswasta || approveForm.value.posisi_jabatan || '-')
         : (approveForm.value.posisi_jabatan || '-');
     const targetPerusahaan = approveForm.value.nama_perusahaan || '-';
+    const targetSkills = approveForm.value.skills?.trim() || '-';
 
     const result = await Swal.fire({
         title: 'Setujui & Terapkan Data?',
@@ -431,10 +463,11 @@ const handleApprove = async () => {
                     <p><span class="text-slate-500 font-medium">Kategori:</span> <b>${isWirausaha ? 'Wiraswasta / Usaha' : 'Karyawan / Pekerja'}</b></p>
                     <p><span class="text-slate-500 font-medium">${isWirausaha ? 'Posisi Usaha' : 'Posisi / Jabatan'}:</span> <b>${targetJabatan}</b></p>
                     <p><span class="text-slate-500 font-medium">Perusahaan / Usaha:</span> <b>${targetPerusahaan}</b></p>
+                    <p><span class="text-slate-500 font-medium">Keahlian (Skills):</span> <b>${targetSkills}</b></p>
                 </div>
                 <div class="flex items-start gap-2 bg-emerald-50 text-emerald-900 p-2.5 rounded-lg border border-emerald-200">
                     <span class="font-bold shrink-0">Catatan:</span>
-                    <span>Perusahaan ini akan otomatis didaftarkan ke Master Perusahaan berstatus Menunggu Verifikasi.</span>
+                    <span>Data jabatan, perusahaan, dan keahlian di database alumni akan diperbarui sesuai hasil peninjauan ini.</span>
                 </div>
             </div>
         `,
@@ -463,6 +496,7 @@ const handleApprove = async () => {
                 posisi_jabatan: approveForm.value.posisi_jabatan,
                 posisi_wiraswasta: approveForm.value.posisi_wiraswasta,
                 nama_perusahaan: approveForm.value.nama_perusahaan,
+                skills: approveForm.value.skills,
                 sync_foto: approveForm.value.sync_foto,
             }),
         });
@@ -1015,15 +1049,15 @@ const dashboardRoute = computed(() => {
         </div>
 
         <!-- ================================================================= -->
-        <!-- MODAL PENINJAUAN & APPROVAL (APIFY) - BERSIH TANPA EMOTICON       -->
+        <!-- MODAL PENINJAUAN & APPROVAL (APIFY) - LENGKAP & TRANSPARAN        -->
         <!-- ================================================================= -->
         <div
             v-if="isReviewModalOpen"
             class="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4"
         >
-            <div class="bg-white rounded-2xl max-w-3xl w-full shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[90vh]">
+            <div class="bg-white rounded-2xl max-w-5xl w-full shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[92vh]">
                 <!-- Header Modal -->
-                <div class="px-6 py-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
+                <div class="px-6 py-4 bg-slate-50 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                     <div>
                         <div class="flex items-center gap-2">
                             <h3 class="text-base font-bold text-slate-900">
@@ -1039,15 +1073,43 @@ const dashboardRoute = computed(() => {
                         </p>
                     </div>
 
-                    <button
-                        type="button"
-                        @click="isReviewModalOpen = false"
-                        class="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-200/60 transition-colors cursor-pointer"
-                    >
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-                        </svg>
-                    </button>
+                    <div class="flex items-center gap-3">
+                        <!-- Switch Tab: Terstruktur vs Raw JSON -->
+                        <div v-if="activeReview" class="inline-flex rounded-xl border border-slate-200 p-0.5 bg-slate-200/60 text-xs shadow-2xs">
+                            <button
+                                type="button"
+                                @click="activeReviewTab = 'structured'"
+                                :class="[activeReviewTab === 'structured' ? 'bg-white text-slate-900 font-bold shadow-xs' : 'text-slate-600 hover:text-slate-900']"
+                                class="px-3 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1.5"
+                            >
+                                <svg class="w-3.5 h-3.5 text-[#0D542B]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                                </svg>
+                                <span>Ringkasan Terstruktur</span>
+                            </button>
+                            <button
+                                type="button"
+                                @click="activeReviewTab = 'raw_json'"
+                                :class="[activeReviewTab === 'raw_json' ? 'bg-white text-slate-900 font-bold shadow-xs' : 'text-slate-600 hover:text-slate-900']"
+                                class="px-3 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1.5"
+                            >
+                                <svg class="w-3.5 h-3.5 text-sky-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"/>
+                                </svg>
+                                <span>{ } JSON Mentah</span>
+                            </button>
+                        </div>
+
+                        <button
+                            type="button"
+                            @click="isReviewModalOpen = false"
+                            class="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-200/60 transition-colors cursor-pointer"
+                        >
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                            </svg>
+                        </button>
+                    </div>
                 </div>
 
                 <!-- Body Modal -->
@@ -1068,41 +1130,43 @@ const dashboardRoute = computed(() => {
                                     Hasil sinkronisasi LinkedIn dari provider Apify dan belum diterapkan ke data utama.
                                 </p>
                                 <p class="text-amber-700 mt-0.5 leading-relaxed">
-                                    Data profil utama alumni di database kampus <b>tidak akan berubah</b> sampai Anda menekan tombol <b>Setujui (Approve)</b>.
+                                    Data profil utama alumni di database kampus <b>tidak akan berubah</b> sampai Anda menekan tombol <b>Setujui (Approve)</b>. Silakan periksa rincian data di bawah untuk memastikan data ini cocok sebelum disetujui.
                                 </p>
                             </div>
                         </div>
 
                         <!-- Form Penyesuaian Usulan Sebelum Disetujui -->
-                        <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-3">
+                        <div class="bg-slate-50 p-4 sm:p-5 rounded-2xl border border-slate-200 space-y-3">
                             <div class="flex items-center justify-between flex-wrap gap-2">
-                                <h4 class="text-xs font-bold text-slate-800 uppercase tracking-wider">
-                                    Penyesuaian Data Profil Sebelum Disetujui
+                                <h4 class="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
+                                    <span class="w-2 h-2 rounded-full bg-[#0D542B]"></span>
+                                    <span>Penyesuaian Data Profil Sebelum Disetujui</span>
                                 </h4>
                                 <span class="text-[11px] text-slate-500">
                                     Data di bawah dapat disesuaikan sebelum diterapkan ke database utama
                                 </span>
                             </div>
 
-                            <div class="grid grid-cols-1 lg:grid-cols-3 gap-3 text-xs">
+                            <div class="grid grid-cols-1 lg:grid-cols-3 gap-3.5 text-xs">
                                 <!-- Data Saat Ini -->
-                                <div class="bg-white p-3 rounded-lg border border-slate-200">
-                                    <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
+                                <div class="bg-white p-3.5 rounded-xl border border-slate-200 space-y-2">
+                                    <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
                                         Data Saat Ini di Sistem:
                                     </span>
-                                    <div class="space-y-1">
-                                        <p><span class="text-slate-500">Jabatan:</span> <b class="text-slate-800">{{ activeReview.current_data?.posisi_jabatan || '- Belum diisi -' }}</b></p>
-                                        <p><span class="text-slate-500">Perusahaan:</span> <b class="text-slate-800">{{ activeReview.current_data?.nama_perusahaan || '- Belum diisi -' }}</b></p>
+                                    <div class="space-y-1.5 text-xs">
+                                        <p><span class="text-slate-500">Jabatan:</span> <b class="text-slate-800 block">{{ activeReview.current_data?.posisi_jabatan || '- Belum diisi -' }}</b></p>
+                                        <p><span class="text-slate-500">Perusahaan:</span> <b class="text-slate-800 block">{{ activeReview.current_data?.nama_perusahaan || '- Belum diisi -' }}</b></p>
+                                        <p><span class="text-slate-500">Keahlian (Skills):</span> <span class="text-slate-700 block truncate">{{ activeReview.current_data?.skills || '- Belum diisi -' }}</span></p>
                                     </div>
                                 </div>
 
-                                <!-- Form Penyesuaian Usulan (Bebas Emoticon) -->
-                                <div class="lg:col-span-2 bg-emerald-50/60 p-3.5 rounded-lg border border-emerald-200 space-y-2.5">
+                                <!-- Form Penyesuaian Usulan -->
+                                <div class="lg:col-span-2 bg-emerald-50/70 p-4 rounded-xl border border-emerald-200 space-y-3">
                                     <div class="flex items-center justify-between flex-wrap gap-2">
                                         <span class="text-[10px] font-bold text-emerald-800 uppercase tracking-wider">
-                                            Data yang Akan Disimpan ke Profil:
+                                            Data yang Akan Disimpan ke Profil Alumni:
                                         </span>
-                                        <!-- Toggle Kategori Bersih Tanpa Emoji -->
+                                        <!-- Toggle Kategori -->
                                         <div class="inline-flex rounded-lg border border-emerald-300 p-0.5 bg-white text-[11px] shadow-2xs">
                                             <button
                                                 type="button"
@@ -1129,7 +1193,7 @@ const dashboardRoute = computed(() => {
                                         </div>
                                     </div>
 
-                                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
                                         <!-- Posisi Jabatan -->
                                         <div>
                                             <label class="block text-[11px] font-semibold text-emerald-950 mb-1">
@@ -1140,14 +1204,14 @@ const dashboardRoute = computed(() => {
                                                 type="text"
                                                 v-model="approveForm.posisi_wiraswasta"
                                                 :placeholder="approveForm.posisi_jabatan || 'contoh: Founder, Owner, Direktur'"
-                                                class="w-full px-2.5 py-1.5 text-xs bg-white border border-emerald-300 rounded-md focus:ring-1 focus:ring-[#0D542B] focus:border-[#0D542B]"
+                                                class="w-full px-3 py-2 text-xs bg-white border border-emerald-300 rounded-lg focus:ring-1 focus:ring-[#0D542B] focus:border-[#0D542B]"
                                             />
                                             <input
                                                 v-else
                                                 type="text"
                                                 v-model="approveForm.posisi_jabatan"
                                                 placeholder="contoh: Software Engineer, Analis Sistem"
-                                                class="w-full px-2.5 py-1.5 text-xs bg-white border border-emerald-300 rounded-md focus:ring-1 focus:ring-[#0D542B] focus:border-[#0D542B]"
+                                                class="w-full px-3 py-2 text-xs bg-white border border-emerald-300 rounded-lg focus:ring-1 focus:ring-[#0D542B] focus:border-[#0D542B]"
                                             />
                                         </div>
 
@@ -1160,28 +1224,60 @@ const dashboardRoute = computed(() => {
                                                 type="text"
                                                 v-model="approveForm.nama_perusahaan"
                                                 placeholder="contoh: PT Teknologi Nusantara"
-                                                class="w-full px-2.5 py-1.5 text-xs bg-white border border-emerald-300 rounded-md focus:ring-1 focus:ring-[#0D542B] focus:border-[#0D542B]"
+                                                class="w-full px-3 py-2 text-xs bg-white border border-emerald-300 rounded-lg focus:ring-1 focus:ring-[#0D542B] focus:border-[#0D542B]"
                                             />
+                                        </div>
+
+                                        <!-- Kolom Keahlian (Skills) yang Akan Disimpan ke Profil -->
+                                        <div class="sm:col-span-2">
+                                            <label class="block text-[11px] font-semibold text-emerald-950 mb-1 flex items-center justify-between">
+                                                <span>Keahlian / Skills yang Akan Disimpan ke Profil:</span>
+                                                <span class="text-[10px] text-slate-500 font-normal">Sinkron ke kolom Keahlian profil alumni (pisahkan dengan koma)</span>
+                                            </label>
+                                            <input
+                                                type="text"
+                                                v-model="approveForm.skills"
+                                                placeholder="contoh: IT Audit, Business Process Management, SQL, Python..."
+                                                class="w-full px-3 py-2 text-xs bg-white border border-emerald-300 rounded-lg focus:ring-1 focus:ring-[#0D542B] focus:border-[#0D542B]"
+                                            />
+
+                                            <!-- Pills Keahlian dari Hasil Scraping Asli LinkedIn -->
+                                            <div
+                                                v-if="activeReview.preview?.skills && activeReview.preview.skills.length > 0"
+                                                class="flex items-center gap-1.5 flex-wrap mt-2"
+                                            >
+                                                <span class="text-[10px] text-slate-500 font-medium">Klik untuk menambahkan dari profil:</span>
+                                                <button
+                                                    v-for="sk in activeReview.preview.skills"
+                                                    :key="sk"
+                                                    type="button"
+                                                    @click="addSkillToForm(sk)"
+                                                    class="px-2 py-0.5 rounded-full text-[10px] font-medium bg-emerald-100 hover:bg-emerald-200 text-emerald-900 border border-emerald-300 transition-colors cursor-pointer"
+                                                    :title="'Tambahkan ' + sk"
+                                                >
+                                                    + {{ sk }}
+                                                </button>
+                                            </div>
                                         </div>
                                     </div>
 
                                     <!-- Opsi Foto Profil -->
                                     <div
                                         v-if="activeReview.preview?.profile_picture"
-                                        class="p-2.5 bg-white/95 rounded-md border border-emerald-300 flex items-center justify-between gap-3 shadow-2xs"
+                                        class="p-2.5 bg-white/95 rounded-lg border border-emerald-300 flex items-center justify-between gap-3 shadow-2xs"
                                     >
                                         <div class="flex items-center gap-2.5 min-w-0">
                                             <img
                                                 :src="activeReview.preview.profile_picture"
                                                 alt="Foto LinkedIn"
-                                                class="w-7 h-7 rounded-full object-cover border border-slate-200 shrink-0"
+                                                class="w-8 h-8 rounded-full object-cover border border-slate-200 shrink-0"
                                             />
                                             <div class="min-w-0 text-left">
                                                 <span class="text-[11px] font-semibold text-slate-800 block">Terapkan Foto Profil LinkedIn ke Biodata Alumni</span>
                                                 <span class="text-[10px] text-slate-500 block truncate">Foto akan disimpan ke sistem /uploads/profile/</span>
                                             </div>
                                         </div>
-                                        <label class="flex items-center gap-1.5 cursor-pointer shrink-0 bg-emerald-50 px-2 py-1 rounded border border-emerald-200">
+                                        <label class="flex items-center gap-1.5 cursor-pointer shrink-0 bg-emerald-50 px-2.5 py-1 rounded-md border border-emerald-200">
                                             <input
                                                 type="checkbox"
                                                 v-model="approveForm.sync_foto"
@@ -1194,93 +1290,246 @@ const dashboardRoute = computed(() => {
                             </div>
                         </div>
 
-                        <!-- Rincian Profil Hasil Scraping -->
-                        <div class="space-y-3">
-                            <h4 class="text-xs font-bold text-slate-800 uppercase tracking-wider">
-                                Rincian Profil Hasil Scraping
-                            </h4>
+                        <!-- ============================================================= -->
+                        <!-- TAB 1: TAMPILAN DATA TERSTRUKTUR DARI HASIL SCRAPING LINKEDIN -->
+                        <!-- ============================================================= -->
+                        <div v-show="activeReviewTab === 'structured'" class="space-y-4">
+                            <!-- Header Profil LinkedIn Terverifikasi -->
+                            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-2xs space-y-4">
+                                <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-4 pb-4 border-b border-slate-100">
+                                    <div class="flex items-start gap-4">
+                                        <img
+                                            v-if="activeReview.preview?.profile_picture"
+                                            :src="activeReview.preview.profile_picture"
+                                            alt="Foto Profil LinkedIn"
+                                            class="w-16 h-16 rounded-2xl object-cover border border-slate-200 shadow-xs shrink-0"
+                                        />
+                                        <div v-else class="w-16 h-16 rounded-2xl bg-emerald-50 border border-emerald-200 flex items-center justify-center text-emerald-800 font-extrabold text-xl shrink-0">
+                                            {{ (activeReview.preview?.name || 'A').charAt(0) }}
+                                        </div>
 
-                            <div class="bg-white p-4 rounded-xl border border-slate-200 space-y-3 text-xs">
-                                <div class="flex items-start gap-3 pb-3 border-b border-slate-100">
-                                    <img
-                                        v-if="activeReview.preview?.profile_picture"
-                                        :src="activeReview.preview.profile_picture"
-                                        alt="Foto Profil LinkedIn"
-                                        class="w-12 h-12 rounded-full object-cover border border-slate-200 shrink-0"
-                                    />
-                                    <div v-else class="w-12 h-12 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-500 font-bold shrink-0">
-                                        {{ (activeReview.preview?.name || 'A').charAt(0) }}
+                                        <div class="space-y-1">
+                                            <div class="flex items-center gap-2 flex-wrap">
+                                                <h3 class="font-bold text-slate-900 text-base">
+                                                    {{ activeReview.preview?.name || '-' }}
+                                                </h3>
+                                                <span v-if="activeReview.preview?.handle" class="px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 font-mono text-[10px] font-semibold">
+                                                    @{{ activeReview.preview.handle }}
+                                                </span>
+                                            </div>
+
+                                            <p class="text-slate-700 text-xs font-medium leading-relaxed">
+                                                {{ activeReview.preview?.headline || '-' }}
+                                            </p>
+
+                                            <p class="text-slate-500 text-[11px] flex items-center gap-1.5 flex-wrap">
+                                                <span>{{ activeReview.preview?.location || '-' }}</span>
+                                                <span v-if="activeReview.preview?.country">&bull; {{ activeReview.preview.country }}</span>
+                                                <span v-if="activeReview.preview?.followers !== null">&bull; {{ activeReview.preview.followers }} Pengikut</span>
+                                                <span v-if="activeReview.preview?.connections !== null">&bull; {{ activeReview.preview.connections }} Koneksi</span>
+                                            </p>
+                                        </div>
                                     </div>
 
-                                    <div class="min-w-0 flex-1">
-                                        <h3 class="font-bold text-slate-900 text-sm">
-                                            {{ activeReview.preview?.name || '-' }}
-                                        </h3>
-                                        <p class="text-slate-600 text-xs mt-0.5">{{ activeReview.preview?.headline || '-' }}</p>
-                                        <p class="text-slate-400 text-[11px] mt-0.5">{{ activeReview.preview?.location || '-' }}</p>
-                                    </div>
-                                </div>
-
-                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                                    <div>
-                                        <span class="text-slate-400 block text-[11px]">URL Profil:</span>
+                                    <!-- Link Langsung ke LinkedIn Asli untuk Pembuktian Admin -->
+                                    <div class="shrink-0 flex items-center gap-2">
                                         <a
                                             :href="activeReview.linkedin_url"
                                             target="_blank"
-                                            class="text-sky-600 hover:underline font-mono truncate block text-xs"
+                                            rel="noopener noreferrer"
+                                            class="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold text-[#0D542B] bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 transition-colors shadow-2xs"
                                         >
-                                            {{ activeReview.linkedin_url }}
-                                        </a>
-                                    </div>
-                                    <div v-if="activeReview.preview?.current_company_url">
-                                        <span class="text-slate-400 block text-[11px]">URL Perusahaan:</span>
-                                        <a
-                                            :href="activeReview.preview.current_company_url"
-                                            target="_blank"
-                                            class="text-sky-600 hover:underline font-mono truncate block text-xs"
-                                        >
-                                            {{ activeReview.preview.current_company_url }}
+                                            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                                                <path d="M19 3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14m-.5 15.5v-5.3a3.26 3.26 0 0 0-3.26-3.26c-.85 0-1.84.52-2.28 1.3v-1.11h-2.79v8.37h2.79v-4.93c0-.77.62-1.4 1.39-1.4a1.4 1.4 0 0 1 1.4 1.4v4.93h2.75M6.46 10.9h2.8v8.37h-2.8v-8.37M7.86 6.5a1.63 1.63 0 1 0 1.63 1.63A1.63 1.63 0 0 0 7.86 6.5z"/>
+                                            </svg>
+                                            <span>Buka Profil Asli &nearr;</span>
                                         </a>
                                     </div>
                                 </div>
 
-                                <div v-if="activeReview.preview?.about" class="pt-2 border-t border-slate-100">
-                                    <span class="text-slate-400 block text-[11px] mb-1">Ringkasan (About):</span>
-                                    <p class="text-slate-700 leading-relaxed bg-slate-50 p-2.5 rounded-lg border border-slate-100 font-sans">
+                                <!-- Ringkasan / About -->
+                                <div v-if="activeReview.preview?.about" class="space-y-1">
+                                    <span class="text-slate-500 font-bold block text-[11px] uppercase tracking-wider">Tentang / Ringkasan (About):</span>
+                                    <p class="text-slate-700 leading-relaxed bg-slate-50 p-3 rounded-xl border border-slate-100 text-xs whitespace-pre-line font-sans">
                                         {{ activeReview.preview.about }}
                                     </p>
                                 </div>
                             </div>
-                        </div>
 
-                        <!-- Riwayat Pengalaman Kerja -->
-                        <div v-if="activeReview.preview?.experience && activeReview.preview.experience.length > 0" class="space-y-2.5">
-                            <h4 class="text-xs font-bold text-slate-800 uppercase tracking-wider">
-                                Riwayat Pengalaman Kerja ({{ activeReview.preview.experience.length }})
-                            </h4>
+                            <!-- Riwayat Pendidikan Lengkap (Education) -->
+                            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-2xs space-y-3">
+                                <div class="flex items-center justify-between">
+                                    <h4 class="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
+                                        <svg class="w-4 h-4 text-[#0D542B]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l9-5-9-5-9 5 9 5z"/>
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z"/>
+                                        </svg>
+                                        <span>Riwayat Pendidikan ({{ activeReview.preview?.education?.length || 0 }})</span>
+                                    </h4>
+                                    <span class="text-[11px] text-slate-500">Pencocokan almamater & gelar akademik</span>
+                                </div>
 
-                            <div class="space-y-2">
-                                <div
-                                    v-for="(exp, idx) in activeReview.preview.experience"
-                                    :key="idx"
-                                    class="bg-white p-3 rounded-xl border border-slate-200 text-xs flex items-start justify-between gap-3"
-                                >
-                                    <div>
-                                        <div class="flex items-center gap-2">
-                                            <span class="font-bold text-slate-900">{{ exp.position || 'Posisi tidak disebutkan' }}</span>
-                                            <span
-                                                v-if="exp.is_current"
-                                                class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200"
-                                            >
-                                                Pekerjaan Saat Ini
+                                <div v-if="activeReview.preview?.education && activeReview.preview.education.length > 0" class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                    <div
+                                        v-for="(edu, idx) in activeReview.preview.education"
+                                        :key="idx"
+                                        class="p-3.5 rounded-xl border text-xs space-y-1 transition-all"
+                                        :class="edu.school && edu.school.toLowerCase().includes('duta wacana') ? 'bg-emerald-50/50 border-emerald-300 ring-1 ring-emerald-200' : 'bg-slate-50 border-slate-200'"
+                                    >
+                                        <div class="flex items-center justify-between gap-2">
+                                            <span class="font-bold text-slate-900 text-xs">{{ edu.school || 'Sekolah / Kampus' }}</span>
+                                            <span v-if="edu.school && edu.school.toLowerCase().includes('duta wacana')" class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200 shrink-0">
+                                                Almamater UKDW
                                             </span>
                                         </div>
-                                        <p class="text-slate-600 font-medium mt-0.5">
-                                            {{ exp.company || 'Perusahaan tidak disebutkan' }}
-                                            <span v-if="exp.time_period" class="text-slate-400 font-normal">({{ exp.time_period }})</span>
+                                        <p class="text-slate-700 font-medium">
+                                            <span v-if="edu.degree">{{ edu.degree }}</span>
+                                            <span v-if="edu.degree && edu.field_of_study"> &bull; </span>
+                                            <span v-if="edu.field_of_study" class="text-slate-600">{{ edu.field_of_study }}</span>
+                                        </p>
+                                        <p v-if="edu.date" class="text-slate-500 text-[11px]">{{ edu.date }}</p>
+                                    </div>
+                                </div>
+                                <div v-else class="text-center py-4 bg-slate-50 rounded-xl border border-slate-200 text-xs text-slate-500">
+                                    Tidak ada data pendidikan spesifik pada profil ini.
+                                </div>
+                            </div>
+
+                            <!-- Riwayat Pengalaman Kerja Lengkap (Experiences) -->
+                            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-2xs space-y-3">
+                                <div class="flex items-center justify-between">
+                                    <h4 class="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
+                                        <svg class="w-4 h-4 text-[#0D542B]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                                        </svg>
+                                        <span>Riwayat Pengalaman Kerja ({{ activeReview.preview?.experience?.length || 0 }})</span>
+                                    </h4>
+                                    <span class="text-[11px] text-slate-500">Daftar riwayat jabatan & instansi</span>
+                                </div>
+
+                                <div v-if="activeReview.preview?.experience && activeReview.preview.experience.length > 0" class="space-y-2.5">
+                                    <div
+                                        v-for="(exp, idx) in activeReview.preview.experience"
+                                        :key="idx"
+                                        class="p-4 rounded-xl border border-slate-200 bg-white text-xs space-y-2 hover:border-slate-300 transition-colors"
+                                    >
+                                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                                            <div class="flex items-center gap-2 flex-wrap">
+                                                <span class="font-bold text-slate-900 text-sm">{{ exp.position || 'Posisi tidak disebutkan' }}</span>
+                                                <span
+                                                    v-if="exp.is_current"
+                                                    class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-200"
+                                                >
+                                                    Pekerjaan Saat Ini
+                                                </span>
+                                            </div>
+                                            <span v-if="exp.date || exp.time_period" class="text-slate-500 text-[11px]">
+                                                {{ exp.date || '' }} <span v-if="exp.time_period">({{ exp.time_period }})</span>
+                                            </span>
+                                        </div>
+
+                                        <div class="flex items-center gap-2 flex-wrap text-slate-700 font-medium">
+                                            <span>{{ exp.company || 'Perusahaan tidak disebutkan' }}</span>
+                                            <span v-if="exp.location" class="text-slate-500">&bull; {{ exp.location }}</span>
+                                            <a
+                                                v-if="exp.company_url"
+                                                :href="exp.company_url"
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                class="text-sky-600 hover:underline text-[11px] font-normal"
+                                            >
+                                                Halaman Perusahaan &nearr;
+                                            </a>
+                                        </div>
+
+                                        <p v-if="exp.description" class="text-slate-600 text-[11px] leading-relaxed bg-slate-50 p-2.5 rounded-lg border border-slate-100 whitespace-pre-line">
+                                            {{ exp.description }}
                                         </p>
                                     </div>
                                 </div>
+                                <div v-else class="text-center py-4 bg-slate-50 rounded-xl border border-slate-200 text-xs text-slate-500">
+                                    Tidak ada riwayat pengalaman kerja spesifik pada profil ini.
+                                </div>
+                            </div>
+
+                            <!-- Daftar Keahlian / Skills dari Profil LinkedIn -->
+                            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-2xs space-y-3">
+                                <div class="flex items-center justify-between">
+                                    <h4 class="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
+                                        <svg class="w-4 h-4 text-[#0D542B]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                                        </svg>
+                                        <span>Keahlian (Skills) dari LinkedIn ({{ activeReview.preview?.skills?.length || 0 }})</span>
+                                    </h4>
+                                    <button
+                                        v-if="activeReview.preview?.skills && activeReview.preview.skills.length > 0"
+                                        type="button"
+                                        @click="approveForm.skills = activeReview.preview.skills.join(', ')"
+                                        class="text-[11px] font-bold text-[#0D542B] hover:underline cursor-pointer"
+                                    >
+                                        Gunakan Semua di Form Penyesuaian
+                                    </button>
+                                </div>
+
+                                <div v-if="activeReview.preview?.skills && activeReview.preview.skills.length > 0" class="flex items-center gap-2 flex-wrap">
+                                    <span
+                                        v-for="sk in activeReview.preview.skills"
+                                        :key="'sk-' + sk"
+                                        class="px-3 py-1.5 rounded-xl text-xs font-semibold bg-emerald-50 text-[#0D542B] border border-emerald-200 shadow-2xs"
+                                    >
+                                        {{ sk }}
+                                    </span>
+                                </div>
+                                <div v-else class="text-center py-4 bg-slate-50 rounded-xl border border-slate-200 text-xs text-slate-500">
+                                    Tidak ada data keahlian (skills) pada profil publik LinkedIn alumni ini.
+                                </div>
+                            </div>
+
+                            <!-- Riwayat Sukarelawan jika ada -->
+                            <div v-if="activeReview.preview?.volunteer_experiences && activeReview.preview.volunteer_experiences.length > 0" class="bg-white p-5 rounded-2xl border border-slate-200 shadow-2xs space-y-3">
+                                <h4 class="text-xs font-bold text-slate-900 uppercase tracking-wider">
+                                    Pengalaman Sukarelawan / Volunteer ({{ activeReview.preview.volunteer_experiences.length }})
+                                </h4>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                    <div
+                                        v-for="(vol, idx) in activeReview.preview.volunteer_experiences"
+                                        :key="idx"
+                                        class="p-3 bg-slate-50 rounded-xl border border-slate-200 text-xs space-y-1"
+                                    >
+                                        <p class="font-bold text-slate-900">{{ vol.role || 'Volunteer' }}</p>
+                                        <p class="text-slate-600">{{ vol.organization || '-' }}</p>
+                                        <p v-if="vol.date" class="text-slate-400 text-[11px]">{{ vol.date }}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- ============================================================= -->
+                        <!-- TAB 2: DATA MENTAH JSON (RAW JSON DARI HASIL SCRAPING APIFY)  -->
+                        <!-- ============================================================= -->
+                        <div v-show="activeReviewTab === 'raw_json'" class="space-y-3">
+                            <div class="flex items-center justify-between flex-wrap gap-2">
+                                <div class="flex items-center gap-2">
+                                    <span class="text-xs font-bold text-slate-800 uppercase tracking-wider">Respons Payload Mentah (Apify Dataset):</span>
+                                    <span class="px-2 py-0.5 rounded text-[10px] font-mono bg-slate-200 text-slate-700">
+                                        {{ JSON.stringify(activeReview.raw).length }} Karakter
+                                    </span>
+                                </div>
+
+                                <button
+                                    type="button"
+                                    @click="copyRawJson(activeReview.raw)"
+                                    class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-slate-700 bg-white hover:bg-slate-100 border border-slate-300 transition-colors shadow-2xs cursor-pointer"
+                                >
+                                    <svg class="w-3.5 h-3.5 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+                                    </svg>
+                                    <span>Salin JSON Mentah</span>
+                                </button>
+                            </div>
+
+                            <div class="p-4 bg-slate-900 text-emerald-400 font-mono text-xs rounded-2xl overflow-x-auto max-h-[500px] border border-slate-800 shadow-inner">
+                                <pre class="leading-relaxed whitespace-pre-wrap">{{ JSON.stringify(activeReview.raw, null, 2) }}</pre>
                             </div>
                         </div>
                     </template>
@@ -1317,12 +1566,12 @@ const dashboardRoute = computed(() => {
                                 type="button"
                                 @click="handleApprove"
                                 :disabled="isActionLoading"
-                                class="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold text-white bg-[#0D542B] hover:bg-[#093c1f] transition-colors shadow-2xs disabled:opacity-50 cursor-pointer"
+                                class="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-[#0D542B] hover:bg-[#093c1f] transition-colors shadow-2xs disabled:opacity-50 cursor-pointer"
                             >
                                 <svg v-if="!isActionLoading" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
                                 </svg>
-                                <span>Setujui (Approve)</span>
+                                <span>Setujui (Approve) & Simpan Data</span>
                             </button>
                         </template>
                     </div>
