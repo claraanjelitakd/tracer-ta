@@ -159,16 +159,16 @@ const getMatrixScaleOptions = (questions) => {
     if (firstWithOpts) {
         return firstWithOpts.options.slice(0, 5).map((opt, idx) => ({
             score: idx + 1,
-            label: (opt.option_text || '').replace(/^\d+\s*=\s*/, '').trim(),
+            label: (opt.option_text || '').replace(/^\d+\s*[-=:]\s*/, '').trim(),
         }));
     }
 
     return [
-        { score: 1, label: 'Sangat Tidak Setuju' },
-        { score: 2, label: 'Tidak Setuju' },
-        { score: 3, label: 'Netral' },
-        { score: 4, label: 'Setuju' },
-        { score: 5, label: 'Sangat Setuju' },
+        { score: 1, label: 'Sangat Rendah' },
+        { score: 2, label: 'Rendah' },
+        { score: 3, label: 'Cukup' },
+        { score: 4, label: 'Tinggi' },
+        { score: 5, label: 'Sangat Tinggi' },
     ];
 };
 
@@ -176,6 +176,68 @@ const filterNumberInput = (event) => {
     if (['e', 'E', '+', '-', '.'].includes(event.key)) {
         event.preventDefault();
     }
+};
+
+// Helper checkbox untuk kuesioner prodi
+const isCheckboxChecked = (qId, optionText) => {
+    const ans = form.answers[qId];
+    if (Array.isArray(ans)) {
+        return ans.includes(optionText);
+    }
+    return false;
+};
+
+const toggleCheckboxOption = (qId, optionText) => {
+    if (!Array.isArray(form.answers[qId])) {
+        form.answers[qId] = [];
+    }
+    const idx = form.answers[qId].indexOf(optionText);
+    if (idx > -1) {
+        form.answers[qId].splice(idx, 1);
+    } else {
+        form.answers[qId].push(optionText);
+    }
+};
+
+// Helper radio_text & radio_input
+const getRadioSelected = (qId) => {
+    const ans = form.answers[qId];
+    if (ans && typeof ans === 'object') return ans.selected || '';
+    return ans || '';
+};
+
+const getRadioInput = (qId) => {
+    const ans = form.answers[qId];
+    if (ans && typeof ans === 'object') return ans.input || '';
+    return '';
+};
+
+const handleRadioSelect = (qId, optionText) => {
+    if (!form.answers[qId] || typeof form.answers[qId] !== 'object') {
+        form.answers[qId] = {
+            selected: optionText,
+            input: '',
+        };
+    } else {
+        form.answers[qId].selected = optionText;
+    }
+};
+
+const setRadioInput = (qId, val) => {
+    if (!form.answers[qId] || typeof form.answers[qId] !== 'object') {
+        form.answers[qId] = {
+            selected: '',
+            input: val,
+        };
+    } else {
+        form.answers[qId].input = val;
+    }
+};
+
+const isCustomOption = (optionText) => {
+    if (!optionText) return false;
+    const lower = optionText.toLowerCase();
+    return lower.includes('lainnya') || lower.includes('tuliskan') || lower.includes('...') || lower.includes('…');
 };
 
 // Validasi kelengkapan per butir pertanyaan
@@ -243,23 +305,6 @@ const progressStats = computed(() => {
         percentage: Math.round((answered / total) * 100),
     };
 });
-
-// Helper checkbox
-const isCheckboxChecked = (qId, optionText) => {
-    return Array.isArray(form.answers[qId]) && form.answers[qId].includes(optionText);
-};
-
-const toggleCheckboxOption = (qId, optionText) => {
-    if (!Array.isArray(form.answers[qId])) {
-        form.answers[qId] = [];
-    }
-    const idx = form.answers[qId].indexOf(optionText);
-    if (idx > -1) {
-        form.answers[qId].splice(idx, 1);
-    } else {
-        form.answers[qId].push(optionText);
-    }
-};
 
 // Navigasi Section
 const setSection = (index) => {
@@ -633,6 +678,93 @@ watch(() => form.answers, (newAnswers) => {
                                 </div>
                             </div>
 
+                            <!-- Pilihan Ganda + Lainnya (Radio + Teks) -->
+                            <div v-else-if="block.question.type === 'radio_text'">
+                                <div class="inline-block mb-3 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-[11px] font-bold text-emerald-800">
+                                    Pilih salah satu jawaban
+                                </div>
+                                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                                    <label v-for="opt in block.question.options" :key="opt.id" class="cursor-pointer group block select-none">
+                                        <input 
+                                            type="radio" 
+                                            :name="'q_' + block.question.id" 
+                                            :value="opt.option_text" 
+                                            :checked="getRadioSelected(block.question.id) === opt.option_text"
+                                            @change="handleRadioSelect(block.question.id, opt.option_text)"
+                                            class="sr-only"
+                                        >
+                                        <div 
+                                            class="p-4 rounded-2xl font-bold text-xs sm:text-sm md:text-base transition-all flex flex-col items-center justify-center text-center shadow-2xs min-h-[56px]"
+                                            :class="[
+                                                getRadioSelected(block.question.id) === opt.option_text
+                                                    ? 'bg-[#005B3C] text-white shadow-md ring-2 ring-emerald-500'
+                                                    : 'bg-gray-50 text-gray-700 hover:bg-emerald-50 hover:text-[#005B3C] border border-gray-100'
+                                            ]"
+                                        >
+                                            <span>{{ opt.option_text }}</span>
+                                            <div 
+                                                v-if="getRadioSelected(block.question.id) === opt.option_text && isCustomOption(opt.option_text)" 
+                                                class="w-full mt-2" 
+                                                @click.stop
+                                            >
+                                                <input 
+                                                    type="text" 
+                                                    :value="getRadioInput(block.question.id)"
+                                                    @input="setRadioInput(block.question.id, $event.target.value)"
+                                                    placeholder="Tuliskan jawaban Anda di sini..." 
+                                                    class="w-full rounded-xl bg-white text-gray-900 placeholder-gray-400 p-2 text-xs sm:text-sm font-semibold border border-gray-300 focus:ring-2 focus:ring-[#005B3C] focus:outline-none"
+                                                >
+                                            </div>
+                                        </div>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <!-- Radio + Angka (Bulan) -->
+                            <div v-else-if="block.question.type === 'radio_input'">
+                                <div class="inline-block mb-3 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-[11px] font-bold text-emerald-800">
+                                    Pilih salah satu jawaban
+                                </div>
+                                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                                    <label v-for="opt in block.question.options" :key="opt.id" class="cursor-pointer group block select-none">
+                                        <input 
+                                            type="radio" 
+                                            :name="'q_' + block.question.id" 
+                                            :value="opt.option_text" 
+                                            :checked="getRadioSelected(block.question.id) === opt.option_text"
+                                            @change="handleRadioSelect(block.question.id, opt.option_text)"
+                                            class="sr-only"
+                                        >
+                                        <div 
+                                            class="p-4 rounded-2xl font-bold text-xs sm:text-sm md:text-base transition-all flex flex-col items-center justify-center text-center shadow-2xs min-h-[56px]"
+                                            :class="[
+                                                getRadioSelected(block.question.id) === opt.option_text
+                                                    ? 'bg-[#005B3C] text-white shadow-md ring-2 ring-emerald-500'
+                                                    : 'bg-gray-50 text-gray-700 hover:bg-emerald-50 hover:text-[#005B3C] border border-gray-100'
+                                            ]"
+                                        >
+                                            <span>{{ opt.option_text }}</span>
+                                            <div 
+                                                v-if="getRadioSelected(block.question.id) === opt.option_text && !opt.option_text.toLowerCase().includes('tidak')" 
+                                                class="w-full mt-2 flex items-center justify-center gap-2" 
+                                                @click.stop
+                                            >
+                                                <input 
+                                                    type="number" 
+                                                    min="0"
+                                                    :value="getRadioInput(block.question.id)"
+                                                    @input="setRadioInput(block.question.id, $event.target.value)"
+                                                    @keydown="filterNumberInput"
+                                                    placeholder="0" 
+                                                    class="w-24 rounded-xl bg-white text-gray-900 placeholder-gray-400 p-2 text-center text-xs sm:text-sm font-bold border border-gray-300 focus:ring-2 focus:ring-[#005B3C] focus:outline-none"
+                                                >
+                                                <span class="text-xs font-bold" :class="getRadioSelected(block.question.id) === opt.option_text ? 'text-white' : 'text-gray-600'">Bulan</span>
+                                            </div>
+                                        </div>
+                                    </label>
+                                </div>
+                            </div>
+
                             <!-- Pilihan Ganda (Checkbox / Multiple Choice) -->
                             <div v-else-if="block.question.type === 'multiple_choice' || block.question.type === 'checkbox'">
                                 <div class="inline-block mb-3 px-3 py-1 rounded-full bg-emerald-100/70 border border-emerald-300 text-[11px] font-bold text-[#005B3C]">
@@ -661,14 +793,39 @@ watch(() => form.answers, (newAnswers) => {
                                 </div>
                             </div>
 
-                            <!-- Isian Teks Bebas -->
-                            <div v-else-if="block.question.type === 'text'">
-                                <textarea 
+                            <!-- Dropdown Select & Searchable Select -->
+                            <div v-else-if="block.question.type === 'dropdown' || block.question.type === 'searchable_select'">
+                                <select 
                                     v-model="form.answers[block.question.id]" 
-                                    rows="3" 
+                                    :required="block.question.is_required"
+                                    class="w-full rounded-2xl bg-gray-50 p-4 text-gray-900 font-bold focus:bg-white focus:ring-2 focus:ring-[#005B3C] transition-all text-sm sm:text-base border border-gray-200 shadow-2xs cursor-pointer"
+                                >
+                                    <option value="" disabled>-- Pilih salah satu opsi --</option>
+                                    <option v-for="opt in block.question.options" :key="opt.id" :value="opt.option_text">
+                                        {{ opt.option_text }}
+                                    </option>
+                                </select>
+                            </div>
+
+                            <!-- Isian Teks Bebas Singkat -->
+                            <div v-else-if="block.question.type === 'text'">
+                                <input 
+                                    type="text"
+                                    v-model="form.answers[block.question.id]" 
                                     :required="block.question.is_required"
                                     class="w-full rounded-2xl bg-gray-50 p-4 text-gray-900 font-medium focus:bg-white focus:ring-2 focus:ring-[#005B3C] transition-all text-sm sm:text-base border border-gray-200 shadow-2xs"
-                                    placeholder="Tuliskan jawaban atau saran Anda di sini..."
+                                    placeholder="Tuliskan jawaban Anda di sini..."
+                                >
+                            </div>
+
+                            <!-- Paragraf (Textarea) -->
+                            <div v-else-if="block.question.type === 'textarea'">
+                                <textarea 
+                                    v-model="form.answers[block.question.id]" 
+                                    rows="4" 
+                                    :required="block.question.is_required"
+                                    class="w-full rounded-2xl bg-gray-50 p-4 text-gray-900 font-medium focus:bg-white focus:ring-2 focus:ring-[#005B3C] transition-all text-sm sm:text-base border border-gray-200 shadow-2xs leading-relaxed"
+                                    placeholder="Tuliskan penjelasan atau jawaban lengkap Anda di sini..."
                                 ></textarea>
                             </div>
 
@@ -689,6 +846,16 @@ watch(() => form.answers, (newAnswers) => {
                             <div v-else-if="block.question.type === 'date'">
                                 <input 
                                     type="date" 
+                                    v-model="form.answers[block.question.id]" 
+                                    :required="block.question.is_required"
+                                    class="w-full sm:max-w-xs rounded-2xl bg-gray-50 p-4 text-gray-900 font-bold focus:bg-white focus:ring-2 focus:ring-[#005B3C] transition-all text-sm sm:text-base border border-gray-200 shadow-2xs"
+                                >
+                            </div>
+
+                            <!-- Waktu / Time -->
+                            <div v-else-if="block.question.type === 'time'">
+                                <input 
+                                    type="time" 
                                     v-model="form.answers[block.question.id]" 
                                     :required="block.question.is_required"
                                     class="w-full sm:max-w-xs rounded-2xl bg-gray-50 p-4 text-gray-900 font-bold focus:bg-white focus:ring-2 focus:ring-[#005B3C] transition-all text-sm sm:text-base border border-gray-200 shadow-2xs"

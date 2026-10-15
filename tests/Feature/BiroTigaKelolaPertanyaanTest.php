@@ -128,9 +128,9 @@ class BiroTigaKelolaPertanyaanTest extends TestCase
     }
 
     /**
-     * Memverifikasi pembuatan pertanyaan bertipe rating_5 tidak menyimpan opsi di tabel question_options (skala murni).
+     * Memverifikasi pembuatan pertanyaan bertipe rating_5 secara otomatis mengenerate opsi default 1-5.
      */
-    public function test_storing_rating_question_does_not_store_options(): void
+    public function test_storing_rating_question_generates_default_options(): void
     {
         $response = $this->actingAs($this->admin)->post('/superadmin/pertanyaan', [
             'kelompok_pertanyaan_id' => $this->section->id,
@@ -143,6 +143,6 @@ class BiroTigaKelolaPertanyaanTest extends TestCase
         $response->assertSessionHasNoErrors();
         $q = RefSubpertanyaan2021::where('kode_pertanyaan', 'F99')->first();
         $this->assertNotNull($q);
-        $this->assertCount(0, $q->detils);
+        $this->assertCount(5, $q->detils);
     }
 }

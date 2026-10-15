@@ -391,7 +391,7 @@ class SimpanProfilController extends Controller
             'created_by_prodi_id' => $prodiIdPengaju,
         ]);
 
-        if ($biodata) {
+        if ($user?->role === 'alumni' && $biodata) {
             $biodata->update(['perusahaan_id' => $perusahaan->id]);
         }
 

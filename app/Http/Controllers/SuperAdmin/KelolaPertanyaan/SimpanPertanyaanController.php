@@ -4,6 +4,7 @@ namespace App\Http\Controllers\SuperAdmin\KelolaPertanyaan;
 
 use App\Http\Controllers\Controller;
 use App\Models\RefSubpertanyaan2021;
+use App\Services\Kuesioner\QuestionDefaultOptionsService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 
@@ -45,9 +46,12 @@ class SimpanPertanyaanController extends Controller
             $validated['tampil_di'] = 'kuesioner';
         }
 
-        RefSubpertanyaan2021::create($validated);
+        $subpertanyaan = RefSubpertanyaan2021::create($validated);
 
-        return redirect()->back()->with('success', 'Pertanyaan baru berhasil ditambahkan.');
+        // Otomatis buatkan opsi pilihan default jika pertanyaan mendukung opsi
+        QuestionDefaultOptionsService::generateForUnivQuestion($subpertanyaan);
+
+        return redirect()->back()->with('success', 'Pertanyaan baru beserta pilihan opsi jawaban default berhasil ditambahkan.');
     }
 
     /**

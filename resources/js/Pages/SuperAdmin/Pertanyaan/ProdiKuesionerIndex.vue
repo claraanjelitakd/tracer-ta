@@ -82,13 +82,15 @@ const questionSearchQuery = ref('');
 
 const typeLabels = {
     single_choice: 'Pilihan Ganda (Radio)',
-    radio_input: 'Radio + Angka',
-    radio_text: 'Radio + Teks',
+    radio: 'Pilihan Ganda (Radio)',
+    radio_text: 'Pilihan Ganda + Lainnya (Radio + Teks)',
+    radio_input: 'Radio + Angka (Bulan)',
     multiple_choice: 'Kotak Centang (Checkbox)',
+    checkbox: 'Kotak Centang (Checkbox)',
     dropdown: 'Pilihan Dropdown (Select)',
     searchable_select: 'Pencarian Dropdown',
     rating_5: 'Skala Rating (1-5)',
-    multiple_number: 'Angka Ganda',
+    multiple_number: 'Rincian Nominal / Gaji',
     matrix: 'Matriks Skala',
     matrix_dual: 'Dual Matrix',
     multiple_textbox: 'Multiple Textbox',
@@ -101,11 +103,30 @@ const typeLabels = {
     header: 'Header / Judul Bagian',
 };
 
+const prodiSelectableTypes = {
+    single_choice: 'Pilihan Ganda (Radio)',
+    radio_text: 'Pilihan Ganda + Lainnya (Radio + Teks)',
+    radio_input: 'Radio + Angka (Bulan)',
+    multiple_choice: 'Kotak Centang (Checkbox)',
+    dropdown: 'Pilihan Dropdown (Select)',
+    searchable_select: 'Pencarian Dropdown',
+    rating_5: 'Skala Rating (1-5)',
+    text: 'Jawaban Singkat (Text)',
+    textarea: 'Paragraf (Textarea)',
+    number: 'Isian Angka (Number)',
+    date: 'Tanggal',
+    time: 'Waktu',
+    file: 'Unggah Berkas (File)',
+    header: 'Header / Judul Bagian',
+};
+
 const OPTION_SUPPORTED_TYPES = [
     'single_choice',
+    'radio',
     'radio_input',
     'radio_text',
     'multiple_choice',
+    'checkbox',
     'dropdown',
     'searchable_select',
     'rating_5',
@@ -252,7 +273,7 @@ const openQuestionModal = (questionToEdit = null) => {
     const initialOrder = questionToEdit?.order || (props.questions.length + 1);
 
     const sectionOptions = props.sections.map(s => `<option value="${s.id}" ${initialSecId == s.id ? 'selected' : ''}>${s.title}</option>`).join('');
-    const typeOptions = Object.entries(typeLabels).map(([val, label]) => `<option value="${val}" ${initialType === val ? 'selected' : ''}>${label}</option>`).join('');
+    const typeOptions = Object.entries(prodiSelectableTypes).map(([val, label]) => `<option value="${val}" ${initialType === val ? 'selected' : ''}>${label}</option>`).join('');
 
     Swal.fire({
         title: isEdit ? 'Sunting Pertanyaan Kuesioner Prodi' : 'Tambah Pertanyaan Kuesioner Prodi Baru',
@@ -278,6 +299,7 @@ const openQuestionModal = (questionToEdit = null) => {
                         <select id="swal-q-type" class="w-full px-2 py-2 border border-gray-300 rounded-lg text-xs">
                             ${typeOptions}
                         </select>
+                        <p class="text-[10px] text-emerald-700 font-semibold mt-1">Opsi default otomatis dibuat & dapat disesuaikan.</p>
                     </div>
                     <div>
                         <label class="block font-bold text-gray-700 mb-1">Nomor Urut</label>

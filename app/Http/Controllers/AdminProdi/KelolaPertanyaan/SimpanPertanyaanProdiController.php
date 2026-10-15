@@ -5,6 +5,7 @@ namespace App\Http\Controllers\AdminProdi\KelolaPertanyaan;
 use App\Http\Controllers\Controller;
 use App\Models\ProdiQuestion;
 use App\Models\ProdiQuestionSection;
+use App\Services\Kuesioner\QuestionDefaultOptionsService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -73,22 +74,25 @@ class SimpanPertanyaanProdiController extends Controller
 
         $question = ProdiQuestion::create($validated);
 
-        // Jika terdapat opsi awal yang dikirimkan bersama form (misal array teks opsi)
-        if ($request->has('options') && is_array($request->options) && in_array($validated['type'], ['single_choice', 'multiple_choice', 'radio_input'])) {
+        // Jika terdapat opsi manual yang dikirimkan bersama form
+        if ($request->has('options') && is_array($request->options) && count($request->options) > 0) {
             $orderCounter = 1;
             foreach ($request->options as $idx => $optText) {
                 $trimmed = trim((string) $optText);
                 if ($trimmed !== '') {
                     $question->options()->create([
-                        'code' => $question->code.'-'.str_pad($idx + 1, 2, '0', STR_PAD_LEFT),
+                        'code' => $question->code.'-'.str_pad((string) ($idx + 1), 2, '0', STR_PAD_LEFT),
                         'option_text' => $trimmed,
                         'order' => $orderCounter++,
                     ]);
                 }
             }
+        } else {
+            // Otomatis buat opsi default berdasarkan tipe pertanyaan (Radio, Radio+Teks, Skala 1-5, Radio+Angka, Checkbox, Dropdown)
+            QuestionDefaultOptionsService::generateForProdiQuestion($question);
         }
 
-        return redirect()->back()->with('success', 'Pertanyaan kuesioner prodi berhasil ditambahkan.');
+        return redirect()->back()->with('success', 'Pertanyaan kuesioner prodi beserta pilihan opsi jawaban default berhasil ditambahkan.');
     }
 
     /**

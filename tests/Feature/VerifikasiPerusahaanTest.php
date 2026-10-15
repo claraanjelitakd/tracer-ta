@@ -279,4 +279,25 @@ class VerifikasiPerusahaanTest extends TestCase
             ->where('companies.data.0.nama_perusahaan', 'PT Gameloft Indonesia Jogja')
         );
     }
+
+    public function test_admin_prodi_can_add_company_via_modal_endpoint(): void
+    {
+        $response = $this->actingAs($this->adminProdi)->postJson('/alumni/company', [
+            'nama_perusahaan' => 'PT Duta Wacana Kreatif',
+            'jenis_lokasi' => 'Dalam Negeri',
+            'negara' => 'Indonesia',
+            'province_id' => $this->propinsi->id,
+            'kabupaten_id' => $this->kabupaten->id,
+            'skala' => 'Nasional',
+        ]);
+
+        $response->assertOk();
+        $response->assertJson(['success' => true]);
+
+        $company = Perusahaan::where('nama_perusahaan', 'PT Duta Wacana Kreatif')->first();
+        $this->assertNotNull($company);
+        $this->assertEquals('Menunggu Verifikasi', $company->status_verifikasi);
+        $this->assertEquals($this->adminProdi->id, $company->created_by_user_id);
+        $this->assertEquals($this->adminProdi->prodi_id, $company->created_by_prodi_id);
+    }
 }

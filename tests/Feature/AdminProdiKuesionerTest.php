@@ -361,4 +361,105 @@ class AdminProdiKuesionerTest extends TestCase
             ->where('prodiCompleted', false)
         );
     }
+
+    public function test_creating_question_automatically_generates_default_options(): void
+    {
+        // 1. Tipe radio_text (Radio + Teks) -> otomatis dibuat 2 pilihan + 1 Lainnya
+        $response1 = $this->actingAs($this->adminSI)->post('/prodi/pertanyaan', [
+            'code' => 'PSI-TEST-RT',
+            'question_text' => 'Bentuk kontribusi yang ingin diberikan?',
+            'type' => 'radio_text',
+            'prodi_question_section_id' => $this->sectionSI->id,
+            'is_required' => true,
+        ]);
+        $response1->assertRedirect();
+
+        $qRadioText = ProdiQuestion::where('code', 'PSI-TEST-RT')->first();
+        $this->assertNotNull($qRadioText);
+        $this->assertCount(3, $qRadioText->options);
+        $this->assertEquals('Pilihan 1', $qRadioText->options[0]->option_text);
+        $this->assertEquals('Pilihan 2', $qRadioText->options[1]->option_text);
+        $this->assertEquals('Lainnya (Tuliskan)', $qRadioText->options[2]->option_text);
+
+        // 2. Tipe rating_5 (Skala Rating 1-5) -> otomatis dibuat 5 opsi skala penilaian
+        $response2 = $this->actingAs($this->adminSI)->post('/prodi/pertanyaan', [
+            'code' => 'PSI-TEST-R5',
+            'question_text' => 'Bagaimana kepuasan Anda terhadap fasilitas laboratorium?',
+            'type' => 'rating_5',
+            'prodi_question_section_id' => $this->sectionSI->id,
+            'is_required' => true,
+        ]);
+        $response2->assertRedirect();
+
+        $qRating = ProdiQuestion::where('code', 'PSI-TEST-R5')->first();
+        $this->assertNotNull($qRating);
+        $this->assertCount(5, $qRating->options);
+        $this->assertEquals('1 - Sangat Rendah', $qRating->options[0]->option_text);
+        $this->assertEquals('5 - Sangat Tinggi', $qRating->options[4]->option_text);
+
+        // 3. Tipe radio_input (Radio + Angka) -> otomatis dibuat opsi angka dan opsi 'tidak'
+        $response3 = $this->actingAs($this->adminSI)->post('/prodi/pertanyaan', [
+            'code' => 'PSI-TEST-RI',
+            'question_text' => 'Berapa bulan Anda menyelesaikan tugas akhir?',
+            'type' => 'radio_input',
+            'prodi_question_section_id' => $this->sectionSI->id,
+            'is_required' => true,
+        ]);
+        $response3->assertRedirect();
+
+        $qRadioInput = ProdiQuestion::where('code', 'PSI-TEST-RI')->first();
+        $this->assertNotNull($qRadioInput);
+        $this->assertCount(3, $qRadioInput->options);
+        $this->assertStringContainsString('Bulan', $qRadioInput->options[0]->option_text);
+        $this->assertStringContainsString('Tidak', $qRadioInput->options[2]->option_text);
+    }
+
+    public function test_alumni_can_submit_radio_text_and_radio_input_in_prodi_questionnaire(): void
+    {
+        $qRadioText = ProdiQuestion::create([
+            'prodi_id' => $this->prodiSI->id,
+            'prodi_question_section_id' => $this->sectionSI->id,
+            'code' => 'PSI-SUB-RT',
+            'question_text' => 'Kontribusi alumni?',
+            'type' => 'radio_text',
+            'is_required' => true,
+        ]);
+
+        $qRadioInput = ProdiQuestion::create([
+            'prodi_id' => $this->prodiSI->id,
+            'prodi_question_section_id' => $this->sectionSI->id,
+            'code' => 'PSI-SUB-RI',
+            'question_text' => 'Waktu pengerjaan skripsi?',
+            'type' => 'radio_input',
+            'is_required' => true,
+        ]);
+
+        $response = $this->actingAs($this->alumniUser)->post('/alumni/kuesioner-prodi', [
+            'answers' => [
+                $qRadioText->id => [
+                    'selected' => 'Lainnya (Tuliskan)',
+                    'input' => 'Menjadi pembicara seminar',
+                ],
+                $qRadioInput->id => [
+                    'selected' => 'Bulan sebelum lulus',
+                    'input' => '6',
+                ],
+            ],
+            'stay_on_page' => true,
+        ]);
+
+        $response->assertRedirect();
+
+        $this->assertDatabaseHas('prodi_response', [
+            'biodata_id' => $this->alumni->id,
+            'prodi_question_id' => $qRadioText->id,
+            'answer_text' => 'Lainnya (Tuliskan): Menjadi pembicara seminar',
+        ]);
+
+        $this->assertDatabaseHas('prodi_response', [
+            'biodata_id' => $this->alumni->id,
+            'prodi_question_id' => $qRadioInput->id,
+            'answer_text' => 'Bulan sebelum lulus: 6',
+        ]);
+    }
 }

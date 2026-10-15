@@ -77,6 +77,11 @@ Route::middleware('auth')->group(function () {
     // Rute yang mengharuskan password bawaan sudah diganti
     Route::middleware('must_change_password')->group(function () {
 
+        // Rute Tambah Perusahaan Baru via Modal (Dapat diakses oleh Alumni & seluruh Admin pengelola)
+        Route::middleware('role:alumni,admin_prodi,admin_fakultas,admin_biro3,superadmin')->group(function () {
+            Route::post('/alumni/company', [SimpanProfilController::class, 'tambahPerusahaanBaru'])->name('alumni.company.store');
+        });
+
         // -----------------------------------------------------------------
         // Rute Alumni
         // -----------------------------------------------------------------
@@ -87,7 +92,6 @@ Route::middleware('auth')->group(function () {
             // Profil
             Route::get('/alumni/profile', [ProfilController::class, 'tampilkanHalamanProfil'])->name('alumni.profile');
             Route::post('/alumni/profile', [SimpanProfilController::class, 'simpanPerubahanProfil'])->name('alumni.profile.simpan');
-            Route::post('/alumni/company', [SimpanProfilController::class, 'tambahPerusahaanBaru'])->name('alumni.company.store');
 
             // Kuesioner Umum Tracer Study
             Route::get('/alumni/kuesioner', [KuesionerController::class, 'tampilkanKuesioner'])->name('alumni.kuesioner');

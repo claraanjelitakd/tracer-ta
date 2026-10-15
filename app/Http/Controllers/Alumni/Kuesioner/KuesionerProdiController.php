@@ -112,7 +112,17 @@ class KuesionerProdiController extends Controller
                         ]
                     );
                 } else {
-                    $initialAnswers[$q->id] = ($q->type === 'multiple_choice' || $q->type === 'checkbox') ? [] : '';
+                    if ($q->type === 'multiple_choice' || $q->type === 'checkbox') {
+                        $initialAnswers[$q->id] = [];
+                    } elseif ($q->type === 'radio_input' || $q->type === 'radio_text') {
+                        $initialAnswers[$q->id] = [
+                            'selected' => '',
+                            'input' => '',
+                            'inputs' => [],
+                        ];
+                    } else {
+                        $initialAnswers[$q->id] = '';
+                    }
                 }
             }
         }
@@ -159,8 +169,8 @@ class KuesionerProdiController extends Controller
                         $answerValue = implode(', ', $cleaned);
                     }
                 } elseif ($q->type === 'radio_input' || $q->type === 'radio_text') {
-                    $selected = trim((string) ($jawaban['selected'] ?? ''));
-                    $inputVal = trim((string) ($jawaban['input'] ?? ''));
+                    $selected = is_array($jawaban) ? trim((string) ($jawaban['selected'] ?? '')) : trim((string) $jawaban);
+                    $inputVal = is_array($jawaban) ? trim((string) ($jawaban['input'] ?? '')) : '';
                     if ($selected !== '') {
                         $answerJson = ['selected' => $selected, 'input' => $inputVal];
                         $answerValue = ! empty($inputVal) ? "{$selected}: {$inputVal}" : $selected;
@@ -171,6 +181,9 @@ class KuesionerProdiController extends Controller
                 }
             } elseif ($jawaban !== null && trim((string) $jawaban) !== '') {
                 $answerValue = trim((string) $jawaban);
+                if ($q->type === 'radio_input' || $q->type === 'radio_text') {
+                    $answerJson = ['selected' => $answerValue, 'input' => ''];
+                }
             }
 
             // Cek autofill HANYA jika pertanyaan tersebut memang butir identitas khusus

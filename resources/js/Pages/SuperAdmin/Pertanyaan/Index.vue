@@ -52,11 +52,15 @@ const isReordering = ref(false);
 const typeLabels = {
     // Tipe yang mendukung Opsi Pilihan Jawaban
     radio: 'Pilihan Ganda (Radio)',
-    radio_input: 'Radio + Angka',
-    radio_text: 'Radio + Teks',
+    single_choice: 'Pilihan Ganda (Radio)',
+    radio_text: 'Pilihan Ganda + Lainnya (Radio + Teks)',
+    radio_input: 'Radio + Angka (Bulan)',
     multiple_choice: 'Kotak Centang (Checkbox)',
+    checkbox: 'Kotak Centang (Checkbox)',
+    dropdown: 'Pilihan Dropdown (Select)',
+    searchable_select: 'Pencarian Dropdown',
     rating_5: 'Skala Rating (1-5)',
-    multiple_number: 'Angka Ganda',
+    multiple_number: 'Rincian Nominal / Gaji (Take Home Pay)',
     matrix: 'Matriks Skala',
     matrix_dual: 'Dual Matrix',
     multiple_textbox: 'Multiple Textbox',
@@ -66,15 +70,40 @@ const typeLabels = {
     textarea: 'Paragraf (Textarea)',
     number: 'Isian Angka (Number)',
     date: 'Tanggal',
+    time: 'Waktu',
+    file: 'Unggah Berkas (File)',
+    header: 'Header / Judul Bagian',
+};
+
+// Tipe pilihan yang bersih untuk form tambah/edit butir kuesioner universitas (tanpa duplikasi dan tipe usang)
+const superadminSelectableTypes = {
+    radio: 'Pilihan Ganda (Radio)',
+    radio_text: 'Pilihan Ganda + Lainnya (Radio + Teks)',
+    radio_input: 'Radio + Angka (Bulan)',
+    multiple_choice: 'Kotak Centang (Checkbox)',
+    dropdown: 'Pilihan Dropdown (Select)',
+    searchable_select: 'Pencarian Dropdown',
+    rating_5: 'Skala Rating (1-5)',
+    multiple_number: 'Rincian Nominal / Gaji (Take Home Pay)',
+    text: 'Jawaban Singkat (Text)',
+    textarea: 'Paragraf (Textarea)',
+    number: 'Isian Angka (Number)',
+    date: 'Tanggal',
+    time: 'Waktu',
+    file: 'Unggah Berkas (File)',
     header: 'Header / Judul Bagian',
 };
 
 // Hanya tipe-tipe ini yang boleh memiliki pilihan opsi jawaban
 const OPTION_SUPPORTED_TYPES = [
     'radio',
+    'single_choice',
     'radio_input',
     'radio_text',
     'multiple_choice',
+    'checkbox',
+    'dropdown',
+    'searchable_select',
     'rating_5',
     'multiple_number',
     'matrix',
@@ -153,7 +182,7 @@ const openQuestionModal = (questionToEdit = null) => {
         .map((s) => `<option value="${s.id}" ${s.id == initialSectionId ? 'selected' : ''}>Bagian ${s.order}: ${s.title}</option>`)
         .join('');
 
-    const typeOptionsHtml = Object.entries(typeLabels)
+    const typeOptionsHtml = Object.entries(superadminSelectableTypes)
         .map(([val, label]) => `<option value="${val}" ${val === initialType ? 'selected' : ''}>${label}</option>`)
         .join('');
 
@@ -187,6 +216,7 @@ const openQuestionModal = (questionToEdit = null) => {
                     <select id="swal-type" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-xs bg-white focus:outline-none focus:ring-1 focus:ring-emerald-700">
                         ${typeOptionsHtml}
                     </select>
+                    <p class="text-[10px] text-emerald-700 font-semibold mt-1">Opsi pilihan default akan otomatis terbuat & dapat disesuaikan.</p>
                 </div>
                 <div>
                     <label class="block font-bold text-gray-700 mb-1">Sifat Pengisian *</label>
