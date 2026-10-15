@@ -1,6 +1,15 @@
 # Update Log Tracer Study
 
 ## 15 Oktober 2026
+- **Refactoring & Pembersihan Antarmuka Dashboard Alumni & Navbar**:
+  - Menyederhanakan antarmuka [`Alumni/Dashboard.vue`](file:///c:/study/tracerstudy/resources/js/Pages/Alumni/Dashboard.vue) dengan menghapus badge decorative titik kuning portal, kartu ringkasan status kelengkapan 4 tahap di banner, banner langkah selanjutnya, dan kartu tahap 4 survei atasan.
+  - Dashboard alumni kini secara bersih menampilkan ringkasan profil dan 3 kartu navigasi inti: Tahap 1 (Profil & Biodata), Tahap 2 (Kuesioner Universitas), dan Tahap 3 (Kuesioner Prodi).
+  - Mengatur navigasi navbar [`Alumni/Components/Navbar.vue`](file:///c:/study/tracerstudy/resources/js/Pages/Alumni/Components/Navbar.vue): menu link tengah disembunyikan saat di dashboard karena navigasi sudah tersedia langsung di kartu utama halaman.
+  - Mengubah tombol keluar menjadi ikon logout mandiri bernuansa merah (`text-rose-600`) tanpa tulisan "Keluar".
+- **Pemisahan Pengiriman Email Undangan Kuesioner Evaluasi Atasan (On-Demand)**:
+  - Mengeliminasi pengiriman email atasan otomatis saat menyimpan profil pada [`SimpanProfilController.php`](file:///c:/study/tracerstudy/app/Http/Controllers/Alumni/Profil/SimpanProfilController.php) guna mencegah terkirimnya email saat terdapat kekeliruan data/email atasan.
+  - Menyediakan rute endpoint baru `POST /alumni/kirim-email-atasan` (`alumni.kirim-email-atasan`) pada [`routes/web.php`](file:///c:/study/tracerstudy/routes/web.php).
+  - Menyediakan tombol manual terdedikasi **"Kirim Email ke Atasan"** dengan konfirmasi SweetAlert dan status pengiriman pada Card 3 Formulir Karier Alumni ([`FormKarier.vue`](file:///c:/study/tracerstudy/resources/js/Pages/Alumni/Profil/Components/FormKarier.vue) & [`Index.vue`](file:///c:/study/tracerstudy/resources/js/Pages/Alumni/Profil/Index.vue)).
 - **Penyelarasan Opsi Default Otomatis Instrumen Kuesioner (Prodi & Universitas)**:
   - Pembuatan service terpusat [`app/Services/Kuesioner/QuestionDefaultOptionsService.php`](file:///c:/study/tracerstudy/app/Services/Kuesioner/QuestionDefaultOptionsService.php) untuk mengenerate opsi pilihan secara otomatis saat pertanyaan baru dibuat oleh Admin Prodi (`SimpanPertanyaanProdiController`), Super Admin Prodi (`KelolaKuesionerProdiSuperAdminController`), maupun Super Admin Universitas (`SimpanPertanyaanController`).
   - Pemetaan opsi default terstandarisasi:

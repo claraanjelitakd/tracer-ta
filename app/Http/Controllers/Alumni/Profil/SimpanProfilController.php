@@ -300,7 +300,7 @@ class SimpanProfilController extends Controller
         // Sinkronisasi otomatis ke tabel tracer kuesioner
         KuesionerSyncService::syncProfileResponses($biodata);
 
-        // Jika data atasan dan email atasan terisi, buat / sinkronkan token evaluasi publik & kirim email undangan
+        // Jika data atasan dan email atasan terisi, buat / sinkronkan token evaluasi publik (email dikirim terpisah via tombol kirim)
         if ($idAtasan && $emailAtasan && filter_var($emailAtasan, FILTER_VALIDATE_EMAIL)) {
             try {
                 $evaluasi = EvaluasiAtasan::firstOrCreate(
@@ -326,14 +326,52 @@ class SimpanProfilController extends Controller
                 if (! empty($evaluasiUpdates)) {
                     $evaluasi->update($evaluasiUpdates);
                 }
-
-                Mail::to($emailAtasan)->send(new UndanganEvaluasiAtasanMail($biodata, $evaluasi));
             } catch (\Throwable $e) {
-                Log::error('Gagal mengirim email evaluasi ke atasan: '.$e->getMessage());
+                Log::error('Gagal menyinkronkan data evaluasi atasan: '.$e->getMessage());
             }
         }
 
         return redirect()->back()->with('success', 'Profil biodata berhasil diperbarui.');
+    }
+
+    /**
+     * Mengirimkan email undangan kuesioner evaluasi atasan secara manual oleh alumni
+     */
+    public function kirimEmailAtasan(Request $request)
+    {
+        $user = $request->user();
+        $biodata = $user->biodata;
+
+        if (! $biodata) {
+            return redirect()->back()->with('error', 'Data biodata alumni tidak ditemukan.');
+        }
+
+        $emailAtasan = $biodata->email_atasan;
+        if (! $emailAtasan || ! filter_var($emailAtasan, FILTER_VALIDATE_EMAIL)) {
+            return redirect()->back()->with('error', 'Alamat email atasan belum diisi atau format tidak valid. Mohon lengkapi pada form atasan terlebih dahulu.');
+        }
+
+        $idAtasan = $biodata->atasan_id;
+        $evaluasi = EvaluasiAtasan::firstOrCreate(
+            ['biodata_id' => $biodata->id],
+            [
+                'perusahaan_id' => $biodata->perusahaan_id,
+                'atasan_id' => $idAtasan,
+                'token' => Str::random(40),
+                'nama_perusahaan' => $biodata->perusahaan?->nama_perusahaan,
+                'alamat_lengkap' => $biodata->perusahaan?->alamat,
+            ]
+        );
+
+        try {
+            Mail::to($emailAtasan)->send(new UndanganEvaluasiAtasanMail($biodata, $evaluasi));
+
+            return redirect()->back()->with('success', "Email undangan evaluasi berhasil dikirimkan ke atasan ({$emailAtasan}).");
+        } catch (\Throwable $e) {
+            Log::error('Gagal mengirim email evaluasi ke atasan: '.$e->getMessage());
+
+            return redirect()->back()->with('error', 'Gagal mengirim email: '.$e->getMessage());
+        }
     }
 
     /**

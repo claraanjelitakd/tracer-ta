@@ -9,6 +9,7 @@
 -->
 <script setup>
 import { ref, computed, watch, nextTick, onMounted, onUnmounted } from 'vue';
+import { router } from '@inertiajs/vue3';
 import Swal from 'sweetalert2';
 
 // ============================================================================
@@ -22,6 +23,7 @@ const props = defineProps({
     companies: Array,
     alumniData: Object,
     refOptions: Object,
+    evaluasiAtasan: Object,
 });
 
 // Container refs untuk mendeteksi klik di luar area dropdown (click-outside)
@@ -215,6 +217,72 @@ const selectRole = (newRole) => {
             props.form.telepon_atasan = '';
         }
     }
+};
+
+// ============================================================================
+// 3. PENGIRIMAN MANUAL EMAIL KUESIONER EVALUASI ATASAN
+// ============================================================================
+const sendingEmail = ref(false);
+
+const handleKirimEmailAtasan = () => {
+    const email = props.form.email_atasan?.trim();
+    if (!email || !isValidEmail(email)) {
+        Swal.fire({
+            title: 'Email Belum Valid',
+            text: 'Harap masukkan alamat email atasan yang valid sebelum mengirimkan undangan survei.',
+            icon: 'warning',
+            confirmButtonColor: '#005B3C',
+        });
+        return;
+    }
+
+    if (props.form.isDirty) {
+        Swal.fire({
+            title: 'Simpan Profil Terlebih Dahulu',
+            text: 'Ada perubahan data kontak atasan atau profil Anda yang belum disimpan. Silakan klik tombol Simpan Perubahan terlebih dahulu agar data terbarui.',
+            icon: 'info',
+            confirmButtonColor: '#005B3C',
+        });
+        return;
+    }
+
+    Swal.fire({
+        title: 'Kirim Email ke Atasan?',
+        html: `Sistem akan mengirimkan email undangan kuesioner evaluasi atasan langsung ke: <br><strong class="text-base text-gray-900">${email}</strong><br><span class="text-xs text-gray-500 mt-2 block">Atasan akan menerima tautan khusus untuk mengisi kuesioner evaluasi pengguna lulusan secara mandiri.</span>`,
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#005B3C',
+        cancelButtonColor: '#9CA3AF',
+        confirmButtonText: 'Ya, Kirim Email',
+        cancelButtonText: 'Batal',
+        reverseButtons: true,
+    }).then((result) => {
+        if (result.isConfirmed) {
+            sendingEmail.value = true;
+            router.post('/alumni/kirim-email-atasan', {}, {
+                preserveScroll: true,
+                onFinish: () => {
+                    sendingEmail.value = false;
+                },
+                onSuccess: () => {
+                    Swal.fire({
+                        title: 'Email Terkirim!',
+                        text: `Undangan kuesioner evaluasi atasan berhasil dikirim ke ${email}.`,
+                        icon: 'success',
+                        confirmButtonColor: '#005B3C',
+                    });
+                },
+                onError: (err) => {
+                    Swal.fire({
+                        title: 'Gagal Mengirim Email',
+                        text: err?.message || 'Terjadi kesalahan sistem saat mengirim email ke atasan.',
+                        icon: 'error',
+                        confirmButtonColor: '#005B3C',
+                    });
+                }
+            });
+        }
+    });
 };
 
 // Watcher sinkronisasi dua arah field perusahaan agar tersimpan sempurna ke backend
@@ -1751,6 +1819,52 @@ onUnmounted(() => {
                         placeholder="081234567890" 
                     />
                 </div>
+            </div>
+
+            <!-- Panel Aksi: Tombol Kirim Email ke Atasan (Manual On-Demand) -->
+            <div class="mt-6 pt-5 border-t border-gray-100 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-gray-50/80 p-4 sm:p-5 rounded-2xl border border-gray-200">
+                <div>
+                    <div class="flex items-center gap-2">
+                        <span class="text-xs sm:text-sm font-bold text-gray-900">Undangan Evaluasi Atasan</span>
+                        <span 
+                            v-if="evaluasiAtasan?.is_submitted" 
+                            class="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200"
+                        >
+                            Atasan Sudah Mengisi
+                        </span>
+                        <span 
+                            v-else-if="evaluasiAtasan?.token" 
+                            class="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-blue-50 text-blue-800 border border-blue-200"
+                        >
+                            Tautan Siap / Terkirim
+                        </span>
+                        <span 
+                            v-else 
+                            class="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-50 text-amber-800 border border-amber-200"
+                        >
+                            Belum Terkirim
+                        </span>
+                    </div>
+                    <p class="text-xs text-gray-500 mt-1 max-w-xl leading-relaxed">
+                        Email survei evaluasi tidak dikirim secara otomatis saat menyimpan profil untuk mencegah kesalahan penulisan email. Klik tombol di samping setelah Anda yakin data email atasan sudah benar.
+                    </p>
+                </div>
+
+                <button 
+                    type="button" 
+                    @click="handleKirimEmailAtasan"
+                    :disabled="sendingEmail || !form.email_atasan || !isValidEmail(form.email_atasan)"
+                    class="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold text-white bg-[#005B3C] hover:bg-[#00472e] transition-all shadow-xs shrink-0 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                    <svg v-if="sendingEmail" class="w-4 h-4 animate-spin text-white" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    <svg v-else class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                    </svg>
+                    <span>{{ sendingEmail ? 'Mengirim...' : (evaluasiAtasan?.token ? 'Kirim Ulang Email ke Atasan' : 'Kirim Email ke Atasan') }}</span>
+                </button>
             </div>
         </div>
 

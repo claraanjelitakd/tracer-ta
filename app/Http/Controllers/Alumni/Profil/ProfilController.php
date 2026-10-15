@@ -24,7 +24,7 @@ class ProfilController extends Controller
     public function tampilkanHalamanProfil(Request $request)
     {
         $pengguna = $request->user();
-        $biodata = $pengguna->biodata()->with(['prodi.fakultas', 'perusahaan', 'perusahaan.propinsi', 'perusahaan.kabupaten', 'dataAkademik', 'yudisium', 'orangTua', 'atasan'])->first();
+        $biodata = $pengguna->biodata()->with(['prodi.fakultas', 'perusahaan', 'perusahaan.propinsi', 'perusahaan.kabupaten', 'dataAkademik', 'yudisium', 'orangTua', 'atasan', 'evaluasiAtasan'])->first();
 
         $propinsi = Propinsi::all();
         $kabupaten = Kabupaten::all();
@@ -169,6 +169,7 @@ class ProfilController extends Controller
         return inertia('Alumni/Profil/Index', [
             'biodataData' => $biodata,
             'alumniData' => $biodata,
+            'evaluasiAtasan' => $biodata?->evaluasiAtasan,
             'formData' => $formData,
             'propinsis' => $propinsi,
             'provinces' => $propinsi,

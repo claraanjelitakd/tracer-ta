@@ -92,6 +92,7 @@ Route::middleware('auth')->group(function () {
             // Profil
             Route::get('/alumni/profile', [ProfilController::class, 'tampilkanHalamanProfil'])->name('alumni.profile');
             Route::post('/alumni/profile', [SimpanProfilController::class, 'simpanPerubahanProfil'])->name('alumni.profile.simpan');
+            Route::post('/alumni/kirim-email-atasan', [SimpanProfilController::class, 'kirimEmailAtasan'])->name('alumni.kirim-email-atasan');
 
             // Kuesioner Umum Tracer Study
             Route::get('/alumni/kuesioner', [KuesionerController::class, 'tampilkanKuesioner'])->name('alumni.kuesioner');

@@ -3,6 +3,16 @@
 Semua perubahan besar pada sistem dicatat dalam dokumen ini.
 
 ## [2026-10-15]
+- **Perbaikan & Penyederhanaan Antarmuka Dashboard Alumni & Navbar ([`Dashboard.vue`](file:///c:/study/tracerstudy/resources/js/Pages/Alumni/Dashboard.vue) & [`Navbar.vue`](file:///c:/study/tracerstudy/resources/js/Pages/Alumni/Components/Navbar.vue))**:
+  - Menghapus badge decorative dengan titik kuning (`Portal Resmi Alumni Tracer Study UKDW`) dan kartu ringkasan progres kelengkapan 4 tahap dari header banner solid hijau UKDW agar tampilan lebih bersih, minimalis, dan elegan.
+  - Menghapus kartu banner notifikasi aksi cepat (*Langkah Selanjutnya*) dan kartu survei atasan (*Tahap 4 Evaluasi Pengguna Lulusan*) dari dashboard.
+  - Merapikan dashboard alumni agar langsung berfokus pada 3 kartu utama: **Tahap 1: Profil & Biodata**, **Tahap 2: Kuesioner Universitas**, dan **Tahap 3: Kuesioner Prodi**.
+  - Mengatur navigasi navbar: menu navigasi tautan tengah disembunyikan saat pengguna berada di `/alumni/dashboard` karena navigasi sudah langsung dapat diakses lewat kartu-kartu di dalam halaman.
+  - Mengubah tombol keluar pada navbar menjadi ikon logout mandiri bernuansa merah (`text-rose-600`) tanpa teks *"Keluar"*, lengkap dengan dialog konfirmasi SweetAlert.
+- **Pemisahan Pengiriman Email Kuesioner Evaluasi Atasan (Manual On-Demand)**:
+  - Memisahkan pengiriman email ke atasan dari proses simpan profil di [`SimpanProfilController.php`](file:///c:/study/tracerstudy/app/Http/Controllers/Alumni/Profil/SimpanProfilController.php) untuk mencegah email terkirim otomatis saat masih ada kesalahan ketik data atasan.
+  - Menambahkan endpoint rute khusus `POST /alumni/kirim-email-atasan` (`alumni.kirim-email-atasan`) pada [`routes/web.php`](file:///c:/study/tracerstudy/routes/web.php).
+  - Menambahkan panel aksi khusus dan tombol **"Kirim Email ke Atasan"** dengan konfirmasi SweetAlert serta status penandaan pada Card 3 Formulir Karier Alumni ([`FormKarier.vue`](file:///c:/study/tracerstudy/resources/js/Pages/Alumni/Profil/Components/FormKarier.vue) & [`Index.vue`](file:///c:/study/tracerstudy/resources/js/Pages/Alumni/Profil/Index.vue)).
 - **Standardisasi & Otomasi Pembuatan Opsi Default Butir Pertanyaan (Prodi & Universitas)**:
   - Mengembangkan service terpusat [`app/Services/Kuesioner/QuestionDefaultOptionsService.php`](file:///c:/study/tracerstudy/app/Services/Kuesioner/QuestionDefaultOptionsService.php) untuk mengotomasi penambahan pilihan opsi awal saat butir pertanyaan baru dibuat:
     - `radio_text` (Pilihan Ganda + Lainnya): 2 opsi baku (`Pilihan 1`, `Pilihan 2`) + 1 opsi bertrik khusus input teks bebas (`Lainnya (Tuliskan)`).

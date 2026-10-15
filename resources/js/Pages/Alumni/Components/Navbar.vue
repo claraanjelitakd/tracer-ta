@@ -89,8 +89,8 @@ const handleLogout = () => {
                         </div>
                     </Link>
 
-                    <!-- Navigasi Menu Desktop -->
-                    <div class="hidden lg:flex items-center space-x-1 pl-4 border-l border-gray-200">
+                    <!-- Navigasi Menu Desktop (Disembunyikan di dashboard agar tidak redundan dengan kartu navigasi utama) -->
+                    <div v-if="!isDashboardActive" class="hidden lg:flex items-center space-x-1 pl-4 border-l border-gray-200">
                         <Link 
                             href="/alumni/dashboard" 
                             class="px-3.5 py-2 rounded-xl text-sm font-semibold transition-all flex items-center gap-1.5"
@@ -141,7 +141,7 @@ const handleLogout = () => {
                     </div>
                 </div>
 
-                <!-- Kanan: Profil User & Tombol Keluar -->
+                <!-- Kanan: Profil User & Tombol Keluar (Icon Logout Merah) -->
                 <div class="flex items-center space-x-4">
                     <div class="hidden sm:block text-right">
                         <span class="text-gray-900 font-bold text-sm block leading-tight truncate max-w-[200px]">
@@ -152,23 +152,23 @@ const handleLogout = () => {
                         </span>
                     </div>
 
+                    <!-- Tombol Keluar: Hanya Ikon Warna Merah Sesuai Permintaan -->
                     <button 
                         @click="handleLogout" 
-                        class="px-4 py-2 text-xs font-semibold text-gray-700 hover:text-red-600 hover:bg-red-50 border border-gray-200 rounded-full transition-all cursor-pointer shadow-2xs flex items-center gap-1.5"
+                        class="p-2 text-rose-600 hover:text-rose-700 hover:bg-rose-50 border border-rose-200 rounded-xl transition-all cursor-pointer shadow-2xs flex items-center justify-center"
                         title="Keluar dari akun"
+                        aria-label="Keluar"
                     >
-                        <!-- Ikon Power Off untuk Tombol Keluar -->
-                        <svg class="w-3.5 h-3.5 text-current" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 5.636a9 9 0 11-12.728 0M12 3v9" />
+                        <svg class="w-4 h-4 text-rose-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                         </svg>
-                        <span>Keluar</span>
                     </button>
                 </div>
             </div>
         </div>
 
-        <!-- Subnav Mobile / Tablet -->
-        <div class="lg:hidden bg-gray-50/95 px-3 py-2 border-t border-gray-100 flex items-center justify-around text-xs gap-1 overflow-x-auto">
+        <!-- Subnav Mobile / Tablet (Disembunyikan di dashboard) -->
+        <div v-if="!isDashboardActive" class="lg:hidden bg-gray-50/95 px-3 py-2 border-t border-gray-100 flex items-center justify-around text-xs gap-1 overflow-x-auto">
             <Link 
                 href="/alumni/dashboard" 
                 class="px-2.5 py-1.5 font-bold rounded-lg transition-colors whitespace-nowrap"

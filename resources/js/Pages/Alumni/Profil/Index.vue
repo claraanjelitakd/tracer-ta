@@ -39,6 +39,7 @@ const props = defineProps({
     negaras: Array,
     companies: Array,
     refOptions: Object,
+    evaluasiAtasan: Object,
 });
 
 const page = usePage();
@@ -460,6 +461,7 @@ const submit = () => {
                             :companies="companies" 
                             :alumniData="alumniData" 
                             :refOptions="refOptions" 
+                            :evaluasiAtasan="evaluasiAtasan" 
                         />
                     </div>
 
