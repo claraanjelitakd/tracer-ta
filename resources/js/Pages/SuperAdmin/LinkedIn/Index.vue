@@ -90,6 +90,7 @@ const selectedTahun = ref(defaultTahun);
 const selectedSemester = ref(props.filters.semester || 'all');
 const selectedTarget = ref(props.filters.target || 'all');
 const selectedStatus = ref(props.filters.status || 'all');
+const selectedStatusPlot = ref(props.filters.status_plot || 'all');
 const selectedProdiId = ref(props.filters.prodi_id || 'all');
 const highlightedAlumniId = ref(props.targetAlumniId ? Number(props.targetAlumniId) : null);
 
@@ -127,6 +128,9 @@ watch(() => props.filters, (newFilters) => {
         }
         if (newFilters.status !== undefined) {
             selectedStatus.value = newFilters.status || 'all';
+        }
+        if (newFilters.status_plot !== undefined) {
+            selectedStatusPlot.value = newFilters.status_plot || 'all';
         }
         if (newFilters.prodi_id !== undefined && props.role !== 'admin_prodi') {
             selectedProdiId.value = newFilters.prodi_id || 'all';
@@ -178,8 +182,23 @@ const filteredAlumni = computed(() => {
             (item.linkedin_username && item.linkedin_username.toLowerCase().includes(query)) ||
             (item.linkedin_url && item.linkedin_url.toLowerCase().includes(query)) ||
             (item.perusahaan && item.perusahaan.toLowerCase().includes(query)) ||
-            (item.posisi && item.posisi.toLowerCase().includes(query))
+            (item.posisi && item.posisi.toLowerCase().includes(query)) ||
+            (item.nama_linkedin && item.nama_linkedin.toLowerCase().includes(query)) ||
+            (item.perusahaan_linkedin && item.perusahaan_linkedin.toLowerCase().includes(query)) ||
+            (item.posisi_linkedin && item.posisi_linkedin.toLowerCase().includes(query))
         );
+    }
+
+    if (selectedStatusPlot.value && selectedStatusPlot.value !== 'all') {
+        if (selectedStatusPlot.value === 'ready') {
+            result = result.filter(item => item.status_plot_label === 'Data Sama / Siap Diplot');
+        } else if (selectedStatusPlot.value === 'nama_sesuai') {
+            result = result.filter(item => item.is_nama_sesuai);
+        } else if (selectedStatusPlot.value === 'nama_berbeda') {
+            result = result.filter(item => !item.is_nama_sesuai && item.latest_sync_result);
+        } else if (selectedStatusPlot.value === 'terplot') {
+            result = result.filter(item => item.is_terplot_ke_biodata);
+        }
     }
 
     return result;
@@ -215,6 +234,7 @@ const applyFilters = () => {
         semester: selectedSemester.value !== 'all' ? selectedSemester.value : undefined,
         target: selectedTarget.value !== 'all' ? selectedTarget.value : undefined,
         status: selectedStatus.value !== 'all' ? selectedStatus.value : undefined,
+        status_plot: selectedStatusPlot.value !== 'all' ? selectedStatusPlot.value : undefined,
         prodi_id: (props.role === 'admin_prodi' ? undefined : (selectedProdiId.value !== 'all' ? selectedProdiId.value : undefined)),
     }, {
         preserveState: true,
@@ -236,6 +256,7 @@ const resetFilters = () => {
     selectedSemester.value = 'all';
     selectedTarget.value = 'all';
     selectedStatus.value = 'all';
+    selectedStatusPlot.value = 'all';
     selectedProdiId.value = props.role === 'admin_prodi' ? (props.filters.prodi_id || 'all') : 'all';
     currentPage.value = 1;
 
@@ -343,8 +364,14 @@ const syncSingle = async (alumni) => {
                 alumni.status_sync = 'Pending Review';
                 alumni.status_color = 'amber';
                 alumni.terakhir_sync = data.alumni.terakhir_sync;
-                alumni.terakhir_sync_human = data.alumni.terakhir_sync_human;
                 alumni.latest_sync_result = data.alumni.latest_sync_result;
+                if (data.alumni.keterangan_nama) alumni.keterangan_nama = data.alumni.keterangan_nama;
+                if (data.alumni.status_plot_label) alumni.status_plot_label = data.alumni.status_plot_label;
+                if (data.alumni.nama_linkedin) alumni.nama_linkedin = data.alumni.nama_linkedin;
+                if (data.alumni.posisi_linkedin) alumni.posisi_linkedin = data.alumni.posisi_linkedin;
+                if (data.alumni.perusahaan_linkedin) alumni.perusahaan_linkedin = data.alumni.perusahaan_linkedin;
+                if (data.alumni.is_nama_sesuai !== undefined) alumni.is_nama_sesuai = data.alumni.is_nama_sesuai;
+                if (data.alumni.is_terplot_ke_biodata !== undefined) alumni.is_terplot_ke_biodata = data.alumni.is_terplot_ke_biodata;
 
                 showToast('success', `${alumni.nama}: ${data.message}`);
                 recalculateLocalStats();
@@ -507,9 +534,17 @@ const handleApprove = async () => {
             if (activeAlumni.value) {
                 activeAlumni.value.perusahaan = data.alumni.perusahaan;
                 activeAlumni.value.posisi = data.alumni.posisi;
+                if (data.alumni.linkedin_username) activeAlumni.value.linkedin_username = data.alumni.linkedin_username;
                 activeAlumni.value.status_sync = 'Approved';
                 activeAlumni.value.status_color = 'emerald';
                 activeAlumni.value.latest_sync_result = data.alumni.latest_sync_result;
+                if (data.alumni.keterangan_nama) activeAlumni.value.keterangan_nama = data.alumni.keterangan_nama;
+                if (data.alumni.status_plot_label) activeAlumni.value.status_plot_label = data.alumni.status_plot_label;
+                if (data.alumni.nama_linkedin) activeAlumni.value.nama_linkedin = data.alumni.nama_linkedin;
+                if (data.alumni.posisi_linkedin) activeAlumni.value.posisi_linkedin = data.alumni.posisi_linkedin;
+                if (data.alumni.perusahaan_linkedin) activeAlumni.value.perusahaan_linkedin = data.alumni.perusahaan_linkedin;
+                if (data.alumni.is_nama_sesuai !== undefined) activeAlumni.value.is_nama_sesuai = data.alumni.is_nama_sesuai;
+                if (data.alumni.is_terplot_ke_biodata !== undefined) activeAlumni.value.is_terplot_ke_biodata = data.alumni.is_terplot_ke_biodata;
             }
 
             isReviewModalOpen.value = false;
@@ -685,41 +720,48 @@ const dashboardRoute = computed(() => {
             <!-- Main Content Container -->
             <main class="w-full max-w-[1400px] mx-auto -mt-10 px-4 sm:px-6 lg:px-8 space-y-6 pb-16">
 
-                <!-- 5 Kartu Statistik Ringkas & Profesional (-mt-10) -->
-                <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+                <!-- 6 Kartu Statistik Ringkas & Profesional (-mt-10) -->
+                <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3.5">
                     <!-- 1. Total Alumni -->
-                    <div class="bg-white rounded-2xl p-5 shadow-xs border border-gray-100">
-                        <p class="text-xs font-bold text-gray-500 uppercase tracking-wider">Total Alumni</p>
-                        <p class="text-2xl sm:text-3xl font-extrabold text-gray-900 tracking-tight mt-2">{{ localStats.total_alumni }}</p>
-                        <p class="text-xs text-gray-400 mt-1">Lulusan {{ selectedTahun }}</p>
+                    <div class="bg-white rounded-2xl p-4 shadow-xs border border-gray-100">
+                        <p class="text-[11px] font-bold text-gray-500 uppercase tracking-wider">Total Alumni</p>
+                        <p class="text-2xl font-extrabold text-gray-900 tracking-tight mt-1.5">{{ localStats.total_alumni }}</p>
+                        <p class="text-[11px] text-gray-400 mt-0.5">Lulusan {{ selectedTahun }}</p>
                     </div>
 
                     <!-- 2. Terhubung LinkedIn -->
-                    <div class="bg-white rounded-2xl p-5 shadow-xs border border-gray-100">
-                        <p class="text-xs font-bold text-sky-700 uppercase tracking-wider">Punya LinkedIn</p>
-                        <p class="text-2xl sm:text-3xl font-extrabold text-sky-900 tracking-tight mt-2">{{ localStats.dengan_linkedin }}</p>
-                        <p class="text-xs text-sky-600 mt-1">{{ provider === 'apify' ? 'Memiliki URL Profil' : 'Memiliki Username' }}</p>
+                    <div class="bg-white rounded-2xl p-4 shadow-xs border border-gray-100">
+                        <p class="text-[11px] font-bold text-sky-700 uppercase tracking-wider">Punya Akun</p>
+                        <p class="text-2xl font-extrabold text-sky-900 tracking-tight mt-1.5">{{ localStats.dengan_linkedin }}</p>
+                        <p class="text-[11px] text-sky-600 mt-0.5">{{ provider === 'apify' ? 'Ada URL Profil' : 'Ada Username' }}</p>
                     </div>
 
-                    <!-- 3. Berhasil / Approved -->
-                    <div class="bg-white rounded-2xl p-5 shadow-xs border border-gray-100">
-                        <p class="text-xs font-bold text-[#0D542B] uppercase tracking-wider">Disinkronkan</p>
-                        <p class="text-2xl sm:text-3xl font-extrabold text-[#0D542B] tracking-tight mt-2">{{ localStats.berhasil_sinkron }}</p>
-                        <p class="text-xs text-gray-400 mt-1">Data valid & approved</p>
+                    <!-- 3. Siap Diplot (Matching) -->
+                    <div class="bg-white rounded-2xl p-4 shadow-xs border border-blue-100 bg-gradient-to-br from-white to-blue-50/30">
+                        <p class="text-[11px] font-bold text-blue-700 uppercase tracking-wider">Siap Diplot</p>
+                        <p class="text-2xl font-extrabold text-blue-900 tracking-tight mt-1.5">{{ localStats.siap_diplot || 0 }}</p>
+                        <p class="text-[11px] text-blue-600 mt-0.5">Data sama / cocok</p>
                     </div>
 
-                    <!-- 4. Menunggu Review (Khusus Apify) -->
-                    <div class="bg-white rounded-2xl p-5 shadow-xs border border-gray-100">
-                        <p class="text-xs font-bold text-amber-600 uppercase tracking-wider">Pending Review</p>
-                        <p class="text-2xl sm:text-3xl font-extrabold text-amber-600 tracking-tight mt-2">{{ localStats.pending_review }}</p>
-                        <p class="text-xs text-amber-600 mt-1">Menunggu persetujuan</p>
+                    <!-- 4. Nama Sesuai (Validasi) -->
+                    <div class="bg-white rounded-2xl p-4 shadow-xs border border-emerald-100 bg-gradient-to-br from-white to-emerald-50/30">
+                        <p class="text-[11px] font-bold text-emerald-700 uppercase tracking-wider">Nama Cocok</p>
+                        <p class="text-2xl font-extrabold text-emerald-900 tracking-tight mt-1.5">{{ localStats.nama_sesuai || 0 }}</p>
+                        <p class="text-[11px] text-emerald-600 mt-0.5">Nama identik/parsial</p>
                     </div>
 
-                    <!-- 5. Belum / Gagal Sinkron -->
-                    <div class="bg-white rounded-2xl p-5 shadow-xs border border-gray-100 col-span-2 sm:col-span-1">
-                        <p class="text-xs font-bold text-rose-600 uppercase tracking-wider">Belum / Gagal</p>
-                        <p class="text-2xl sm:text-3xl font-extrabold text-rose-600 tracking-tight mt-2">{{ localStats.gagal_sinkron + localStats.dilewati }}</p>
-                        <p class="text-xs text-gray-400 mt-1">Perlu ditindaklanjuti</p>
+                    <!-- 5. Menunggu Review (Khusus Apify) -->
+                    <div class="bg-white rounded-2xl p-4 shadow-xs border border-amber-100">
+                        <p class="text-[11px] font-bold text-amber-600 uppercase tracking-wider">Pending Review</p>
+                        <p class="text-2xl font-extrabold text-amber-600 tracking-tight mt-1.5">{{ localStats.pending_review }}</p>
+                        <p class="text-[11px] text-amber-600 mt-0.5">Menunggu approval</p>
+                    </div>
+
+                    <!-- 6. Berhasil / Approved -->
+                    <div class="bg-white rounded-2xl p-4 shadow-xs border border-gray-100">
+                        <p class="text-[11px] font-bold text-[#0D542B] uppercase tracking-wider">Approved</p>
+                        <p class="text-2xl font-extrabold text-[#0D542B] tracking-tight mt-1.5">{{ localStats.berhasil_sinkron }}</p>
+                        <p class="text-[11px] text-gray-400 mt-0.5">Terplot ke database</p>
                     </div>
                 </div>
 
@@ -745,7 +787,7 @@ const dashboardRoute = computed(() => {
                         </div>
                     </div>
 
-                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-7 gap-4">
                         <!-- 1. Pencarian Nama / NIM / Akun -->
                         <div>
                             <label class="block text-xs font-bold text-gray-600 mb-1.5">Cari Nama / NIM / LinkedIn</label>
@@ -818,7 +860,23 @@ const dashboardRoute = computed(() => {
                             </select>
                         </div>
 
-                        <!-- 6. Filter Program Studi (Disesuaikan Peran) -->
+                        <!-- 6. Filter Status Plot & Validasi Nama -->
+                        <div>
+                            <label class="block text-xs font-bold text-gray-600 mb-1.5">Plotting & Nama</label>
+                            <select 
+                                v-model="selectedStatusPlot" 
+                                @change="applyFilters" 
+                                class="w-full text-xs rounded-xl border border-gray-200 bg-gray-50 py-2.5 px-3.5 font-medium text-gray-900 focus:bg-white focus:border-[#0D542B] focus:ring-1 focus:ring-[#0D542B] outline-none cursor-pointer"
+                            >
+                                <option value="all">Semua Plot & Nama</option>
+                                <option value="ready">Siap Diplot (Data Sama)</option>
+                                <option value="nama_sesuai">Nama Sesuai (Eksak/Parsial)</option>
+                                <option value="nama_berbeda">Nama Berbeda (Perlu Cek)</option>
+                                <option value="terplot">Sudah Terplot ke Biodata</option>
+                            </select>
+                        </div>
+
+                        <!-- 7. Filter Program Studi (Disesuaikan Peran) -->
                         <div>
                             <label class="block text-xs font-bold text-gray-600 mb-1.5">Program Studi</label>
                             <select 
@@ -893,6 +951,26 @@ const dashboardRoute = computed(() => {
                                                 <span class="text-[11px] font-mono text-gray-500 block mt-0.5">
                                                     NIM: {{ alumni.nim }}
                                                 </span>
+                                                <!-- Badge Validasi Nama dari Database View v_alumni_linkedin_plot -->
+                                                <div v-if="alumni.keterangan_nama" class="mt-1.5">
+                                                    <span 
+                                                        class="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-md"
+                                                        :class="{
+                                                            'bg-emerald-50 text-emerald-800 border border-emerald-200': alumni.keterangan_nama === 'Nama Sesuai Eksak',
+                                                            'bg-sky-50 text-sky-800 border border-sky-200': alumni.keterangan_nama === 'Nama Sesuai Parsial',
+                                                            'bg-rose-50 text-rose-800 border border-rose-200': alumni.keterangan_nama === 'Nama Berbeda (Perlu Verifikasi)',
+                                                            'bg-gray-100 text-gray-500 border border-gray-200': alumni.keterangan_nama === 'Belum Ada Data LinkedIn'
+                                                        }"
+                                                    >
+                                                        <span class="w-1.5 h-1.5 rounded-full" :class="{
+                                                            'bg-emerald-500': alumni.keterangan_nama === 'Nama Sesuai Eksak',
+                                                            'bg-sky-500': alumni.keterangan_nama === 'Nama Sesuai Parsial',
+                                                            'bg-rose-500': alumni.keterangan_nama === 'Nama Berbeda (Perlu Verifikasi)',
+                                                            'bg-gray-400': alumni.keterangan_nama === 'Belum Ada Data LinkedIn'
+                                                        }"></span>
+                                                        {{ alumni.keterangan_nama }}
+                                                    </span>
+                                                </div>
                                             </div>
                                         </div>
                                     </td>
@@ -926,10 +1004,39 @@ const dashboardRoute = computed(() => {
                                         </div>
                                     </td>
 
-                                    <!-- 4. Karier Terkini -->
+                                    <!-- 4. Karier Terkini & Plotting LinkedIn (Database View v_alumni_linkedin_plot) -->
                                     <td class="py-4 px-4">
-                                        <span class="font-semibold text-gray-800 block truncate max-w-[200px]">{{ alumni.posisi || '-' }}</span>
-                                        <span class="text-[11px] text-gray-500 block truncate max-w-[200px]">{{ alumni.perusahaan || '-' }}</span>
+                                        <div class="space-y-1.5">
+                                            <div>
+                                                <span class="text-[9px] uppercase font-bold tracking-wider text-gray-600 block">Biodata UKDW:</span>
+                                                <span class="font-semibold text-gray-800 block truncate max-w-[210px]" :title="alumni.posisi">{{ alumni.posisi || '-' }}</span>
+                                                <span class="text-[11px] text-gray-500 block truncate max-w-[210px]" :title="alumni.perusahaan">{{ alumni.perusahaan || '-' }}</span>
+                                            </div>
+
+                                            <div v-if="alumni.posisi_linkedin || alumni.perusahaan_linkedin" class="pt-1 border-t border-gray-100">
+                                                <span class="text-[9px] uppercase font-bold tracking-wider text-[#0077B5] flex items-center gap-1">
+                                                    <svg class="w-2.5 h-2.5 fill-current" viewBox="0 0 24 24"><path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/></svg>
+                                                    LinkedIn Scrape:
+                                                </span>
+                                                <span class="text-xs font-medium text-slate-800 block truncate max-w-[210px]" :title="alumni.posisi_linkedin">{{ alumni.posisi_linkedin || '-' }}</span>
+                                                <span class="text-[11px] text-slate-500 block truncate max-w-[210px]" :title="alumni.perusahaan_linkedin">{{ alumni.perusahaan_linkedin || '-' }}</span>
+                                            </div>
+
+                                            <div v-if="alumni.status_plot_label" class="mt-1">
+                                                <span 
+                                                    class="inline-block text-[10px] font-bold px-2 py-0.5 rounded-full"
+                                                    :class="{
+                                                        'bg-emerald-50 text-emerald-800 border border-emerald-200': alumni.status_plot_label === 'Sudah Terplot (Approved)',
+                                                        'bg-teal-50 text-teal-800 border border-teal-200': alumni.status_plot_label === 'Data Sama / Siap Diplot',
+                                                        'bg-amber-50 text-amber-800 border border-amber-200': alumni.status_plot_label === 'Menunggu Review (Pending)',
+                                                        'bg-rose-50 text-rose-800 border border-rose-200': alumni.status_plot_label === 'Ditolak (Rejected)',
+                                                        'bg-gray-100 text-gray-500': alumni.status_plot_label === 'Belum Pernah Sync'
+                                                    }"
+                                                >
+                                                    {{ alumni.status_plot_label }}
+                                                </span>
+                                            </div>
+                                        </div>
                                     </td>
 
                                     <!-- 5. Status Sinkronisasi -->

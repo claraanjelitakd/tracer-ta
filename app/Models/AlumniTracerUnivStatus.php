@@ -33,6 +33,8 @@ class AlumniTracerUnivStatus extends Model
             'total_mandatory_univ' => 'integer',
             'answered_mandatory_univ' => 'integer',
             'total_answered_univ' => 'integer',
+            'univ_percentage' => 'integer',
+            'is_complete_univ' => 'boolean',
         ];
     }
 

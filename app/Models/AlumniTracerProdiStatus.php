@@ -33,6 +33,8 @@ class AlumniTracerProdiStatus extends Model
             'prodi_id' => 'integer',
             'total_prodi_questions' => 'integer',
             'answered_prodi_questions' => 'integer',
+            'prodi_percentage' => 'integer',
+            'is_complete_prodi' => 'boolean',
         ];
     }
 

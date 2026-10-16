@@ -382,10 +382,11 @@ const copyRawJson = () => {
         });
 };
 
-const getSyncBadgeClass = (status) => {
-    if (status === 'synced') return 'bg-emerald-100 text-emerald-800 border-emerald-200';
-    if (status === 'conflict') return 'bg-rose-100 text-rose-800 border-rose-200';
-    if (status === 'pending_sync') return 'bg-amber-100 text-amber-800 border-amber-200';
+const getSyncBadgeClass = (status, badge = null) => {
+    if (badge === 'emerald' || status === 'synced' || status === 'Tersinkron' || status === 'Nama Sesuai Eksak') return 'bg-emerald-100 text-emerald-800 border-emerald-200';
+    if (badge === 'sky' || (status && status.includes('Parsial'))) return 'bg-sky-100 text-sky-800 border-sky-200';
+    if (badge === 'rose' || status === 'conflict' || (status && status.includes('Berbeda'))) return 'bg-rose-100 text-rose-800 border-rose-200';
+    if (badge === 'amber' || status === 'pending_sync' || (status && status.includes('Menunggu'))) return 'bg-amber-100 text-amber-800 border-amber-200';
     return 'bg-gray-100 text-gray-700 border-gray-200';
 };
 
@@ -1601,7 +1602,7 @@ const filteredProdiSections = computed(() => {
                                         <td class="py-3 px-4 text-center">
                                             <span 
                                                 class="px-2.5 py-0.5 rounded-full text-[10px] font-bold border"
-                                                :class="getSyncBadgeClass(row.status)"
+                                                :class="getSyncBadgeClass(row.status, row.badge)"
                                             >
                                                 {{ getSyncBadgeLabel(row.status) }}
                                             </span>

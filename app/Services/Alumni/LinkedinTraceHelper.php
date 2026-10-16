@@ -2,11 +2,20 @@
 
 namespace App\Services\Alumni;
 
+use App\Models\AlumniLinkedinPlot;
 use App\Models\Biodata;
 use App\Models\LinkedinSyncResult;
 
 class LinkedinTraceHelper
 {
+    /**
+     * Mengambil ringkasan plotting LinkedIn langsung dari Database View
+     */
+    public static function getPlotSummary(Biodata $alumni): ?AlumniLinkedinPlot
+    {
+        return $alumni->linkedinPlot ?? AlumniLinkedinPlot::where('biodata_id', $alumni->id)->first();
+    }
+
     /**
      * Membangun Baris Pemetaan Audit Trace Hasil Scraping LinkedIn ke Basis Data
      */
@@ -20,6 +29,8 @@ class LinkedinTraceHelper
         if (empty($item)) {
             return [];
         }
+
+        $plot = self::getPlotSummary($alumni);
 
         $rows = [];
         $handledKeys = [];
@@ -120,6 +131,7 @@ class LinkedinTraceHelper
         // 7. Username LinkedIn
         $scrapedHandle = $item['li_profile_handle'] ?? ($item['handle'] ?? ($item['publicIdentifier'] ?? $syncResult->linkedin_username));
         $dbHandle = $alumni->linkedin_username;
+        $isHandleMatch = ! empty($scrapedHandle) && ! empty($dbHandle) && strtolower(trim((string) $scrapedHandle)) === strtolower(trim((string) $dbHandle));
         $rows[] = [
             'key' => 'li_profile_handle',
             'label' => 'Username LinkedIn',
@@ -127,9 +139,9 @@ class LinkedinTraceHelper
             'target_table' => 'biodata',
             'target_column' => 'linkedin_username',
             'db_value' => $dbHandle ?: '(Belum terisi)',
-            'status' => ! empty($dbHandle) ? 'Tersinkron' : 'Belum Disinkron',
-            'badge' => ! empty($dbHandle) ? 'emerald' : 'amber',
-            'note' => 'Identifier publik unik profil LinkedIn',
+            'status' => $isHandleMatch ? 'Tersinkron' : (! empty($dbHandle) ? 'Berbeda dengan Profil LinkedIn' : 'Belum Disinkron'),
+            'badge' => $isHandleMatch ? 'emerald' : (! empty($dbHandle) ? 'rose' : 'amber'),
+            'note' => 'Identifier publik unik profil LinkedIn (otomatis diselaraskan dari URL profil)',
         ];
         $handledKeys = array_merge($handledKeys, ['li_profile_handle', 'handle', 'publicIdentifier']);
 
@@ -195,9 +207,16 @@ class LinkedinTraceHelper
         ];
         $handledKeys = array_merge($handledKeys, ['location', 'locationName', 'geoCountryName', 'li_profile_country']);
 
-        // 12. Nama Lengkap
+        // 12. Nama Lengkap & Verifikasi Kesesuaian
         $scrapedName = $item['full_name'] ?? ($item['fullName'] ?? (($item['first_name'] ?? '').' '.($item['last_name'] ?? '')));
         $dbName = $alumni->dataAkademik?->nama ?? $alumni->nama;
+        $nameStatus = $plot?->keterangan_nama ?? 'Terkunci Data Akademik';
+        $nameBadge = match ($plot?->keterangan_nama) {
+            'Nama Sesuai Eksak' => 'emerald',
+            'Nama Sesuai Parsial' => 'sky',
+            'Nama Berbeda (Perlu Verifikasi)' => 'rose',
+            default => 'slate'
+        };
         $rows[] = [
             'key' => 'full_name',
             'label' => 'Nama Lengkap Mahasiswa / Alumni',
@@ -205,11 +224,33 @@ class LinkedinTraceHelper
             'target_table' => 'data_akademik (Master)',
             'target_column' => 'nama',
             'db_value' => $dbName ?: '(Kosong)',
-            'status' => 'Terkunci Data Akademik',
-            'badge' => 'slate',
-            'note' => 'Data nama resmi dikunci pangkalan data kampus',
+            'status' => $nameStatus,
+            'badge' => $nameBadge,
+            'note' => $plot?->keterangan_nama ? 'Validasi: '.$plot->keterangan_nama : 'Data nama resmi dikunci pangkalan data kampus',
         ];
         $handledKeys = array_merge($handledKeys, ['full_name', 'fullName', 'first_name', 'last_name']);
+
+        // 13. Status Plotting ke Biodata
+        if ($plot) {
+            $plotBadge = match ($plot->status_plot_label) {
+                'Sudah Terplot (Approved)' => 'emerald',
+                'Data Sama / Siap Diplot' => 'sky',
+                'Menunggu Review (Pending)' => 'amber',
+                'Ditolak (Rejected)' => 'rose',
+                default => 'slate'
+            };
+            $rows[] = [
+                'key' => 'status_plotting',
+                'label' => 'Status Plotting ke Biodata',
+                'scraped_value' => $plot->posisi_linkedin ? ($plot->posisi_linkedin.' di '.($plot->perusahaan_linkedin ?: '-')) : '(Data scraping kosong)',
+                'target_table' => 'v_alumni_linkedin_plot',
+                'target_column' => 'status_plot_label',
+                'db_value' => $plot->posisi_biodata ? ($plot->posisi_biodata.' di '.($plot->perusahaan_biodata ?: '-')) : '(Belum terisi di biodata)',
+                'status' => $plot->status_plot_label,
+                'badge' => $plotBadge,
+                'note' => $plot->is_terplot_ke_biodata ? 'Telah terplot ke profil utama biodata' : 'Memerlukan review sebelum diplot',
+            ];
+        }
 
         // 13. Headline
         if (isset($item['headline'])) {

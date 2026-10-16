@@ -3,14 +3,13 @@
 namespace App\Http\Controllers\SuperAdmin\Dashboard;
 
 use App\Http\Controllers\Controller;
-use App\Models\Biodata;
 use App\Models\KelompokPertanyaan;
 use App\Models\LogActivity;
 use App\Models\Perusahaan;
 use App\Models\Prodi;
 use App\Models\RefSubpertanyaan2021;
-use App\Models\Tracer;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -21,9 +20,8 @@ use Inertia\Response;
  * Menampilkan halaman dasbor eksekutif utama untuk Superadmin.
  *
  * Tujuan:
- * Menyajikan gambaran umum ekosistem Tracer Study secara menyeluruh,
- * mencakup status instrumen kuesioner, total responden alumni,
- * serta akses cepat menuju modul pengelolaan kuesioner dan pengaturan sistem.
+ * Menyajikan gambaran umum ekosistem Tracer Study secara menyeluruh dengan kueri berkecepatan tinggi
+ * berbasis Database View `v_alumni_audit_rekap`.
  */
 class DashboardController extends Controller
 {
@@ -36,29 +34,38 @@ class DashboardController extends Controller
     {
         $user = $request->user();
 
-        // 1. Menghitung ringkasan statistik kuesioner dan partisipasi
+        // 1. Menghitung ringkasan statistik kuesioner dan partisipasi via v_alumni_audit_rekap
         $totalPertanyaan = RefSubpertanyaan2021::count();
         $totalSections = KelompokPertanyaan::count();
-        $totalAlumni = Biodata::count();
-        $totalResponden = Tracer::distinct('biodata_id')->count('biodata_id');
+        $totalAlumni = DB::table('v_alumni_audit_rekap')->count();
+        $totalResponden = DB::table('v_alumni_audit_rekap')->where('answered_mandatory_univ', '>', 0)->count();
         $totalProdi = Prodi::count();
         $totalPendingPerusahaan = Perusahaan::where('status_verifikasi', 'Menunggu Verifikasi')->count();
         $responseRate = $totalAlumni > 0 ? round(($totalResponden / $totalAlumni) * 100, 1) : 0;
 
-        $totalLinkedIn = Biodata::where(function ($q) {
+        $totalLinkedIn = DB::table('v_alumni_audit_rekap')->where(function ($q) {
             $q->whereNotNull('linkedin_url')->where('linkedin_url', '!=', '')
                 ->orWhereNotNull('linkedin_username')->where('linkedin_username', '!=', '');
         })->count();
 
-        // 2. Ringkasan Partisipasi per Program Studi se-Universitas
-        $prodiSummaries = Prodi::withCount('biodatas')
-            ->orderBy('kode_prodi', 'asc')
+        // 2. Ringkasan Partisipasi per Program Studi se-Universitas (Single Aggregated Query)
+        $statsPerProdi = DB::table('v_alumni_audit_rekap')
+            ->select(
+                'prodi_id',
+                DB::raw('COUNT(*) as total_alumni'),
+                DB::raw('SUM(CASE WHEN answered_mandatory_univ > 0 THEN 1 ELSE 0 END) as total_responden')
+            )
+            ->whereNotNull('prodi_id')
+            ->groupBy('prodi_id')
             ->get()
-            ->map(function ($p) {
-                $respondenCount = Biodata::where('prodi_id', $p->id)
-                    ->whereHas('tracers')
-                    ->count();
-                $totalBio = $p->biodatas_count ?? 0;
+            ->keyBy('prodi_id');
+
+        $prodiSummaries = Prodi::orderBy('kode_prodi', 'asc')
+            ->get()
+            ->map(function ($p) use ($statsPerProdi) {
+                $stat = $statsPerProdi->get($p->id);
+                $totalBio = (int) ($stat->total_alumni ?? 0);
+                $respondenCount = (int) ($stat->total_responden ?? 0);
                 $rate = $totalBio > 0 ? round(($respondenCount / $totalBio) * 100, 1) : 0;
 
                 return [
@@ -71,19 +78,19 @@ class DashboardController extends Controller
                 ];
             });
 
-        // 3. Pratinjau 8 Alumni Terbaru Terdaftar
-        $recentAlumni = Biodata::with(['prodi', 'user', 'dataAkademik'])
-            ->latest()
+        // 3. Pratinjau 8 Alumni Terbaru Terdaftar via v_alumni_audit_rekap
+        $recentAlumni = DB::table('v_alumni_audit_rekap')
+            ->orderByDesc('biodata_id')
             ->take(8)
             ->get()
             ->map(function ($alumni) {
                 return [
-                    'id' => $alumni->id,
-                    'nim' => $alumni->nim ?? $alumni->user?->username ?? '-',
-                    'nama' => $alumni->nama ?? $alumni->dataAkademik?->nama ?? $alumni->user?->name ?? 'Mahasiswa',
-                    'prodi' => $alumni->prodi?->nama_prodi ?? '-',
-                    'tahun_lulus' => $alumni->tahun_lulus ?? $alumni->dataAkademik?->tahun_akademik_lulus ?? '-',
-                    'has_responded' => $alumni->tracers()->exists(),
+                    'id' => $alumni->biodata_id,
+                    'nim' => $alumni->nim ?? '-',
+                    'nama' => $alumni->nama ?? 'Mahasiswa',
+                    'prodi' => $alumni->nama_prodi ?? '-',
+                    'tahun_lulus' => $alumni->tahun_lulus ?? $alumni->tahun_akademik_lulus ?? '-',
+                    'has_responded' => ((int) $alumni->answered_mandatory_univ) > 0,
                     'has_linkedin' => ! empty($alumni->linkedin_url) || ! empty($alumni->linkedin_username),
                 ];
             });

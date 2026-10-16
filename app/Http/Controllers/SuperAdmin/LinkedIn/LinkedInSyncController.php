@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\SuperAdmin\LinkedIn;
 
 use App\Http\Controllers\Controller;
+use App\Models\AlumniLinkedinPlot;
 use App\Models\Biodata;
 use App\Models\LinkedinSyncResult;
 use App\Models\LogActivity;
@@ -157,6 +158,7 @@ class LinkedInSyncController extends Controller
         $semesterTerpilih = (string) $request->input('semester', 'all');
         $targetTerpilih = (string) $request->input('target', 'all');
         $statusTerpilih = (string) $request->input('status', 'all');
+        $statusPlotTerpilih = (string) $request->input('status_plot', 'all');
         $prodiIdTerpilih = (string) $request->input('prodi_id', 'all');
 
         // Untuk Admin Prodi, kunci filter prodi ke ID prodinya sendiri
@@ -175,13 +177,9 @@ class LinkedInSyncController extends Controller
             }
         }
 
-        // 6. Kueri data alumni berbasis Eloquent dengan relasi lengkap
-        $queryAlumni = Biodata::with([
-            'perusahaan',
-            'dataAkademik',
-            'prodi.fakultas',
-            'latestLinkedinSyncLog',
-            'latestLinkedinSyncResult.reviewer',
+        // 6. Kueri data alumni berbasis Database View `v_alumni_linkedin_plot` (AlumniLinkedinPlot)
+        $queryAlumni = AlumniLinkedinPlot::query()->with([
+            'biodata.latestLinkedinSyncLog',
         ]);
 
         // Terapkan batasan wewenang (Role Scope)
@@ -197,63 +195,87 @@ class LinkedInSyncController extends Controller
             $queryAlumni->where('prodi_id', (int) $prodiIdTerpilih);
         }
 
-        // Filter Tahun Kelulusan (Pencocokan eksak kolom tahun_lulus agar tidak bocor ke tahun akademik lain)
+        // Filter Tahun Kelulusan
         if ($tahunTerpilih && $tahunTerpilih !== 'all') {
             $queryAlumni->where(function ($q) use ($tahunTerpilih, $targetAlumniId) {
-                $q->where(function ($sub) use ($tahunTerpilih) {
-                    $sub->whereHas('dataAkademik', fn ($a) => $a->where('tahun_lulus', $tahunTerpilih))
-                        ->orWhereHas('yudisium.dataAkademik', fn ($a) => $a->where('tahun_lulus', $tahunTerpilih));
-                });
-
+                $q->where('tahun_lulus', $tahunTerpilih);
                 if ($targetAlumniId) {
-                    $q->orWhere('id', $targetAlumniId);
+                    $q->orWhere('biodata_id', $targetAlumniId);
                 }
             });
         }
 
         // Filter Target Periode Kelulusan (Semester + Tahun)
         if ($targetTerpilih && $targetTerpilih !== 'all') {
-            $queryAlumni->whereHas('dataAkademik', fn ($a) => $a->where('tahun_akademik_lulus', $targetTerpilih));
+            $queryAlumni->where('tahun_akademik_lulus', $targetTerpilih);
         }
 
         // Filter Semester Kelulusan (Gasal / Genap)
         if ($semesterTerpilih && $semesterTerpilih !== 'all') {
-            $queryAlumni->whereHas('dataAkademik', fn ($a) => $a->where('tahun_akademik_lulus', 'like', "%{$semesterTerpilih}%"));
+            $queryAlumni->where('tahun_akademik_lulus', 'like', "%{$semesterTerpilih}%");
         }
 
-        // Filter Pencarian Teks (NIM, Nama di Data Akademik/User, Email, URL LinkedIn, atau Username)
+        // Filter Pencarian Teks
         if ($searchQuery) {
             $queryAlumni->where(function ($w) use ($searchQuery) {
                 $w->where('nim', 'like', "%{$searchQuery}%")
-                    ->orWhere('email_pribadi', 'like', "%{$searchQuery}%")
-                    ->orWhere('linkedin_url', 'like', "%{$searchQuery}%")
-                    ->orWhere('linkedin_username', 'like', "%{$searchQuery}%")
-                    ->orWhereHas('dataAkademik', function ($da) use ($searchQuery) {
-                        $da->where('nama', 'like', "%{$searchQuery}%")
-                            ->orWhere('email_pribadi', 'like', "%{$searchQuery}%")
-                            ->orWhere('email_students', 'like', "%{$searchQuery}%");
-                    })
-                    ->orWhereHas('user', function ($u) use ($searchQuery) {
-                        $u->where('name', 'like', "%{$searchQuery}%");
-                    });
+                    ->orWhere('nama_alumni', 'like', "%{$searchQuery}%")
+                    ->orWhere('linkedin_url_biodata', 'like', "%{$searchQuery}%")
+                    ->orWhere('linkedin_username_biodata', 'like', "%{$searchQuery}%")
+                    ->orWhere('perusahaan_biodata', 'like', "%{$searchQuery}%")
+                    ->orWhere('posisi_biodata', 'like', "%{$searchQuery}%")
+                    ->orWhere('nama_linkedin', 'like', "%{$searchQuery}%")
+                    ->orWhere('perusahaan_linkedin', 'like', "%{$searchQuery}%")
+                    ->orWhere('posisi_linkedin', 'like', "%{$searchQuery}%");
             });
         }
 
-        $semuaAlumni = $queryAlumni->orderBy('nim', 'asc')->get();
+        // Filter Tambahan: Status Plotting View
+        if ($statusPlotTerpilih && $statusPlotTerpilih !== 'all') {
+            if ($statusPlotTerpilih === 'ready') {
+                $queryAlumni->readyToPlot();
+            } elseif ($statusPlotTerpilih === 'nama_sesuai') {
+                $queryAlumni->namaSesuai();
+            } elseif ($statusPlotTerpilih === 'nama_berbeda') {
+                $queryAlumni->namaBerbeda();
+            } elseif ($statusPlotTerpilih === 'terplot') {
+                $queryAlumni->terplot();
+            }
+        }
+
+        $semuaPlot = $queryAlumni->orderBy('nim', 'asc')->get();
 
         // 7. Hitung metrik analitik dan format data reaktif
-        $totalAlumni = $semuaAlumni->count();
+        $totalAlumni = $semuaPlot->count();
         $denganLinkedin = 0;
         $berhasilSinkron = 0;
         $gagalSinkron = 0;
         $dilewati = 0;
         $pendingReview = 0;
+        $siapDiplot = 0;
+        $namaSesuai = 0;
+        $namaBerbeda = 0;
+        $terplotBiodata = 0;
 
         $alumniList = [];
 
-        foreach ($semuaAlumni as $b) {
-            $hasUrl = ! empty(trim($b->linkedin_url ?? ''));
-            $hasUsername = ! empty(trim($b->linkedin_username ?? ''));
+        foreach ($semuaPlot as $b) {
+            $hasUrl = ! empty(trim((string) ($b->linkedin_url_biodata ?: $b->linkedin_url_scraped)));
+            $hasUsername = ! empty(trim((string) ($b->linkedin_username_biodata ?: $b->linkedin_username_scraped)));
+
+            if ($b->is_nama_sesuai) {
+                $namaSesuai++;
+            } elseif (! $b->is_nama_sesuai && $b->sync_result_id) {
+                $namaBerbeda++;
+            }
+
+            if ($b->status_plot_label === 'Data Sama / Siap Diplot') {
+                $siapDiplot++;
+            }
+
+            if ($b->is_terplot_ke_biodata) {
+                $terplotBiodata++;
+            }
 
             if ($provider === 'apify') {
                 if ($hasUrl) {
@@ -262,20 +284,19 @@ class LinkedInSyncController extends Controller
                     $dilewati++;
                 }
 
-                $latestResult = $b->latestLinkedinSyncResult;
                 $statusSync = 'Belum Disinkronkan';
                 $statusColor = 'slate';
 
-                if ($latestResult) {
-                    if ($latestResult->status === 'pending') {
+                if ($b->sync_result_id) {
+                    if ($b->sync_status === 'pending') {
                         $statusSync = 'Pending Review';
                         $statusColor = 'amber';
                         $pendingReview++;
-                    } elseif ($latestResult->status === 'approved') {
+                    } elseif ($b->sync_status === 'approved') {
                         $statusSync = 'Approved';
                         $statusColor = 'emerald';
                         $berhasilSinkron++;
-                    } elseif ($latestResult->status === 'rejected') {
+                    } elseif ($b->sync_status === 'rejected') {
                         $statusSync = 'Rejected';
                         $statusColor = 'rose';
                         $gagalSinkron++;
@@ -285,34 +306,43 @@ class LinkedInSyncController extends Controller
                     $statusColor = 'slate';
                 }
 
-                $terakhirSync = $latestResult ? $latestResult->scraped_at?->format('d/m/Y H:i') : '-';
-                $terakhirSyncHuman = $latestResult ? $latestResult->scraped_at?->diffForHumans() : '-';
+                $terakhirSync = $b->scraped_at ? $b->scraped_at->format('d/m/Y H:i') : '-';
+                $terakhirSyncHuman = $b->scraped_at ? $b->scraped_at->diffForHumans() : '-';
 
                 $alumniItem = [
-                    'id' => $b->id,
+                    'id' => $b->biodata_id,
                     'nim' => $b->nim,
-                    'nama' => $b->nama ?? 'Nama Alumni Tidak Ditemukan',
-                    'prodi' => $b->prodi?->nama_prodi ?? '-',
-                    'prodi_kode' => $b->prodi?->kode_prodi ?? '',
+                    'nama' => $b->nama_alumni ?? 'Nama Alumni Tidak Ditemukan',
+                    'prodi' => $b->nama_prodi ?? '-',
+                    'prodi_kode' => $b->kode_prodi ?? '',
                     'prodi_id' => $b->prodi_id,
-                    'fakultas' => $b->prodi?->fakultas?->nama_fakultas ?? '-',
-                    'tahun_lulus' => $b->tahun_lulus ?: ($b->dataAkademik?->tahun_lulus ?? '-'),
-                    'tahun_akademik_lulus' => $b->dataAkademik?->tahun_akademik_lulus ?? '-',
-                    'linkedin_username' => $b->linkedin_username ?: null,
-                    'linkedin_url' => $b->linkedin_url ?: null,
-                    'perusahaan' => $b->perusahaan?->nama_perusahaan ?? '-',
-                    'posisi' => $b->posisi_jabatan ?? '-',
+                    'fakultas' => $b->nama_fakultas ?? '-',
+                    'tahun_lulus' => $b->tahun_lulus ?: '-',
+                    'tahun_akademik_lulus' => $b->tahun_akademik_lulus ?: '-',
+                    'linkedin_username' => $b->linkedin_username_biodata ?: ($b->linkedin_username_scraped ?: null),
+                    'linkedin_url' => $b->linkedin_url_biodata ?: ($b->linkedin_url_scraped ?: null),
+                    'perusahaan' => $b->perusahaan_biodata ?? '-',
+                    'posisi' => $b->posisi_biodata ?? '-',
                     'status_sync' => $statusSync,
                     'status_color' => $statusColor,
                     'terakhir_sync' => $terakhirSync ?: '-',
                     'terakhir_sync_human' => $terakhirSyncHuman ?: '-',
-                    'latest_sync_result' => $latestResult ? [
-                        'id' => $latestResult->id,
-                        'status' => $latestResult->status,
-                        'scraped_at' => $latestResult->scraped_at?->format('d/m/Y H:i'),
-                        'reviewed_at' => $latestResult->reviewed_at?->format('d/m/Y H:i'),
-                        'reviewer_name' => $latestResult->reviewer?->name,
+                    'latest_sync_result' => $b->sync_result_id ? [
+                        'id' => $b->sync_result_id,
+                        'status' => $b->sync_status,
+                        'scraped_at' => $b->scraped_at?->format('d/m/Y H:i'),
+                        'reviewed_at' => $b->reviewed_at?->format('d/m/Y H:i'),
+                        'reviewer_name' => $b->reviewer_name,
                     ] : null,
+                    // Field Khusus Database View Plotting & Name Matching
+                    'nama_linkedin' => $b->nama_linkedin,
+                    'posisi_linkedin' => $b->posisi_linkedin,
+                    'perusahaan_linkedin' => $b->perusahaan_linkedin,
+                    'lokasi_linkedin' => $b->lokasi_linkedin,
+                    'is_nama_sesuai' => (bool) $b->is_nama_sesuai,
+                    'keterangan_nama' => $b->keterangan_nama,
+                    'is_terplot_ke_biodata' => (bool) $b->is_terplot_ke_biodata,
+                    'status_plot_label' => $b->status_plot_label,
                 ];
             } else {
                 // Official Provider Flow
@@ -322,7 +352,7 @@ class LinkedInSyncController extends Controller
                     $dilewati++;
                 }
 
-                $lastLog = $b->latestLinkedinSyncLog;
+                $lastLog = $b->biodata?->latestLinkedinSyncLog;
                 $statusSync = 'Belum Disinkronkan';
                 $statusColor = 'slate';
 
@@ -345,24 +375,33 @@ class LinkedInSyncController extends Controller
                 }
 
                 $alumniItem = [
-                    'id' => $b->id,
+                    'id' => $b->biodata_id,
                     'nim' => $b->nim,
-                    'nama' => $b->nama ?? 'Nama Alumni Tidak Ditemukan',
-                    'prodi' => $b->prodi?->nama_prodi ?? '-',
-                    'prodi_kode' => $b->prodi?->kode_prodi ?? '',
+                    'nama' => $b->nama_alumni ?? 'Nama Alumni Tidak Ditemukan',
+                    'prodi' => $b->nama_prodi ?? '-',
+                    'prodi_kode' => $b->kode_prodi ?? '',
                     'prodi_id' => $b->prodi_id,
-                    'fakultas' => $b->prodi?->fakultas?->nama_fakultas ?? '-',
-                    'tahun_lulus' => $b->tahun_lulus ?: ($b->dataAkademik?->tahun_lulus ?? '-'),
-                    'tahun_akademik_lulus' => $b->dataAkademik?->tahun_akademik_lulus ?? '-',
-                    'linkedin_username' => $b->linkedin_username ?: null,
-                    'linkedin_url' => $b->linkedin_url ?: null,
-                    'perusahaan' => $b->perusahaan?->nama_perusahaan ?? '-',
-                    'posisi' => $b->posisi_jabatan ?? '-',
+                    'fakultas' => $b->nama_fakultas ?? '-',
+                    'tahun_lulus' => $b->tahun_lulus ?: '-',
+                    'tahun_akademik_lulus' => $b->tahun_akademik_lulus ?: '-',
+                    'linkedin_username' => $b->linkedin_username_biodata ?: ($b->linkedin_username_scraped ?: null),
+                    'linkedin_url' => $b->linkedin_url_biodata ?: ($b->linkedin_url_scraped ?: null),
+                    'perusahaan' => $b->perusahaan_biodata ?? '-',
+                    'posisi' => $b->posisi_biodata ?? '-',
                     'status_sync' => $statusSync,
                     'status_color' => $statusColor,
                     'terakhir_sync' => $lastLog ? $lastLog->created_at->format('d/m/Y H:i') : '-',
                     'terakhir_sync_human' => $lastLog ? $lastLog->created_at->diffForHumans() : '-',
                     'latest_sync_result' => null,
+                    // Field Khusus Database View Plotting & Name Matching
+                    'nama_linkedin' => $b->nama_linkedin,
+                    'posisi_linkedin' => $b->posisi_linkedin,
+                    'perusahaan_linkedin' => $b->perusahaan_linkedin,
+                    'lokasi_linkedin' => $b->lokasi_linkedin,
+                    'is_nama_sesuai' => (bool) $b->is_nama_sesuai,
+                    'keterangan_nama' => $b->keterangan_nama,
+                    'is_terplot_ke_biodata' => (bool) $b->is_terplot_ke_biodata,
+                    'status_plot_label' => $b->status_plot_label,
                 ];
             }
 
@@ -406,6 +445,7 @@ class LinkedInSyncController extends Controller
                 'semester' => $semesterTerpilih,
                 'target' => $targetTerpilih,
                 'status' => $statusTerpilih,
+                'status_plot' => $statusPlotTerpilih,
                 'prodi_id' => $prodiIdTerpilih,
             ],
             'stats' => [
@@ -416,6 +456,10 @@ class LinkedInSyncController extends Controller
                 'dilewati' => $dilewati,
                 'pending_review' => $pendingReview,
                 'persentase_sinkron' => $rasioSinkron,
+                'siap_diplot' => $siapDiplot,
+                'nama_sesuai' => $namaSesuai,
+                'nama_berbeda' => $namaBerbeda,
+                'terplot_biodata' => $terplotBiodata,
             ],
         ]);
     }
@@ -511,6 +555,14 @@ class LinkedInSyncController extends Controller
                             'status' => 'pending',
                             'scraped_at' => $syncResult->scraped_at?->format('d/m/Y H:i'),
                         ],
+                        'nama_linkedin' => AlumniLinkedinPlot::where('biodata_id', $biodata->id)->value('nama_linkedin'),
+                        'posisi_linkedin' => AlumniLinkedinPlot::where('biodata_id', $biodata->id)->value('posisi_linkedin'),
+                        'perusahaan_linkedin' => AlumniLinkedinPlot::where('biodata_id', $biodata->id)->value('perusahaan_linkedin'),
+                        'lokasi_linkedin' => AlumniLinkedinPlot::where('biodata_id', $biodata->id)->value('lokasi_linkedin'),
+                        'is_nama_sesuai' => (bool) AlumniLinkedinPlot::where('biodata_id', $biodata->id)->value('is_nama_sesuai'),
+                        'keterangan_nama' => AlumniLinkedinPlot::where('biodata_id', $biodata->id)->value('keterangan_nama') ?: 'Menunggu Review',
+                        'is_terplot_ke_biodata' => (bool) AlumniLinkedinPlot::where('biodata_id', $biodata->id)->value('is_terplot_ke_biodata'),
+                        'status_plot_label' => AlumniLinkedinPlot::where('biodata_id', $biodata->id)->value('status_plot_label') ?: 'Menunggu Review (Pending)',
                     ],
                 ]);
 
@@ -724,10 +776,10 @@ class LinkedInSyncController extends Controller
                 }
             }
 
-            // 4. Pemetaan Username LinkedIn (jika di biodata masih kosong)
-            if (empty($biodata->linkedin_username) && ! empty($preview['handle'])) {
+            // 4. Pemetaan Username LinkedIn
+            if (! empty($preview['handle']) && $biodata->linkedin_username !== $preview['handle']) {
                 $updates['linkedin_username'] = $preview['handle'];
-                $changesSummary[] = "Username LinkedIn disimpan: {$preview['handle']}";
+                $changesSummary[] = "Username LinkedIn diselaraskan: {$preview['handle']}";
             }
 
             // 5. Pemetaan Pendidikan Lanjutan (hanya jika tersedia dan di biodata masih kosong)
@@ -819,6 +871,8 @@ class LinkedInSyncController extends Controller
 
             $fresh = $biodata->fresh(['perusahaan']);
 
+            $plotRecord = AlumniLinkedinPlot::where('biodata_id', $fresh->id)->first();
+
             return response()->json([
                 'success' => true,
                 'message' => "Data profil LinkedIn untuk {$biodata->nama} berhasil disetujui dan diterapkan.",
@@ -827,6 +881,7 @@ class LinkedInSyncController extends Controller
                     'id' => $fresh->id,
                     'perusahaan' => $fresh->perusahaan?->nama_perusahaan ?? '-',
                     'posisi' => $fresh->posisi_jabatan ?? '-',
+                    'linkedin_username' => $fresh->linkedin_username,
                     'status_sync' => 'Approved',
                     'status_color' => 'emerald',
                     'latest_sync_result' => [
@@ -834,6 +889,14 @@ class LinkedInSyncController extends Controller
                         'status' => 'approved',
                         'reviewed_at' => $result->reviewed_at?->format('d/m/Y H:i'),
                     ],
+                    'nama_linkedin' => $plotRecord?->nama_linkedin,
+                    'posisi_linkedin' => $plotRecord?->posisi_linkedin,
+                    'perusahaan_linkedin' => $plotRecord?->perusahaan_linkedin,
+                    'lokasi_linkedin' => $plotRecord?->lokasi_linkedin,
+                    'is_nama_sesuai' => (bool) $plotRecord?->is_nama_sesuai,
+                    'keterangan_nama' => $plotRecord?->keterangan_nama,
+                    'is_terplot_ke_biodata' => (bool) $plotRecord?->is_terplot_ke_biodata,
+                    'status_plot_label' => $plotRecord?->status_plot_label,
                 ],
             ]);
         });

@@ -72,6 +72,48 @@ class Biodata extends Model
                 }
             }
         });
+
+        static::saving(function (Biodata $biodata) {
+            // 1. Jika linkedin_username diisi berupa URL utuh, bersihkan menjadi handle murni
+            if (! empty($biodata->linkedin_username) && str_contains($biodata->linkedin_username, 'linkedin.com')) {
+                $extracted = self::extractLinkedinHandle($biodata->linkedin_username);
+                if (! empty($extracted)) {
+                    $biodata->linkedin_username = $extracted;
+                }
+            }
+
+            // 2. Jika linkedin_url tersedia, otomatis sinkronkan linkedin_username jika belum sesuai
+            if (! empty($biodata->linkedin_url)) {
+                $extracted = self::extractLinkedinHandle($biodata->linkedin_url);
+                if (! empty($extracted)) {
+                    $biodata->linkedin_username = $extracted;
+                }
+            }
+        });
+    }
+
+    /**
+     * Helper statis untuk mengekstrak username/handle publik dari URL LinkedIn atau string input.
+     */
+    public static function extractLinkedinHandle(?string $input): ?string
+    {
+        if (empty($input)) {
+            return null;
+        }
+
+        $clean = trim($input);
+
+        // Jika input berupa URL LinkedIn (misal https://www.linkedin.com/in/username/?isSelfProfile=false)
+        if (preg_match('#linkedin\.com/in/([a-zA-Z0-9\-_%]+)#i', $clean, $matches)) {
+            return urldecode(trim($matches[1], '/'));
+        }
+
+        // Jika bukan format URL lengkap, bersihkan karakter awalan @ atau trailing slash/query
+        if (! str_contains($clean, '/') && ! str_contains($clean, '?') && ! str_contains($clean, '&')) {
+            return ltrim($clean, '@');
+        }
+
+        return null;
     }
 
     /**
@@ -263,6 +305,30 @@ class Biodata extends Model
     public function latestLinkedinSyncResult()
     {
         return $this->hasOne(LinkedinSyncResult::class, 'biodata_id')->latestOfMany();
+    }
+
+    /**
+     * Relasi ke View LinkedIn Plotting & Validasi Nama
+     */
+    public function linkedinPlot()
+    {
+        return $this->hasOne(AlumniLinkedinPlot::class, 'biodata_id');
+    }
+
+    /**
+     * Relasi ke View Ringkasan Profil Konsolidasi
+     */
+    public function profileSummary()
+    {
+        return $this->hasOne(AlumniProfileSummary::class, 'biodata_id');
+    }
+
+    /**
+     * Relasi ke View Master Rekapitulasi Audit Tracer Study
+     */
+    public function auditRekap()
+    {
+        return $this->hasOne(AlumniAuditRekap::class, 'biodata_id');
     }
 
     // =========================================================================

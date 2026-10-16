@@ -2,6 +2,7 @@
 
 namespace App\Services\Kuesioner;
 
+use App\Models\AlumniProfileSummary;
 use App\Models\Biodata;
 use App\Models\RefSubpertanyaan2021;
 use App\Models\Tracer;
@@ -70,6 +71,8 @@ class KelengkapanTracerService
         $biodata->refresh();
         $biodata->load(['dataAkademik.orangTua', 'perusahaan.propinsi', 'perusahaan.kabupaten', 'atasan', 'user', 'prodi']);
 
+        // Utamakan pembacaan dari Database View `v_alumni_profile_summary`
+        $summary = $biodata->profileSummary ?? AlumniProfileSummary::where('biodata_id', $biodata->id)->first();
         $dataAkademik = $biodata->dataAkademik;
         $orangTua = $dataAkademik?->orangTua ?? $biodata->orangTua;
         $perusahaan = $biodata->perusahaan;
@@ -77,47 +80,47 @@ class KelengkapanTracerService
 
         $fields = [
             // Data Pribadi & Kontak
-            'Nama Lengkap' => $dataAkademik?->nama ?? $biodata->user?->name,
-            'NIM' => $biodata->nim,
-            'Tempat Lahir' => $dataAkademik?->tempat_lahir,
-            'Tanggal Lahir' => $dataAkademik?->tanggal_lahir,
-            'Agama' => $dataAkademik?->agama,
-            'Jenis Kelamin' => $dataAkademik?->jenis_kelamin,
-            'Nomor Telepon/HP' => $biodata->nomor_telepon ?? $dataAkademik?->nomor_telepon,
-            'Email Pribadi' => $biodata->email_pribadi ?? $dataAkademik?->email_pribadi,
-            'Alamat Domisili Saat Ini' => $biodata->alamat ?? $dataAkademik?->alamat_saat_ini,
-            'NIK KTP' => $biodata->nik ?? $dataAkademik?->nik,
-            'NPWP' => $biodata->npwp,
+            'Nama Lengkap' => $summary?->nama ?? ($dataAkademik?->nama ?? $biodata->user?->name),
+            'NIM' => $summary?->nim ?? $biodata->nim,
+            'Tempat Lahir' => $summary?->tempat_lahir ?? $dataAkademik?->tempat_lahir,
+            'Tanggal Lahir' => $summary?->tanggal_lahir ?? $dataAkademik?->tanggal_lahir,
+            'Agama' => $summary?->agama ?? $dataAkademik?->agama,
+            'Jenis Kelamin' => $summary?->jenis_kelamin ?? $dataAkademik?->jenis_kelamin,
+            'Nomor Telepon/HP' => $summary?->nomor_telepon ?? ($biodata->nomor_telepon ?? $dataAkademik?->nomor_telepon),
+            'Email Pribadi' => $summary?->email_pribadi ?? ($biodata->email_pribadi ?? $dataAkademik?->email_pribadi),
+            'Alamat Domisili Saat Ini' => $summary?->alamat ?? ($biodata->alamat ?? $dataAkademik?->alamat_saat_ini),
+            'NIK KTP' => $summary?->nik ?? ($biodata->nik ?? $dataAkademik?->nik),
+            'NPWP' => $summary?->npwp ?? $biodata->npwp,
 
             // Data Akademik
-            'IPK Kelulusan' => $dataAkademik?->ip_kumulatif,
-            'Tahun Kelulusan' => $dataAkademik?->tahun_lulus ? (string) $dataAkademik->tahun_lulus : $dataAkademik?->tahun_akademik_lulus,
+            'IPK Kelulusan' => $summary?->ipk ?? $dataAkademik?->ip_kumulatif,
+            'Tahun Kelulusan' => $summary?->tahun_lulus ? (string) $summary->tahun_lulus : ($dataAkademik?->tahun_lulus ? (string) $dataAkademik->tahun_lulus : $dataAkademik?->tahun_akademik_lulus),
 
             // Data Orang Tua
-            'Nama Orang Tua' => $orangTua?->nama_orang_tua,
-            'Pekerjaan Orang Tua' => $orangTua?->pekerjaan,
-            'Alamat Orang Tua' => $orangTua?->alamat,
-            'Nomor Telepon Orang Tua' => $orangTua?->nomor_telepon,
+            'Nama Orang Tua' => $summary?->nama_orang_tua ?? $orangTua?->nama_orang_tua,
+            'Pekerjaan Orang Tua' => $summary?->pekerjaan_orang_tua ?? $orangTua?->pekerjaan,
+            'Alamat Orang Tua' => $summary?->alamat_orang_tua ?? $orangTua?->alamat,
+            'Nomor Telepon Orang Tua' => $summary?->nomor_telepon_orang_tua ?? $orangTua?->nomor_telepon,
 
             // Data Perusahaan & Atasan
-            'Nama Perusahaan' => $perusahaan?->nama_perusahaan,
-            'Alamat Perusahaan' => $perusahaan?->alamat,
-            'Skala Perusahaan' => $perusahaan?->skala,
-            'Provinsi Perusahaan' => $perusahaan?->propinsi_id,
-            'Kabupaten Perusahaan' => $perusahaan?->kabupaten_id,
-            'Nama Atasan' => $atasan?->nama,
-            'Email Atasan' => $atasan?->email,
-            'Nomor Telepon Atasan' => $atasan?->telepon,
-            'Posisi Jabatan' => $biodata->posisi_jabatan,
+            'Nama Perusahaan' => $summary?->nama_perusahaan ?? $perusahaan?->nama_perusahaan,
+            'Alamat Perusahaan' => $summary?->alamat_perusahaan ?? $perusahaan?->alamat,
+            'Skala Perusahaan' => $summary?->skala_perusahaan ?? $perusahaan?->skala,
+            'Provinsi Perusahaan' => $summary?->propinsi_id ?? $perusahaan?->propinsi_id,
+            'Kabupaten Perusahaan' => $summary?->kabupaten_id ?? $perusahaan?->kabupaten_id,
+            'Nama Atasan' => $summary?->nama_atasan ?? $atasan?->nama,
+            'Email Atasan' => $summary?->email_atasan ?? $atasan?->email,
+            'Nomor Telepon Atasan' => $summary?->telepon_atasan ?? $atasan?->telepon,
+            'Posisi Jabatan' => $summary?->posisi_jabatan ?? $biodata->posisi_jabatan,
 
             // Data Media Sosial & Profesional Alumni (Tabel biodata)
-            'Keahlian (Skills)' => $biodata->skills ?? $biodata->expert,
-            'Pengalaman Kerja (Experience)' => $biodata->experience ?? $biodata->minat,
-            'LinkedIn Profil URL' => $biodata->linkedin_url,
-            'LinkedIn Username' => $biodata->linkedin_username,
-            'Instagram Profil URL' => $biodata->instagram_url,
-            'Facebook Profil URL' => $biodata->facebook_url,
-            'Kode Pos Perusahaan (Zipcode)' => $biodata->zipcode,
+            'Keahlian (Skills)' => $summary?->skills ?? ($biodata->skills ?? $biodata->expert),
+            'Pengalaman Kerja (Experience)' => $summary?->experience ?? ($biodata->experience ?? $biodata->minat),
+            'LinkedIn Profil URL' => $summary?->linkedin_url ?? $biodata->linkedin_url,
+            'LinkedIn Username' => $summary?->linkedin_username ?? $biodata->linkedin_username,
+            'Instagram Profil URL' => $summary?->instagram_url ?? $biodata->instagram_url,
+            'Facebook Profil URL' => $summary?->facebook_url ?? $biodata->facebook_url,
+            'Kode Pos Perusahaan (Zipcode)' => $summary?->kode_pos ?? $biodata->zipcode,
         ];
 
         $isTeologi = ($biodata->prodi?->kode_prodi === '31' || substr((string) $biodata->nim, 0, 2) === '31');

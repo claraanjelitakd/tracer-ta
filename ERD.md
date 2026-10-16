@@ -549,11 +549,15 @@ erDiagram
 ---
 
 ### F. Database Views Terkonsolidasi
+*(Dokumentasi kueri DDL lengkap dan kamus data tersedia di [`docs/database-views.md`](file:///c:/study/tracerstudy/docs/database-views.md))*
+
 1. **`v_alumni_audit_rekap`** (Model: [`AlumniAuditRekap`](file:///c:/study/tracerstudy/app/Models/AlumniAuditRekap.php)): View agregat utama 89 kolom yang menyatukan profil biodata, status kuesioner universitas, dan status kuesioner prodi untuk direktori alumni tanpa masalah query N+1.
 2. **`v_alumni_profile_summary`** (Model: [`AlumniProfileSummary`](file:///c:/study/tracerstudy/app/Models/AlumniProfileSummary.php)): View ringkasan profil lengkap 4 sub-tab (Pribadi, Akademik, Orang Tua, Karier).
 3. **`v_alumni_tracer_univ_status`** (Model: [`AlumniTracerUnivStatus`](file:///c:/study/tracerstudy/app/Models/AlumniTracerUnivStatus.php)): Menghitung persentase dan progres kelengkapan kuesioner universitas (otomatis mengecualikan butir identitas Seksi 1).
 4. **`v_alumni_tracer_prodi_status`** (Model: [`AlumniTracerProdiStatus`](file:///c:/study/tracerstudy/app/Models/AlumniTracerProdiStatus.php)): Menghitung status pengisian kuesioner mandiri program studi.
 5. **`v_alumni_kuesioner_autofill`** (Model: [`AlumniKuesionerAutofill`](file:///c:/study/tracerstudy/app/Models/AlumniKuesionerAutofill.php)): Pemetaan data profil alumni ke kode pertanyaan kuesioner untuk pengisian otomatis.
+6. **`v_question_mappings`** (Model: [`QuestionMapping`](file:///c:/study/tracerstudy/app/Models/QuestionMapping.php)): Tabel kamus relasional yang memetakan kode pertanyaan kuesioner dengan tabel dan kolom sumber basis data.
+7. **`v_alumni_linkedin_plot`** (Model: [`AlumniLinkedinPlot`](file:///c:/study/tracerstudy/app/Models/AlumniLinkedinPlot.php)): View perbandingan data scraping LinkedIn (`linkedin_sync_results`) berdampingan dengan profil `biodata`, dilengkapi verifikasi kecocokan nama alumni (`is_nama_sesuai`), deteksi kesamaan data perusahaan/posisi, dan status plot ke sistem (`status_plot_label`).
 
 ---
 

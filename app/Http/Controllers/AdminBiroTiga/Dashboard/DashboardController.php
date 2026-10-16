@@ -3,12 +3,11 @@
 namespace App\Http\Controllers\AdminBiroTiga\Dashboard;
 
 use App\Http\Controllers\Controller;
-use App\Models\Biodata;
 use App\Models\Perusahaan;
 use App\Models\Prodi;
 use App\Models\RefSubpertanyaan2021;
-use App\Models\Tracer;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 
 /**
@@ -33,18 +32,16 @@ class DashboardController extends Controller
         $user = $request->user();
 
         // -----------------------------------------------------------------
-        // 1. Perhitungan Metrik KPI Utama (Ringkasan Angka Statistik)
+        // 1. Perhitungan Metrik KPI Utama berbasis View (v_alumni_audit_rekap)
         // -----------------------------------------------------------------
 
-        // $totalAlumni: Menghitung jumlah seluruh baris data biodata di tabel 'biodatas'
-        $totalAlumni = Biodata::count();
+        // $totalAlumni: Menghitung jumlah seluruh baris data alumni dari database view v_alumni_audit_rekap
+        $totalAlumni = DB::table('v_alumni_audit_rekap')->count();
 
-        // $totalResponden: Menghitung berapa banyak alumni unik yang sudah mengisi minimal satu jawaban di tabel 'tracers'
-        // (distinct memastikan alumni yang jawab banyak pertanyaan hanya dihitung 1 responden)
-        $totalResponden = Tracer::distinct('biodata_id')->count('biodata_id');
+        // $totalResponden: Menghitung alumni yang sudah merespon pertanyaan kuesioner wajib universitas
+        $totalResponden = DB::table('v_alumni_audit_rekap')->where('answered_mandatory_univ', '>', 0)->count();
 
         // $persentaseRespon: Menghitung rasio responden dibandingkan total alumni dalam bentuk persen (misal: 65.5%)
-        // Rumus: (Total Responden / Total Alumni) * 100
         $persentaseRespon = $totalAlumni > 0 ? round(($totalResponden / $totalAlumni) * 100, 1) : 0;
 
         // $totalPertanyaan: Menghitung jumlah seluruh butir instrumen pertanyaan kuesioner di tabel 'ref_subpertanyaan2021'
@@ -54,8 +51,7 @@ class DashboardController extends Controller
         $totalProdi = Prodi::count();
 
         // $alumniLinkedIn: Menghitung jumlah alumni yang profilnya sudah terhubung dengan LinkedIn
-        // (kondisinya: kolom linkedin_url atau linkedin_username tidak kosong)
-        $alumniLinkedIn = Biodata::where(function ($q) {
+        $alumniLinkedIn = DB::table('v_alumni_audit_rekap')->where(function ($q) {
             $q->whereNotNull('linkedin_url')
                 ->where('linkedin_url', '!=', '')
                 ->orWhereNotNull('linkedin_username')
@@ -63,58 +59,59 @@ class DashboardController extends Controller
         })->count();
 
         // -----------------------------------------------------------------
-        // 2. Ringkasan Statistik Partisipasi per Program Studi
+        // 2. Ringkasan Statistik Partisipasi per Program Studi (Single Query)
         // -----------------------------------------------------------------
 
-        // $prodiSummaries: Mengambil daftar prodi beserta kalkulasi jumlah alumni & responden masing-masing prodi
-        $prodiSummaries = Prodi::withCount('biodatas') // Otomatis menambahkan kolom 'biodatas_count' pada setiap prodi
-            ->orderBy('kode_prodi', 'asc')
+        $statsPerProdi = DB::table('v_alumni_audit_rekap')
+            ->select(
+                'prodi_id',
+                DB::raw('COUNT(*) as total_alumni'),
+                DB::raw('SUM(CASE WHEN answered_mandatory_univ > 0 THEN 1 ELSE 0 END) as total_responden')
+            )
+            ->whereNotNull('prodi_id')
+            ->groupBy('prodi_id')
             ->get()
-            ->map(function ($prodi) {
-                // $respondenCount: Menghitung alumni di prodi ini yang sudah memiliki jawaban kuesioner (whereHas 'tracers')
-                $respondenCount = Biodata::where('prodi_id', $prodi->id)
-                    ->whereHas('tracers')
-                    ->count();
+            ->keyBy('prodi_id');
 
-                $totalBiodata = $prodi->biodatas_count ?? 0;
-
-                // $rate: Menghitung persentase tingkat partisipasi per prodi (contoh: 80.0%)
+        $prodiSummaries = Prodi::orderBy('kode_prodi', 'asc')
+            ->get()
+            ->map(function ($prodi) use ($statsPerProdi) {
+                $stat = $statsPerProdi->get($prodi->id);
+                $totalBiodata = (int) ($stat->total_alumni ?? 0);
+                $respondenCount = (int) ($stat->total_responden ?? 0);
                 $rate = $totalBiodata > 0
                     ? round(($respondenCount / $totalBiodata) * 100, 1)
                     : 0;
 
-                // Bentuk array rapi untuk dikirim ke tabel / grafik di Vue
                 return [
-                    'id' => $prodi->id,              // ID prodi
-                    'kode_prodi' => $prodi->kode_prodi,      // Kode prodi (misal: 71, 72)
-                    'nama_prodi' => $prodi->nama_prodi,      // Nama lengkap prodi (misal: Sistem Informasi)
-                    'total_alumni' => $totalBiodata,   // Total alumni terdaftar di prodi ini
-                    'total_responden' => $respondenCount,         // Total alumni yang sudah mengisi kuesioner
-                    'response_rate' => $rate,                   // Persentase partisipasi prodi (%)
+                    'id' => $prodi->id,
+                    'kode_prodi' => $prodi->kode_prodi,
+                    'nama_prodi' => $prodi->nama_prodi,
+                    'total_alumni' => $totalBiodata,
+                    'total_responden' => $respondenCount,
+                    'response_rate' => $rate,
                 ];
             });
 
         // -----------------------------------------------------------------
-        // 3. Data Alumni Terbaru untuk Pratinjau Cepat (Tabel 5 Teratas)
+        // 3. Data Alumni Terbaru untuk Pratinjau Cepat via v_alumni_audit_rekap
         // -----------------------------------------------------------------
 
         $totalPendingPerusahaan = Perusahaan::where('status_verifikasi', 'Menunggu Verifikasi')->count();
 
-        // $recentAlumni: Mengambil 8 alumni terbaru yang baru terdaftar atau diimpor
-        $recentAlumni = Biodata::with(['prodi', 'dataAkademik', 'user']) // Eager loading relasi agar database tidak lambat
-            ->latest() // Urutkan dari yang paling baru didaftarkan
-            ->take(8)  // Ambil 8 baris
+        $recentAlumni = DB::table('v_alumni_audit_rekap')
+            ->orderByDesc('biodata_id')
+            ->take(8)
             ->get()
             ->map(function ($alumni) {
-                // Merapikan data alumni untuk ditampilkan di tabel ringkasan dashboard Vue
                 return [
-                    'id' => $alumni->id,                                                     // ID alumni
-                    'nim' => $alumni->user?->username ?? $alumni->nim,                         // NIM alumni
-                    'nama' => $alumni->nama ?? $alumni->dataAkademik?->nama ?? $alumni->user?->name ?? 'Belum terisi', // Nama lengkap alumni
-                    'prodi' => $alumni->prodi?->nama_prodi ?? '-',                               // Nama prodi
-                    'tahun_lulus' => $alumni->tahun_lulus ?? $alumni->dataAkademik?->tahun_akademik_lulus ?? '-',
-                    'has_linkedin' => ! empty($alumni->linkedin_url) || ! empty($alumni->linkedin_username),  // Status LinkedIn (true/false)
-                    'has_responded' => $alumni->tracers()->exists(),                                  // Status sudah isi kuesioner (true/false)
+                    'id' => $alumni->biodata_id,
+                    'nim' => $alumni->nim ?? '-',
+                    'nama' => $alumni->nama ?? 'Belum terisi',
+                    'prodi' => $alumni->nama_prodi ?? '-',
+                    'tahun_lulus' => $alumni->tahun_lulus ?? $alumni->tahun_akademik_lulus ?? '-',
+                    'has_linkedin' => ! empty($alumni->linkedin_url) || ! empty($alumni->linkedin_username),
+                    'has_responded' => ((int) $alumni->answered_mandatory_univ) > 0,
                 ];
             });
 

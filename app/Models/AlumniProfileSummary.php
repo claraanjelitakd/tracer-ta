@@ -59,4 +59,19 @@ class AlumniProfileSummary extends Model
     {
         return $this->belongsTo(RefFakultas::class, 'fakultas_id');
     }
+
+    public function perusahaan(): BelongsTo
+    {
+        return $this->belongsTo(Perusahaan::class, 'perusahaan_id');
+    }
+
+    public function propinsi(): BelongsTo
+    {
+        return $this->belongsTo(Propinsi::class, 'propinsi_id');
+    }
+
+    public function kabupaten(): BelongsTo
+    {
+        return $this->belongsTo(Kabupaten::class, 'kabupaten_id');
+    }
 }

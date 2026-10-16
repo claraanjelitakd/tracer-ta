@@ -2,6 +2,27 @@
 
 Semua perubahan besar pada sistem dicatat dalam dokumen ini.
 
+## [2026-10-17]
+- **Dokumentasi Lengkap & Kueri DDL Seluruh Database Views ([`database-views.md`](file:///c:/study/tracerstudy/docs/database-views.md) & [`ERD.md`](file:///c:/study/tracerstudy/ERD.md))**:
+  - Menyusun dokumen panduan teknis terpusat [`docs/database-views.md`](file:///c:/study/tracerstudy/docs/database-views.md) yang merangkum latar belakang arsitektur (eliminasi query N+1), diagram hierarki ketergantungan view (Mermaid), kamus data per view, dan skrip DDL SQL lengkap (*ready-to-run*) untuk seluruh 7 database views:
+    1. `v_alumni_profile_summary`: Rekapitulasi profil lengkap 4 sub-tab (Pribadi, Akademik, Orang Tua, Karier).
+    2. `v_alumni_tracer_univ_status`: Agregasi kelengkapan kuesioner universitas dengan *skip logic* status F8 dan F502/F506.
+    3. `v_alumni_tracer_prodi_status`: Agregasi butir kuesioner mandiri program studi per alumni.
+    4. `v_alumni_audit_rekap`: Master audit 89 kolom untuk dashboard & audit direktori.
+    5. `v_alumni_kuesioner_autofill`: Pemetaan atribut profil ke kode butir kuesioner (F1, F2A-F2H, F5B-F5D, F510, F8, dll).
+    6. `v_question_mappings`: Kamus relasi butir kuesioner dengan tabel sumber basis data.
+    7. `v_alumni_linkedin_plot`: Pemetaan data scraping LinkedIn ke biodata alumni, verifikasi kesesuaian nama (eksak/parsial), dan deteksi kesamaan perusahaan/posisi.
+  - Menyediakan *All-in-One Master SQL Runner Script* untuk mengeksekusi dan membuat ulang seluruh 7 view sesuai urutan dependensinya.
+- **Implementasi Database View Hasil Scraping LinkedIn ([`v_alumni_linkedin_plot`](file:///c:/study/tracerstudy/database/migrations/2026_10_17_000000_create_v_alumni_linkedin_plot_view.php) & [`AlumniLinkedinPlot.php`](file:///c:/study/tracerstudy/app/Models/AlumniLinkedinPlot.php))**:
+  - Membuat Database View `v_alumni_linkedin_plot` dan model Eloquent [`AlumniLinkedinPlot`](file:///c:/study/tracerstudy/app/Models/AlumniLinkedinPlot.php) yang memetakan data staging LinkedIn (`linkedin_sync_results`) berdampingan dengan profil aktual `biodata`.
+  - Dilengkapi logika verifikasi kesesuaian nama (`is_nama_sesuai`, `keterangan_nama`), deteksi plot ke biodata (`is_terplot_ke_biodata`), dan status plotting (`status_plot_label`).
+  - Dilengkapi query scopes: `scopeNamaSesuai()`, `scopeTerplot()`, dan `scopePendingReview()`.
+- **Refactoring Dashboard Controllers & Export Excel Menggunakan Database Views**:
+  - Merefaktor [`DashboardController.php`](file:///c:/study/tracerstudy/app/Http/Controllers/AdminProdi/Dashboard/DashboardController.php) (Admin Prodi), [`DashboardController.php`](file:///c:/study/tracerstudy/app/Http/Controllers/SuperAdmin/Dashboard/DashboardController.php) (Super Admin), dan [`DashboardController.php`](file:///c:/study/tracerstudy/app/Http/Controllers/AdminBiroTiga/Dashboard/DashboardController.php) (Biro 3) dari perulangan PHP N+1 menjadi kueri agregasi cepat berbasis `v_alumni_audit_rekap`.
+  - Merefaktor [`AlumniTracerExcelExporter.php`](file:///c:/study/tracerstudy/app/Services/Export/AlumniTracerExcelExporter.php) untuk menggunakan `v_alumni_profile_summary` sebagai sumber data profil primer.
+- **Verifikasi Pengujian Otomatis (Automated Tests)**:
+  - Seluruh pengujian fitur lulus 100%: [`AlumniLinkedinPlotViewTest.php`](file:///c:/study/tracerstudy/tests/Feature/AlumniLinkedinPlotViewTest.php) (6 lulus, 31 assertions), `AdminProdiDashboardTest.php` (2 lulus, 19 assertions), `SuperAdminDashboardTest.php` (2 lulus, 18 assertions), `BiroTigaDashboardTest.php` (3 lulus, 14 assertions), dan 47 tes LinkedIn suite lulus (165 assertions).
+
 ## [2026-10-15]
 - **Transparansi Hasil Sinkronisasi LinkedIn & Manajemen Keahlian (Skills) ([`Index.vue`](file:///c:/study/tracerstudy/resources/js/Pages/SuperAdmin/LinkedIn/Index.vue), [`LinkedinSyncResult.php`](file:///c:/study/tracerstudy/app/Models/LinkedinSyncResult.php), [`LinkedInSyncController.php`](file:///c:/study/tracerstudy/app/Http/Controllers/SuperAdmin/LinkedIn/LinkedInSyncController.php))**:
   - Memperluas modal peninjauan hasil sinkronisasi LinkedIn (`max-w-5xl`) dengan tab switcher:

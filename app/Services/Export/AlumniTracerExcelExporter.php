@@ -2,6 +2,8 @@
 
 namespace App\Services\Export;
 
+use App\Models\AlumniAuditRekap;
+use App\Models\AlumniProfileSummary;
 use App\Models\Biodata;
 use App\Models\EvaluasiAtasan;
 use App\Models\Kuesioner;
@@ -91,8 +93,9 @@ class AlumniTracerExcelExporter
 
         KuesionerSyncService::syncProfileResponses($alumni);
 
-        // Ambil status evaluasi tracer study
-        $evaluasi = KelengkapanTracerService::evaluasiKelengkapanTotal($alumni);
+        // Ambil status audit rekapitulasi kelengkapan tracer study dari Database View
+        $auditRekap = $alumni->auditRekap ?? AlumniAuditRekap::where('biodata_id', $alumni->id)->first();
+        $summary = $auditRekap ?? ($alumni->profileSummary ?? AlumniProfileSummary::where('biodata_id', $alumni->id)->first());
 
         // Ambil seluruh jawaban kuesioner umum
         $savedResponses = Tracer::where('biodata_id', $alumni->id)
@@ -144,75 +147,83 @@ class AlumniTracerExcelExporter
         $perusahaan = $alumni->perusahaan;
         $atasan = $alumni->atasan;
 
-        // 1. Data Pribadi & Kontak
-        $namaLengkap = $alumni->nama ?: ($dataAkademik?->nama ?: ($alumni->user?->name ?: '-'));
-        $nik = $alumni->nik ?: ($dataAkademik?->nik ?: '-');
-        $npwp = $alumni->npwp ?: '-';
-        $noKk = $alumni->no_kk ?: ($dataAkademik?->no_kk ?: '-');
-        $noBpjs = $alumni->no_bpjs ?: ($dataAkademik?->no_bpjs ?: '-');
-        $nisn = $alumni->nisn ?: ($dataAkademik?->nisn ?: '-');
-        $jenisKelamin = $dataAkademik?->jenis_kelamin ?: '-';
-        $tempatLahir = $dataAkademik?->tempat_lahir ?: '-';
-        $tanggalLahir = $dataAkademik?->tanggal_lahir ? date('d-m-Y', strtotime($dataAkademik->tanggal_lahir)) : '-';
-        $agama = $dataAkademik?->agama ?: '-';
-        $golDarah = $dataAkademik?->golongan_darah ?: '-';
-        $wargaNegara = $dataAkademik?->warga_negara ?: 'WNI';
-        $telepon = $alumni->nomor_telepon ?: ($dataAkademik?->nomor_telepon ?: '-');
-        $emailPribadi = $alumni->email_pribadi ?: ($dataAkademik?->email_pribadi ?: '-');
-        $emailKampus = $dataAkademik?->email_students ?: '-';
-        $linkedin = $alumni->linkedin_url ?: ($alumni->linkedin_username ?: '-');
-        $medsos = trim(($alumni->instagram_url ? 'IG: '.$alumni->instagram_url : '').($alumni->facebook_url ? ' | FB: '.$alumni->facebook_url : '')) ?: '-';
-        $skills = $alumni->skills ?: ($alumni->expert ?: '-');
-        $experience = $alumni->experience ?: ($alumni->minat ?: '-');
-        $alamatDomisiliLengkap = $alumni->alamat ?: ($dataAkademik?->alamat_saat_ini ?: '-');
+        // 1. Data Pribadi & Kontak (Diutamakan dari view v_alumni_profile_summary)
+        $namaLengkap = $summary?->nama ?: ($alumni->nama ?: ($dataAkademik?->nama ?: ($alumni->user?->name ?: '-')));
+        $nik = $summary?->nik ?: ($alumni->nik ?: ($dataAkademik?->nik ?: '-'));
+        $npwp = $summary?->npwp ?: ($alumni->npwp ?: '-');
+        $noKk = $summary?->no_kk ?: ($alumni->no_kk ?: ($dataAkademik?->no_kk ?: '-'));
+        $noBpjs = $summary?->no_bpjs ?: ($alumni->no_bpjs ?: ($dataAkademik?->no_bpjs ?: '-'));
+        $nisn = $summary?->nisn ?: ($alumni->nisn ?: ($dataAkademik?->nisn ?: '-'));
+        $jenisKelamin = $summary?->jenis_kelamin ?: ($dataAkademik?->jenis_kelamin ?: '-');
+        $tempatLahir = $summary?->tempat_lahir ?: ($dataAkademik?->tempat_lahir ?: '-');
+        $tglLahirVal = $summary?->tanggal_lahir ?: $dataAkademik?->tanggal_lahir;
+        $tanggalLahir = $tglLahirVal ? date('d-m-Y', strtotime($tglLahirVal)) : '-';
+        $agama = $summary?->agama ?: ($dataAkademik?->agama ?: '-');
+        $golDarah = $summary?->golongan_darah ?: ($dataAkademik?->golongan_darah ?: '-');
+        $wargaNegara = $summary?->warga_negara ?: ($dataAkademik?->warga_negara ?: 'WNI');
+        $telepon = $summary?->nomor_telepon ?: ($alumni->nomor_telepon ?: ($dataAkademik?->nomor_telepon ?: '-'));
+        $emailPribadi = $summary?->email_pribadi ?: ($alumni->email_pribadi ?: ($dataAkademik?->email_pribadi ?: '-'));
+        $emailKampus = $summary?->email_students ?: ($dataAkademik?->email_students ?: '-');
+        $linkedin = $summary?->linkedin_url ?: ($summary?->linkedin_username ?: ($alumni->linkedin_url ?: ($alumni->linkedin_username ?: '-')));
+        $ig = $summary?->instagram_url ?: $alumni->instagram_url;
+        $fb = $summary?->facebook_url ?: $alumni->facebook_url;
+        $medsos = trim(($ig ? 'IG: '.$ig : '').($fb ? ' | FB: '.$fb : '')) ?: '-';
+        $skills = $summary?->skills ?: ($alumni->skills ?: ($alumni->expert ?: '-'));
+        $experience = $summary?->experience ?: ($alumni->experience ?: ($alumni->minat ?: '-'));
+        $alamatDomisiliLengkap = $summary?->alamat ?: ($alumni->alamat ?: ($dataAkademik?->alamat_saat_ini ?: '-'));
 
         // 2. Data Akademik
-        $prodiNama = $alumni->prodi?->nama_prodi ?: ($dataAkademik?->prodi?->nama_prodi ?: '-');
-        $fakultasNama = $alumni->prodi?->fakultas?->nama_fakultas ?: '-';
-        $angkatanMasuk = $dataAkademik?->angkatan_masuk ?: '-';
-        $statusMahasiswa = $dataAkademik?->status_mahasiswa === 'L' ? 'Lulus' : ($dataAkademik?->status_mahasiswa ?: '-');
-        $tahunLulus = $alumni->tahun_lulus
+        $prodiNama = $summary?->nama_prodi ?: ($alumni->prodi?->nama_prodi ?: ($dataAkademik?->prodi?->nama_prodi ?: '-'));
+        $fakultasNama = $summary?->nama_fakultas ?: ($alumni->prodi?->fakultas?->nama_fakultas ?: '-');
+        $angkatanMasuk = $summary?->angkatan_masuk ?: ($dataAkademik?->angkatan_masuk ?: '-');
+        $statusMhsVal = $summary?->status_mahasiswa ?: $dataAkademik?->status_mahasiswa;
+        $statusMahasiswa = $statusMhsVal === 'L' ? 'Lulus' : ($statusMhsVal ?: '-');
+        $tahunLulus = $summary?->tahun_lulus
+            ?: ($alumni->tahun_lulus
             ?: ($yudisium?->tahun_lulus
             ?: ($dataAkademik?->tahun_lulus
             ?: ($yudisium?->tahun_akademik_lulus
-            ?: ($dataAkademik?->tahun_akademik_lulus ?: '-'))));
-        $semesterLulus = $yudisium?->tahun_akademik_lulus ?: ($dataAkademik?->tahun_akademik_lulus ?: '-');
-        $ipk = $dataAkademik?->ip_kumulatif ?: '-';
-        $totalSks = $dataAkademik?->total_sks ?: '-';
-        $totalAngkaKualitas = $dataAkademik?->total_angka_kualitas ?: '-';
-        $asalSekolah = $dataAkademik?->asal_sekolah ?: '-';
-        $jurusanSekolah = $dataAkademik?->jurusan_asal_sekolah ?: '-';
-        $alamatSekolah = $dataAkademik?->alamat_asal_sekolah ?: '-';
-        $wilayahSekolah = trim(($dataAkademik?->kota_kabupaten_asal_sekolah ? $dataAkademik->kota_kabupaten_asal_sekolah : '').($dataAkademik?->provinsi_asal_sekolah ? ', '.$dataAkademik->provinsi_asal_sekolah : '')) ?: '-';
+            ?: ($dataAkademik?->tahun_akademik_lulus ?: '-')))));
+        $semesterLulus = $summary?->tahun_akademik_lulus ?: ($yudisium?->tahun_akademik_lulus ?: ($dataAkademik?->tahun_akademik_lulus ?: '-'));
+        $ipk = $summary?->ipk ?: ($dataAkademik?->ip_kumulatif ?: '-');
+        $totalSks = $summary?->total_sks ?: ($dataAkademik?->total_sks ?: '-');
+        $totalAngkaKualitas = $summary?->total_angka_kualitas ?: ($dataAkademik?->total_angka_kualitas ?: '-');
+        $asalSekolah = $summary?->asal_sekolah ?: ($dataAkademik?->asal_sekolah ?: '-');
+        $jurusanSekolah = $summary?->jurusan_asal_sekolah ?: ($dataAkademik?->jurusan_asal_sekolah ?: '-');
+        $alamatSekolah = $summary?->alamat_asal_sekolah ?: ($dataAkademik?->alamat_asal_sekolah ?: '-');
+        $kotaSekolah = $summary?->kota_kabupaten_asal_sekolah ?: $dataAkademik?->kota_kabupaten_asal_sekolah;
+        $provSekolah = $summary?->provinsi_asal_sekolah ?: $dataAkademik?->provinsi_asal_sekolah;
+        $wilayahSekolah = trim(($kotaSekolah ? $kotaSekolah : '').($provSekolah ? ', '.$provSekolah : '')) ?: '-';
 
         // 3. Data Orang Tua / Wali
-        $namaOrtu = $orangTua?->nama_orang_tua ?: '-';
-        $pekerjaanOrtu = $orangTua?->pekerjaan ?: '-';
-        $teleponOrtu = $orangTua?->nomor_telepon ?: '-';
-        $kotaOrtu = $orangTua?->kota ?: ($orangTua?->kabupaten?->nama_kabupaten ?: '-');
-        $alamatOrtu = $orangTua?->alamat ?: '-';
-        $kodePosOrtu = $orangTua?->kode_pos ?: '-';
+        $namaOrtu = $summary?->nama_orang_tua ?: ($orangTua?->nama_orang_tua ?: '-');
+        $pekerjaanOrtu = $summary?->pekerjaan_orang_tua ?: ($orangTua?->pekerjaan ?: '-');
+        $teleponOrtu = $summary?->nomor_telepon_orang_tua ?: ($orangTua?->nomor_telepon ?: '-');
+        $kotaOrtu = $summary?->kode_orang_tua ?: ($orangTua?->kota ?: ($orangTua?->kabupaten?->nama_kabupaten ?: '-'));
+        $alamatOrtu = $summary?->alamat_orang_tua ?: ($orangTua?->alamat ?: '-');
+        $kodePosOrtu = $summary?->kode_pos_orang_tua ?: ($orangTua?->kode_pos ?: '-');
 
         // 4. Data Karier, Perusahaan & Atasan
-        $kategoriPekerjaan = $alumni->kategori_pekerjaan ?: '-';
-        $posisiJabatan = $alumni->posisi_jabatan ?: ($alumni->posisi_wiraswasta ?: '-');
-        $posisiWiraswasta = $alumni->posisi_wiraswasta ?: '-';
-        $gaji = $alumni->gaji ? 'Rp '.number_format((float) $alumni->gaji, 0, ',', '.') : '-';
-        $jenisPekerjaan = $alumni->jenis_pekerjaan ?: ($perusahaan?->jenis_perusahaan ?: ($alumni->kategori_pekerjaan ?: '-'));
-        $namaPerusahaan = $perusahaan?->nama_perusahaan ?: '-';
-        $sektorPerusahaan = $perusahaan?->sektor ?: '-';
-        $skalaPerusahaan = $perusahaan?->skala ?: '-';
-        $jenisPerusahaan = $perusahaan?->jenis_perusahaan ?: ($alumni->jenis_pekerjaan ?: '-');
-        $lokasiPerusahaan = $perusahaan?->jenis_lokasi ?: '-';
-        $negaraPerusahaan = $perusahaan?->negara ?: 'Indonesia';
-        $alamatPerusahaan = $perusahaan?->alamat ?: '-';
-        $kodePosPerusahaan = $perusahaan?->kode_pos ?: ($alumni->zipcode ?: '-');
-        $namaAtasan = $atasan?->nama ?: '-';
-        $teleponAtasan = $atasan?->telepon ?: '-';
-        $emailAtasan = $atasan?->email ?: '-';
-        $tingkatPendidikanLanjut = $alumni->pendidikan_tingkat ?: '-';
-        $kampusLanjut = $alumni->perguruan_tinggi ?: '-';
-        $prodiLanjut = $alumni->pendidikan_prodi ?: '-';
+        $kategoriPekerjaan = $summary?->kategori_pekerjaan ?: ($alumni->kategori_pekerjaan ?: '-');
+        $posisiJabatan = $summary?->posisi_jabatan ?: ($alumni->posisi_jabatan ?: ($alumni->posisi_wiraswasta ?: '-'));
+        $posisiWiraswasta = $summary?->posisi_wiraswasta ?: ($alumni->posisi_wiraswasta ?: '-');
+        $gajiVal = $summary?->gaji ?: $alumni->gaji;
+        $gaji = $gajiVal ? 'Rp '.number_format((float) $gajiVal, 0, ',', '.') : '-';
+        $jenisPekerjaan = $summary?->jenis_pekerjaan ?: ($alumni->jenis_pekerjaan ?: ($perusahaan?->jenis_perusahaan ?: ($alumni->kategori_pekerjaan ?: '-')));
+        $namaPerusahaan = $summary?->nama_perusahaan ?: ($perusahaan?->nama_perusahaan ?: '-');
+        $sektorPerusahaan = $summary?->sektor_perusahaan ?: ($perusahaan?->sektor ?: '-');
+        $skalaPerusahaan = $summary?->skala_perusahaan ?: ($perusahaan?->skala ?: '-');
+        $jenisPerusahaan = $summary?->jenis_perusahaan ?: ($perusahaan?->jenis_perusahaan ?: ($alumni->jenis_pekerjaan ?: '-'));
+        $lokasiPerusahaan = $summary?->jenis_lokasi_perusahaan ?: ($perusahaan?->jenis_lokasi ?: '-');
+        $negaraPerusahaan = $summary?->negara_perusahaan ?: ($perusahaan?->negara ?: 'Indonesia');
+        $alamatPerusahaan = $summary?->alamat_perusahaan ?: ($perusahaan?->alamat ?: '-');
+        $kodePosPerusahaan = $summary?->kode_pos ?: ($perusahaan?->kode_pos ?: ($alumni->zipcode ?: '-'));
+        $namaAtasan = $summary?->nama_atasan ?: ($atasan?->nama ?: '-');
+        $teleponAtasan = $summary?->telepon_atasan ?: ($atasan?->telepon ?: '-');
+        $emailAtasan = $summary?->email_atasan ?: ($atasan?->email ?: '-');
+        $tingkatPendidikanLanjut = $summary?->pendidikan_tingkat ?: ($alumni->pendidikan_tingkat ?: '-');
+        $kampusLanjut = $summary?->perguruan_tinggi ?: ($alumni->perguruan_tinggi ?: '-');
+        $prodiLanjut = $summary?->pendidikan_prodi ?: ($alumni->pendidikan_prodi ?: '-');
 
         // 5. Data Evaluasi Atasan
         $atasanEvaluatorNama = $evaluasiAtasan?->atasan?->nama ?: ($atasan?->nama ?: '-');
