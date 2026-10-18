@@ -41,7 +41,7 @@ defineProps({
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
             <div>
                 <div class="flex items-center gap-2 mb-1.5">
-                    <span class="inline-block bg-[#005B3C] text-white text-[10px] sm:text-[11px] font-black uppercase px-2.5 py-0.5 rounded-md tracking-wider shadow-2xs">
+                    <span class="inline-block bg-[#0D542B] text-white text-[10px] sm:text-[11px] font-bold uppercase px-2 py-0.5 rounded tracking-wider shadow-2xs">
                         BAGIAN {{ currentIndex + 1 }} DARI {{ totalSections }}
                     </span>
                     <span class="text-[11px] sm:text-xs text-gray-500 font-bold">
@@ -49,19 +49,19 @@ defineProps({
                     </span>
                 </div>
                 <!-- Judul Nama Bagian -->
-                <h1 class="text-xl sm:text-2xl md:text-3xl font-black text-gray-900 tracking-tight leading-snug">
+                <h1 class="text-xl sm:text-2xl md:text-3xl font-extrabold text-gray-900 tracking-tight leading-snug">
                     {{ title }}
                 </h1>
                 <!-- Petunjuk Singkat -->
                 <p class="text-gray-600 font-medium text-xs sm:text-sm mt-1">
                     <span v-if="description && !description.toLowerCase().includes('wajib diisi')">
-                        {{ description }} Kolom bertanda <span class="text-red-500 font-black">*</span> wajib diisi.
+                        {{ description }} Kolom bertanda <span class="text-rose-500 font-bold">*</span> wajib diisi.
                     </span>
                     <span v-else-if="description">
                         {{ description }}
                     </span>
                     <span v-else>
-                        Pilih jawaban yang paling sesuai. Kolom bertanda <span class="text-red-500 font-black">*</span> wajib diisi.
+                        Pilih jawaban yang paling sesuai. Kolom bertanda <span class="text-rose-500 font-bold">*</span> wajib diisi.
                     </span>
                 </p>
             </div>

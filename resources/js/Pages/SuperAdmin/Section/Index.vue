@@ -542,25 +542,30 @@ const handleDeleteKuesioner = (k) => {
                 </div>
 
                 <!-- Tabel Data Bagian Kuesioner -->
-                <div class="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-2xs">
-                    <table class="w-full text-left border-collapse text-xs">
+                <div class="bg-white border border-gray-300 overflow-x-auto shadow-2xs">
+                    <table class="w-full min-w-full text-left border-collapse border border-gray-300 text-xs bg-white">
                         <thead>
-                            <tr class="bg-gray-50 border-b border-gray-200 text-gray-600 font-bold uppercase tracking-wider text-[11px]">
-                                <th class="py-3 px-3 w-16 text-center">Urut</th>
-                                <th class="py-3 px-4">Judul & Deskripsi Bagian</th>
-                                <th class="py-3 px-4 w-52">Kuesioner Induk</th>
-                                <th class="py-3 px-3 w-32 text-center">Jumlah Soal</th>
-                                <th class="py-3 px-3 w-28 text-center">Aksi</th>
+                            <tr class="bg-gray-100 text-gray-800 font-semibold border-b border-gray-300 text-[11px] whitespace-nowrap">
+                                <th class="border border-gray-300 px-2.5 py-2 text-center w-16 whitespace-nowrap">Urut</th>
+                                <th class="border border-gray-300 px-3 py-2 whitespace-nowrap">Judul & Deskripsi Bagian</th>
+                                <th class="border border-gray-300 px-3 py-2 w-52 whitespace-nowrap">Kuesioner Induk</th>
+                                <th class="border border-gray-300 px-3 py-2 w-32 text-center whitespace-nowrap">Jumlah Soal</th>
+                                <th class="border border-gray-300 px-2.5 py-2 text-center w-28 whitespace-nowrap">Aksi</th>
                             </tr>
                         </thead>
-                        <tbody class="divide-y divide-gray-200">
+                        <tbody>
+                            <tr v-if="filteredSections.length === 0">
+                                <td colspan="5" class="border border-gray-300 p-8 text-center text-gray-400 italic">
+                                    Tidak ada bagian kuesioner yang sesuai kriteria pencarian.
+                                </td>
+                            </tr>
                             <tr
                                 v-for="(sec, index) in filteredSections"
                                 :key="sec.id"
-                                class="hover:bg-slate-50/70 transition-colors"
+                                class="hover:bg-gray-50/80 transition-colors"
                             >
                                 <!-- Urutan -->
-                                <td class="py-3 px-2 text-center">
+                                <td class="border border-gray-300 px-2.5 py-2 text-center">
                                     <div class="flex items-center justify-center gap-1">
                                         <span class="font-bold text-gray-700 text-xs">{{ sec.order }}</span>
                                         <div class="flex flex-col gap-0.5">
@@ -591,7 +596,7 @@ const handleDeleteKuesioner = (k) => {
                                 </td>
 
                                 <!-- Judul & Deskripsi -->
-                                <td class="py-3 px-4">
+                                <td class="border border-gray-300 px-3 py-2">
                                     <span class="font-bold text-gray-900 text-xs block">
                                         {{ sec.title }}
                                     </span>
@@ -604,7 +609,7 @@ const handleDeleteKuesioner = (k) => {
                                 </td>
 
                                 <!-- Kuesioner Induk -->
-                                <td class="py-3 px-4">
+                                <td class="border border-gray-300 px-3 py-2">
                                     <span class="text-gray-700 font-medium">
                                         {{ sec.kuesioner?.title || sec.questionnaire?.title || 'Kuesioner Umum' }}
                                         <span v-if="sec.kuesioner?.year || sec.questionnaire?.year" class="text-gray-500 text-[11px]">
@@ -614,7 +619,7 @@ const handleDeleteKuesioner = (k) => {
                                 </td>
 
                                 <!-- Jumlah Soal -->
-                                <td class="py-3 px-3 text-center">
+                                <td class="border border-gray-300 px-3 py-2 text-center">
                                     <Link
                                         :href="`/superadmin/pertanyaan?sec_id=${sec.id}`"
                                         class="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-emerald-50 text-emerald-800 hover:bg-emerald-100 font-semibold text-[11px] border border-emerald-200 transition-colors"
@@ -628,14 +633,14 @@ const handleDeleteKuesioner = (k) => {
                                 </td>
 
                                 <!-- Aksi -->
-                                <td class="py-3 px-3 text-center">
+                                <td class="border border-gray-300 px-2.5 py-2 text-center">
                                     <div class="flex items-center justify-center gap-1">
                                         <!-- Detail (Mata) -->
                                         <button
                                             type="button"
                                             @click="openDetailModal(sec)"
                                             title="Detail Bagian"
-                                            class="p-1 text-gray-500 hover:text-gray-900 hover:bg-gray-100 rounded cursor-pointer"
+                                            class="p-1 text-blue-600 hover:bg-blue-50 rounded cursor-pointer transition-colors"
                                         >
                                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -648,7 +653,7 @@ const handleDeleteKuesioner = (k) => {
                                             type="button"
                                             @click="openSectionModal(sec)"
                                             title="Sunting Bagian"
-                                            class="p-1 text-gray-500 hover:text-emerald-800 hover:bg-emerald-50 rounded cursor-pointer"
+                                            class="p-1 text-amber-600 hover:bg-amber-50 rounded cursor-pointer transition-colors"
                                         >
                                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
@@ -660,21 +665,13 @@ const handleDeleteKuesioner = (k) => {
                                             type="button"
                                             @click="handleDeleteSection(sec)"
                                             title="Hapus Bagian"
-                                            class="p-1 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded cursor-pointer"
+                                            class="p-1 text-rose-600 hover:bg-rose-50 rounded cursor-pointer transition-colors"
                                         >
                                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                                             </svg>
                                         </button>
                                     </div>
-                                </td>
-                            </tr>
-
-                            <!-- Empty State -->
-                            <tr v-if="filteredSections.length === 0">
-                                <td colspan="5" class="py-10 text-center text-gray-500">
-                                    <p class="font-bold text-gray-700">Tidak ada bagian yang cocok</p>
-                                    <p class="text-xs text-gray-400 mt-1">Coba gunakan kata kunci pencarian yang lain.</p>
                                 </td>
                             </tr>
                         </tbody>

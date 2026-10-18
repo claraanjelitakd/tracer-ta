@@ -113,9 +113,9 @@ const lockedInputClass = "block w-full border border-gray-200 bg-gray-100 text-g
             </p>
 
             <!-- Foto Profil Resmi Alumni -->
-            <div class="mb-6 p-4 sm:p-5 bg-gradient-to-r from-emerald-50/60 via-slate-50 to-white rounded-2xl border border-emerald-100 flex flex-col sm:flex-row items-center sm:items-start gap-5">
+            <div class="mb-6 p-4 sm:p-5 bg-slate-50 rounded-2xl border border-slate-200 flex flex-col sm:flex-row items-center sm:items-start gap-5">
                 <div class="relative shrink-0">
-                    <div class="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl overflow-hidden shadow-md border-2 border-white bg-slate-100 flex items-center justify-center">
+                    <div class="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl overflow-hidden shadow-xs border-2 border-white bg-slate-100 flex items-center justify-center">
                         <img 
                             v-if="fotoPreview" 
                             :src="fotoPreview" 
@@ -135,7 +135,7 @@ const lockedInputClass = "block w-full border border-gray-200 bg-gray-100 text-g
                     </div>
                     <span 
                         v-if="fotoPreview || form.foto" 
-                        class="absolute -bottom-1.5 -right-1.5 px-2 py-0.5 bg-[#005B3C] text-white text-[10px] font-black rounded-full shadow-xs flex items-center gap-1"
+                        class="absolute -bottom-1.5 -right-1.5 px-2 py-0.5 bg-[#0D542B] text-white text-[10px] font-bold rounded-full shadow-xs flex items-center gap-1"
                     >
                         <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"></path></svg>
                         Aktif
@@ -144,11 +144,11 @@ const lockedInputClass = "block w-full border border-gray-200 bg-gray-100 text-g
 
                 <div class="flex-1 text-center sm:text-left space-y-2">
                     <div class="flex flex-wrap items-center justify-center sm:justify-start gap-2">
-                        <h3 class="text-sm font-black text-gray-900">Foto Profil Mahasiswa / Alumni</h3>
-                        <span v-if="form.foto && typeof form.foto === 'string' && form.foto.includes('uploads/profile')" class="px-2 py-0.5 bg-emerald-100 text-emerald-800 text-[10px] font-bold rounded-md">
+                        <h3 class="text-sm font-bold text-gray-900">Foto Profil Mahasiswa / Alumni</h3>
+                        <span v-if="form.foto && typeof form.foto === 'string' && form.foto.includes('uploads/profile')" class="px-2 py-0.5 bg-slate-200 text-slate-700 text-[10px] font-bold rounded-md">
                             Tersinkron LinkedIn / Terverifikasi
                         </span>
-                        <span v-else-if="form.foto" class="px-2 py-0.5 bg-sky-100 text-sky-800 text-[10px] font-bold rounded-md">
+                        <span v-else-if="form.foto" class="px-2 py-0.5 bg-slate-200 text-slate-700 text-[10px] font-bold rounded-md">
                             Foto Tersedia
                         </span>
                         <span v-else class="px-2 py-0.5 bg-amber-100 text-amber-800 text-[10px] font-bold rounded-md">
@@ -173,7 +173,7 @@ const lockedInputClass = "block w-full border border-gray-200 bg-gray-100 text-g
                             @click="triggerFileInput" 
                             class="px-3.5 py-1.5 bg-white hover:bg-gray-50 border border-gray-300 rounded-xl text-xs font-bold text-gray-700 transition shadow-2xs cursor-pointer flex items-center gap-1.5"
                         >
-                            <svg class="w-3.5 h-3.5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                            <svg class="w-3.5 h-3.5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4 4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
                             <span>{{ form.foto ? 'Ganti Foto' : 'Unggah Foto' }}</span>
                         </button>
 
@@ -181,7 +181,7 @@ const lockedInputClass = "block w-full border border-gray-200 bg-gray-100 text-g
                             v-if="form.foto && typeof form.foto === 'string'" 
                             :href="form.foto" 
                             target="_blank" 
-                            class="px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-[#005B3C] rounded-xl text-xs font-bold transition flex items-center gap-1"
+                            class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition flex items-center gap-1"
                         >
                             <span>Buka Foto Penuh</span>
                             <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
@@ -244,8 +244,7 @@ const lockedInputClass = "block w-full border border-gray-200 bg-gray-100 text-g
                         :value="form.npwp" 
                         @input="handleNpwpInput"
                         maxlength="16"
-                        class="block w-full border rounded-xl shadow-2xs px-4 py-3 text-sm font-mono font-bold transition-all focus:ring-2 focus:ring-[#005B3C]/20"
-                        :class="isValidNpwp(form.npwp) ? 'border-emerald-300 bg-white text-gray-900 focus:border-[#005B3C]' : 'border-rose-300 bg-rose-50/20 text-gray-900 focus:border-rose-500'"
+                        class="block w-full border border-gray-300 bg-white text-gray-900 rounded-xl shadow-xs px-4 py-3 text-sm font-mono font-medium transition-colors focus:border-[#0D542B] focus:ring-1 focus:ring-[#0D542B] outline-none"
                         placeholder="16 Digit NIK / 15 Digit NPWP" 
                     />
                     <p class="text-[11px] text-gray-400 mt-1 font-medium">
@@ -419,8 +418,7 @@ const lockedInputClass = "block w-full border border-gray-200 bg-gray-100 text-g
                         :value="form.nomor_telepon" 
                         @input="handlePhoneInput"
                         autocomplete="off"
-                        class="block w-full border rounded-xl shadow-2xs px-4 py-3 text-sm font-mono font-bold transition-all focus:ring-2 focus:ring-[#005B3C]/20"
-                        :class="isValidPhone(form.nomor_telepon) ? 'border-emerald-300 bg-white text-gray-900 focus:border-[#005B3C]' : 'border-rose-300 bg-rose-50/20 text-gray-900 focus:border-rose-500'"
+                        class="block w-full border border-gray-300 bg-white text-gray-900 rounded-xl shadow-xs px-4 py-3 text-sm font-mono font-medium transition-colors focus:border-[#0D542B] focus:ring-1 focus:ring-[#0D542B] outline-none"
                         placeholder="Contoh: 081234567890" 
                     />
                 </div>
@@ -434,8 +432,7 @@ const lockedInputClass = "block w-full border border-gray-200 bg-gray-100 text-g
                         type="email" 
                         v-model="form.email_pribadi" 
                         autocomplete="off"
-                        class="block w-full border rounded-xl shadow-2xs px-4 py-3 text-sm font-medium transition-all focus:ring-2 focus:ring-[#005B3C]/20"
-                        :class="isValidEmail(form.email_pribadi) ? 'border-emerald-300 bg-white text-gray-900 focus:border-[#005B3C]' : 'border-rose-300 bg-rose-50/20 text-gray-900 focus:border-rose-500'"
+                        class="block w-full border border-gray-300 bg-white text-gray-900 rounded-xl shadow-xs px-4 py-3 text-sm font-medium transition-colors focus:border-[#0D542B] focus:ring-1 focus:ring-[#0D542B] outline-none"
                         placeholder="contoh: nama.alumni@gmail.com" 
                     />
                 </div>
@@ -448,8 +445,7 @@ const lockedInputClass = "block w-full border border-gray-200 bg-gray-100 text-g
                     <textarea 
                         v-model="form.alamat_saat_ini" 
                         rows="3" 
-                        class="block w-full border rounded-xl shadow-2xs px-4 py-3 text-sm font-medium transition-all focus:ring-2 focus:ring-[#005B3C]/20"
-                        :class="(form.alamat_saat_ini || form.alamat)?.trim() ? 'border-emerald-300 bg-white text-gray-900 focus:border-[#005B3C]' : 'border-rose-300 bg-rose-50/20 text-gray-900 focus:border-rose-500'"
+                        class="block w-full border border-gray-300 bg-white text-gray-900 rounded-xl shadow-xs px-4 py-3 text-sm font-medium transition-colors focus:border-[#0D542B] focus:ring-1 focus:ring-[#0D542B] outline-none"
                         placeholder="Nama Jalan, RT/RW, Dusun/Kelurahan..."
                     ></textarea>
                 </div>
@@ -461,8 +457,7 @@ const lockedInputClass = "block w-full border border-gray-200 bg-gray-100 text-g
                     </label>
                     <select 
                         v-model="form.provinsi_id" 
-                        class="block w-full border rounded-xl shadow-2xs px-4 py-3 text-sm font-medium transition-all focus:ring-2 focus:ring-[#005B3C]/20"
-                        :class="(form.provinsi_id || form.propinsi_id) ? 'border-emerald-300 bg-white text-gray-900 focus:border-[#005B3C]' : 'border-rose-300 bg-rose-50/20 text-gray-900 focus:border-rose-500'"
+                        class="block w-full border border-gray-300 bg-white text-gray-900 rounded-xl shadow-xs px-4 py-3 text-sm font-medium transition-colors focus:border-[#0D542B] focus:ring-1 focus:ring-[#0D542B] outline-none"
                     >
                         <option value="">-- Pilih Provinsi --</option>
                         <option v-for="prov in provinces" :key="prov.id" :value="prov.id">{{ prov.nama_provinsi }}</option>
@@ -476,8 +471,7 @@ const lockedInputClass = "block w-full border border-gray-200 bg-gray-100 text-g
                     </label>
                     <select 
                         v-model="form.kabupaten_id" 
-                        class="block w-full border rounded-xl shadow-2xs px-4 py-3 text-sm font-medium transition-all focus:ring-2 focus:ring-[#005B3C]/20"
-                        :class="form.kabupaten_id ? 'border-emerald-300 bg-white text-gray-900 focus:border-[#005B3C]' : 'border-rose-300 bg-rose-50/20 text-gray-900 focus:border-rose-500'"
+                        class="block w-full border border-gray-300 bg-white text-gray-900 rounded-xl shadow-xs px-4 py-3 text-sm font-medium transition-colors focus:border-[#0D542B] focus:ring-1 focus:ring-[#0D542B] outline-none"
                     >
                         <option value="">-- Pilih Kabupaten/Kota --</option>
                         <option v-for="kab in kabupatens" :key="kab.id" :value="kab.id" v-show="!form.provinsi_id || kab.province_id == form.provinsi_id">
@@ -495,8 +489,7 @@ const lockedInputClass = "block w-full border border-gray-200 bg-gray-100 text-g
                         type="text" 
                         v-model="form.kecamatan" 
                         autocomplete="off"
-                        class="block w-full border rounded-xl shadow-2xs px-4 py-3 text-sm font-medium transition-all focus:ring-2 focus:ring-[#005B3C]/20"
-                        :class="form.kecamatan?.trim() ? 'border-emerald-300 bg-white text-gray-900 focus:border-[#005B3C]' : 'border-rose-300 bg-rose-50/20 text-gray-900 focus:border-rose-500'"
+                        class="block w-full border border-gray-300 bg-white text-gray-900 rounded-xl shadow-xs px-4 py-3 text-sm font-medium transition-colors focus:border-[#0D542B] focus:ring-1 focus:ring-[#0D542B] outline-none"
                         placeholder="Kecamatan" 
                     />
                 </div>
@@ -510,8 +503,7 @@ const lockedInputClass = "block w-full border border-gray-200 bg-gray-100 text-g
                         type="text" 
                         v-model="form.kelurahan" 
                         autocomplete="off"
-                        class="block w-full border rounded-xl shadow-2xs px-4 py-3 text-sm font-medium transition-all focus:ring-2 focus:ring-[#005B3C]/20"
-                        :class="form.kelurahan?.trim() ? 'border-emerald-300 bg-white text-gray-900 focus:border-[#005B3C]' : 'border-rose-300 bg-rose-50/20 text-gray-900 focus:border-rose-500'"
+                        class="block w-full border border-gray-300 bg-white text-gray-900 rounded-xl shadow-xs px-4 py-3 text-sm font-medium transition-colors focus:border-[#0D542B] focus:ring-1 focus:ring-[#0D542B] outline-none"
                         placeholder="Kelurahan/Desa" 
                     />
                 </div>
@@ -525,8 +517,7 @@ const lockedInputClass = "block w-full border border-gray-200 bg-gray-100 text-g
                         type="text" 
                         v-model="form.kode_pos" 
                         autocomplete="off"
-                        class="block w-full border rounded-xl shadow-2xs px-4 py-3 text-sm font-medium transition-all focus:ring-2 focus:ring-[#005B3C]/20"
-                        :class="form.kode_pos?.trim() ? 'border-emerald-300 bg-white text-gray-900 focus:border-[#005B3C]' : 'border-rose-300 bg-rose-50/20 text-gray-900 focus:border-rose-500'"
+                        class="block w-full border border-gray-300 bg-white text-gray-900 rounded-xl shadow-xs px-4 py-3 text-sm font-medium transition-colors focus:border-[#0D542B] focus:ring-1 focus:ring-[#0D542B] outline-none"
                         placeholder="Kode Pos (5 digit)" 
                     />
                 </div>

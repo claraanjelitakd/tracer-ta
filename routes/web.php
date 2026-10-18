@@ -87,6 +87,9 @@ Route::middleware('auth')->group(function () {
         // Rute Alumni
         // -----------------------------------------------------------------
         Route::middleware('role:alumni')->group(function () {
+            // Redirect /alumni ke Dashboard
+            Route::redirect('/alumni', '/alumni/dashboard');
+
             // Dashboard
             Route::get('/alumni/dashboard', [DashboardController::class, 'tampilkanDashboard'])->name('alumni.dashboard');
 

@@ -115,13 +115,13 @@ onMounted(() => {
                 >
                     <!-- Lingkaran Angka / Centang Selesai -->
                     <div 
-                        class="flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 rounded-full font-black text-xs sm:text-sm md:text-lg transition-all duration-200 z-10 shadow-xs relative"
+                        class="flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 rounded-full font-bold text-xs sm:text-sm md:text-base transition-all duration-200 z-10 shadow-xs relative"
                         :class="[
                             ((activeOriginalIndex !== null && activeOriginalIndex !== undefined && section.originalIndex !== undefined) ? activeOriginalIndex === section.originalIndex : activeIndex === index)
-                                ? 'bg-[#FFD700] text-[#005B3C] shadow-md scale-105 sm:scale-110 ring-2 sm:ring-4 ring-[#005B3C]/20' : 
+                                ? 'bg-[#0D542B] text-white ring-4 ring-[#0D542B]/20 shadow-md scale-105 sm:scale-110' : 
                             (isSectionCompleted(section.originalIndex !== undefined ? section.originalIndex : index) 
-                                ? 'bg-[#005B3C] text-white shadow-xs group-hover:bg-[#00482f] group-hover:scale-105' : 
-                                'bg-gray-100 text-gray-400 group-hover:bg-gray-200 group-hover:text-gray-600')
+                                ? 'bg-[#0D542B] text-white shadow-xs group-hover:bg-[#08381c] group-hover:scale-105' : 
+                                'bg-slate-100 text-slate-500 group-hover:bg-slate-200 group-hover:text-slate-700')
                         ]"
                     >
                         <!-- 1.1 Tanda centang putih jika seksi sudah lengkap terisi dan tidak sedang dibuka -->
@@ -132,7 +132,7 @@ onMounted(() => {
                             stroke="currentColor" 
                             viewBox="0 0 24 24"
                         >
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="4" d="M5 13l4 4L19 7"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path>
                         </svg>
                         
                         <!-- 1.2 Angka urutan tahapan (1, 2, 3..) jika sedang aktif atau belum selesai -->
@@ -141,7 +141,7 @@ onMounted(() => {
                         <!-- 1.3 Badge mini centang di sudut kanan atas jika tahapan aktif ini sudah lengkap -->
                         <span 
                             v-if="((activeOriginalIndex !== null && activeOriginalIndex !== undefined && section.originalIndex !== undefined) ? activeOriginalIndex === section.originalIndex : activeIndex === index) && isSectionCompleted(section.originalIndex !== undefined ? section.originalIndex : index)" 
-                            class="absolute -top-1 -right-1 w-3.5 h-3.5 sm:w-4 sm:h-4 bg-[#005B3C] text-white rounded-full flex items-center justify-center text-[8px] sm:text-[10px] font-black shadow-xs ring-1.5 sm:ring-2 ring-white"
+                            class="absolute -top-1 -right-1 w-3.5 h-3.5 sm:w-4 sm:h-4 bg-emerald-600 text-white rounded-full flex items-center justify-center text-[8px] sm:text-[10px] font-bold shadow-xs ring-1.5 sm:ring-2 ring-white"
                             title="Bagian ini sudah lengkap"
                         >
                             ✓
@@ -153,10 +153,10 @@ onMounted(() => {
                         class="text-[9px] sm:text-[11px] md:text-xs mt-1 sm:mt-2 text-center w-20 sm:w-24 md:w-28 leading-tight transition-colors line-clamp-2"
                         :class="[
                             ((activeOriginalIndex !== null && activeOriginalIndex !== undefined && section.originalIndex !== undefined) ? activeOriginalIndex === section.originalIndex : activeIndex === index)
-                                ? 'text-[#005B3C] font-black' : 
+                                ? 'text-[#0D542B] font-extrabold' : 
                             (isSectionCompleted(section.originalIndex !== undefined ? section.originalIndex : index) 
-                                ? 'text-[#005B3C] font-bold group-hover:text-[#00482f]' : 
-                                'text-gray-400 group-hover:text-gray-600 font-medium')
+                                ? 'text-slate-800 font-semibold group-hover:text-slate-900' : 
+                                'text-slate-400 group-hover:text-slate-600 font-medium')
                         ]"
                     >
                         {{ section.title }}
@@ -168,8 +168,8 @@ onMounted(() => {
                 <!-- =================================================================================== -->
                 <div 
                     v-if="index < sections.length - 1" 
-                    class="flex-1 h-1 sm:h-1.5 md:h-2 rounded-full transition-colors duration-300 mx-1 md:mx-2 min-w-[14px] sm:min-w-[20px]" 
-                    :class="isLineCompleted(index) ? 'bg-[#005B3C]' : 'bg-gray-200'"
+                    class="flex-1 h-1 sm:h-1.5 rounded-full transition-colors duration-300 mx-1 md:mx-2 min-w-[14px] sm:min-w-[20px]" 
+                    :class="isLineCompleted(index) ? 'bg-[#0D542B]' : 'bg-slate-200'"
                 ></div>
             </template>
         </div>

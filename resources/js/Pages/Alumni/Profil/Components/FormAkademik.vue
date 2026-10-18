@@ -50,8 +50,9 @@ const labelClass = "block text-sm font-semibold text-gray-700 mb-1.5";
     <div class="space-y-8">
         
         <!-- Bagian 1: Informasi Akademik -->
-        <div class="bg-white rounded-2xl p-6 sm:p-8 shadow-sm border border-gray-100">
-            <h2 class="text-xl font-bold text-gray-900 mb-6">
+        <div class="bg-white rounded-2xl p-6 sm:p-8 shadow-xs border border-gray-100">
+            <h2 class="text-lg sm:text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">
+                <span class="w-1.5 h-5 bg-[#0D542B] rounded-full inline-block"></span>
                 Informasi Akademik
             </h2>
 
@@ -104,8 +105,9 @@ const labelClass = "block text-sm font-semibold text-gray-700 mb-1.5";
         </div>
 
         <!-- Bagian 2: Skripsi & Publikasi Ilmiah (Data Resmi Kampus) -->
-        <div class="bg-white rounded-2xl p-6 sm:p-8 shadow-sm border border-gray-100">
-            <h2 class="text-xl font-bold text-gray-900 mb-6">
+        <div class="bg-white rounded-2xl p-6 sm:p-8 shadow-xs border border-gray-100">
+            <h2 class="text-lg sm:text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">
+                <span class="w-1.5 h-5 bg-[#0D542B] rounded-full inline-block"></span>
                 Skripsi & Publikasi Ilmiah
             </h2>
             
@@ -158,8 +160,9 @@ const labelClass = "block text-sm font-semibold text-gray-700 mb-1.5";
         </div>
 
         <!-- Bagian 3: Data Yudisium -->
-        <div class="bg-white rounded-2xl p-6 sm:p-8 shadow-sm border border-gray-100">
-            <h2 class="text-xl font-bold text-gray-900 mb-6">
+        <div class="bg-white rounded-2xl p-6 sm:p-8 shadow-xs border border-gray-100">
+            <h2 class="text-lg sm:text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">
+                <span class="w-1.5 h-5 bg-[#0D542B] rounded-full inline-block"></span>
                 Data Yudisium & Predikat Kelulusan
             </h2>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-5">

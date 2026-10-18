@@ -246,60 +246,75 @@ const handleResetToDefaultAndNotify = (userData) => {
                 </div>
 
                 <!-- Table Pengguna -->
-                <div class="bg-white border border-gray-200 rounded-lg overflow-hidden shadow-2xs">
-                    <table class="w-full text-left border-collapse text-xs">
+                <div class="bg-white border border-gray-300 overflow-x-auto shadow-2xs">
+                    <table class="w-full min-w-full text-left border-collapse border border-gray-300 text-xs bg-white">
                         <thead>
-                            <tr class="bg-slate-100 border-b border-gray-200 text-slate-700 font-bold uppercase text-[11px]">
-                                <th class="py-3 px-4">Nama Pengguna</th>
-                                <th class="py-3 px-4">Email Terdaftar (Pribadi)</th>
-                                <th class="py-3 px-4">Role / Peran</th>
-                                <th class="py-3 px-4">Program Studi / Fakultas</th>
-                                <th class="py-3 px-4 text-center">Aksi Manajemen</th>
+                            <tr class="bg-gray-100 text-gray-800 font-semibold border-b border-gray-300 text-[11px] whitespace-nowrap">
+                                <th class="border border-gray-300 px-2.5 py-2 text-center w-12 whitespace-nowrap">No</th>
+                                <th class="border border-gray-300 px-3 py-2 whitespace-nowrap">Nama Pengguna</th>
+                                <th class="border border-gray-300 px-3 py-2 whitespace-nowrap">Email Terdaftar (Pribadi)</th>
+                                <th class="border border-gray-300 px-3 py-2 whitespace-nowrap">Role / Peran</th>
+                                <th class="border border-gray-300 px-3 py-2 whitespace-nowrap">Program Studi / Fakultas</th>
+                                <th class="border border-gray-300 px-2.5 py-2 text-center w-24 whitespace-nowrap">Aksi</th>
                             </tr>
                         </thead>
-                        <tbody class="divide-y divide-gray-200">
-                            <tr v-for="u in users.data" :key="u.id" class="hover:bg-slate-50/80">
-                                <td class="py-3 px-4">
-                                    <div class="font-bold text-slate-900">{{ u.name }}</div>
-                                    <div class="text-[11px] text-slate-500 font-mono">@{{ u.username }}</div>
+                        <tbody>
+                            <tr v-if="!users.data || users.data.length === 0">
+                                <td colspan="6" class="border border-gray-300 p-8 text-center text-gray-400 italic">
+                                    Tidak ada data pengguna yang sesuai dengan kriteria filter.
                                 </td>
-                                <td class="py-3 px-4 font-medium text-slate-800">
+                            </tr>
+                            <tr v-for="(u, idx) in users.data" :key="u.id" class="hover:bg-gray-50/80 transition-colors">
+                                <td class="border border-gray-300 px-2.5 py-2 text-center text-gray-600 font-medium">
+                                    {{ ((users.current_page - 1) * users.per_page) + idx + 1 }}
+                                </td>
+                                <td class="border border-gray-300 px-3 py-2">
+                                    <div class="font-bold text-gray-900">{{ u.name }}</div>
+                                    <div class="text-[11px] text-gray-500 font-mono">@{{ u.username }}</div>
+                                </td>
+                                <td class="border border-gray-300 px-3 py-2 font-medium text-gray-800">
                                     {{ u.email }}
                                 </td>
-                                <td class="py-3 px-4">
-                                    <span v-if="u.role === 'superadmin'" class="px-2.5 py-1 rounded font-bold text-[11px] text-[#0D542B]">Super Admin</span>
-                                    <span v-else-if="u.role === 'admin_fakultas'" class="px-2.5 py-1 rounded font-bold text-[11px] text-[#0D542B]">Admin Fakultas</span>
-                                    <span v-else-if="u.role === 'admin_prodi'" class="px-2.5 py-1 rounded font-bold text-[11px] text-[#0D542B]">Admin Prodi</span>
-                                    <span v-else-if="u.role === 'admin_biro3'" class="px-2.5 py-1 rounded font-bold text-[11px] text-[#0D542B]">Admin Biro 3</span>
-                                    <span v-else-if="u.role === 'alumni'" class="px-2.5 py-1 rounded font-bold text-[11px] text-slate-700">Alumni</span>
-                                    <span v-else class="px-2.5 py-1 rounded font-bold text-[11px] text-slate-700">{{ u.role }}</span>
+                                <td class="border border-gray-300 px-3 py-2">
+                                    <span v-if="u.role === 'superadmin'" class="px-2 py-0.5 rounded font-bold text-[11px] text-[#0D542B] bg-emerald-50 border border-emerald-200">Super Admin</span>
+                                    <span v-else-if="u.role === 'admin_fakultas'" class="px-2 py-0.5 rounded font-bold text-[11px] text-[#0D542B] bg-emerald-50 border border-emerald-200">Admin Fakultas</span>
+                                    <span v-else-if="u.role === 'admin_prodi'" class="px-2 py-0.5 rounded font-bold text-[11px] text-[#0D542B] bg-emerald-50 border border-emerald-200">Admin Prodi</span>
+                                    <span v-else-if="u.role === 'admin_biro3'" class="px-2 py-0.5 rounded font-bold text-[11px] text-[#0D542B] bg-emerald-50 border border-emerald-200">Admin Biro 3</span>
+                                    <span v-else-if="u.role === 'alumni'" class="px-2 py-0.5 rounded font-bold text-[11px] text-gray-700 bg-gray-100 border border-gray-200">Alumni</span>
+                                    <span v-else class="px-2 py-0.5 rounded font-bold text-[11px] text-gray-700 bg-gray-100 border border-gray-200">{{ u.role }}</span>
                                 </td>
-                                <td class="py-3 px-4 text-slate-700">
+                                <td class="border border-gray-300 px-3 py-2 text-gray-700">
                                     <template v-if="u.role === 'alumni' || u.role === 'admin_prodi'">
-                                        <div class="font-medium">{{ u.prodi?.nama_prodi || '-' }}</div>
-                                        <div v-if="u.prodi?.fakultas" class="text-[11px] text-slate-500 mt-0.5">{{ u.prodi.fakultas.nama_fakultas }}</div>
+                                        <div class="font-medium text-gray-900">{{ u.prodi?.nama_prodi || '-' }}</div>
+                                        <div v-if="u.prodi?.fakultas" class="text-[11px] text-gray-500 mt-0.5">{{ u.prodi.fakultas.nama_fakultas }}</div>
                                     </template>
                                     <template v-else>
                                         {{ u.fakultas?.nama_fakultas || u.prodi?.nama_prodi || '-' }}
                                     </template>
                                 </td>
-                                <td class="py-3 px-4 text-center">
-                                    <div class="flex items-center justify-center gap-2">
-                                        <!-- Tombol Edit User -->
+                                <td class="border border-gray-300 px-2.5 py-2 text-center">
+                                    <div class="flex items-center justify-center gap-1">
+                                        <!-- Tombol Edit User (Pencil) -->
                                         <button
+                                            type="button"
                                             @click="openEditUserModal(u)"
-                                            class="px-2.5 py-1 bg-slate-100 text-slate-700 font-bold rounded text-[11px] hover:bg-slate-200 border border-slate-300 cursor-pointer"
-                                            title="Sunting email, nama, username, atau role pengguna"
+                                            class="p-1 text-amber-600 hover:bg-amber-50 rounded cursor-pointer transition-colors"
+                                            title="Sunting Pengguna"
                                         >
-                                            Edit
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                            </svg>
                                         </button>
-                                        <!-- Tombol Reset 1-Klik ke Tanggal Lahir + Email Konfirmasi -->
+                                        <!-- Tombol Reset Password (Key) -->
                                         <button
+                                            type="button"
                                             @click="handleResetToDefaultAndNotify(u)"
-                                            class="px-2.5 py-1 bg-[#0D542B] text-white font-semibold rounded text-[11px] hover:bg-[#08381c] cursor-pointer"
-                                            title="Reset password otomatis ke tanggal lahir (ddmmyyyy) & kirim email konfirmasi ke email terdaftar"
+                                            class="p-1 text-[#0D542B] hover:bg-emerald-50 rounded cursor-pointer transition-colors"
+                                            title="Reset Password ke Tanggal Lahir & Kirim Email"
                                         >
-                                            Reset Password
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
+                                            </svg>
                                         </button>
                                     </div>
                                 </td>

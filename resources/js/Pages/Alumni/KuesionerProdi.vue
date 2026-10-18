@@ -14,9 +14,11 @@ import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import { ref, computed, watch, onMounted } from 'vue';
 import Swal from 'sweetalert2';
 import Navbar from './Components/Navbar.vue';
-import Stepper from './Components/Kuesioner/Stepper.vue';
-import Banner from './Components/Kuesioner/Banner.vue';
-import Navigasi from './Components/Kuesioner/Navigasi.vue';
+import Stepper from './Components/KuesionerProdi/Stepper.vue';
+import Banner from './Components/KuesionerProdi/Banner.vue';
+import Navigasi from './Components/KuesionerProdi/Navigasi.vue';
+import TabelMatriksProdi from './Components/KuesionerProdi/TabelMatriksProdi.vue';
+import KartuPertanyaanProdi from './Components/KuesionerProdi/KartuPertanyaanProdi.vue';
 
 const props = defineProps({
     alumni: Object,
@@ -178,67 +180,6 @@ const filterNumberInput = (event) => {
     }
 };
 
-// Helper checkbox untuk kuesioner prodi
-const isCheckboxChecked = (qId, optionText) => {
-    const ans = form.answers[qId];
-    if (Array.isArray(ans)) {
-        return ans.includes(optionText);
-    }
-    return false;
-};
-
-const toggleCheckboxOption = (qId, optionText) => {
-    if (!Array.isArray(form.answers[qId])) {
-        form.answers[qId] = [];
-    }
-    const idx = form.answers[qId].indexOf(optionText);
-    if (idx > -1) {
-        form.answers[qId].splice(idx, 1);
-    } else {
-        form.answers[qId].push(optionText);
-    }
-};
-
-// Helper radio_text & radio_input
-const getRadioSelected = (qId) => {
-    const ans = form.answers[qId];
-    if (ans && typeof ans === 'object') return ans.selected || '';
-    return ans || '';
-};
-
-const getRadioInput = (qId) => {
-    const ans = form.answers[qId];
-    if (ans && typeof ans === 'object') return ans.input || '';
-    return '';
-};
-
-const handleRadioSelect = (qId, optionText) => {
-    if (!form.answers[qId] || typeof form.answers[qId] !== 'object') {
-        form.answers[qId] = {
-            selected: optionText,
-            input: '',
-        };
-    } else {
-        form.answers[qId].selected = optionText;
-    }
-};
-
-const setRadioInput = (qId, val) => {
-    if (!form.answers[qId] || typeof form.answers[qId] !== 'object') {
-        form.answers[qId] = {
-            selected: '',
-            input: val,
-        };
-    } else {
-        form.answers[qId].input = val;
-    }
-};
-
-const isCustomOption = (optionText) => {
-    if (!optionText) return false;
-    const lower = optionText.toLowerCase();
-    return lower.includes('lainnya') || lower.includes('tuliskan') || lower.includes('...') || lower.includes('…');
-};
 
 // Validasi kelengkapan per butir pertanyaan
 const isQuestionAnswered = (q) => {
@@ -467,7 +408,7 @@ watch(() => form.answers, (newAnswers) => {
 <template>
     <Head :title="'Kuesioner Program Studi ' + (prodi?.nama_prodi || '')" />
 
-    <div class="min-h-screen bg-[#E8F5E9] font-sans text-gray-900 antialiased flex flex-col relative pb-20 md:pb-6">
+    <div class="min-h-screen bg-slate-50 font-sans text-gray-900 antialiased flex flex-col relative pb-20 md:pb-6">
         <!-- Header Atas: Navbar & Stepper Tahapan -->
         <header class="sticky top-0 z-50 w-full shadow-md bg-white">
             <!-- 1. Navbar Atas -->
@@ -521,347 +462,21 @@ watch(() => form.answers, (newAnswers) => {
                 <!-- Konten Formulir Seksi Aktif -->
                 <form @submit.prevent="handleNextOrSubmit" class="space-y-4 sm:space-y-6">
                     <template v-for="(block, bIdx) in currentSectionBlocks" :key="'block_' + bIdx">
-                        
-                        <!-- =================================================================================== -->
-                        <!-- 1. MATRIKS TABEL SKALA 1-5 (Persis Format TabelF2 Kuesioner Universitas)            -->
-                        <!-- =================================================================================== -->
-                        <div 
-                            v-if="block.type === 'rating_matrix'" 
-                            class="bg-white rounded-2xl sm:rounded-3xl shadow-xs border border-gray-100 overflow-hidden"
-                        >
-                            <div class="p-4 sm:p-6 border-b border-gray-100 bg-gray-50/50 flex items-center justify-between">
-                                <div class="flex items-center gap-2">
-                                    <span class="inline-block bg-[#005B3C] text-white text-[10px] sm:text-[11px] font-black uppercase px-2.5 py-0.5 rounded-md tracking-wider shadow-2xs">
-                                        Skala 1 - 5
-                                    </span>
-                                    <span class="text-xs font-bold text-gray-700">
-                                        Pilihlah skor 1 s/d 5 untuk setiap butir penilaian di bawah ini:
-                                    </span>
-                                </div>
-                            </div>
+                        <!-- 1. Matriks Tabel Skala 1-5 -->
+                        <TabelMatriksProdi 
+                            v-if="block.type === 'rating_matrix'"
+                            :block="block"
+                            :form="form"
+                            :is-question-answered="isQuestionAnswered"
+                            :get-matrix-scale-options="getMatrixScaleOptions"
+                        />
 
-                            <div class="overflow-x-auto md:overflow-x-visible">
-                                <table class="w-full text-left border-collapse min-w-[620px] md:min-w-0">
-                                    <thead>
-                                        <tr class="bg-gray-50/90 border-b border-gray-200/80 text-gray-700 text-xs sm:text-sm">
-                                            <th class="py-3.5 px-3 sm:px-4 font-black uppercase text-gray-600 text-center w-12">No</th>
-                                            <th class="py-3.5 px-3 sm:px-4 font-black text-gray-800">Butir Pernyataan / Evaluasi</th>
-                                            <th 
-                                                v-for="opt in getMatrixScaleOptions(block.questions)" 
-                                                :key="opt.score"
-                                                class="py-3.5 px-2 text-center font-black text-xs w-20 sm:w-24 md:w-28"
-                                            >
-                                                <div class="font-extrabold text-gray-900 text-sm sm:text-base">{{ opt.score }}</div>
-                                                <div class="text-[10px] sm:text-[11px] font-medium text-gray-500 leading-tight mt-0.5">
-                                                    {{ opt.label }}
-                                                </div>
-                                            </th>
-                                        </tr>
-                                    </thead>
-                                    <tbody class="divide-y divide-gray-100">
-                                        <tr 
-                                            v-for="(q, qIdx) in block.questions" 
-                                            :key="q.id" 
-                                            class="transition-colors hover:bg-emerald-50/20"
-                                            :class="{'bg-emerald-50/30': isQuestionAnswered(q)}"
-                                        >
-                                            <!-- Nomor Urut -->
-                                            <td class="py-3.5 px-3 sm:px-4 text-center font-black text-xs sm:text-sm text-gray-500">
-                                                {{ qIdx + 1 }}
-                                            </td>
-
-                                            <!-- Teks Pertanyaan & Kode -->
-                                            <td class="py-3.5 px-3 sm:px-4">
-                                                <div class="flex items-start gap-2.5">
-                                                    <span class="font-mono text-[11px] font-black px-1.5 py-0.5 rounded bg-gray-100 text-gray-700 border border-gray-200/60 shrink-0 mt-0.5">
-                                                        {{ q.code }}
-                                                    </span>
-                                                    <span class="font-bold text-gray-900 text-xs sm:text-sm md:text-base leading-snug">
-                                                        {{ q.question_text }}
-                                                        <span v-if="q.is_required" class="text-red-500 font-black ml-0.5">*</span>
-                                                    </span>
-                                                </div>
-                                            </td>
-
-                                            <!-- 5 Pilihan Skor Bulat (Persis F2) -->
-                                            <td 
-                                                v-for="opt in getMatrixScaleOptions(block.questions)" 
-                                                :key="opt.score"
-                                                class="py-3.5 px-2 text-center"
-                                            >
-                                                <label class="cursor-pointer inline-flex items-center justify-center p-1 group">
-                                                    <input 
-                                                        type="radio" 
-                                                        :name="'q_' + q.id" 
-                                                        :value="opt.score" 
-                                                        v-model="form.answers[q.id]" 
-                                                        class="sr-only"
-                                                    >
-                                                    <div 
-                                                        class="w-8 h-8 sm:w-9 sm:h-9 md:w-10 md:h-10 rounded-full flex items-center justify-center font-black text-xs sm:text-sm md:text-base transition-all shadow-2xs"
-                                                        :class="[
-                                                            Number(form.answers[q.id]) === opt.score
-                                                                ? 'bg-[#005B3C] text-white ring-2 ring-offset-1 ring-[#005B3C] shadow-sm scale-105 font-black'
-                                                                : 'bg-white text-gray-700 border border-gray-300 hover:bg-emerald-50 hover:border-emerald-500'
-                                                        ]"
-                                                    >
-                                                        {{ opt.score }}
-                                                    </div>
-                                                </label>
-                                            </td>
-                                        </tr>
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-
-                        <!-- =================================================================================== -->
-                        <!-- 2. KARTU HEADER PETUNJUK (Jika Tipe Header)                                         -->
-                        <!-- =================================================================================== -->
-                        <div 
-                            v-else-if="block.question?.type === 'header'"
-                            class="bg-white p-5 sm:p-7 md:p-8 rounded-2xl sm:rounded-3xl shadow-xs border border-gray-100"
-                        >
-                            <div class="flex items-center gap-2 mb-1.5">
-                                <span class="inline-block bg-[#005B3C] text-white text-[10px] sm:text-[11px] font-black uppercase px-2.5 py-0.5 rounded-md tracking-wider shadow-2xs">
-                                    {{ block.question.code || 'Petunjuk' }}
-                                </span>
-                            </div>
-                            <h3 class="text-base sm:text-lg md:text-xl font-black text-gray-900 leading-snug">
-                                {{ block.question.question_text }}
-                            </h3>
-                        </div>
-
-                        <!-- =================================================================================== -->
-                        <!-- 3. KARTU PERTANYAAN NON-MATRIX (Pilihan Tunggal, Ganda, Teks, Angka, Tanggal)       -->
-                        <!-- =================================================================================== -->
-                        <div 
-                            v-else-if="block.type === 'standard_question'" 
-                            class="bg-white p-5 sm:p-7 md:p-8 rounded-2xl sm:rounded-3xl shadow-xs border border-gray-100"
-                        >
-                            <!-- Header Soal -->
-                            <h3 class="text-base sm:text-lg md:text-xl font-black text-gray-900 mb-4 leading-snug flex items-start gap-3">
-                                <span class="shrink-0 bg-[#FFD700] text-[#005B3C] px-2.5 py-1 rounded-xl text-xs sm:text-sm font-black shadow-2xs">
-                                    {{ block.question.code }}
-                                </span>
-                                <span>
-                                    {{ block.question.question_text }}
-                                    <span v-if="block.question.is_required" class="text-red-500 font-black ml-0.5">*</span>
-                                </span>
-                            </h3>
-
-                            <!-- Pilihan Tunggal (Radio / Single Choice) -->
-                            <div v-if="block.question.type === 'single_choice' || block.question.type === 'radio'">
-                                <div class="inline-block mb-3 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-[11px] font-bold text-emerald-800">
-                                    Pilih satu jawaban
-                                </div>
-                                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-                                    <label v-for="opt in block.question.options" :key="opt.id" class="cursor-pointer group block select-none">
-                                        <input 
-                                            type="radio" 
-                                            :name="'q_' + block.question.id" 
-                                            :value="opt.option_text" 
-                                            v-model="form.answers[block.question.id]" 
-                                            class="sr-only"
-                                        >
-                                        <div 
-                                            class="p-4 rounded-2xl font-bold text-xs sm:text-sm md:text-base transition-all flex items-center justify-center text-center shadow-2xs min-h-[56px]"
-                                            :class="[
-                                                form.answers[block.question.id] === opt.option_text
-                                                    ? 'bg-[#005B3C] text-white shadow-md ring-2 ring-emerald-500'
-                                                    : 'bg-gray-50 text-gray-700 hover:bg-emerald-50 hover:text-[#005B3C] border border-gray-100'
-                                            ]"
-                                        >
-                                            <span>{{ opt.option_text }}</span>
-                                        </div>
-                                    </label>
-                                </div>
-                            </div>
-
-                            <!-- Pilihan Ganda + Lainnya (Radio + Teks) -->
-                            <div v-else-if="block.question.type === 'radio_text'">
-                                <div class="inline-block mb-3 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-[11px] font-bold text-emerald-800">
-                                    Pilih salah satu jawaban
-                                </div>
-                                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-                                    <label v-for="opt in block.question.options" :key="opt.id" class="cursor-pointer group block select-none">
-                                        <input 
-                                            type="radio" 
-                                            :name="'q_' + block.question.id" 
-                                            :value="opt.option_text" 
-                                            :checked="getRadioSelected(block.question.id) === opt.option_text"
-                                            @change="handleRadioSelect(block.question.id, opt.option_text)"
-                                            class="sr-only"
-                                        >
-                                        <div 
-                                            class="p-4 rounded-2xl font-bold text-xs sm:text-sm md:text-base transition-all flex flex-col items-center justify-center text-center shadow-2xs min-h-[56px]"
-                                            :class="[
-                                                getRadioSelected(block.question.id) === opt.option_text
-                                                    ? 'bg-[#005B3C] text-white shadow-md ring-2 ring-emerald-500'
-                                                    : 'bg-gray-50 text-gray-700 hover:bg-emerald-50 hover:text-[#005B3C] border border-gray-100'
-                                            ]"
-                                        >
-                                            <span>{{ opt.option_text }}</span>
-                                            <div 
-                                                v-if="getRadioSelected(block.question.id) === opt.option_text && isCustomOption(opt.option_text)" 
-                                                class="w-full mt-2" 
-                                                @click.stop
-                                            >
-                                                <input 
-                                                    type="text" 
-                                                    :value="getRadioInput(block.question.id)"
-                                                    @input="setRadioInput(block.question.id, $event.target.value)"
-                                                    placeholder="Tuliskan jawaban Anda di sini..." 
-                                                    class="w-full rounded-xl bg-white text-gray-900 placeholder-gray-400 p-2 text-xs sm:text-sm font-semibold border border-gray-300 focus:ring-2 focus:ring-[#005B3C] focus:outline-none"
-                                                >
-                                            </div>
-                                        </div>
-                                    </label>
-                                </div>
-                            </div>
-
-                            <!-- Radio + Angka (Bulan) -->
-                            <div v-else-if="block.question.type === 'radio_input'">
-                                <div class="inline-block mb-3 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-[11px] font-bold text-emerald-800">
-                                    Pilih salah satu jawaban
-                                </div>
-                                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-                                    <label v-for="opt in block.question.options" :key="opt.id" class="cursor-pointer group block select-none">
-                                        <input 
-                                            type="radio" 
-                                            :name="'q_' + block.question.id" 
-                                            :value="opt.option_text" 
-                                            :checked="getRadioSelected(block.question.id) === opt.option_text"
-                                            @change="handleRadioSelect(block.question.id, opt.option_text)"
-                                            class="sr-only"
-                                        >
-                                        <div 
-                                            class="p-4 rounded-2xl font-bold text-xs sm:text-sm md:text-base transition-all flex flex-col items-center justify-center text-center shadow-2xs min-h-[56px]"
-                                            :class="[
-                                                getRadioSelected(block.question.id) === opt.option_text
-                                                    ? 'bg-[#005B3C] text-white shadow-md ring-2 ring-emerald-500'
-                                                    : 'bg-gray-50 text-gray-700 hover:bg-emerald-50 hover:text-[#005B3C] border border-gray-100'
-                                            ]"
-                                        >
-                                            <span>{{ opt.option_text }}</span>
-                                            <div 
-                                                v-if="getRadioSelected(block.question.id) === opt.option_text && !opt.option_text.toLowerCase().includes('tidak')" 
-                                                class="w-full mt-2 flex items-center justify-center gap-2" 
-                                                @click.stop
-                                            >
-                                                <input 
-                                                    type="number" 
-                                                    min="0"
-                                                    :value="getRadioInput(block.question.id)"
-                                                    @input="setRadioInput(block.question.id, $event.target.value)"
-                                                    @keydown="filterNumberInput"
-                                                    placeholder="0" 
-                                                    class="w-24 rounded-xl bg-white text-gray-900 placeholder-gray-400 p-2 text-center text-xs sm:text-sm font-bold border border-gray-300 focus:ring-2 focus:ring-[#005B3C] focus:outline-none"
-                                                >
-                                                <span class="text-xs font-bold" :class="getRadioSelected(block.question.id) === opt.option_text ? 'text-white' : 'text-gray-600'">Bulan</span>
-                                            </div>
-                                        </div>
-                                    </label>
-                                </div>
-                            </div>
-
-                            <!-- Pilihan Ganda (Checkbox / Multiple Choice) -->
-                            <div v-else-if="block.question.type === 'multiple_choice' || block.question.type === 'checkbox'">
-                                <div class="inline-block mb-3 px-3 py-1 rounded-full bg-emerald-100/70 border border-emerald-300 text-[11px] font-bold text-[#005B3C]">
-                                    Jawaban bisa lebih dari satu
-                                </div>
-                                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-                                    <label v-for="opt in block.question.options" :key="opt.id" class="cursor-pointer group block select-none">
-                                        <input 
-                                            type="checkbox" 
-                                            :value="opt.option_text" 
-                                            :checked="isCheckboxChecked(block.question.id, opt.option_text)"
-                                            @change="toggleCheckboxOption(block.question.id, opt.option_text)"
-                                            class="sr-only"
-                                        >
-                                        <div 
-                                            class="p-4 rounded-2xl font-bold text-xs sm:text-sm md:text-base transition-all flex items-center justify-center text-center shadow-2xs min-h-[56px]"
-                                            :class="[
-                                                isCheckboxChecked(block.question.id, opt.option_text)
-                                                    ? 'bg-[#005B3C] text-white shadow-md ring-2 ring-emerald-500' 
-                                                    : 'bg-gray-50 text-gray-700 hover:bg-emerald-50 hover:text-[#005B3C] border border-gray-100'
-                                            ]"
-                                        >
-                                            <span>{{ opt.option_text }}</span>
-                                        </div>
-                                    </label>
-                                </div>
-                            </div>
-
-                            <!-- Dropdown Select & Searchable Select -->
-                            <div v-else-if="block.question.type === 'dropdown' || block.question.type === 'searchable_select'">
-                                <select 
-                                    v-model="form.answers[block.question.id]" 
-                                    :required="block.question.is_required"
-                                    class="w-full rounded-2xl bg-gray-50 p-4 text-gray-900 font-bold focus:bg-white focus:ring-2 focus:ring-[#005B3C] transition-all text-sm sm:text-base border border-gray-200 shadow-2xs cursor-pointer"
-                                >
-                                    <option value="" disabled>-- Pilih salah satu opsi --</option>
-                                    <option v-for="opt in block.question.options" :key="opt.id" :value="opt.option_text">
-                                        {{ opt.option_text }}
-                                    </option>
-                                </select>
-                            </div>
-
-                            <!-- Isian Teks Bebas Singkat -->
-                            <div v-else-if="block.question.type === 'text'">
-                                <input 
-                                    type="text"
-                                    v-model="form.answers[block.question.id]" 
-                                    :required="block.question.is_required"
-                                    class="w-full rounded-2xl bg-gray-50 p-4 text-gray-900 font-medium focus:bg-white focus:ring-2 focus:ring-[#005B3C] transition-all text-sm sm:text-base border border-gray-200 shadow-2xs"
-                                    placeholder="Tuliskan jawaban Anda di sini..."
-                                >
-                            </div>
-
-                            <!-- Paragraf (Textarea) -->
-                            <div v-else-if="block.question.type === 'textarea'">
-                                <textarea 
-                                    v-model="form.answers[block.question.id]" 
-                                    rows="4" 
-                                    :required="block.question.is_required"
-                                    class="w-full rounded-2xl bg-gray-50 p-4 text-gray-900 font-medium focus:bg-white focus:ring-2 focus:ring-[#005B3C] transition-all text-sm sm:text-base border border-gray-200 shadow-2xs leading-relaxed"
-                                    placeholder="Tuliskan penjelasan atau jawaban lengkap Anda di sini..."
-                                ></textarea>
-                            </div>
-
-                            <!-- Isian Angka -->
-                            <div v-else-if="block.question.type === 'number'">
-                                <input 
-                                    type="number" 
-                                    v-model="form.answers[block.question.id]" 
-                                    :required="block.question.is_required"
-                                    @keydown="filterNumberInput"
-                                    min="0"
-                                    class="w-full sm:max-w-xs rounded-2xl bg-gray-50 p-4 text-gray-900 font-black font-mono focus:bg-white focus:ring-2 focus:ring-[#005B3C] transition-all text-lg sm:text-xl text-center border border-gray-200 shadow-2xs"
-                                    placeholder="0"
-                                >
-                            </div>
-
-                            <!-- Tanggal / Date -->
-                            <div v-else-if="block.question.type === 'date'">
-                                <input 
-                                    type="date" 
-                                    v-model="form.answers[block.question.id]" 
-                                    :required="block.question.is_required"
-                                    class="w-full sm:max-w-xs rounded-2xl bg-gray-50 p-4 text-gray-900 font-bold focus:bg-white focus:ring-2 focus:ring-[#005B3C] transition-all text-sm sm:text-base border border-gray-200 shadow-2xs"
-                                >
-                            </div>
-
-                            <!-- Waktu / Time -->
-                            <div v-else-if="block.question.type === 'time'">
-                                <input 
-                                    type="time" 
-                                    v-model="form.answers[block.question.id]" 
-                                    :required="block.question.is_required"
-                                    class="w-full sm:max-w-xs rounded-2xl bg-gray-50 p-4 text-gray-900 font-bold focus:bg-white focus:ring-2 focus:ring-[#005B3C] transition-all text-sm sm:text-base border border-gray-200 shadow-2xs"
-                                >
-                            </div>
-                        </div>
+                        <!-- 2. Kartu Pertanyaan Standar & Header -->
+                        <KartuPertanyaanProdi 
+                            v-else
+                            :block="block"
+                            :form="form"
+                        />
                     </template>
 
                     <!-- Tombol Navigasi Desktop & Mobile (< Kembali & > Lanjut/Selesai) -->

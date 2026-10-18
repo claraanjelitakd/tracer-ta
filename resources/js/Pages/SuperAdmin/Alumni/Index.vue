@@ -123,6 +123,15 @@ const applyFilters = () => {
     });
 };
 
+const filterByStatus = (statusValue) => {
+    if (status.value === statusValue) {
+        status.value = 'all';
+    } else {
+        status.value = statusValue;
+    }
+    applyFilters();
+};
+
 const handleSearchInput = () => {
     clearTimeout(searchTimeout);
     searchTimeout = setTimeout(() => {
@@ -207,7 +216,7 @@ const openWhatsAppModal = (alumni) => {
     const baseUrl = window.location.origin;
     const loginUrl = `${baseUrl}/login`;
 
-    waMessageText.value = `Halo Sdr/i ${alumni.nama},\n\nSalam hangat dari Universitas Kristen Duta Wacana (UKDW).\n\nKami mengundang Anda untuk melengkapi instrumen kuesioner Tracer Study UKDW melalui portal resmi kami:\n👉 ${loginUrl}\n\n*Panduan Masuk ke Portal:*\n• Username: *${alumni.nim}* (NIM Anda)\n• Password: Kata sandi akun Tracer Study Anda\n\nPartisipasi Anda sangat berarti bagi pengembangan kurikulum dan peningkatan mutu almamater. Jika memerlukan bantuan, silakan balas pesan ini.\n\nTerima kasih banyak atas kerjasamanya!\nSalam,\nTim Tracer Study UKDW`;
+    waMessageText.value = `Halo Sdr/i ${alumni.nama},\n\nSalam hangat dari Universitas Kristen Duta Wacana (UKDW).\n\nKami mengundang Anda untuk melengkapi instrumen kuesioner Tracer Study UKDW melalui portal resmi kami:\n${loginUrl}\n\n*Panduan Masuk ke Portal:*\n• Username: *${alumni.nim}* (NIM Anda)\n• Password: Kata sandi akun Tracer Study Anda\n\nPartisipasi Anda sangat berarti bagi pengembangan kurikulum dan peningkatan mutu almamater. Jika memerlukan bantuan, silakan balas pesan ini.\n\nTerima kasih banyak atas kerjasamanya!\nSalam,\nTim Tracer Study UKDW`;
 
     showWaModal.value = true;
 };
@@ -455,16 +464,6 @@ const handleOpenLinkedInHistory = async (alumni) => {
 
                         <!-- Tombol Aksi Cepat Header -->
                         <div class="flex items-center gap-3 mt-4 flex-wrap">
-                            <Link 
-                                href="/superadmin/evaluasi-atasan"
-                                class="inline-flex items-center gap-2 px-3.5 py-2 bg-white/10 hover:bg-white/20 border border-white/20 text-white rounded-xl text-xs font-semibold transition-all shadow-2xs hover:shadow-xs"
-                            >
-                                <svg class="w-4 h-4 text-[#FDC700]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                </svg>
-                                <span>Kelola Soal Evaluasi Atasan</span>
-                            </Link>
-
                             <button 
                                 type="button"
                                 @click="handleDownloadZip"
@@ -478,112 +477,93 @@ const handleOpenLinkedInHistory = async (alumni) => {
                             </button>
                         </div>
                     </div>
-
-                    <!-- Ringkasan Cepat di Header -->
-                    <div class="bg-black/20 border border-white/20 backdrop-blur-xs px-6 py-4 rounded-2xl text-left md:text-right text-white shadow-xs">
-                        <div class="flex items-center md:justify-end gap-1.5 text-xs text-emerald-200 font-bold uppercase tracking-wider mb-0.5">
-                            <span class="w-2 h-2 rounded-full bg-[#FDC700] animate-pulse"></span>
-                            <span>Tingkat Kelulusan Kuesioner</span>
-                        </div>
-                        <span class="text-3xl lg:text-4xl font-black text-[#FDC700] tracking-tight block">{{ stats.persentase_selesai }}%</span>
-                        <span class="text-xs text-emerald-100/90 font-medium block mt-0.5">
-                            {{ stats.total_selesai }} dari {{ stats.total_alumni }} Responden Selesai
-                        </span>
-                    </div>
                 </div>
             </header>
 
             <!-- Main Content Container -->
             <main class="w-full max-w-[1440px] mx-auto -mt-10 px-4 sm:px-6 lg:px-8 space-y-6 pb-12">
                 
-                <!-- 4 Kartu Statistik Elegan & Modern -->
+                <!-- 4 Kartu Statistik Interaktif & Filter Cepat -->
                 <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
-                    <!-- Total Mahasiswa -->
-                    <div class="bg-white rounded-2xl p-5 sm:p-6 border border-slate-200/80 shadow-xs flex items-center justify-between gap-4">
-                        <div>
+                    <!-- Total Mahasiswa (Filter: Semua Status) -->
+                    <div 
+                        @click="filterByStatus('all')"
+                        class="bg-white rounded-xl p-5 border shadow-2xs cursor-pointer hover:shadow-xs transition-all select-none"
+                        :class="status === 'all' ? 'border-[#0D542B] ring-2 ring-[#0D542B]/20 bg-emerald-50/20' : 'border-slate-200 hover:border-slate-300'"
+                        title="Klik untuk menampilkan semua mahasiswa"
+                    >
+                        <div class="flex items-center justify-between gap-1.5">
                             <p class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Total Mahasiswa</p>
-                            <p class="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight mt-1.5">{{ stats.total_alumni }}</p>
-                            <p class="text-xs text-slate-400 mt-0.5">Tahun Kelulusan {{ tahun }}</p>
+                            <span v-if="status === 'all'" class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-[#0D542B] text-white">Aktif</span>
                         </div>
-                        <div class="w-12 h-12 rounded-xl bg-slate-100 text-slate-600 flex items-center justify-center shrink-0">
-                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                            </svg>
-                        </div>
+                        <p class="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight mt-1.5">{{ stats.total_alumni }}</p>
+                        <p class="text-xs text-slate-400 mt-1">Tahun Kelulusan {{ tahun }} (Semua)</p>
                     </div>
 
-                    <!-- Kuesioner Selesai -->
-                    <div class="bg-white rounded-2xl p-5 sm:p-6 border border-slate-200/80 shadow-xs flex items-center justify-between gap-4">
-                        <div>
+                    <!-- Kuesioner Selesai (Filter: Selesai) -->
+                    <div 
+                        @click="filterByStatus('selesai')"
+                        class="bg-white rounded-xl p-5 border shadow-2xs cursor-pointer hover:shadow-xs transition-all select-none"
+                        :class="status === 'selesai' ? 'border-[#0D542B] ring-2 ring-[#0D542B]/30 bg-emerald-50/40' : 'border-slate-200 hover:border-emerald-300'"
+                        title="Klik untuk memfilter responden kuesioner selesai (100%)"
+                    >
+                        <div class="flex items-center justify-between gap-1.5">
                             <p class="text-[11px] font-bold text-[#0D542B] uppercase tracking-wider">Kuesioner Selesai</p>
-                            <p class="text-2xl sm:text-3xl font-extrabold text-[#0D542B] tracking-tight mt-1.5">{{ stats.total_selesai }}</p>
-                            <p class="text-xs text-slate-400 mt-0.5">Lengkap 100%</p>
+                            <span v-if="status === 'selesai'" class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-[#0D542B] text-white">Aktif</span>
                         </div>
-                        <div class="w-12 h-12 rounded-xl bg-emerald-50 text-[#0D542B] flex items-center justify-center shrink-0">
-                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
-                        </div>
+                        <p class="text-2xl sm:text-3xl font-extrabold text-[#0D542B] tracking-tight mt-1.5">{{ stats.total_selesai }}</p>
+                        <p class="text-xs text-slate-400 mt-1">Lengkap 100% (Klik filter)</p>
                     </div>
 
-                    <!-- Belum Selesai -->
-                    <div class="bg-white rounded-2xl p-5 sm:p-6 border border-slate-200/80 shadow-xs flex items-center justify-between gap-4">
-                        <div>
+                    <!-- Belum Selesai (Filter: Belum Selesai) -->
+                    <div 
+                        @click="filterByStatus('belum_selesai')"
+                        class="bg-white rounded-xl p-5 border shadow-2xs cursor-pointer hover:shadow-xs transition-all select-none"
+                        :class="status === 'belum_selesai' ? 'border-amber-500 ring-2 ring-amber-500/30 bg-amber-50/40' : 'border-slate-200 hover:border-amber-300'"
+                        title="Klik untuk memfilter responden yang belum selesai"
+                    >
+                        <div class="flex items-center justify-between gap-1.5">
                             <p class="text-[11px] font-bold text-amber-600 uppercase tracking-wider">Belum Selesai</p>
-                            <p class="text-2xl sm:text-3xl font-extrabold text-amber-600 tracking-tight mt-1.5">{{ stats.total_belum_selesai }}</p>
-                            <p class="text-xs text-slate-400 mt-0.5">Perlu tindak lanjut</p>
+                            <span v-if="status === 'belum_selesai'" class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-amber-600 text-white">Aktif</span>
                         </div>
-                        <div class="w-12 h-12 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center shrink-0">
-                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
-                        </div>
+                        <p class="text-2xl sm:text-3xl font-extrabold text-amber-600 tracking-tight mt-1.5">{{ stats.total_belum_selesai }}</p>
+                        <p class="text-xs text-slate-400 mt-1">Perlu tindak lanjut (Klik filter)</p>
                     </div>
 
-                    <!-- Rasio Penyelesaian -->
-                    <div class="bg-white rounded-2xl p-5 sm:p-6 border border-slate-200/80 shadow-xs flex items-center justify-between gap-4">
-                        <div>
+                    <!-- Rasio Penyelesaian (Filter: Selesai) -->
+                    <div 
+                        @click="filterByStatus('selesai')"
+                        class="bg-white rounded-xl p-5 border shadow-2xs cursor-pointer hover:shadow-xs transition-all select-none"
+                        :class="status === 'selesai' ? 'border-[#0D542B] ring-2 ring-[#0D542B]/30 bg-emerald-50/40' : 'border-slate-200 hover:border-emerald-300'"
+                        title="Klik untuk memfilter responden selesai"
+                    >
+                        <div class="flex items-center justify-between gap-1.5">
                             <p class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Rasio Penyelesaian</p>
-                            <p class="text-2xl sm:text-3xl font-extrabold text-[#0D542B] tracking-tight mt-1.5">{{ stats.persentase_selesai }}%</p>
-                            <p class="text-xs text-slate-400 mt-0.5">Kepatuhan responden</p>
+                            <span v-if="status === 'selesai'" class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-[#0D542B] text-white">Aktif</span>
                         </div>
-                        <div class="w-12 h-12 rounded-xl bg-emerald-50 text-[#0D542B] flex items-center justify-center shrink-0">
-                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                            </svg>
-                        </div>
+                        <p class="text-2xl sm:text-3xl font-extrabold text-[#0D542B] tracking-tight mt-1.5">{{ stats.persentase_selesai }}%</p>
+                        <p class="text-xs text-slate-400 mt-1">Kepatuhan responden (Klik filter)</p>
                     </div>
                 </div>
 
                 <!-- Panel Filter Komprehensif & Modern -->
-                <div class="bg-white rounded-2xl p-5 sm:p-6 border border-slate-200/80 shadow-xs">
+                <div class="bg-white rounded-xl p-5 border border-slate-200 shadow-2xs">
                     <!-- Header Filter Panel -->
-                    <div class="flex items-center justify-between border-b border-slate-100 pb-4 mb-5">
+                    <div class="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
                         <div class="flex items-center gap-2.5">
-                            <div class="w-7 h-7 rounded-lg bg-emerald-50 text-[#0D542B] flex items-center justify-center">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
-                                </svg>
-                            </div>
                             <h2 class="text-xs sm:text-sm font-extrabold text-slate-900 uppercase tracking-wider">
                                 Filter & Pencarian Mahasiswa
                             </h2>
-                            <span class="text-xs px-2.5 py-0.5 rounded-full bg-emerald-50 text-[#0D542B] border border-emerald-200/60 font-bold inline-flex items-center gap-1">
-                                <svg class="w-3 h-3 text-[#0D542B]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                </svg>
-                                <span>Tahun: {{ tahun }}</span>
+                            <span class="text-xs px-2.5 py-0.5 rounded-full bg-emerald-50 text-[#0D542B] border border-emerald-200/60 font-bold">
+                                Tahun: {{ tahun }}
                             </span>
                         </div>
-                        <div class="flex items-center gap-3">
+                        <div>
                             <button 
                                 @click="resetFilters" 
-                                class="text-xs text-slate-500 hover:text-slate-800 font-bold transition-colors inline-flex items-center gap-1.5 cursor-pointer px-2.5 py-1.5 rounded-lg hover:bg-slate-100"
+                                class="text-xs text-slate-500 hover:text-slate-800 font-bold transition-colors cursor-pointer px-2.5 py-1.5 rounded-lg hover:bg-slate-100"
                             >
-                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                                </svg>
-                                <span>Reset Filter</span>
+                                Reset Filter
                             </button>
                         </div>
                     </div>
@@ -720,42 +700,42 @@ const handleOpenLinkedInHistory = async (alumni) => {
                     </div>
 
                     <!-- Tabel Data -->
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left text-xs">
-                            <thead class="bg-slate-50 text-slate-600 font-bold border-b border-slate-200/70 uppercase tracking-wider text-[11px]">
-                                <tr>
-                                    <th class="py-3.5 px-4 text-center w-12">No</th>
-                                    <th class="py-3.5 px-5">Mahasiswa / Alumni</th>
-                                    <th class="py-3.5 px-4">Program Studi</th>
-                                    <th class="py-3.5 px-4">Target Kelulusan</th>
-                                    <th class="py-3.5 px-4 text-center min-w-[210px]">Status & Progres Tracer</th>
-                                    <th class="py-3.5 px-4 text-center min-w-[160px]">Aksi & Kontak</th>
+                    <div class="bg-white border border-gray-300 overflow-x-auto shadow-2xs">
+                        <table class="w-full min-w-full text-left border-collapse border border-gray-300 text-xs bg-white">
+                            <thead>
+                                <tr class="bg-gray-100 text-gray-800 font-semibold border-b border-gray-300 text-[11px] whitespace-nowrap">
+                                    <th class="border border-gray-300 px-2.5 py-2 text-center w-12 whitespace-nowrap">No</th>
+                                    <th class="border border-gray-300 px-3 py-2 whitespace-nowrap">Mahasiswa / Alumni</th>
+                                    <th class="border border-gray-300 px-3 py-2 whitespace-nowrap">Program Studi</th>
+                                    <th class="border border-gray-300 px-3 py-2 whitespace-nowrap">Target Kelulusan</th>
+                                    <th class="border border-gray-300 px-3 py-2 min-w-[200px] whitespace-nowrap">Status Kelengkapan</th>
+                                    <th class="border border-gray-300 px-2.5 py-2 text-center w-28 whitespace-nowrap">Aksi</th>
                                 </tr>
                             </thead>
-                            <tbody class="divide-y divide-slate-100">
+                            <tbody>
                                 <tr 
                                     v-for="(alumni, idx) in paginatedAlumnis" 
                                     :key="alumni.id" 
-                                    class="hover:bg-slate-50/70 transition-colors group"
+                                    class="hover:bg-gray-50/80 transition-colors group"
                                 >
                                     <!-- No -->
-                                    <td class="py-4 px-4 text-center font-mono font-semibold text-slate-400">
+                                    <td class="border border-gray-300 px-2.5 py-2 text-center font-mono font-medium text-gray-500">
                                         {{ (currentPage - 1) * perPage + idx + 1 }}
                                     </td>
 
                                     <!-- Identitas Mahasiswa (Nama, Avatar Inisial & NIM) -->
-                                    <td class="py-4 px-5">
-                                        <div class="flex items-center gap-3">
+                                    <td class="border border-gray-300 px-3 py-2">
+                                        <div class="flex items-center gap-2.5">
                                             <!-- Avatar Inisial Berkelas -->
-                                            <div class="w-9 h-9 rounded-full bg-emerald-50 border border-emerald-200 text-[#0D542B] flex items-center justify-center font-extrabold text-xs shrink-0 shadow-2xs group-hover:bg-[#0D542B] group-hover:text-white transition-colors">
+                                            <div class="w-8 h-8 rounded-full bg-emerald-50 border border-emerald-200 text-[#0D542B] flex items-center justify-center font-extrabold text-[11px] shrink-0 shadow-2xs group-hover:bg-[#0D542B] group-hover:text-white transition-colors">
                                                 {{ getInitials(alumni.nama) }}
                                             </div>
                                             <div class="min-w-0">
-                                                <div class="font-extrabold text-slate-900 text-xs sm:text-sm group-hover:text-[#0D542B] transition-colors leading-snug truncate">
+                                                <div class="font-bold text-gray-900 text-xs group-hover:text-[#0D542B] transition-colors leading-snug truncate">
                                                     {{ alumni.nama }}
                                                 </div>
                                                 <div class="flex items-center gap-1.5 mt-0.5">
-                                                    <span class="font-mono text-[11px] text-slate-500 bg-slate-100 border border-slate-200/50 px-1.5 py-0.2 rounded font-semibold">
+                                                    <span class="font-mono text-[10px] text-gray-500 bg-gray-100 border border-gray-200 px-1.5 py-0.2 rounded font-semibold">
                                                         {{ alumni.nim }}
                                                     </span>
                                                 </div>
@@ -764,81 +744,70 @@ const handleOpenLinkedInHistory = async (alumni) => {
                                     </td>
 
                                     <!-- Program Studi -->
-                                    <td class="py-4 px-4">
-                                        <div class="font-semibold text-slate-800 text-xs">
+                                    <td class="border border-gray-300 px-3 py-2">
+                                        <div class="font-bold text-gray-800 text-xs">
                                             {{ alumni.prodi }}
                                         </div>
-                                        <div v-if="alumni.fakultas && alumni.fakultas !== '-'" class="text-[10px] text-slate-400">
+                                        <div v-if="alumni.fakultas && alumni.fakultas !== '-'" class="text-[10px] text-gray-500">
                                             {{ alumni.fakultas }}
                                         </div>
                                     </td>
 
                                     <!-- Periode / Target Kelulusan -->
-                                    <td class="py-4 px-4">
-                                        <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-50 text-[#0D542B] border border-emerald-200/70 text-[11px] font-bold">
+                                    <td class="border border-gray-300 px-3 py-2">
+                                        <div class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-emerald-50 text-[#0D542B] border border-emerald-200 text-[11px] font-bold">
                                             <svg class="w-3 h-3 text-[#0D542B] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                                             </svg>
                                             <span class="truncate">{{ alumni.tahun_akademik_lulus }}</span>
                                         </div>
-                                        <div class="text-[10px] text-slate-400 mt-1 flex items-center gap-1.5">
+                                        <div class="text-[10px] text-gray-400 mt-1 flex items-center gap-1.5">
                                             <span>Tahun {{ alumni.tahun_lulus }}</span>
                                             <span>&bull;</span>
-                                            <span>Status: <strong class="text-slate-600">{{ alumni.status_yudisium }}</strong></span>
+                                            <span>Status: <strong class="text-gray-600">{{ alumni.status_yudisium }}</strong></span>
                                         </div>
                                     </td>
 
-                                    <!-- Kolom Terpadu: Status & Progres Tracer (Profil, Kuesioner Univ, Evaluasi Atasan) -->
-                                    <td class="py-4 px-4">
-                                        <div class="flex flex-col gap-1.5 min-w-[190px] max-w-[220px] mx-auto text-[11px]">
-                                            <!-- 1. Kelengkapan Profil -->
-                                            <div class="flex items-center justify-between px-2 py-1 rounded-md border" :class="alumni.kelengkapan.profile.is_complete ? 'bg-emerald-50/70 border-emerald-200/60 text-emerald-800' : 'bg-rose-50/70 border-rose-200/60 text-rose-700'">
-                                                <span class="font-medium flex items-center gap-1.5">
-                                                    <span class="w-1.5 h-1.5 rounded-full" :class="alumni.kelengkapan.profile.is_complete ? 'bg-emerald-600' : 'bg-rose-500'"></span>
-                                                    Profil
-                                                </span>
-                                                <span class="font-extrabold font-mono text-[10px]">
-                                                    {{ alumni.kelengkapan.profile.percentage }}% {{ alumni.kelengkapan.profile.is_complete ? 'Lengkap' : 'Belum' }}
-                                                </span>
-                                            </div>
-
-                                            <!-- 2. Kuesioner Universitas -->
-                                            <div class="flex items-center justify-between px-2 py-1 rounded-md border" :class="alumni.kelengkapan.questionnaire.is_complete ? 'bg-emerald-50/70 border-emerald-200/60 text-emerald-800' : 'bg-amber-50/70 border-amber-200/60 text-amber-800'">
-                                                <span class="font-medium flex items-center gap-1.5">
-                                                    <span class="w-1.5 h-1.5 rounded-full" :class="alumni.kelengkapan.questionnaire.is_complete ? 'bg-emerald-600' : 'bg-amber-500'"></span>
-                                                    Kuesioner
-                                                </span>
-                                                <span class="font-extrabold font-mono text-[10px]">
-                                                    {{ alumni.kelengkapan.questionnaire.percentage }}% {{ alumni.kelengkapan.questionnaire.is_complete ? 'Selesai' : 'Wajib' }}
+                                    <!-- Kolom Status Kelengkapan (List Bersih Tanpa Multi-Dot) -->
+                                    <td class="border border-gray-300 px-3 py-2">
+                                        <div class="space-y-1 min-w-[180px] text-[11px]">
+                                            <div class="flex items-center justify-between gap-2">
+                                                <span class="text-gray-500 font-medium">Profil:</span>
+                                                <span 
+                                                    class="font-semibold"
+                                                    :class="alumni.kelengkapan?.profile?.is_complete ? 'text-emerald-700' : 'text-amber-700'"
+                                                >
+                                                    {{ alumni.kelengkapan?.profile?.percentage || 0 }}% ({{ alumni.kelengkapan?.profile?.is_complete ? 'Lengkap' : 'Belum' }})
                                                 </span>
                                             </div>
-
-                                            <!-- 3. Evaluasi Atasan -->
-                                            <div class="flex items-center justify-between px-2 py-1 rounded-md border" 
-                                                 :class="alumni.evaluasi_atasan?.is_submitted 
-                                                     ? 'bg-emerald-50/70 border-emerald-200/60 text-emerald-800' 
-                                                     : (alumni.evaluasi_atasan?.has_evaluasi ? 'bg-amber-50/70 border-amber-200/60 text-amber-800' : 'bg-slate-50 border-slate-200/60 text-slate-500')">
-                                                <span class="font-medium flex items-center gap-1.5">
-                                                    <span class="w-1.5 h-1.5 rounded-full" 
-                                                          :class="alumni.evaluasi_atasan?.is_submitted 
-                                                              ? 'bg-emerald-600' 
-                                                              : (alumni.evaluasi_atasan?.has_evaluasi ? 'bg-amber-500' : 'bg-slate-400')"></span>
-                                                    Atasan
+                                            <div class="flex items-center justify-between gap-2">
+                                                <span class="text-gray-500 font-medium">Kuesioner:</span>
+                                                <span 
+                                                    class="font-semibold"
+                                                    :class="alumni.kelengkapan?.questionnaire?.is_complete ? 'text-emerald-700' : 'text-amber-700'"
+                                                >
+                                                    {{ alumni.kelengkapan?.questionnaire?.percentage || 0 }}% ({{ alumni.kelengkapan?.questionnaire?.is_complete ? 'Selesai' : 'Belum' }})
                                                 </span>
-                                                <span class="font-extrabold text-[10px]">
+                                            </div>
+                                            <div class="flex items-center justify-between gap-2">
+                                                <span class="text-gray-500 font-medium">Atasan:</span>
+                                                <span 
+                                                    class="font-semibold"
+                                                    :class="alumni.evaluasi_atasan?.is_submitted ? 'text-emerald-700' : (alumni.evaluasi_atasan?.has_evaluasi ? 'text-amber-700' : 'text-gray-500')"
+                                                >
                                                     {{ alumni.evaluasi_atasan?.is_submitted ? 'Sudah Diisi' : (alumni.evaluasi_atasan?.has_evaluasi ? 'Menunggu' : 'Belum Ada') }}
                                                 </span>
                                             </div>
                                         </div>
                                     </td>
 
-                                    <!-- Kolom Aksi Terpadu (Detail, WA, Email Flash, LinkedIn Sync & History) -->
-                                    <td class="py-4 px-4 text-center">
-                                        <div class="inline-flex items-center justify-center gap-1.5">
-                                            <!-- 1. Detail (👁️) -->
+                                    <!-- Kolom Aksi Terpadu (Detail, WA, Email, LinkedIn Sync & History) -->
+                                    <td class="border border-gray-300 px-2.5 py-2 text-center">
+                                        <div class="inline-flex items-center justify-center gap-1">
+                                            <!-- 1. Detail -->
                                             <Link 
                                                 :href="`/superadmin/alumni/${alumni.id}`" 
-                                                class="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 bg-[#0D542B] hover:bg-[#08381c] text-white transition-all shadow-2xs hover:shadow-xs active:scale-95 cursor-pointer"
+                                                class="p-1 text-blue-600 hover:bg-blue-50 rounded cursor-pointer transition-colors"
                                                 title="Lihat Detail Alumni & Kuesioner"
                                                 aria-label="Lihat Detail Alumni"
                                             >
@@ -848,11 +817,11 @@ const handleOpenLinkedInHistory = async (alumni) => {
                                                 </svg>
                                             </Link>
 
-                                            <!-- 2. WhatsApp (💬) -->
+                                            <!-- 2. WhatsApp -->
                                             <button 
                                                 type="button"
                                                 @click="openWhatsAppModal(alumni)"
-                                                class="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 bg-[#25D366] hover:bg-[#1faa52] text-white transition-all shadow-2xs hover:shadow-xs active:scale-95 cursor-pointer"
+                                                class="p-1 text-emerald-600 hover:bg-emerald-50 rounded cursor-pointer transition-colors"
                                                 title="Hubungi via WhatsApp (Undangan Kuesioner)"
                                                 aria-label="Hubungi via WhatsApp"
                                             >
@@ -861,11 +830,11 @@ const handleOpenLinkedInHistory = async (alumni) => {
                                                 </svg>
                                             </button>
 
-                                            <!-- 3. Kirim Email Pengingat Flash (✉️) -->
+                                            <!-- 3. Kirim Email Pengingat -->
                                             <button 
                                                 type="button"
                                                 @click="handleSendSingleEmail(alumni)"
-                                                class="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 bg-blue-600 hover:bg-blue-700 text-white transition-all shadow-2xs hover:shadow-xs active:scale-95 cursor-pointer"
+                                                class="p-1 text-sky-600 hover:bg-sky-50 rounded cursor-pointer transition-colors"
                                                 title="Kirim Email Pengingat Kuesioner Langsung"
                                                 aria-label="Kirim Email Pengingat"
                                             >
@@ -874,12 +843,12 @@ const handleOpenLinkedInHistory = async (alumni) => {
                                                 </svg>
                                             </button>
 
-                                            <!-- 4. Sinkronisasi LinkedIn Direct & History (🔗) -->
+                                            <!-- 4. Sinkronisasi LinkedIn Direct & History -->
                                             <div class="relative inline-flex items-center">
                                                 <button 
                                                     type="button"
                                                     @click="handleSyncLinkedIn(alumni)"
-                                                    class="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 bg-[#0077B5] hover:bg-[#005e93] text-white transition-all shadow-2xs hover:shadow-xs active:scale-95 cursor-pointer"
+                                                    class="p-1 text-[#0077B5] hover:bg-blue-50 rounded cursor-pointer transition-colors"
                                                     :title="alumni.linkedin_url ? `Sinkronkan LinkedIn: ${alumni.linkedin_url}` : 'Sinkronkan LinkedIn Alumni'"
                                                     aria-label="Sinkronkan LinkedIn"
                                                 >
@@ -891,7 +860,7 @@ const handleOpenLinkedInHistory = async (alumni) => {
                                                 <button 
                                                     type="button"
                                                     @click="handleOpenLinkedInHistory(alumni)"
-                                                    class="w-4 h-4 rounded-full bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 absolute -top-1.5 -right-1.5 flex items-center justify-center text-[8px] font-bold shadow-2xs cursor-pointer"
+                                                    class="w-3.5 h-3.5 rounded-full bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 absolute -top-1 -right-1 flex items-center justify-center text-[7px] font-bold shadow-2xs cursor-pointer"
                                                     title="Riwayat Scraping LinkedIn"
                                                     aria-label="Riwayat LinkedIn"
                                                 >

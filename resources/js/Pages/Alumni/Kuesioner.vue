@@ -819,7 +819,7 @@ watch(() => form.answers, (newAnswers) => {
 <template>
     <Head title="Kuesioner Tracer Study" />
 
-    <div class="min-h-screen bg-[#E8F5E9] font-sans text-gray-900 antialiased flex flex-col relative pb-20 md:pb-6">
+    <div class="min-h-screen bg-slate-50 font-sans text-gray-900 antialiased flex flex-col relative pb-20 md:pb-6">
         <!-- Header Atas: Navbar & Stepper Tahapan -->
         <header class="sticky top-0 z-50 w-full shadow-md bg-white">
             <!-- 1. Navbar Atas (Logo UKDW & Tombol Kembali) -->

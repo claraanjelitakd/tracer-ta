@@ -223,13 +223,7 @@ const handleMultipleNumberInput = (qId, optCode, event) => {
         event.target.value = '';
         return;
     }
-    let num = Number(cleanDigits);
-
-    // Otomatis tambahkan 000 pada input pertama jika mengetik angka satuan (misal: 5 -> 5.000), dan tetap bisa di-adjust/diedit
-    if (num > 0 && num < 1000 && !rawVal.includes('000') && !rawVal.includes('00') && !rawVal.includes('0')) {
-        num = num * 1000;
-    }
-
+    const num = Number(cleanDigits);
     props.form.answers[qId][optCode] = num;
     event.target.value = new Intl.NumberFormat('id-ID').format(num);
 };
@@ -325,20 +319,14 @@ const stepNumberInput = (qId, delta) => {
         <!-- Header Soal: Kode & Teks Pertanyaan (Format Formal) -->
         <div :class="isPaired ? 'mb-4' : 'mb-4 sm:mb-6'">
             <div class="flex items-center gap-2 mb-2">
-                <span class="inline-block bg-[#005B3C] text-white text-[10px] sm:text-[11px] font-black uppercase px-2.5 py-0.5 rounded-md tracking-wider shadow-2xs">
+                <span class="inline-block bg-[#0D542B] text-white text-[10px] sm:text-[11px] font-bold uppercase px-2 py-0.5 rounded tracking-wider shadow-2xs">
                     {{ subpertanyaan.kode_pertanyaan }}
-                </span>
-                <span v-if="subpertanyaan.wajib" class="text-[10px] sm:text-[11px] font-bold text-red-600 bg-red-50 border border-red-200 px-2 py-0.5 rounded-md">
-                    Wajib diisi
-                </span>
-                <span v-else class="text-[10px] sm:text-[11px] font-bold text-slate-500 bg-slate-100 border border-slate-200 px-2 py-0.5 rounded-md">
-                    Opsional
                 </span>
             </div>
 
-            <h2 :class="isPaired ? 'text-sm sm:text-base md:text-lg font-black leading-snug tracking-tight text-gray-900' : 'text-base sm:text-xl md:text-2xl font-black text-gray-900 leading-snug tracking-tight'">
+            <h2 :class="isPaired ? 'text-sm sm:text-base md:text-lg font-bold leading-snug tracking-tight text-gray-900' : 'text-base sm:text-xl md:text-2xl font-bold text-gray-900 leading-snug tracking-tight'">
                 {{ getCleanQuestionText(subpertanyaan.subpertanyaan) }}
-                <span v-if="subpertanyaan.wajib" class="text-red-500 font-black">*</span>
+                <span v-if="subpertanyaan.wajib" class="text-rose-500 font-bold ml-1">*</span>
             </h2>
 
             <p v-if="getCleanKeterangan(subpertanyaan.keterangan || subpertanyaan.sub_detail)" class="text-xs sm:text-sm text-gray-600 font-medium mt-1">
@@ -715,11 +703,11 @@ const stepNumberInput = (qId, delta) => {
 
         <!-- TIPE INPUT: Multiple Number (Take Home Pay Gaji F13 / F505) -->
         <div v-else-if="subpertanyaan.type === 'multiple_number'" class="space-y-4 sm:space-y-6">
-            <div class="p-3.5 sm:p-4 rounded-xl sm:rounded-2xl bg-emerald-50/90 border border-emerald-200/80 text-emerald-950 flex items-start gap-3 text-xs sm:text-sm">
+            <div class="p-3.5 sm:p-4 rounded-xl bg-slate-50 border border-slate-200 text-slate-800 flex items-start gap-3 text-xs sm:text-sm">
                 <div>
-                    <p class="font-bold text-emerald-900">Petunjuk Pengisian Penghasilan (Take Home Pay):</p>
-                    <p class="text-[11px] sm:text-xs text-emerald-800 mt-1 leading-relaxed">
-                        Ketik nominal pada kolom di bawah. Anda dapat mengetik dalam format ribuan (misal: ketik <strong>5</strong> akan otomatis menjadi <strong>5.000</strong>) atau mengetik nominal penuh (misal: <strong>5.000.000</strong>). Format titik ribuan tertata otomatis dan angka <strong>000</strong> dapat diedit langsung sesuai nominal sebenarnya.
+                    <p class="font-bold text-slate-900">Petunjuk Pengisian Penghasilan (Take Home Pay):</p>
+                    <p class="text-[11px] sm:text-xs text-slate-600 mt-1 leading-relaxed">
+                        Data ini disinkronkan dengan data pendapatan pada Profil Anda. Anda dapat memperbarui atau merinci nominal pada kolom di bawah (format titik ribuan tertata otomatis).
                     </p>
                 </div>
             </div>

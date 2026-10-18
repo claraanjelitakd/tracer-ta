@@ -204,71 +204,71 @@ const openDetailModal = (log) => {
                 </div>
 
                 <!-- Table View -->
-                <div class="bg-white rounded-lg border border-gray-200 overflow-hidden shadow-2xs">
+                <div class="bg-white border border-gray-300 shadow-2xs">
                     <div class="overflow-x-auto">
-                        <table class="w-full text-left text-xs border-collapse">
-                            <thead>
-                                <tr class="bg-slate-50 border-b border-gray-200 text-gray-700 font-bold uppercase tracking-wider text-[11px]">
-                                    <th class="py-3 px-4 w-12 text-center">#</th>
-                                    <th class="py-3 px-4 w-44">Waktu</th>
-                                    <th class="py-3 px-4 w-48">Pengguna (Pelaku)</th>
-                                    <th class="py-3 px-4 w-48">Aksi</th>
-                                    <th class="py-3 px-4">Deskripsi Aktivitas</th>
-                                    <th class="py-3 px-4 w-32">IP Address</th>
-                                    <th class="py-3 px-4 w-20 text-center">Detail</th>
-                                </tr>
-                            </thead>
-                            <tbody class="divide-y divide-gray-200 text-gray-800">
-                                <tr v-if="logs.data.length === 0">
-                                    <td colspan="7" class="py-8 text-center text-gray-400 font-medium">
-                                        Belum ada rekaman log aktivitas yang sesuai dengan kriteria filter.
-                                    </td>
-                                </tr>
-                                <tr
-                                    v-for="(log, idx) in logs.data"
-                                    :key="log.id"
-                                    class="hover:bg-slate-50/80 transition-colors"
-                                >
-                                    <td class="py-3 px-4 text-center font-medium text-gray-500">
-                                        {{ (logs.current_page - 1) * logs.per_page + idx + 1 }}
-                                    </td>
-                                    <td class="py-3 px-4 font-semibold text-gray-700 whitespace-nowrap">
-                                        {{ formatDate(log.created_at) }}
-                                    </td>
-                                    <td class="py-3 px-4">
-                                        <div v-if="log.user" class="space-y-0.5">
-                                            <div class="font-bold text-gray-900">{{ log.user.name }}</div>
-                                            <div class="text-[11px] text-gray-500 font-mono">{{ log.user.username }} ({{ log.user.role }})</div>
-                                        </div>
-                                        <div v-else class="italic text-gray-400">Sistem / Pengunjung</div>
-                                    </td>
-                                    <td class="py-3 px-4">
-                                        <span class="px-2 py-0.5 rounded font-mono text-[10px] font-bold uppercase tracking-wider bg-slate-100 text-slate-800 border border-slate-300 inline-block">
-                                            {{ log.action }}
-                                        </span>
-                                    </td>
-                                    <td class="py-3 px-4 leading-relaxed font-medium">
-                                        {{ log.description || '-' }}
-                                    </td>
-                                    <td class="py-3 px-4 font-mono text-gray-600 text-[11px]">
-                                        {{ log.ip_address || '-' }}
-                                    </td>
-                                    <td class="py-3 px-4 text-center">
-                                        <button
-                                            @click="openDetailModal(log)"
-                                            class="p-1.5 rounded-lg bg-emerald-50 text-[#0D542B] hover:bg-emerald-100 transition-colors font-bold text-xs cursor-pointer border border-emerald-200"
-                                            title="Lihat Detail Log"
-                                        >
-                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                                            </svg>
-                                        </button>
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
+                        <table class="w-full min-w-full text-left border-collapse border border-gray-300 text-xs bg-white">
+                        <thead>
+                            <tr class="bg-gray-100 text-gray-800 font-semibold border-b border-gray-300 text-[11px] whitespace-nowrap">
+                                <th class="border border-gray-300 px-2.5 py-2 text-center w-12 whitespace-nowrap">No</th>
+                                <th class="border border-gray-300 px-3 py-2 w-44 whitespace-nowrap">Waktu</th>
+                                <th class="border border-gray-300 px-3 py-2 w-48 whitespace-nowrap">Pengguna (Pelaku)</th>
+                                <th class="border border-gray-300 px-3 py-2 w-44 whitespace-nowrap">Aksi</th>
+                                <th class="border border-gray-300 px-3 py-2 whitespace-nowrap">Deskripsi Aktivitas</th>
+                                <th class="border border-gray-300 px-3 py-2 w-32 whitespace-nowrap">IP Address</th>
+                                <th class="border border-gray-300 px-2.5 py-2 text-center w-16 whitespace-nowrap">Detail</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr v-if="logs.data.length === 0">
+                                <td colspan="7" class="border border-gray-300 p-8 text-center text-gray-400 italic">
+                                    Belum ada rekaman log aktivitas yang sesuai dengan kriteria filter.
+                                </td>
+                            </tr>
+                            <tr
+                                v-for="(log, idx) in logs.data"
+                                :key="log.id"
+                                class="hover:bg-gray-50/80 transition-colors"
+                            >
+                                <td class="border border-gray-300 px-2.5 py-2 text-center text-gray-600 font-medium">
+                                    {{ (logs.current_page - 1) * logs.per_page + idx + 1 }}
+                                </td>
+                                <td class="border border-gray-300 px-3 py-2 font-semibold text-gray-700 whitespace-nowrap">
+                                    {{ formatDate(log.created_at) }}
+                                </td>
+                                <td class="border border-gray-300 px-3 py-2">
+                                    <div v-if="log.user" class="space-y-0.5">
+                                        <div class="font-bold text-gray-900">{{ log.user.name }}</div>
+                                        <div class="text-[11px] text-gray-500 font-mono">{{ log.user.username }} ({{ log.user.role }})</div>
+                                    </div>
+                                    <div v-else class="italic text-gray-400">Sistem / Pengunjung</div>
+                                </td>
+                                <td class="border border-gray-300 px-3 py-2">
+                                    <span class="px-2 py-0.5 rounded font-mono text-[10px] font-bold uppercase tracking-wider bg-slate-100 text-slate-800 border border-slate-300 inline-block">
+                                        {{ log.action }}
+                                    </span>
+                                </td>
+                                <td class="border border-gray-300 px-3 py-2 leading-relaxed font-medium text-gray-800">
+                                    {{ log.description || '-' }}
+                                </td>
+                                <td class="border border-gray-300 px-3 py-2 font-mono text-gray-600 text-[11px]">
+                                    {{ log.ip_address || '-' }}
+                                </td>
+                                <td class="border border-gray-300 px-2.5 py-2 text-center">
+                                    <button
+                                        @click="openDetailModal(log)"
+                                        class="p-1 text-blue-600 hover:bg-blue-50 rounded cursor-pointer transition-colors"
+                                        title="Lihat Detail Log"
+                                    >
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                        </svg>
+                                    </button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
 
                     <!-- Pagination -->
                     <div v-if="logs.total > 0" class="px-4 py-3 border-t border-gray-200 bg-slate-50 flex items-center justify-between text-xs text-gray-600">

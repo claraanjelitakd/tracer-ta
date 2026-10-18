@@ -1,5 +1,43 @@
 # UPDATE LOG - SERU (Sistem Ekosistem Rekam Jejak Alumni)
 
+## [2026-10-19] Standardisasi Desain UI Formal Super Admin, Refaktorisasi Modular Kuesioner Prodi, dan Peningkatan UX Profil Alumni (Stepper & Unified Navigation)
+
+### Ringkasan Pembaruan
+1. **Peningkatan UX & Desain Formulir Profil Alumni (`/alumni/profile`)**:
+   - **Stepper Horizontal Full-Width**: Mengganti tombol tab yang datar dengan komponen modular [`Stepper.vue`](file:///c:/study/tracerstudy/resources/js/Pages/Alumni/Profil/Components/Stepper.vue) yang membentang penuh (*full-width*) selebar kartu form. Dilengkapi nomor langkah 1..4, centang putih (`✓`) dinamis, serta status badge *"Sudah Lengkap"* saat seluruh atribut wajib di tahapan tersebut telah terpenuhi secara valid.
+   - **Menghilangkan Kesan Tombol Ganda (*Double Buttons*)**: Menyederhanakan *Bottom Action Bar* dari sebelumnya dua tombol bersaing (`Lanjut` vs `Simpan Perubahan`) menjadi satu alur jelas:
+     - Tahap 1 s.d. 3: Tombol utama hijau **`Simpan & Lanjut: [Nama Langkah Berikutnya] →`** (menyimpan data form secara otomatis dan memindahkan tampilan ke tab berikutnya) didampingi tombol sekunder **`Simpan Saja`**.
+     - Tahap 4 (Terakhir): Tombol utama hijau tunggal **`Simpan Seluruh Profil`**.
+   - **Pembersihan Header**: Menghapus kotak petunjuk lama dan indikator yang tidak diperlukan sehingga header profil tampil bersih, rapi, dan minimalis.
+   - **Standarisasi Input Enterprise**: Menghilangkan warna hijau dan merah tebal yang berlebihan pada form input biodata, orang tua, dan karier, beralih ke border netral slate dengan ring fokus hijau UKDW `#0D542B`.
+   - **Tombol Navigasi Cepat**: Menambahkan *floating action button* di sudut kanan bawah untuk gulir cepat ke paling atas (*scroll-to-top*) dan ke paling bawah (*scroll-to-bottom*).
+
+2. **Refaktorisasi Modular & Harmonisasi Kuesioner Prodi dengan Kuesioner Universitas**:
+   - **Komponen Kuesioner Prodi Modular**: Memecah halaman monolitik `KuesionerProdi.vue` menjadi sub-komponen terisolasi di `resources/js/Pages/Alumni/Components/KuesionerProdi/`:
+     - [`Banner.vue`](file:///c:/study/tracerstudy/resources/js/Pages/Alumni/Components/KuesionerProdi/Banner.vue): Banner identitas prodi, status kelulusan, dan batas waktu pengisian.
+     - [`Stepper.vue`](file:///c:/study/tracerstudy/resources/js/Pages/Alumni/Components/KuesionerProdi/Stepper.vue): Indikator tahapan seksi prodi dengan nomor seksi sekuensial dan centang validasi selesai.
+     - [`KartuPertanyaanProdi.vue`](file:///c:/study/tracerstudy/resources/js/Pages/Alumni/Components/KuesionerProdi/KartuPertanyaanProdi.vue): Rendering dinamis tipe pertanyaan teks, angka, radio, checkbox, dropdown, dan skala Likert.
+     - [`Navigasi.vue`](file:///c:/study/tracerstudy/resources/js/Pages/Alumni/Components/KuesionerProdi/Navigasi.vue): Tombol navigasi seksi sebelumnya, selanjutnya, dan simpan jawaban kuesioner prodi.
+   - **Konsistensi Visual & Label Wajib**: Menyamakan estetika visual stepper, tombol navigasi, dan indikator wajib (tanda bintang merah `*` standar) antara Kuesioner Universitas dan Kuesioner Prodi.
+   - **Pembersihan Seed & Filter**: Memperbaiki seeder pertanyaan prodi untuk memastikan tidak ada pertanyaan wisuda yang tidak relevan.
+
+3. **Pembersihan & Penyeragaman Desain Antarmuka Super Admin**:
+   - **Penyeragaman Ikon**: Mengganti ikon campuran dengan ikon SVG/Lucide yang konsisten dan seragam di seluruh modul (Manajemen Akun, Master Wilayah, Alumni, Perusahaan, Pertanyaan, Section, Logs, Evaluasi Atasan).
+   - **Garis Tabel Rapi & Stabilitas Zoom**: Merapikan seluruh tabel data dengan batas garis jelas (`divide-y divide-gray-200 border border-gray-200`) dan tata letak stabil saat halaman diperkecil/diperbesar (*zoom stability*).
+   - **Penghapusan Multi-Dot Status Pill**: Menghilangkan widget status kolom bertumpuk titik-titik warna (*multi-dot pill*) dan menggantikannya dengan badge label status yang ringkas, bersih, dan konsisten (seperti badge status pada halaman Perusahaan).
+   - **Penyederhanaan Header Filter**: Menghilangkan ikon corong filter, grafik, jam, dan elemen dekoratif berlebihan. Mengubah persentase kelulusan kuesioner menjadi filter klik interaktif yang bersih dan formal.
+
+4. **Pembaruan Pedoman Standar UI di `AGENTS.md` & `CLAUDE.md`**:
+   - Mencatat aturan tegas tata kelola antarmuka: dilarang menggunakan emoticon/emoji, dilarang menggunakan icon dekoratif berlebihan, dan dilarang membuat widget status kolom multi-dot.
+   - Menegaskan aturan keamanan operasional Git: larangan keras menjalankan `git push` tanpa instruksi eksplisit dari pengguna.
+
+5. **Pengujian & Verifikasi**:
+   - ✅ **150 Feature & Unit Tests** lulus 100% (`150 passed, 937 assertions`).
+   - ✅ **Vite Production Build**: `npm run build` sukses 100% tanpa error (`✓ built in 5.46s`).
+   - ✅ **Laravel Pint**: Lulus verifikasi format kode PHP (`{"tool":"pint","result":"passed"}`).
+
+---
+
 ## [2026-10-08] Deep Linking Dua Arah Detail Alumni - LinkedIn Sync, Tombol Aksi Ikon Mata, Skema Kolom Skills & Experience, dan Replikasi Database Views
 
 ### Ringkasan Pembaruan

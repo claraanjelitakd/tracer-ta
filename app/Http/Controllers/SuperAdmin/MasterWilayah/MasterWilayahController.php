@@ -81,14 +81,8 @@ class MasterWilayahController extends Controller
             ->orderBy('nama_provinsi', 'asc')
             ->get();
 
-        // Query Provinsi beserta UMP pada tahun terpilih dan jumlah kabupaten
-        $provinsiQuery = Propinsi::with(['kabupaten' => function ($q) {
-            $q->select('id', 'propinsi_id');
-        }])
-            ->with(['umps' => function ($q) use ($selectedYear) {
-                $q->where('tahun', $selectedYear);
-            }])
-            ->withCount('kabupaten');
+        // Query Provinsi murni untuk master data & jumlah kabupaten
+        $provinsiQuery = Propinsi::withCount('kabupaten');
 
         if ($search && $activeTab === 'provinsi') {
             $provinsiQuery->where(function ($q) use ($search) {
@@ -98,26 +92,16 @@ class MasterWilayahController extends Controller
         }
 
         $provinces = $provinsiQuery->orderBy('kode_provinsi', 'asc')->get()->map(function ($prov) {
-            $activeUmp = $prov->umps->first();
-
             return [
                 'id' => $prov->id,
                 'kode_provinsi' => $prov->kode_provinsi,
                 'nama_provinsi' => $prov->nama_provinsi,
                 'total_kabupaten' => $prov->kabupaten_count,
-                'ump' => $activeUmp ? [
-                    'id' => $activeUmp->id,
-                    'tahun' => $activeUmp->tahun,
-                    'besaran' => (float) $activeUmp->besaran,
-                    'catatan' => $activeUmp->catatan,
-                ] : null,
             ];
         });
 
-        // Query Kabupaten dengan relasi Provinsi & UMP
-        $kabupatenQuery = Kabupaten::with(['propinsi.umps' => function ($q) use ($selectedYear) {
-            $q->where('tahun', $selectedYear);
-        }]);
+        // Query Kabupaten murni untuk master data dengan relasi Provinsi Induk
+        $kabupatenQuery = Kabupaten::with('propinsi');
 
         if ($propinsiFilterId) {
             $kabupatenQuery->where('propinsi_id', $propinsiFilterId);
@@ -137,8 +121,6 @@ class MasterWilayahController extends Controller
             ->paginate($perPage)
             ->withQueryString()
             ->through(function ($kab) {
-                $activeUmp = $kab->propinsi?->umps?->first();
-
                 return [
                     'id' => $kab->id,
                     'propinsi_id' => $kab->propinsi_id,
@@ -146,26 +128,38 @@ class MasterWilayahController extends Controller
                     'nama_kabupaten' => $kab->nama_kabupaten,
                     'nama_provinsi' => $kab->propinsi?->nama_provinsi ?? '-',
                     'kode_provinsi' => $kab->propinsi?->kode_provinsi ?? '-',
-                    'ump_provinsi' => $activeUmp ? (float) $activeUmp->besaran : null,
                 ];
             });
 
-        // Riwayat Lengkap UMP untuk tab 'ump'
+        // Pengelolaan UMP khusus per Provinsi untuk tab 'ump'
         $allUmps = [];
         if ($activeTab === 'ump') {
-            $allUmps = Ump::with('propinsi')
-                ->where('tahun', $selectedYear)
-                ->orderBy('kode_provinsi', 'asc')
+            $propinsiUmpQuery = Propinsi::with(['umps' => function ($q) use ($selectedYear) {
+                $q->where('tahun', $selectedYear);
+            }]);
+
+            if ($search) {
+                $propinsiUmpQuery->where(function ($q) use ($search) {
+                    $q->where('nama_provinsi', 'like', "%{$search}%")
+                        ->orWhere('kode_provinsi', 'like', "%{$search}%");
+                });
+            }
+
+            $allUmps = $propinsiUmpQuery->orderBy('kode_provinsi', 'asc')
                 ->get()
-                ->map(function ($item) {
+                ->map(function ($item) use ($selectedYear) {
+                    $activeUmp = $item->umps->first();
+
                     return [
-                        'id' => $item->id,
+                        'id' => $activeUmp?->id,
+                        'provinsi_id' => $item->id,
                         'kode_provinsi' => $item->kode_provinsi,
-                        'nama_provinsi' => $item->propinsi?->nama_provinsi ?? '-',
-                        'tahun' => $item->tahun,
-                        'besaran' => (float) $item->besaran,
-                        'catatan' => $item->catatan,
-                        'updated_at' => $item->updated_at ? $item->updated_at->format('d/m/Y H:i') : '-',
+                        'nama_provinsi' => $item->nama_provinsi,
+                        'tahun' => $activeUmp ? $activeUmp->tahun : $selectedYear,
+                        'besaran' => $activeUmp ? (float) $activeUmp->besaran : null,
+                        'catatan' => $activeUmp?->catatan,
+                        'has_ump' => (bool) $activeUmp,
+                        'updated_at' => $activeUmp?->updated_at ? $activeUmp->updated_at->format('d/m/Y H:i') : '-',
                     ];
                 });
         }

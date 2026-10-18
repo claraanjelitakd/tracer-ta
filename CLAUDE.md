@@ -22,6 +22,11 @@ This project has domain-specific skills available in `**/skills/**`. You MUST ac
 - You must follow all existing code conventions used in this application. When creating or editing a file, check sibling files for the correct structure, approach, and naming.
 - Use descriptive names for variables and methods. For example, `isRegisteredForDiscounts`, not `discount()`.
 - Check for existing components to reuse before writing a new one.
+- **NEVER RUN `git push` WITHOUT EXPLICIT PERMISSION**: Dilarang keras melakukan `git push` secara mandiri atau otomatis. `git push` HANYA boleh dieksekusi jika pengguna secara eksplisit meminta push pada giliran pesan tersebut. Semua pekerjaan dilakukan lokal dan dilaporkan untuk diperiksa pengguna terlebih dahulu.
+- **LARANGAN DESAIN UI (STRICT UI DESIGN RULES)**:
+  - Dilarang keras menggunakan emoticon atau emoji dalam template antarmuka pengguna maupun dalam komentar kode.
+  - Dilarang menggunakan icon dekoratif yang berlebihan (seperti icon corong filter pada header filter, icon grafik/bar chart pada kartu statistik ringkasan, icon jam/orang dekoratif, dsb). Tampilan harus formal, flat, bersih, dan berfokus pada kejelasan data/tipografi.
+  - Dilarang membuat widget status kolom tabel bertumpuk dengan titik-titik warna (multi-dot status pill). Gunakan badge atau label teks status yang ringkas, bersih, dan konsisten (seperti badge status pada halaman Perusahaan).
 
 ## Verification Scripts
 

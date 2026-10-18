@@ -46,35 +46,16 @@ class ProdiQuestionnaireSeeder extends Seeder
             ['prodi_id' => $prodiSI->id, 'order' => 1],
             [
                 'title' => 'Formulir Peminatan & Kontribusi Alumni',
-                'description' => 'Data konsentrasi peminatan, rencana wisuda, dan kesediaan berkontribusi untuk prodi.',
+                'description' => 'Data konsentrasi peminatan dan kesediaan berkontribusi untuk prodi.',
             ]
         );
 
-        // Hapus butir lama yang duplikat dengan Kuesioner Universitas / Data Akademik (Nama, NIM, Tahun Kelulusan)
+        // Hapus butir PSI-1-01 jika ada (tidak digunakan pada Prodi Sistem Informasi)
         ProdiQuestion::where('prodi_id', $prodiSI->id)
-            ->where(function ($query) {
-                $query->whereIn('code', ['PSI-1-01', 'PSI-1-02', 'PSI-1-03'])
-                    ->whereIn('question_text', ['Nama', 'NIM', 'Tahun Kelulusan']);
-            })
-            ->orWhere(function ($query) use ($prodiSI) {
-                $query->where('prodi_id', $prodiSI->id)
-                    ->whereIn('code', ['PSI-1-05', 'PSI-1-06', 'PSI-1-07']);
-            })
+            ->where('code', 'PSI-1-01')
             ->delete();
 
-        // 1.1 Rencana Tanggal Wisuda *
-        ProdiQuestion::updateOrCreate(
-            ['prodi_id' => $prodiSI->id, 'code' => 'PSI-1-01'],
-            [
-                'prodi_question_section_id' => $sec1->id,
-                'question_text' => 'Rencana Tanggal Wisuda',
-                'type' => 'date',
-                'is_required' => true,
-                'order' => 1,
-            ]
-        );
-
-        // 1.2 Konsentrasi yang diambil *
+        // 1.1 Konsentrasi yang diambil *
         $qKonsentrasi = ProdiQuestion::updateOrCreate(
             ['prodi_id' => $prodiSI->id, 'code' => 'PSI-1-02'],
             [
@@ -82,7 +63,7 @@ class ProdiQuestionnaireSeeder extends Seeder
                 'question_text' => 'Konsentrasi yang diambil',
                 'type' => 'single_choice',
                 'is_required' => true,
-                'order' => 2,
+                'order' => 1,
             ]
         );
         $konsentrasiOpts = [
@@ -100,7 +81,7 @@ class ProdiQuestionnaireSeeder extends Seeder
             );
         }
 
-        // 1.3 Apakah Anda mau berkontribusi kepada Program Studi Sistem Informasi UKDW? *
+        // 1.2 Apakah Anda mau berkontribusi kepada Program Studi Sistem Informasi UKDW? *
         $qKontribusi = ProdiQuestion::updateOrCreate(
             ['prodi_id' => $prodiSI->id, 'code' => 'PSI-1-03'],
             [
@@ -108,7 +89,7 @@ class ProdiQuestionnaireSeeder extends Seeder
                 'question_text' => 'Apakah Anda mau berkontribusi kepada Program Studi Sistem Informasi UKDW?',
                 'type' => 'single_choice',
                 'is_required' => true,
-                'order' => 3,
+                'order' => 2,
             ]
         );
         $kontribusiOpts = ['Ya', 'Tidak'];
@@ -120,7 +101,7 @@ class ProdiQuestionnaireSeeder extends Seeder
             );
         }
 
-        // 1.4 Jika ya, kontribusi apa yang akan Anda berikan?
+        // 1.3 Jika ya, kontribusi apa yang akan Anda berikan?
         $qBentukKontribusi = ProdiQuestion::updateOrCreate(
             ['prodi_id' => $prodiSI->id, 'code' => 'PSI-1-04'],
             [
@@ -128,7 +109,7 @@ class ProdiQuestionnaireSeeder extends Seeder
                 'question_text' => 'Jika ya, kontribusi apa yang akan Anda berikan?',
                 'type' => 'multiple_choice',
                 'is_required' => false,
-                'order' => 4,
+                'order' => 3,
             ]
         );
         $bentukOpts = [

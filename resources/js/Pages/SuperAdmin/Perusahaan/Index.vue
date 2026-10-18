@@ -586,17 +586,17 @@ const openEditModal = (company) => {
                 </div>
 
                 <!-- Tabel Data Pengajuan Perusahaan (Identik dengan Admin Prodi) -->
-                <div class="bg-white border border-gray-300 overflow-x-auto">
-                    <table class="w-full text-left border-collapse border border-gray-300 text-xs bg-white">
+                <div class="bg-white border border-gray-300 overflow-x-auto shadow-2xs">
+                    <table class="w-full min-w-full text-left border-collapse border border-gray-300 text-xs bg-white">
                         <thead>
-                            <tr class="bg-gray-100 text-gray-800 font-semibold border-b border-gray-300 text-[11px]">
-                                <th class="border border-gray-300 px-2.5 py-2 text-center w-10">No</th>
-                                <th class="border border-gray-300 px-3 py-2 w-48">Nama Perusahaan</th>
-                                <th class="border border-gray-300 px-3 py-2 min-w-[220px]">Lokasi Lengkap</th>
-                                <th class="border border-gray-300 px-3 py-2 text-center w-32">Status</th>
-                                <th class="border border-gray-300 px-3 py-2 w-44">User</th>
-                                <th class="border border-gray-300 px-3 py-2 min-w-[200px]">Rekomendasi</th>
-                                <th class="border border-gray-300 px-2.5 py-2 text-center w-28">Aksi</th>
+                            <tr class="bg-gray-100 text-gray-800 font-semibold border-b border-gray-300 text-[11px] whitespace-nowrap">
+                                <th class="border border-gray-300 px-2.5 py-2 text-center w-10 whitespace-nowrap">No</th>
+                                <th class="border border-gray-300 px-3 py-2 w-48 whitespace-nowrap">Nama Perusahaan</th>
+                                <th class="border border-gray-300 px-3 py-2 min-w-[220px] whitespace-nowrap">Lokasi Lengkap</th>
+                                <th class="border border-gray-300 px-3 py-2 text-center w-32 whitespace-nowrap">Status</th>
+                                <th class="border border-gray-300 px-3 py-2 w-44 whitespace-nowrap">User</th>
+                                <th class="border border-gray-300 px-3 py-2 min-w-[200px] whitespace-nowrap">Rekomendasi</th>
+                                <th class="border border-gray-300 px-2.5 py-2 text-center w-28 whitespace-nowrap">Aksi</th>
                             </tr>
                         </thead>
                         <tbody>

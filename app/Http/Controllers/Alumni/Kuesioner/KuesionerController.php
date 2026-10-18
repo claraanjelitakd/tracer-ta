@@ -231,11 +231,12 @@ class KuesionerController extends Controller
                                 $formatted[$k] = (int) $numVal;
                             }
 
-                            // Fallback jika belum ada jawaban di tracer tetapi profil memiliki data gaji F505
-                            if (empty($formatted) && ! empty($autofillData->F505)) {
+                            // Fallback jika belum ada jawaban di tracer tetapi profil memiliki data gaji
+                            $gajiVal = ! empty($autofillData->F505) ? $autofillData->F505 : ($biodata->gaji ?? null);
+                            if (empty($formatted) && ! empty($gajiVal)) {
                                 $firstOpt = $pertanyaan->detils->first();
                                 $optCode = $firstOpt ? ($firstOpt->kode_opsi ?: ($firstOpt->code ?: $firstOpt->id)) : 'F5051';
-                                $gajiNum = (float) $autofillData->F505;
+                                $gajiNum = (float) $gajiVal;
                                 $formatted[$optCode] = (int) $gajiNum;
                             }
 
@@ -256,11 +257,11 @@ class KuesionerController extends Controller
                             $jawabanAwal[$pertanyaan->id] = [];
                         } elseif ($pertanyaan->type === 'multiple_number') {
                             $formatted = [];
-                            $kode = strtoupper($pertanyaan->code ?? $pertanyaan->kode_pertanyaan ?? '');
-                            if ($kode === 'F505' && ! empty($autofillData->F505)) {
+                            $gajiVal = ! empty($autofillData->F505) ? $autofillData->F505 : ($biodata->gaji ?? null);
+                            if (! empty($gajiVal)) {
                                 $firstOpt = $pertanyaan->detils->first();
                                 $optCode = $firstOpt ? ($firstOpt->kode_opsi ?: ($firstOpt->code ?: $firstOpt->id)) : 'F5051';
-                                $gajiNum = (float) $autofillData->F505;
+                                $gajiNum = (float) $gajiVal;
                                 $formatted[$optCode] = (int) $gajiNum;
                             }
                             $jawabanAwal[$pertanyaan->id] = $formatted;

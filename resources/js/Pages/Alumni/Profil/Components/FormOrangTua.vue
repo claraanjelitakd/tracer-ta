@@ -39,8 +39,8 @@ const handlePhoneInput = (e) => {
         <!-- Bagian: Identitas Orang Tua / Wali -->
         <div class="bg-white rounded-2xl p-6 sm:p-8 shadow-xs border border-gray-100">
             <div class="flex items-center justify-between mb-6 pb-3 border-b border-gray-100">
-                <h2 class="text-lg sm:text-xl font-black text-gray-900 flex items-center gap-2">
-                    <span class="w-2.5 h-6 bg-[#005B3C] rounded-full inline-block"></span>
+                <h2 class="text-lg sm:text-xl font-bold text-gray-900 flex items-center gap-2">
+                    <span class="w-1.5 h-5 bg-[#0D542B] rounded-full inline-block"></span>
                     Identitas Orang Tua / Wali
                 </h2>
                 <span class="text-xs text-gray-400 font-medium">Kolom bertanda <span class="text-rose-500 font-bold">*</span> wajib diisi</span>
@@ -55,8 +55,7 @@ const handlePhoneInput = (e) => {
                     <input 
                         type="text" 
                         v-model="form.nama_orang_tua" 
-                        class="block w-full border rounded-xl shadow-2xs px-4 py-3 text-sm font-medium transition-all focus:ring-2 focus:ring-[#005B3C]/20"
-                        :class="form.nama_orang_tua?.trim() ? 'border-emerald-300 bg-white text-gray-900 focus:border-[#005B3C]' : 'border-rose-300 bg-rose-50/20 text-gray-900 focus:border-rose-500'"
+                        class="block w-full border border-gray-300 bg-white text-gray-900 rounded-xl shadow-xs px-4 py-3 text-sm font-medium transition-colors focus:border-[#0D542B] focus:ring-1 focus:ring-[#0D542B] outline-none"
                         placeholder="Nama Lengkap Orang Tua / Wali" 
                     />
                 </div>
@@ -69,8 +68,7 @@ const handlePhoneInput = (e) => {
                     <input 
                         type="text" 
                         v-model="form.pekerjaan_orang_tua" 
-                        class="block w-full border rounded-xl shadow-2xs px-4 py-3 text-sm font-medium transition-all focus:ring-2 focus:ring-[#005B3C]/20"
-                        :class="form.pekerjaan_orang_tua?.trim() ? 'border-emerald-300 bg-white text-gray-900 focus:border-[#005B3C]' : 'border-rose-300 bg-rose-50/20 text-gray-900 focus:border-rose-500'"
+                        class="block w-full border border-gray-300 bg-white text-gray-900 rounded-xl shadow-xs px-4 py-3 text-sm font-medium transition-colors focus:border-[#0D542B] focus:ring-1 focus:ring-[#0D542B] outline-none"
                         placeholder="Contoh: PNS, Wiraswasta, Karyawan Swasta, Petani..." 
                     />
                 </div>
@@ -84,8 +82,7 @@ const handlePhoneInput = (e) => {
                         type="tel" 
                         :value="form.nomor_telepon_orang_tua" 
                         @input="handlePhoneInput"
-                        class="block w-full border rounded-xl shadow-2xs px-4 py-3 text-sm font-mono font-medium transition-all focus:ring-2 focus:ring-[#005B3C]/20"
-                        :class="isValidPhone(form.nomor_telepon_orang_tua) ? 'border-emerald-300 bg-white text-gray-900 focus:border-[#005B3C]' : 'border-rose-300 bg-rose-50/20 text-gray-900 focus:border-rose-500'"
+                        class="block w-full border border-gray-300 bg-white text-gray-900 rounded-xl shadow-xs px-4 py-3 text-sm font-mono font-medium transition-colors focus:border-[#0D542B] focus:ring-1 focus:ring-[#0D542B] outline-none"
                         placeholder="Contoh: 081234567890" 
                     />
                 </div>
@@ -95,8 +92,8 @@ const handlePhoneInput = (e) => {
         <!-- Bagian: Alamat Tempat Tinggal Orang Tua -->
         <div class="bg-white rounded-2xl p-6 sm:p-8 shadow-xs border border-gray-100">
             <div class="flex items-center justify-between mb-6 pb-3 border-b border-gray-100">
-                <h2 class="text-lg sm:text-xl font-black text-gray-900 flex items-center gap-2">
-                    <span class="w-2.5 h-6 bg-[#005B3C] rounded-full inline-block"></span>
+                <h2 class="text-lg sm:text-xl font-bold text-gray-900 flex items-center gap-2">
+                    <span class="w-1.5 h-5 bg-[#0D542B] rounded-full inline-block"></span>
                     Alamat Domisili Orang Tua / Wali
                 </h2>
                 <span class="text-xs text-gray-400 font-medium">Kolom bertanda <span class="text-rose-500 font-bold">*</span> wajib diisi</span>
@@ -111,8 +108,7 @@ const handlePhoneInput = (e) => {
                     <textarea 
                         v-model="form.alamat_orang_tua" 
                         rows="3" 
-                        class="block w-full border rounded-xl shadow-2xs px-4 py-3 text-sm font-medium transition-all focus:ring-2 focus:ring-[#005B3C]/20"
-                        :class="form.alamat_orang_tua?.trim() ? 'border-emerald-300 bg-white text-gray-900 focus:border-[#005B3C]' : 'border-rose-300 bg-rose-50/20 text-gray-900 focus:border-rose-500'"
+                        class="block w-full border border-gray-300 bg-white text-gray-900 rounded-xl shadow-xs px-4 py-3 text-sm font-medium transition-colors focus:border-[#0D542B] focus:ring-1 focus:ring-[#0D542B] outline-none"
                         placeholder="Nama Jalan, RT/RW, Dusun/Kompleks, Kelurahan..."
                     ></textarea>
                 </div>
@@ -124,8 +120,7 @@ const handlePhoneInput = (e) => {
                     </label>
                     <select 
                         v-model="form.provinsi_id_orang_tua" 
-                        class="block w-full border rounded-xl shadow-2xs px-4 py-3 text-sm font-medium transition-all focus:ring-2 focus:ring-[#005B3C]/20"
-                        :class="form.provinsi_id_orang_tua ? 'border-emerald-300 bg-white text-gray-900 focus:border-[#005B3C]' : 'border-rose-300 bg-rose-50/20 text-gray-900 focus:border-rose-500'"
+                        class="block w-full border border-gray-300 bg-white text-gray-900 rounded-xl shadow-xs px-4 py-3 text-sm font-medium transition-colors focus:border-[#0D542B] focus:ring-1 focus:ring-[#0D542B] outline-none"
                     >
                         <option value="">-- Pilih Provinsi --</option>
                         <option v-for="prov in provinces" :key="prov.id" :value="prov.id">{{ prov.nama_provinsi }}</option>
@@ -139,8 +134,7 @@ const handlePhoneInput = (e) => {
                     </label>
                     <select 
                         v-model="form.kabupaten_id_orang_tua" 
-                        class="block w-full border rounded-xl shadow-2xs px-4 py-3 text-sm font-medium transition-all focus:ring-2 focus:ring-[#005B3C]/20"
-                        :class="form.kabupaten_id_orang_tua ? 'border-emerald-300 bg-white text-gray-900 focus:border-[#005B3C]' : 'border-rose-300 bg-rose-50/20 text-gray-900 focus:border-rose-500'"
+                        class="block w-full border border-gray-300 bg-white text-gray-900 rounded-xl shadow-xs px-4 py-3 text-sm font-medium transition-colors focus:border-[#0D542B] focus:ring-1 focus:ring-[#0D542B] outline-none"
                     >
                         <option value="">-- Pilih Kabupaten/Kota --</option>
                         <option v-for="kab in kabupatens" :key="kab.id" :value="kab.id" v-show="!form.provinsi_id_orang_tua || kab.province_id == form.provinsi_id_orang_tua">
@@ -158,8 +152,7 @@ const handlePhoneInput = (e) => {
                         type="text" 
                         v-model="form.kota_orang_tua" 
                         autocomplete="off"
-                        class="block w-full border rounded-xl shadow-2xs px-4 py-3 text-sm font-medium transition-all focus:ring-2 focus:ring-[#005B3C]/20" 
-                        :class="form.kota_orang_tua?.trim() ? 'border-emerald-300 bg-white text-gray-900 focus:border-[#005B3C]' : 'border-rose-300 bg-rose-50/20 text-gray-900 focus:border-rose-500'"
+                        class="block w-full border border-gray-300 bg-white text-gray-900 rounded-xl shadow-xs px-4 py-3 text-sm font-medium transition-colors focus:border-[#0D542B] focus:ring-1 focus:ring-[#0D542B] outline-none" 
                         placeholder="Contoh: Sleman, Yogyakarta" 
                     />
                 </div>
@@ -173,8 +166,7 @@ const handlePhoneInput = (e) => {
                         type="text" 
                         v-model="form.kode_pos_orang_tua" 
                         autocomplete="off"
-                        class="block w-full border rounded-xl shadow-2xs px-4 py-3 text-sm font-medium transition-all focus:ring-2 focus:ring-[#005B3C]/20" 
-                        :class="form.kode_pos_orang_tua?.trim() ? 'border-emerald-300 bg-white text-gray-900 focus:border-[#005B3C]' : 'border-rose-300 bg-rose-50/20 text-gray-900 focus:border-rose-500'"
+                        class="block w-full border border-gray-300 bg-white text-gray-900 rounded-xl shadow-xs px-4 py-3 text-sm font-medium transition-colors focus:border-[#0D542B] focus:ring-1 focus:ring-[#0D542B] outline-none" 
                         placeholder="Kode Pos (5 digit)" 
                     />
                 </div>

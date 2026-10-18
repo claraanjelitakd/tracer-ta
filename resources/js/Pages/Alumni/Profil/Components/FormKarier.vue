@@ -902,8 +902,8 @@ onUnmounted(() => {
         <!-- ================================================================= -->
         <div class="bg-white rounded-2xl p-6 sm:p-8 shadow-xs border border-gray-100">
             <div class="flex items-center justify-between mb-6 pb-3 border-b border-gray-100">
-                <h2 class="text-lg sm:text-xl font-black text-gray-900 flex items-center gap-2">
-                    <span class="w-2.5 h-6 bg-[#005B3C] rounded-full inline-block"></span>
+                <h2 class="text-lg sm:text-xl font-bold text-gray-900 flex items-center gap-2">
+                    <span class="w-1.5 h-5 bg-[#0D542B] rounded-full inline-block"></span>
                     Media Sosial & Profil Profesional
                 </h2>
                 <span class="text-xs text-gray-400 font-medium">Jejaring alumni & karier</span>
@@ -919,8 +919,7 @@ onUnmounted(() => {
                         type="url" 
                         v-model="form.linkedin_url" 
                         autocomplete="off"
-                        class="block w-full border rounded-xl shadow-2xs px-4 py-3 text-sm font-medium transition-all focus:ring-2 focus:ring-[#005B3C]/20"
-                        :class="isValidUrl(form.linkedin_url) ? 'border-emerald-300 bg-white text-gray-900 focus:border-[#005B3C]' : 'border-rose-300 bg-rose-50/20 text-gray-900 focus:border-rose-500'"
+                        class="block w-full border border-gray-300 bg-white text-gray-900 rounded-xl shadow-xs px-4 py-3 text-sm font-medium transition-colors focus:border-[#0D542B] focus:ring-1 focus:ring-[#0D542B] outline-none"
                         placeholder="https://linkedin.com/in/username" 
                     />
                 </div>
@@ -934,8 +933,7 @@ onUnmounted(() => {
                         type="text" 
                         v-model="form.linkedin_username" 
                         autocomplete="off"
-                        class="block w-full border rounded-xl shadow-2xs px-4 py-3 text-sm font-medium transition-all focus:ring-2 focus:ring-[#005B3C]/20"
-                        :class="form.linkedin_username?.trim() ? 'border-emerald-300 bg-white text-gray-900 focus:border-[#005B3C]' : 'border-rose-300 bg-rose-50/20 text-gray-900 focus:border-rose-500'"
+                        class="block w-full border border-gray-300 bg-white text-gray-900 rounded-xl shadow-xs px-4 py-3 text-sm font-medium transition-colors focus:border-[#0D542B] focus:ring-1 focus:ring-[#0D542B] outline-none"
                         placeholder="username_linkedin" 
                     />
                 </div>
@@ -949,8 +947,7 @@ onUnmounted(() => {
                         type="url" 
                         v-model="form.instagram_url" 
                         autocomplete="off"
-                        class="block w-full border rounded-xl shadow-2xs px-4 py-3 text-sm font-medium transition-all focus:ring-2 focus:ring-[#005B3C]/20"
-                        :class="isValidUrl(form.instagram_url) ? 'border-emerald-300 bg-white text-gray-900 focus:border-[#005B3C]' : 'border-rose-300 bg-rose-50/20 text-gray-900 focus:border-rose-500'"
+                        class="block w-full border border-gray-300 bg-white text-gray-900 rounded-xl shadow-xs px-4 py-3 text-sm font-medium transition-colors focus:border-[#0D542B] focus:ring-1 focus:ring-[#0D542B] outline-none"
                         placeholder="https://instagram.com/username" 
                     />
                 </div>
@@ -964,8 +961,7 @@ onUnmounted(() => {
                         type="url" 
                         v-model="form.facebook_url" 
                         autocomplete="off"
-                        class="block w-full border rounded-xl shadow-2xs px-4 py-3 text-sm font-medium transition-all focus:ring-2 focus:ring-[#005B3C]/20"
-                        :class="isValidUrl(form.facebook_url) ? 'border-emerald-300 bg-white text-gray-900 focus:border-[#005B3C]' : 'border-rose-300 bg-rose-50/20 text-gray-900 focus:border-rose-500'"
+                        class="block w-full border border-gray-300 bg-white text-gray-900 rounded-xl shadow-xs px-4 py-3 text-sm font-medium transition-colors focus:border-[#0D542B] focus:ring-1 focus:ring-[#0D542B] outline-none"
                         placeholder="https://facebook.com/username" 
                     />
                 </div>
@@ -981,8 +977,7 @@ onUnmounted(() => {
                         v-model="form.skills" 
                         @input="form.expert = form.skills"
                         autocomplete="off"
-                        class="block w-full border rounded-xl shadow-2xs px-4 py-3 text-sm font-medium transition-all focus:ring-2 focus:ring-[#005B3C]/20" 
-                        :class="(form.skills?.trim() || form.expert?.trim()) ? 'border-emerald-300 bg-white text-gray-900 focus:border-[#005B3C]' : 'border-rose-300 bg-rose-50/20 text-gray-900 focus:border-rose-500'"
+                        class="block w-full border border-gray-300 bg-white text-gray-900 rounded-xl shadow-xs px-4 py-3 text-sm font-medium transition-colors focus:border-[#0D542B] focus:ring-1 focus:ring-[#0D542B] outline-none" 
                         placeholder="Contoh: Software Engineering, Data Science, Python, Project Management..." 
                     />
                 </div>
@@ -998,8 +993,7 @@ onUnmounted(() => {
                         v-model="form.experience" 
                         @input="form.minat = form.experience"
                         autocomplete="off"
-                        class="block w-full border rounded-xl shadow-2xs px-4 py-3 text-sm font-medium transition-all focus:ring-2 focus:ring-[#005B3C]/20" 
-                        :class="(form.experience?.trim() || form.minat?.trim()) ? 'border-emerald-300 bg-white text-gray-900 focus:border-[#005B3C]' : 'border-rose-300 bg-rose-50/20 text-gray-900 focus:border-rose-500'"
+                        class="block w-full border border-gray-300 bg-white text-gray-900 rounded-xl shadow-xs px-4 py-3 text-sm font-medium transition-colors focus:border-[#0D542B] focus:ring-1 focus:ring-[#0D542B] outline-none" 
                         placeholder="Contoh: Software Engineer di PT Telkom Indonesia (2022 - Saat Ini)..." 
                     />
                 </div>
@@ -1016,11 +1010,11 @@ onUnmounted(() => {
                         <!-- Opsi 1: Pekerja / Karyawan -->
                         <div 
                             @click="selectRole('Pekerja')"
-                            class="p-4 rounded-2xl border-2 cursor-pointer transition-all flex flex-col justify-between relative group"
-                            :class="form.kategori_pekerjaan === 'Pekerja' ? 'border-[#005B3C] bg-emerald-50/80 text-gray-900 shadow-sm ring-2 ring-[#005B3C]/30' : (form.kategori_pekerjaan ? 'border-gray-200 bg-white text-gray-600' : 'border-rose-300 bg-rose-50/20 text-gray-700')"
+                            class="p-4 rounded-2xl border cursor-pointer transition-all flex flex-col justify-between relative group"
+                            :class="form.kategori_pekerjaan === 'Pekerja' ? 'border-[#0D542B] bg-slate-50 text-gray-900 shadow-xs ring-1 ring-[#0D542B]' : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300'"
                         >
                             <div class="flex items-center justify-between">
-                                <div class="font-extrabold text-sm" :class="form.kategori_pekerjaan === 'Pekerja' ? 'text-[#005B3C]' : 'text-gray-800'">
+                                <div class="font-bold text-sm" :class="form.kategori_pekerjaan === 'Pekerja' ? 'text-[#0D542B]' : 'text-gray-800'">
                                     Pekerja / Karyawan
                                 </div>
                             </div>
@@ -1030,11 +1024,11 @@ onUnmounted(() => {
                         <!-- Opsi 2: Wirausaha / Founder -->
                         <div 
                             @click="selectRole('Wiraswasta')"
-                            class="p-4 rounded-2xl border-2 cursor-pointer transition-all flex flex-col justify-between relative group"
-                            :class="form.kategori_pekerjaan === 'Wiraswasta' ? 'border-[#005B3C] bg-emerald-50/80 text-gray-900 shadow-sm ring-2 ring-[#005B3C]/30' : (form.kategori_pekerjaan ? 'border-gray-200 bg-white text-gray-600' : 'border-rose-300 bg-rose-50/20 text-gray-700')"
+                            class="p-4 rounded-2xl border cursor-pointer transition-all flex flex-col justify-between relative group"
+                            :class="form.kategori_pekerjaan === 'Wiraswasta' ? 'border-[#0D542B] bg-slate-50 text-gray-900 shadow-xs ring-1 ring-[#0D542B]' : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300'"
                         >
                             <div class="flex items-center justify-between">
-                                <div class="font-extrabold text-sm" :class="form.kategori_pekerjaan === 'Wiraswasta' ? 'text-[#005B3C]' : 'text-gray-800'">
+                                <div class="font-bold text-sm" :class="form.kategori_pekerjaan === 'Wiraswasta' ? 'text-[#0D542B]' : 'text-gray-800'">
                                     Wirausaha / Founder
                                 </div>
                             </div>
@@ -1044,11 +1038,11 @@ onUnmounted(() => {
                         <!-- Opsi 3: Tidak Bekerja / Mencari Kerja -->
                         <div 
                             @click="selectRole('Tidak Bekerja')"
-                            class="p-4 rounded-2xl border-2 cursor-pointer transition-all flex flex-col justify-between relative group"
-                            :class="['Tidak Bekerja', 'Mencari Kerja', 'Belum Bekerja', 'Belum Memungkinkan Bekerja'].includes(form.kategori_pekerjaan) ? 'border-[#005B3C] bg-emerald-50/80 text-gray-900 shadow-sm ring-2 ring-[#005B3C]/30' : (form.kategori_pekerjaan ? 'border-gray-200 bg-white text-gray-600' : 'border-rose-300 bg-rose-50/20 text-gray-700')"
+                            class="p-4 rounded-2xl border cursor-pointer transition-all flex flex-col justify-between relative group"
+                            :class="['Tidak Bekerja', 'Mencari Kerja', 'Belum Bekerja', 'Belum Memungkinkan Bekerja'].includes(form.kategori_pekerjaan) ? 'border-[#0D542B] bg-slate-50 text-gray-900 shadow-xs ring-1 ring-[#0D542B]' : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300'"
                         >
                             <div class="flex items-center justify-between">
-                                <div class="font-extrabold text-sm" :class="['Tidak Bekerja', 'Mencari Kerja', 'Belum Bekerja', 'Belum Memungkinkan Bekerja'].includes(form.kategori_pekerjaan) ? 'text-[#005B3C]' : 'text-gray-800'">
+                                <div class="font-bold text-sm" :class="['Tidak Bekerja', 'Mencari Kerja', 'Belum Bekerja', 'Belum Memungkinkan Bekerja'].includes(form.kategori_pekerjaan) ? 'text-[#0D542B]' : 'text-gray-800'">
                                     Tidak Bekerja / Mencari Kerja
                                 </div>
                             </div>
@@ -1066,7 +1060,7 @@ onUnmounted(() => {
                         <button 
                             type="button" 
                             @click="isCustomJabatan = !isCustomJabatan" 
-                            class="text-xs font-bold text-[#005B3C] hover:underline cursor-pointer"
+                            class="text-xs font-bold text-[#0D542B] hover:underline cursor-pointer"
                         >
                             {{ isCustomJabatan ? '&larr; Pilih dari Dropdown Standar' : '+ Tulis Jabatan Kustom' }}
                         </button>
@@ -1078,8 +1072,7 @@ onUnmounted(() => {
                             type="text" 
                             v-model="form.posisi_jabatan" 
                             placeholder="Contoh: Wakil Dekan I, Lead Software Engineer, Konsultan..."
-                            class="block w-full border rounded-xl shadow-2xs px-4 py-3 text-sm font-medium transition-all focus:ring-2 focus:ring-[#005B3C]/20"
-                            :class="form.posisi_jabatan ? 'border-emerald-300 bg-white text-gray-900 focus:border-[#005B3C]' : 'border-rose-300 bg-rose-50/20 text-gray-900 focus:border-rose-500'"
+                            class="block w-full border border-gray-300 bg-white text-gray-900 rounded-xl shadow-xs px-4 py-3 text-sm font-medium transition-colors focus:border-[#0D542B] focus:ring-1 focus:ring-[#0D542B] outline-none"
                         />
                         <p class="text-[11px] text-gray-400 mt-1">Jabatan kustom otomatis tersimpan ke profil alumni.</p>
                     </div>
@@ -1088,8 +1081,7 @@ onUnmounted(() => {
                     <div v-else>
                         <select 
                             v-model="form.posisi_jabatan" 
-                            class="block w-full border rounded-xl shadow-2xs px-4 py-3 text-sm font-medium transition-all focus:ring-2 focus:ring-[#005B3C]/20"
-                            :class="form.posisi_jabatan ? 'border-emerald-300 bg-white text-gray-900 focus:border-[#005B3C]' : 'border-rose-300 bg-rose-50/20 text-gray-900 focus:border-rose-500'"
+                            class="block w-full border border-gray-300 bg-white text-gray-900 rounded-xl shadow-xs px-4 py-3 text-sm font-medium transition-colors focus:border-[#0D542B] focus:ring-1 focus:ring-[#0D542B] outline-none"
                         >
                             <option value="">-- Pilih Posisi Jabatan --</option>
                             <option v-for="opt in posisiJabatanOptions" :key="opt.value" :value="opt.value">
@@ -1107,8 +1099,7 @@ onUnmounted(() => {
                         </label>
                         <select 
                             v-model="form.posisi_wiraswasta" 
-                            class="block w-full border rounded-xl shadow-2xs px-4 py-3 text-sm font-medium transition-all focus:ring-2 focus:ring-[#005B3C]/20"
-                            :class="form.posisi_wiraswasta ? 'border-emerald-300 bg-white text-gray-900 focus:border-[#005B3C]' : 'border-rose-300 bg-rose-50/20 text-gray-900 focus:border-rose-500'"
+                            class="block w-full border border-gray-300 bg-white text-gray-900 rounded-xl shadow-xs px-4 py-3 text-sm font-medium transition-colors focus:border-[#0D542B] focus:ring-1 focus:ring-[#0D542B] outline-none"
                         >
                             <option value="">-- Pilih Posisi / Jabatan Wiraswasta --</option>
                             <option value="Owner">Owner</option>
@@ -1127,8 +1118,7 @@ onUnmounted(() => {
                         <input 
                             type="text" 
                             v-model="form.posisi_wiraswasta_lainnya" 
-                            class="block w-full border rounded-xl shadow-2xs px-4 py-3 text-sm font-medium transition-all focus:ring-2 focus:ring-[#005B3C]/20" 
-                            :class="form.posisi_wiraswasta_lainnya?.trim() ? 'border-emerald-300 bg-white text-gray-900 focus:border-[#005B3C]' : 'border-rose-300 bg-rose-50/20 text-gray-900 focus:border-rose-500'"
+                            class="block w-full border border-gray-300 bg-white text-gray-900 rounded-xl shadow-xs px-4 py-3 text-sm font-medium transition-colors focus:border-[#0D542B] focus:ring-1 focus:ring-[#0D542B] outline-none" 
                             placeholder="Contoh: Managing Partner, Content Creator..." 
                         />
                     </div>
@@ -1138,18 +1128,18 @@ onUnmounted(() => {
                 <div class="md:col-span-2 pt-1">
                     <div 
                         @click="toggleMelanjutkanStudi"
-                        class="p-4 rounded-2xl border-2 cursor-pointer transition-all flex items-center justify-between group"
-                        :class="isMelanjutkanStudi ? 'border-[#005B3C] bg-emerald-50/60 shadow-xs' : 'border-gray-200 bg-gray-50/60 hover:border-gray-300'"
+                        class="p-4 rounded-2xl border cursor-pointer transition-all flex items-center justify-between group"
+                        :class="isMelanjutkanStudi ? 'border-[#0D542B] bg-slate-50 shadow-xs' : 'border-gray-200 bg-gray-50/60 hover:border-gray-300'"
                     >
                         <div class="flex items-center gap-3">
                             <div 
                                 class="w-10 h-10 rounded-xl flex items-center justify-center transition-colors"
-                                :class="isMelanjutkanStudi ? 'bg-[#005B3C] text-white shadow-2xs' : 'bg-gray-200 text-gray-500'"
+                                :class="isMelanjutkanStudi ? 'bg-[#0D542B] text-white shadow-2xs' : 'bg-gray-200 text-gray-500'"
                             >
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l9-5-9-5-9 5 9 5zm0 0l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14zm-4 6v-7.5l4-2.222"></path></svg>
                             </div>
                             <div>
-                                <div class="font-bold text-sm" :class="isMelanjutkanStudi ? 'text-[#005B3C]' : 'text-gray-800'">
+                                <div class="font-bold text-sm" :class="isMelanjutkanStudi ? 'text-[#0D542B]' : 'text-gray-800'">
                                     Sedang Melanjutkan Studi (S1 / S2 / S3 / Profesi / Spesialis)
                                 </div>
                                 <div class="text-xs text-gray-500 mt-0.5">
@@ -1162,7 +1152,7 @@ onUnmounted(() => {
                         <div class="relative inline-flex items-center shrink-0 ml-4">
                             <div 
                                 class="w-11 h-6 rounded-full transition-colors duration-200 ease-in-out relative"
-                                :class="isMelanjutkanStudi ? 'bg-[#005B3C]' : 'bg-gray-300'"
+                                :class="isMelanjutkanStudi ? 'bg-[#0D542B]' : 'bg-gray-300'"
                             >
                                 <div 
                                     class="w-5 h-5 bg-white rounded-full shadow-md transform transition-transform duration-200 ease-in-out absolute top-0.5 left-0.5"
@@ -1189,8 +1179,7 @@ onUnmounted(() => {
                             </label>
                             <select 
                                 v-model="form.pendidikan_tingkat" 
-                                class="block w-full border rounded-xl shadow-2xs px-4 py-3 text-sm font-medium transition-all focus:ring-2 focus:ring-[#005B3C]/20"
-                                :class="form.pendidikan_tingkat ? 'border-emerald-300 bg-white text-gray-900 focus:border-[#005B3C]' : 'border-rose-300 bg-rose-50/20 text-gray-900 focus:border-rose-500'"
+                                class="block w-full border border-gray-300 bg-white text-gray-900 rounded-xl shadow-xs px-4 py-3 text-sm font-medium transition-colors focus:border-[#0D542B] focus:ring-1 focus:ring-[#0D542B] outline-none"
                             >
                                 <option value="">-- Pilih Tingkat / Jenjang --</option>
                                 <option value="D3">D3 (Diploma 3)</option>
@@ -1211,8 +1200,7 @@ onUnmounted(() => {
                             <input 
                                 type="text" 
                                 v-model="form.perguruan_tinggi" 
-                                class="block w-full border rounded-xl shadow-2xs px-4 py-3 text-sm font-medium transition-all focus:ring-2 focus:ring-[#005B3C]/20"
-                                :class="form.perguruan_tinggi?.trim() ? 'border-emerald-300 bg-white text-gray-900 focus:border-[#005B3C]' : 'border-rose-300 bg-rose-50/20 text-gray-900 focus:border-rose-500'"
+                                class="block w-full border border-gray-300 bg-white text-gray-900 rounded-xl shadow-xs px-4 py-3 text-sm font-medium transition-colors focus:border-[#0D542B] focus:ring-1 focus:ring-[#0D542B] outline-none"
                                 placeholder="Contoh: Universitas Gadjah Mada" 
                             />
                         </div>
@@ -1224,8 +1212,7 @@ onUnmounted(() => {
                             <input 
                                 type="text" 
                                 v-model="form.pendidikan_prodi" 
-                                class="block w-full border rounded-xl shadow-2xs px-4 py-3 text-sm font-medium transition-all focus:ring-2 focus:ring-[#005B3C]/20"
-                                :class="form.pendidikan_prodi?.trim() ? 'border-emerald-300 bg-white text-gray-900 focus:border-[#005B3C]' : 'border-rose-300 bg-rose-50/20 text-gray-900 focus:border-rose-500'"
+                                class="block w-full border border-gray-300 bg-white text-gray-900 rounded-xl shadow-xs px-4 py-3 text-sm font-medium transition-colors focus:border-[#0D542B] focus:ring-1 focus:ring-[#0D542B] outline-none"
                                 placeholder="Contoh: Magister Informatika" 
                             />
                         </div>
@@ -1238,7 +1225,7 @@ onUnmounted(() => {
                         <label class="block text-xs sm:text-sm font-bold text-gray-700 !mb-0">
                             Rata-rata Pendapatan per Bulan (Take Home Pay) <span class="text-rose-500 font-bold">*</span>
                         </label>
-                        <span v-if="form.gaji && form.gaji >= 1000" class="text-xs text-[#005B3C] font-black inline-flex items-center gap-1">
+                        <span v-if="form.gaji && form.gaji >= 1000" class="text-xs text-[#0D542B] font-bold inline-flex items-center gap-1">
                             Terbaca: <strong>{{ formatRupiah(form.gaji) }}</strong> / bulan
                         </span>
                         <span v-else-if="form.gaji && form.gaji > 0 && form.gaji < 1000" class="text-xs text-rose-600 font-bold inline-flex items-center gap-1">
@@ -1246,19 +1233,14 @@ onUnmounted(() => {
                         </span>
                     </div>
                     <div 
-                        class="relative flex items-center rounded-xl border shadow-2xs focus-within:ring-2 focus-within:ring-[#005B3C]/20 transition-all overflow-hidden"
-                        :class="[
-                            form.gaji && form.gaji >= 1000 
-                                ? 'border-emerald-300 bg-white text-gray-900 focus-within:border-[#005B3C]' 
-                                : 'border-rose-300 bg-rose-50/20 text-gray-900 focus-within:border-rose-500'
-                        ]"
+                        class="relative flex items-center rounded-xl border border-gray-300 bg-white text-gray-900 shadow-xs focus-within:border-[#0D542B] focus-within:ring-1 focus-within:ring-[#0D542B] transition-colors overflow-hidden"
                     >
                         <span class="pl-4 pr-1 font-bold text-gray-400 select-none text-base">Rp</span>
                         <input 
                             type="text" 
                             v-model="formattedGaji"
                             placeholder="Contoh: 5.000.000" 
-                            class="w-full py-3.5 px-3 bg-transparent font-black font-mono border-0 focus:ring-0 text-base sm:text-lg text-gray-900 placeholder-gray-300 tracking-wide outline-none" 
+                            class="w-full py-3.5 px-3 bg-transparent font-medium font-mono border-0 focus:ring-0 text-base sm:text-lg text-gray-900 placeholder-gray-300 tracking-wide outline-none" 
                         />
                         <span class="pr-4 text-xs font-semibold text-gray-400 select-none">/ bulan</span>
                     </div>
@@ -1275,11 +1257,11 @@ onUnmounted(() => {
                     <label class="block text-xs sm:text-sm font-bold text-gray-700 mb-1.5">Jenis Pekerjaan (Khusus Alumni Filsafat Keilahian)</label>
                     <div class="flex gap-6 mt-2">
                         <label class="flex items-center space-x-2 cursor-pointer text-sm font-medium text-gray-700">
-                            <input type="radio" v-model="form.jenis_pekerjaan" value="Gerejawi" class="text-[#005B3C] focus:ring-[#005B3C]">
+                            <input type="radio" v-model="form.jenis_pekerjaan" value="Gerejawi" class="text-[#0D542B] focus:ring-[#0D542B]">
                             <span>Gerejawi</span>
                         </label>
                         <label class="flex items-center space-x-2 cursor-pointer text-sm font-medium text-gray-700">
-                            <input type="radio" v-model="form.jenis_pekerjaan" value="Non Gerejawi" class="text-[#005B3C] focus:ring-[#005B3C]">
+                            <input type="radio" v-model="form.jenis_pekerjaan" value="Non Gerejawi" class="text-[#0D542B] focus:ring-[#0D542B]">
                             <span>Non Gerejawi</span>
                         </label>
                     </div>
@@ -1293,8 +1275,8 @@ onUnmounted(() => {
         <div class="bg-white rounded-2xl p-6 sm:p-8 shadow-xs border border-gray-100">
             <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-4 mb-6 border-b border-gray-100 gap-3">
                 <div>
-                    <h2 class="text-lg sm:text-xl font-black text-gray-900 flex items-center gap-2">
-                        <span class="w-2.5 h-6 bg-[#005B3C] rounded-full inline-block"></span>
+                    <h2 class="text-lg sm:text-xl font-bold text-gray-900 flex items-center gap-2">
+                        <span class="w-1.5 h-5 bg-[#0D542B] rounded-full inline-block"></span>
                         Data {{ form.kategori_pekerjaan === 'Wiraswasta' ? 'Usaha / Bisnis' : 'Perusahaan / Tempat Bekerja' }}
                     </h2>
                     <p class="text-xs text-gray-400 mt-0.5">Filter lokasi wilayah atau pilih perusahaan yang terdaftar</p>
@@ -1306,7 +1288,7 @@ onUnmounted(() => {
                         type="button" 
                         @click="form.company_jenis_lokasi = 'Dalam Negeri'" 
                         class="px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer"
-                        :class="form.company_jenis_lokasi === 'Dalam Negeri' ? 'bg-[#005B3C] text-white shadow-xs' : 'text-gray-600 hover:text-gray-900 hover:bg-white/60'"
+                        :class="form.company_jenis_lokasi === 'Dalam Negeri' ? 'bg-[#0D542B] text-white shadow-xs' : 'text-gray-600 hover:text-gray-900 hover:bg-white/60'"
                     >
                         Dalam Negeri
                     </button>
@@ -1314,7 +1296,7 @@ onUnmounted(() => {
                         type="button" 
                         @click="form.company_jenis_lokasi = 'Luar Negeri'" 
                         class="px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer"
-                        :class="form.company_jenis_lokasi === 'Luar Negeri' ? 'bg-[#005B3C] text-white shadow-xs' : 'text-gray-600 hover:text-gray-900 hover:bg-white/60'"
+                        :class="form.company_jenis_lokasi === 'Luar Negeri' ? 'bg-[#0D542B] text-white shadow-xs' : 'text-gray-600 hover:text-gray-900 hover:bg-white/60'"
                     >
                         Luar Negeri
                     </button>
@@ -1344,8 +1326,7 @@ onUnmounted(() => {
                     
                     <div 
                         @click="showNegaraDropdown = !showNegaraDropdown; if (showNegaraDropdown) searchNegaraQuery = '';"
-                        class="w-full rounded-xl border px-4 py-3 text-sm font-medium cursor-pointer flex justify-between items-center shadow-2xs hover:border-gray-300 transition-colors"
-                        :class="selectedNegaraName ? 'border-emerald-300 bg-white text-gray-900' : 'border-rose-300 bg-rose-50/20 text-gray-900'"
+                        class="w-full rounded-xl border border-gray-300 bg-white text-gray-900 px-4 py-3 text-sm font-medium cursor-pointer flex justify-between items-center shadow-xs hover:border-[#0D542B] transition-colors"
                     >
                         <span v-if="selectedNegaraName" class="text-gray-900 font-semibold">
                             {{ selectedNegaraName }}
@@ -1364,7 +1345,7 @@ onUnmounted(() => {
                                 <input 
                                     type="text" 
                                     v-model="searchNegaraQuery" 
-                                    class="w-full pl-9 pr-3 py-1.5 border border-gray-200 rounded-lg text-sm bg-white focus:ring-1 focus:ring-[#005B3C] focus:border-[#005B3C] outline-none"
+                                    class="w-full pl-9 pr-3 py-1.5 border border-gray-200 rounded-lg text-sm bg-white focus:ring-1 focus:ring-[#0D542B] focus:border-[#0D542B] outline-none"
                                     placeholder="Ketik untuk mencari negara..."
                                     autofocus
                                 >
@@ -1375,8 +1356,8 @@ onUnmounted(() => {
                                 v-for="neg in filteredNegaras" 
                                 :key="neg.id" 
                                 @click="selectNegara(neg)" 
-                                class="px-4 py-2.5 hover:bg-green-50 hover:text-[#005B3C] cursor-pointer text-sm font-medium transition-colors flex items-center justify-between"
-                                :class="{'bg-green-50 text-[#005B3C] font-semibold': form.company_negara === neg.nama_negara}"
+                                class="px-4 py-2.5 hover:bg-slate-50 hover:text-[#0D542B] cursor-pointer text-sm font-medium transition-colors flex items-center justify-between"
+                                :class="{'bg-slate-100 text-[#0D542B] font-semibold': form.company_negara === neg.nama_negara}"
                             >
                                 <div class="flex items-center gap-2">
                                     <span>{{ neg.nama_negara }}</span>
@@ -1413,8 +1394,7 @@ onUnmounted(() => {
                         
                         <div 
                             @click="showProvinsiDropdown = !showProvinsiDropdown; if (showProvinsiDropdown) searchProvinsiQuery = '';"
-                            class="w-full rounded-xl border px-4 py-3 text-sm font-medium cursor-pointer flex justify-between items-center shadow-2xs hover:border-gray-300 transition-colors"
-                            :class="selectedProvinceName ? 'border-emerald-300 bg-white text-gray-900' : 'border-rose-300 bg-rose-50/20 text-gray-900'"
+                            class="w-full rounded-xl border border-gray-300 bg-white text-gray-900 px-4 py-3 text-sm font-medium cursor-pointer flex justify-between items-center shadow-xs hover:border-[#0D542B] transition-colors"
                         >
                             <span v-if="selectedProvinceName" class="text-gray-900 font-medium">{{ selectedProvinceName }}</span>
                             <span v-else class="text-gray-400">Pilih Provinsi Perusahaan...</span>
@@ -1430,7 +1410,7 @@ onUnmounted(() => {
                                     <input 
                                         type="text" 
                                         v-model="searchProvinsiQuery" 
-                                        class="w-full pl-9 pr-3 py-1.5 border border-gray-200 rounded-lg text-sm bg-white focus:ring-1 focus:ring-[#005B3C] focus:border-[#005B3C] outline-none"
+                                        class="w-full pl-9 pr-3 py-1.5 border border-gray-200 rounded-lg text-sm bg-white focus:ring-1 focus:ring-[#0D542B] focus:border-[#0D542B] outline-none"
                                         placeholder="Ketik untuk mencari provinsi..."
                                         autofocus
                                     >
@@ -1441,8 +1421,8 @@ onUnmounted(() => {
                                     v-for="prov in filteredProvinces" 
                                     :key="prov.id" 
                                     @click="selectProvinsi(prov)" 
-                                    class="px-4 py-2.5 hover:bg-green-50 hover:text-[#005B3C] cursor-pointer text-sm font-medium transition-colors border-b border-gray-50 last:border-b-0"
-                                    :class="{'bg-green-50 text-[#005B3C] font-semibold': form.company_province_id == prov.id}"
+                                    class="px-4 py-2.5 hover:bg-slate-50 hover:text-[#0D542B] cursor-pointer text-sm font-medium transition-colors border-b border-gray-50 last:border-b-0"
+                                    :class="{'bg-slate-100 text-[#0D542B] font-semibold': form.company_province_id == prov.id}"
                                 >
                                     {{ prov.nama_provinsi }}
                                 </li>
@@ -1471,10 +1451,10 @@ onUnmounted(() => {
                         
                         <div 
                             @click="if (form.company_province_id) { showKabupatenDropdown = !showKabupatenDropdown; if (showKabupatenDropdown) searchKabupatenQuery = ''; }"
-                            class="w-full rounded-xl border px-4 py-3 text-sm font-medium cursor-pointer flex justify-between items-center shadow-2xs hover:border-gray-300 transition-colors"
+                            class="w-full rounded-xl border px-4 py-3 text-sm font-medium cursor-pointer flex justify-between items-center shadow-xs transition-colors"
                             :class="[
                                 !form.company_province_id ? 'opacity-60 cursor-not-allowed bg-gray-50 border-gray-200 text-gray-400' :
-                                (selectedKabupatenName ? 'border-emerald-300 bg-white text-gray-900' : 'border-rose-300 bg-rose-50/20 text-gray-900')
+                                'border-gray-300 bg-white text-gray-900 hover:border-[#0D542B]'
                             ]"
                         >
                             <span v-if="selectedKabupatenName" class="text-gray-900 font-medium">{{ selectedKabupatenName }}</span>
@@ -1493,7 +1473,7 @@ onUnmounted(() => {
                                     <input 
                                         type="text" 
                                         v-model="searchKabupatenQuery" 
-                                        class="w-full pl-9 pr-3 py-1.5 border border-gray-200 rounded-lg text-sm bg-white focus:ring-1 focus:ring-[#005B3C] focus:border-[#005B3C] outline-none"
+                                        class="w-full pl-9 pr-3 py-1.5 border border-gray-200 rounded-lg text-sm bg-white focus:ring-1 focus:ring-[#0D542B] focus:border-[#0D542B] outline-none"
                                         placeholder="Ketik untuk mencari kabupaten/kota..."
                                         autofocus
                                     >
@@ -1504,8 +1484,8 @@ onUnmounted(() => {
                                     v-for="kab in filteredKabupatens" 
                                     :key="kab.id" 
                                     @click="selectKabupaten(kab)" 
-                                    class="px-4 py-2.5 hover:bg-green-50 hover:text-[#005B3C] cursor-pointer text-sm font-medium transition-colors border-b border-gray-50 last:border-b-0"
-                                    :class="{'bg-green-50 text-[#005B3C] font-semibold': form.company_kabupaten_id == kab.id}"
+                                    class="px-4 py-2.5 hover:bg-slate-50 hover:text-[#0D542B] cursor-pointer text-sm font-medium transition-colors border-b border-gray-50 last:border-b-0"
+                                    :class="{'bg-slate-100 text-[#0D542B] font-semibold': form.company_kabupaten_id == kab.id}"
                                 >
                                     {{ kab.nama_kabupaten }}
                                 </li>
@@ -1530,8 +1510,7 @@ onUnmounted(() => {
                     <div class="flex items-center gap-2">
                         <div 
                             @click="showCompanyDropdown = !showCompanyDropdown; if (showCompanyDropdown) searchCompanyQuery = '';"
-                            class="flex-1 rounded-xl border px-4 py-3 text-sm font-medium cursor-pointer flex justify-between items-center shadow-2xs hover:border-gray-300 transition-colors"
-                            :class="form.nama_perusahaan?.trim() ? 'border-emerald-300 bg-white text-gray-900' : 'border-rose-300 bg-rose-50/20 text-gray-900'"
+                            class="flex-1 rounded-xl border border-gray-300 bg-white text-gray-900 px-4 py-3 text-sm font-medium cursor-pointer flex justify-between items-center shadow-xs hover:border-[#0D542B] transition-colors"
                         >
                             <span v-if="form.nama_perusahaan" class="text-gray-900 font-semibold truncate">{{ form.nama_perusahaan }}</span>
                             <span v-else class="text-gray-400">
@@ -1555,7 +1534,7 @@ onUnmounted(() => {
                         <button 
                             type="button" 
                             @click="openAddCompanyModal" 
-                            class="px-4 py-3 bg-[#005B3C] hover:bg-[#00472e] text-white rounded-xl transition-colors shrink-0 text-xs font-bold flex items-center gap-1 shadow-2xs cursor-pointer" 
+                            class="px-4 py-3 bg-[#0D542B] hover:bg-[#093d1f] text-white rounded-xl transition-colors shrink-0 text-xs font-bold flex items-center gap-1 shadow-xs cursor-pointer" 
                             title="Tambah Perusahaan Baru"
                         >
                             <span>+ Tambah Baru</span>
@@ -1572,7 +1551,7 @@ onUnmounted(() => {
                                 <input 
                                     type="text" 
                                     v-model="searchCompanyQuery" 
-                                    class="w-full pl-9 pr-3 py-1.5 border border-gray-200 rounded-lg text-sm bg-white focus:ring-1 focus:ring-[#005B3C] focus:border-[#005B3C] outline-none"
+                                    class="w-full pl-9 pr-3 py-1.5 border border-gray-200 rounded-lg text-sm bg-white focus:ring-1 focus:ring-[#0D542B] focus:border-[#0D542B] outline-none"
                                     placeholder="Ketik untuk mencari nama perusahaan..."
                                     autofocus
                                 >
@@ -1593,11 +1572,11 @@ onUnmounted(() => {
                                 v-for="company in filteredCompanies" 
                                 :key="company.id" 
                                 @click="selectCompany(company)" 
-                                class="px-4 py-3 hover:bg-green-50 hover:text-[#005B3C] cursor-pointer text-sm font-medium transition-colors border-b border-gray-50 last:border-b-0 flex justify-between items-center"
-                                :class="{'bg-green-50 text-[#005B3C] font-semibold': form.nama_perusahaan === company.nama_perusahaan}"
+                                class="px-4 py-3 hover:bg-slate-50 hover:text-[#0D542B] cursor-pointer text-sm font-medium transition-colors border-b border-gray-50 last:border-b-0 flex justify-between items-center"
+                                :class="{'bg-slate-100 text-[#0D542B] font-semibold': form.nama_perusahaan === company.nama_perusahaan}"
                             >
                                 <div>
-                                    <span class="block text-gray-800" :class="{'text-[#005B3C] font-bold': form.nama_perusahaan === company.nama_perusahaan}">
+                                    <span class="block text-gray-800" :class="{'text-[#0D542B] font-bold': form.nama_perusahaan === company.nama_perusahaan}">
                                         {{ company.nama_perusahaan }}
                                     </span>
                                     <span class="text-xs text-gray-400" v-if="company.jenis_lokasi === 'Luar Negeri' || (company.negara && company.negara !== 'Indonesia')">
@@ -1608,10 +1587,10 @@ onUnmounted(() => {
                                         {{ company.kabupaten_id ? ' - ' + (kabupatens.find(k => k.id == company.kabupaten_id)?.nama_kabupaten || '') : '' }}
                                     </span>
                                 </div>
-                                <span v-if="company.status_verifikasi === 'Terverifikasi'" class="text-xs text-emerald-600 font-semibold shrink-0 ml-2">
+                                <span v-if="company.status_verifikasi === 'Terverifikasi'" class="text-xs text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded font-semibold shrink-0 ml-2">
                                     Terverifikasi
                                 </span>
-                                <span v-else class="text-xs text-amber-600 font-semibold shrink-0 ml-2">
+                                <span v-else class="text-xs text-amber-700 bg-amber-50 px-2 py-0.5 rounded font-semibold shrink-0 ml-2">
                                     Menunggu Verifikasi
                                 </span>
                             </li>
@@ -1619,7 +1598,7 @@ onUnmounted(() => {
                             <!-- State Jika Tidak Ada Perusahaan Ditemukan -->
                             <li v-if="filteredCompanies.length === 0" class="px-4 py-6 text-center text-sm text-gray-500">
                                 <div class="font-medium text-gray-600">Data perusahaan tidak ditemukan pada wilayah/filter yang dipilih.</div>
-                                <button type="button" @click="openAddCompanyModal" class="mt-2 text-xs font-bold text-[#005B3C] hover:underline cursor-pointer">
+                                <button type="button" @click="openAddCompanyModal" class="mt-2 text-xs font-bold text-[#0D542B] hover:underline cursor-pointer">
                                     + Tambah Perusahaan Baru
                                 </button>
                             </li>
@@ -1634,7 +1613,7 @@ onUnmounted(() => {
                     
                     <!-- Banner Notifikasi Status Verifikasi Perusahaan -->
                     <div v-if="!canEditCompanyDetails" class="md:col-span-2 bg-gray-50 border border-gray-200 rounded-xl p-3.5 flex items-center gap-3 text-xs text-gray-600 font-medium shadow-2xs">
-                        <div class="w-2 h-2 rounded-full bg-emerald-500 shrink-0"></div>
+                        <div class="w-2 h-2 rounded-full bg-emerald-600 shrink-0"></div>
                         <div>
                             Perusahaan ini telah <strong>Terverifikasi Resmi</strong> oleh universitas. Detail data perusahaan terkunci untuk menjaga konsistensi master data institusi.
                         </div>
@@ -1649,10 +1628,10 @@ onUnmounted(() => {
                             v-model="form.company_jenis_perusahaan" 
                             @change="form.perusahaan_jenis_perusahaan = form.company_jenis_perusahaan" 
                             :disabled="!canEditCompanyDetails"
-                            class="block w-full border rounded-xl shadow-2xs px-4 py-3 text-sm font-medium transition-all focus:ring-2 focus:ring-[#005B3C]/20"
+                            class="block w-full border rounded-xl shadow-xs px-4 py-3 text-sm font-medium transition-colors"
                             :class="[
                                 !canEditCompanyDetails ? 'bg-gray-100/90 text-gray-500 cursor-not-allowed border-gray-200' : 
-                                (form.company_jenis_perusahaan || form.perusahaan_jenis_perusahaan ? 'border-emerald-300 bg-white text-gray-900 focus:border-[#005B3C]' : 'border-rose-300 bg-rose-50/20 text-gray-900 focus:border-rose-500')
+                                'border-gray-300 bg-white text-gray-900 focus:border-[#0D542B] focus:ring-1 focus:ring-[#0D542B] outline-none'
                             ]"
                         >
                             <option value="">-- Pilih Jenis Instansi / Perusahaan --</option>
@@ -1670,10 +1649,10 @@ onUnmounted(() => {
                             v-model="form.company_jenis_perusahaan_lainnya" 
                             @input="form.perusahaan_jenis_perusahaan_lainnya = form.company_jenis_perusahaan_lainnya"
                             :disabled="!canEditCompanyDetails"
-                            class="block w-full border rounded-xl shadow-2xs px-4 py-3 text-sm font-medium transition-all focus:ring-2 focus:ring-[#005B3C]/20"
+                            class="block w-full border rounded-xl shadow-xs px-4 py-3 text-sm font-medium transition-colors"
                             :class="[
                                 !canEditCompanyDetails ? 'bg-gray-100/90 text-gray-500 cursor-not-allowed border-gray-200' : 
-                                (form.company_jenis_perusahaan_lainnya?.trim() ? 'border-emerald-300 bg-white text-gray-900 focus:border-[#005B3C]' : 'border-gray-200 bg-white text-gray-900 focus:border-[#005B3C]')
+                                'border-gray-300 bg-white text-gray-900 focus:border-[#0D542B] focus:ring-1 focus:ring-[#0D542B] outline-none'
                             ]" 
                             placeholder="Contoh: Lembaga Riset Independen, Startup Komunitas..." 
                         />
@@ -1688,10 +1667,10 @@ onUnmounted(() => {
                             v-model="form.company_skala" 
                             @change="form.perusahaan_skala = form.company_skala" 
                             :disabled="!canEditCompanyDetails"
-                            class="block w-full border rounded-xl shadow-2xs px-4 py-3 text-sm font-medium transition-all focus:ring-2 focus:ring-[#005B3C]/20"
+                            class="block w-full border rounded-xl shadow-xs px-4 py-3 text-sm font-medium transition-colors"
                             :class="[
                                 !canEditCompanyDetails ? 'bg-gray-100/90 text-gray-500 cursor-not-allowed border-gray-200' : 
-                                (form.company_skala || form.perusahaan_skala ? 'border-emerald-300 bg-white text-gray-900 focus:border-[#005B3C]' : 'border-rose-300 bg-rose-50/20 text-gray-900 focus:border-rose-500')
+                                'border-gray-300 bg-white text-gray-900 focus:border-[#0D542B] focus:ring-1 focus:ring-[#0D542B] outline-none'
                             ]"
                         >
                             <option value="">-- Pilih Skala Perusahaan --</option>
@@ -1711,10 +1690,10 @@ onUnmounted(() => {
                             v-model="form.company_alamat" 
                             @input="form.perusahaan_alamat = form.company_alamat"
                             :disabled="!canEditCompanyDetails"
-                            class="block w-full border rounded-xl shadow-2xs px-4 py-3 text-sm font-medium transition-all focus:ring-2 focus:ring-[#005B3C]/20"
+                            class="block w-full border rounded-xl shadow-xs px-4 py-3 text-sm font-medium transition-colors"
                             :class="[
                                 !canEditCompanyDetails ? 'bg-gray-100/90 text-gray-500 cursor-not-allowed border-gray-200' : 
-                                ((form.company_alamat || form.perusahaan_alamat)?.trim() ? 'border-emerald-300 bg-white text-gray-900 focus:border-[#005B3C]' : 'border-rose-300 bg-rose-50/20 text-gray-900 focus:border-rose-500')
+                                'border-gray-300 bg-white text-gray-900 focus:border-[#0D542B] focus:ring-1 focus:ring-[#0D542B] outline-none'
                             ]"
                             placeholder="Contoh: Pacific Building, Jl. Laksda Adisucipto No. 157, Sleman" 
                         />
@@ -1730,10 +1709,10 @@ onUnmounted(() => {
                             v-model="form.zipcode" 
                             autocomplete="off"
                             :disabled="!canEditCompanyDetails"
-                            class="block w-full border rounded-xl shadow-2xs px-4 py-3 text-sm font-medium transition-all focus:ring-2 focus:ring-[#005B3C]/20"
+                            class="block w-full border rounded-xl shadow-xs px-4 py-3 text-sm font-medium transition-colors"
                             :class="[
                                 !canEditCompanyDetails ? 'bg-gray-100/90 text-gray-500 cursor-not-allowed border-gray-200' : 
-                                (form.zipcode?.trim() ? 'border-emerald-300 bg-white text-gray-900 focus:border-[#005B3C]' : 'border-rose-300 bg-rose-50/20 text-gray-900 focus:border-rose-500')
+                                'border-gray-300 bg-white text-gray-900 focus:border-[#0D542B] focus:ring-1 focus:ring-[#0D542B] outline-none'
                             ]" 
                             placeholder="Kode Pos (Cth: 55281)" 
                         />
@@ -1755,8 +1734,8 @@ onUnmounted(() => {
         <!-- ================================================================= -->
         <div v-if="form.kategori_pekerjaan !== 'Melanjutkan Pendidikan'" class="bg-white rounded-2xl p-6 sm:p-8 shadow-xs border border-gray-100">
             <div class="flex items-center justify-between mb-2 pb-3 border-b border-gray-100">
-                <h2 class="text-lg sm:text-xl font-black text-gray-900 flex items-center gap-2">
-                    <span class="w-2.5 h-6 bg-[#005B3C] rounded-full inline-block"></span>
+                <h2 class="text-lg sm:text-xl font-bold text-gray-900 flex items-center gap-2">
+                    <span class="w-1.5 h-5 bg-[#0D542B] rounded-full inline-block"></span>
                     Data Atasan Langsung
                 </h2>
                 <span class="text-xs text-gray-400 font-medium">Survei Pengguna Lulusan</span>
@@ -1782,8 +1761,7 @@ onUnmounted(() => {
                         type="text" 
                         v-model="form.nama_atasan" 
                         autocomplete="off"
-                        class="block w-full border rounded-xl shadow-2xs px-4 py-3 text-sm font-medium transition-all focus:ring-2 focus:ring-[#005B3C]/20"
-                        :class="form.nama_atasan?.trim() ? 'border-emerald-300 bg-white text-gray-900 focus:border-[#005B3C]' : 'border-rose-300 bg-rose-50/20 text-gray-900 focus:border-rose-500'"
+                        class="block w-full border border-gray-300 bg-white text-gray-900 rounded-xl shadow-xs px-4 py-3 text-sm font-medium transition-colors focus:border-[#0D542B] focus:ring-1 focus:ring-[#0D542B] outline-none"
                         placeholder="Contoh: Ir. Bambang Trihatmojo" 
                     />
                 </div>
@@ -1798,8 +1776,7 @@ onUnmounted(() => {
                         type="email" 
                         v-model="form.email_atasan" 
                         autocomplete="off"
-                        class="block w-full border rounded-xl shadow-2xs px-4 py-3 text-sm font-medium transition-all focus:ring-2 focus:ring-[#005B3C]/20"
-                        :class="isValidEmail(form.email_atasan) ? 'border-emerald-300 bg-white text-gray-900 focus:border-[#005B3C]' : 'border-rose-300 bg-rose-50/20 text-gray-900 focus:border-rose-500'"
+                        class="block w-full border border-gray-300 bg-white text-gray-900 rounded-xl shadow-xs px-4 py-3 text-sm font-medium transition-colors focus:border-[#0D542B] focus:ring-1 focus:ring-[#0D542B] outline-none"
                         placeholder="atasan@perusahaan.co.id" 
                     />
                 </div>
@@ -1814,8 +1791,7 @@ onUnmounted(() => {
                         type="tel" 
                         v-model="form.telepon_atasan" 
                         autocomplete="off"
-                        class="block w-full border rounded-xl shadow-2xs px-4 py-3 text-sm font-mono font-medium transition-all focus:ring-2 focus:ring-[#005B3C]/20"
-                        :class="isValidPhone(form.telepon_atasan) ? 'border-emerald-300 bg-white text-gray-900 focus:border-[#005B3C]' : 'border-rose-300 bg-rose-50/20 text-gray-900 focus:border-rose-500'"
+                        class="block w-full border border-gray-300 bg-white text-gray-900 rounded-xl shadow-xs px-4 py-3 text-sm font-mono font-medium transition-colors focus:border-[#0D542B] focus:ring-1 focus:ring-[#0D542B] outline-none"
                         placeholder="081234567890" 
                     />
                 </div>
@@ -1854,7 +1830,7 @@ onUnmounted(() => {
                     type="button" 
                     @click="handleKirimEmailAtasan"
                     :disabled="sendingEmail || !form.email_atasan || !isValidEmail(form.email_atasan)"
-                    class="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold text-white bg-[#005B3C] hover:bg-[#00472e] transition-all shadow-xs shrink-0 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                    class="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold text-white bg-[#0D542B] hover:bg-[#093d1f] transition-all shadow-xs shrink-0 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                     <svg v-if="sendingEmail" class="w-4 h-4 animate-spin text-white" fill="none" viewBox="0 0 24 24">
                         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>

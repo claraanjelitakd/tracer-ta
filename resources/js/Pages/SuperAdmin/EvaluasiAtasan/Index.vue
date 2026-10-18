@@ -298,26 +298,31 @@ const viewDetailEvaluasi = (evaluasi) => {
                 </div>
 
                 <!-- Tabel Butir Aspek -->
-                <div class="bg-white border border-gray-300 overflow-x-auto rounded-lg shadow-2xs">
-                    <table class="w-full text-left border-collapse border border-gray-300 text-xs bg-white">
+                <div class="bg-white border border-gray-300 overflow-x-auto shadow-2xs">
+                    <table class="w-full min-w-full text-left border-collapse border border-gray-300 text-xs bg-white">
                         <thead>
-                            <tr class="bg-gray-100 text-gray-800 font-semibold border-b border-gray-300 text-[11px]">
-                                <th class="border border-gray-300 px-3 py-2 text-center w-12">No</th>
-                                <th class="border border-gray-300 px-3 py-2 w-32">Kode Aspek</th>
-                                <th class="border border-gray-300 px-3 py-2 min-w-[240px]">Aspek Penilaian</th>
-                                <th class="border border-gray-300 px-3 py-2 w-28 text-center">Status</th>
-                                <th class="border border-gray-300 px-3 py-2 text-center w-28">Aksi</th>
+                            <tr class="bg-gray-100 text-gray-800 font-semibold border-b border-gray-300 text-[11px] whitespace-nowrap">
+                                <th class="border border-gray-300 px-2.5 py-2 text-center w-12 whitespace-nowrap">No</th>
+                                <th class="border border-gray-300 px-3 py-2 w-32 whitespace-nowrap">Kode Aspek</th>
+                                <th class="border border-gray-300 px-3 py-2 min-w-[240px] whitespace-nowrap">Aspek Penilaian</th>
+                                <th class="border border-gray-300 px-3 py-2 w-28 text-center whitespace-nowrap">Status</th>
+                                <th class="border border-gray-300 px-2.5 py-2 text-center w-24 whitespace-nowrap">Aksi</th>
                             </tr>
                         </thead>
                         <tbody>
-                            <tr v-for="(item, idx) in filteredQuestions" :key="item.id" class="hover:bg-gray-50 border-b border-gray-200">
-                                <td class="border border-gray-300 px-3 py-2.5 text-center font-bold text-gray-500">{{ item.order || (idx + 1) }}</td>
-                                <td class="border border-gray-300 px-3 py-2.5 font-mono text-[11px] text-gray-700 font-bold">{{ item.kode }}</td>
-                                <td class="border border-gray-300 px-3 py-2.5">
-                                    <div class="font-bold text-gray-900 text-sm">{{ item.aspek }}</div>
-                                    <div v-if="item.deskripsi" class="text-xs text-gray-500 mt-0.5">{{ item.deskripsi }}</div>
+                            <tr v-if="filteredQuestions.length === 0">
+                                <td colspan="5" class="border border-gray-300 p-8 text-center text-gray-400 italic">
+                                    Belum ada butir aspek evaluasi penilaian.
                                 </td>
-                                <td class="border border-gray-300 px-3 py-2.5 text-center">
+                            </tr>
+                            <tr v-for="(item, idx) in filteredQuestions" :key="item.id" class="hover:bg-gray-50/80 transition-colors">
+                                <td class="border border-gray-300 px-2.5 py-2 text-center font-medium text-gray-600">{{ item.order || (idx + 1) }}</td>
+                                <td class="border border-gray-300 px-3 py-2 font-mono text-[11px] text-gray-700 font-bold">{{ item.kode }}</td>
+                                <td class="border border-gray-300 px-3 py-2">
+                                    <div class="font-bold text-gray-900 text-xs">{{ item.aspek }}</div>
+                                    <div v-if="item.deskripsi" class="text-[11px] text-gray-500 mt-0.5">{{ item.deskripsi }}</div>
+                                </td>
+                                <td class="border border-gray-300 px-3 py-2 text-center">
                                     <button
                                         type="button"
                                         @click="toggleActive(item)"
@@ -327,12 +332,12 @@ const viewDetailEvaluasi = (evaluasi) => {
                                         {{ item.is_active ? 'Aktif' : 'Nonaktif' }}
                                     </button>
                                 </td>
-                                <td class="border border-gray-300 px-3 py-2.5 text-center">
-                                    <div class="flex items-center justify-center gap-1.5">
+                                <td class="border border-gray-300 px-2.5 py-2 text-center">
+                                    <div class="flex items-center justify-center gap-1">
                                         <button
                                             type="button"
                                             @click="openQuestionModal(item)"
-                                            class="p-1 text-amber-600 hover:bg-amber-50 rounded cursor-pointer"
+                                            class="p-1 text-amber-600 hover:bg-amber-50 rounded cursor-pointer transition-colors"
                                             title="Sunting Aspek"
                                         >
                                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -342,7 +347,7 @@ const viewDetailEvaluasi = (evaluasi) => {
                                         <button
                                             type="button"
                                             @click="deleteQuestion(item)"
-                                            class="p-1 text-rose-600 hover:bg-rose-50 rounded cursor-pointer"
+                                            class="p-1 text-rose-600 hover:bg-rose-50 rounded cursor-pointer transition-colors"
                                             title="Hapus Aspek"
                                         >
                                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -359,34 +364,39 @@ const viewDetailEvaluasi = (evaluasi) => {
 
             <!-- Konten Tab 2: Daftar Undangan & Respon Atasan -->
             <main v-else class="w-full p-6 space-y-4">
-                <div class="bg-white border border-gray-300 overflow-x-auto rounded-lg shadow-2xs">
-                    <table class="w-full text-left border-collapse border border-gray-300 text-xs bg-white">
+                <div class="bg-white border border-gray-300 overflow-x-auto shadow-2xs">
+                    <table class="w-full min-w-full text-left border-collapse border border-gray-300 text-xs bg-white">
                         <thead>
-                            <tr class="bg-gray-100 text-gray-800 font-semibold border-b border-gray-300 text-[11px]">
-                                <th class="border border-gray-300 px-3 py-2 text-center w-12">No</th>
-                                <th class="border border-gray-300 px-3 py-2 min-w-[200px]">Alumni Dinilai</th>
-                                <th class="border border-gray-300 px-3 py-2 min-w-[200px]">Perusahaan / Instansi</th>
-                                <th class="border border-gray-300 px-3 py-2 min-w-[200px]">Atasan Langsung</th>
-                                <th class="border border-gray-300 px-3 py-2 text-center w-32">Status Pengisian</th>
-                                <th class="border border-gray-300 px-3 py-2 text-center w-28">Aksi</th>
+                            <tr class="bg-gray-100 text-gray-800 font-semibold border-b border-gray-300 text-[11px] whitespace-nowrap">
+                                <th class="border border-gray-300 px-2.5 py-2 text-center w-12 whitespace-nowrap">No</th>
+                                <th class="border border-gray-300 px-3 py-2 min-w-[200px] whitespace-nowrap">Alumni Dinilai</th>
+                                <th class="border border-gray-300 px-3 py-2 min-w-[200px] whitespace-nowrap">Perusahaan / Instansi</th>
+                                <th class="border border-gray-300 px-3 py-2 min-w-[200px] whitespace-nowrap">Atasan Langsung</th>
+                                <th class="border border-gray-300 px-3 py-2 text-center w-32 whitespace-nowrap">Status Pengisian</th>
+                                <th class="border border-gray-300 px-2.5 py-2 text-center w-24 whitespace-nowrap">Aksi</th>
                             </tr>
                         </thead>
                         <tbody>
-                            <tr v-for="(ev, idx) in evaluasis.data" :key="ev.id" class="hover:bg-gray-50 border-b border-gray-200">
-                                <td class="border border-gray-300 px-3 py-2.5 text-center font-bold text-gray-500">{{ idx + 1 }}</td>
-                                <td class="border border-gray-300 px-3 py-2.5">
+                            <tr v-if="!evaluasis.data || evaluasis.data.length === 0">
+                                <td colspan="6" class="border border-gray-300 p-8 text-center text-gray-400 italic">
+                                    Belum ada data evaluasi atasan yang tersimpan.
+                                </td>
+                            </tr>
+                            <tr v-for="(ev, idx) in evaluasis.data" :key="ev.id" class="hover:bg-gray-50/80 transition-colors">
+                                <td class="border border-gray-300 px-2.5 py-2 text-center font-medium text-gray-600">{{ idx + 1 }}</td>
+                                <td class="border border-gray-300 px-3 py-2">
                                     <div class="font-bold text-gray-900">{{ ev.biodata?.nama || ev.biodata?.data_akademik?.nama || '-' }}</div>
                                     <div class="text-[11px] text-gray-500">NIM: {{ ev.biodata?.nim || '-' }} • {{ ev.biodata?.prodi?.nama_prodi || '-' }}</div>
                                 </td>
-                                <td class="border border-gray-300 px-3 py-2.5">
+                                <td class="border border-gray-300 px-3 py-2">
                                     <div class="font-bold text-gray-900">{{ ev.perusahaan?.nama_perusahaan || ev.nama_perusahaan || '-' }}</div>
                                     <div class="text-[11px] text-gray-500">{{ ev.perusahaan?.alamat || ev.alamat_lengkap || '-' }}</div>
                                 </td>
-                                <td class="border border-gray-300 px-3 py-2.5">
+                                <td class="border border-gray-300 px-3 py-2">
                                     <div class="font-bold text-gray-900">{{ ev.atasan?.nama || '-' }}</div>
                                     <div class="text-[11px] text-gray-500">{{ ev.atasan?.email || '-' }} • {{ ev.atasan?.telepon || '-' }}</div>
                                 </td>
-                                <td class="border border-gray-300 px-3 py-2.5 text-center">
+                                <td class="border border-gray-300 px-3 py-2 text-center">
                                     <span
                                         class="px-2.5 py-0.5 rounded-full text-[10px] font-bold"
                                         :class="ev.is_submitted ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'"
@@ -394,31 +404,30 @@ const viewDetailEvaluasi = (evaluasi) => {
                                         {{ ev.is_submitted ? '✓ Sudah Diisi' : 'Menunggu Pengisian' }}
                                     </span>
                                 </td>
-                                <td class="border border-gray-300 px-3 py-2.5 text-center">
+                                <td class="border border-gray-300 px-2.5 py-2 text-center">
                                     <div class="flex items-center justify-center gap-1">
                                         <button
                                             type="button"
                                             @click="viewDetailEvaluasi(ev)"
-                                            class="px-2.5 py-1 bg-[#0D542B] hover:bg-[#08381c] text-white rounded text-[11px] font-semibold cursor-pointer"
+                                            class="p-1 text-blue-600 hover:bg-blue-50 rounded cursor-pointer transition-colors"
+                                            title="Lihat Detail Evaluasi"
                                         >
-                                            Lihat Detail
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                            </svg>
                                         </button>
                                         <a
                                             :href="`/evaluasi-atasan/${ev.token}`"
                                             target="_blank"
-                                            class="p-1 text-blue-600 hover:bg-blue-50 rounded"
-                                            title="Buka Link Publik"
+                                            class="p-1 text-emerald-700 hover:bg-emerald-50 rounded cursor-pointer transition-colors"
+                                            title="Buka Link Publik Kuesioner Atasan"
                                         >
                                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
                                             </svg>
                                         </a>
                                     </div>
-                                </td>
-                            </tr>
-                            <tr v-if="!evaluasis.data || evaluasis.data.length === 0">
-                                <td colspan="6" class="border border-gray-300 px-4 py-8 text-center text-gray-400 italic">
-                                    Belum ada data evaluasi atasan yang tersimpan.
                                 </td>
                             </tr>
                         </tbody>
