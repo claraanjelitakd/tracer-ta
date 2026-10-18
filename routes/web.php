@@ -36,6 +36,7 @@ use App\Http\Controllers\SuperAdmin\KelolaSection\KelolaSectionController;
 use App\Http\Controllers\SuperAdmin\LinkedIn\LinkedInSyncController;
 use App\Http\Controllers\SuperAdmin\LogAktivitasController;
 use App\Http\Controllers\SuperAdmin\ManajemenAkunController;
+use App\Http\Controllers\SuperAdmin\MasterWilayah\MasterWilayahController;
 use App\Http\Controllers\SuperAdmin\Perusahaan\VerifikasiPerusahaanSuperAdminController;
 use App\Http\Controllers\Tamu\BerandaController;
 use Illuminate\Support\Facades\Route;
@@ -260,6 +261,20 @@ Route::middleware('auth')->group(function () {
             Route::put('/superadmin/perusahaan/{id}', [VerifikasiPerusahaanSuperAdminController::class, 'updateAndVerify'])->name('superadmin.perusahaan.update');
             Route::post('/superadmin/perusahaan/{id}/reject', [VerifikasiPerusahaanSuperAdminController::class, 'reject'])->name('superadmin.perusahaan.reject');
             Route::get('/superadmin/perusahaan/search-verified', [VerifikasiPerusahaanSuperAdminController::class, 'searchVerified'])->name('superadmin.perusahaan.search-verified');
+
+            // Master Data Wilayah Administrasi & Regulasi Standar UMP (Provinsi, Kabupaten/Kota, UMP Daerah)
+            Route::get('/superadmin/master-wilayah', [MasterWilayahController::class, 'index'])->name('superadmin.master-wilayah.index');
+            Route::post('/superadmin/master-wilayah/provinsi', [MasterWilayahController::class, 'storeProvinsi'])->name('superadmin.master-wilayah.provinsi.store');
+            Route::put('/superadmin/master-wilayah/provinsi/{id}', [MasterWilayahController::class, 'updateProvinsi'])->name('superadmin.master-wilayah.provinsi.update');
+            Route::delete('/superadmin/master-wilayah/provinsi/{id}', [MasterWilayahController::class, 'destroyProvinsi'])->name('superadmin.master-wilayah.provinsi.destroy');
+
+            Route::post('/superadmin/master-wilayah/kabupaten', [MasterWilayahController::class, 'storeKabupaten'])->name('superadmin.master-wilayah.kabupaten.store');
+            Route::put('/superadmin/master-wilayah/kabupaten/{id}', [MasterWilayahController::class, 'updateKabupaten'])->name('superadmin.master-wilayah.kabupaten.update');
+            Route::delete('/superadmin/master-wilayah/kabupaten/{id}', [MasterWilayahController::class, 'destroyKabupaten'])->name('superadmin.master-wilayah.kabupaten.destroy');
+
+            Route::post('/superadmin/master-wilayah/ump', [MasterWilayahController::class, 'storeOrUpdateUmp'])->name('superadmin.master-wilayah.ump.store');
+            Route::delete('/superadmin/master-wilayah/ump/{id}', [MasterWilayahController::class, 'destroyUmp'])->name('superadmin.master-wilayah.ump.destroy');
+            Route::post('/superadmin/master-wilayah/ump/copy-year', [MasterWilayahController::class, 'copyYearUmp'])->name('superadmin.master-wilayah.ump.copy-year');
 
             // Manajemen Akun Terpadu & Pemulihan Kata Sandi (Admin Fakultas, Admin Prodi, Mahasiswa per Prodi)
             Route::get('/superadmin/manajemen-akun', [ManajemenAkunController::class, 'index'])->name('superadmin.manajemen-akun.index');

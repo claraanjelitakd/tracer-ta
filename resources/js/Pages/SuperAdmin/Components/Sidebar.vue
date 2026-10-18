@@ -52,6 +52,10 @@ const isPerusahaanActive = computed(() => {
     return page.url.startsWith('/superadmin/perusahaan');
 });
 
+const isMasterWilayahActive = computed(() => {
+    return page.url.startsWith('/superadmin/master-wilayah');
+});
+
 const isAlumniActive = computed(() => {
     return page.url.startsWith('/superadmin/alumni');
 });
@@ -280,7 +284,24 @@ const handleLogout = () => {
                     </span>
                 </div>
 
-                <!-- 6. Master Data & Verifikasi Perusahaan -->
+                <!-- 6. Master Data Wilayah & UMP -->
+                <Link
+                    href="/superadmin/master-wilayah"
+                    @click="closeMobileMenu"
+                    class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-semibold transition-colors"
+                    :class="[
+                        isMasterWilayahActive
+                            ? 'bg-[#0D542B] text-white shadow-2xs'
+                            : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                    ]"
+                >
+                    <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <span class="truncate">Master Wilayah & UMP</span>
+                </Link>
+
+                <!-- 7. Master Data & Verifikasi Perusahaan -->
                 <Link
                     href="/superadmin/perusahaan"
                     @click="closeMobileMenu"
