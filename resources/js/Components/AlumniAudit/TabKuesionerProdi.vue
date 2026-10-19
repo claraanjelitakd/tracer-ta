@@ -1,42 +1,57 @@
 <!--
-  Komponen Anak: Tab Kuesioner Universitas (Admin View)
-  File: resources/js/Pages/SuperAdmin/Alumni/Components/TabKuesionerUniv.vue
+  Komponen Bersama: Tab Kuesioner Program Studi (Admin View)
+  Lokasi: resources/js/Components/AlumniAudit/TabKuesionerProdi.vue
+  
+  Mendukung peran Super Admin, Fakultas, Prodi, dan Biro 3.
 -->
 <script setup>
 import { ref, computed } from 'vue';
 
+/**
+ * Definisi properti komponen tab kuesioner program studi.
+ */
 const props = defineProps({
-    sections: {
+    /** Objek data alumni */
+    alumni: {
+        type: Object,
+        required: true,
+    },
+    /** Daftar seksi kuesioner program studi beserta butir pertanyaan dan jawaban */
+    prodiSections: {
         type: Array,
         default: () => [],
     },
-    evaluasi: {
+    /** Rekap evaluasi kelulusan & persentase kuesioner prodi */
+    prodiEvaluasi: {
         type: Object,
         default: () => ({}),
     },
 });
 
-const activeSectionId = ref('all');
-const searchQueryUniv = ref('');
+/** ID seksi kuesioner prodi aktif untuk filter ('all' atau ID seksi numerik) */
+const activeProdiSectionId = ref('all');
 
-const filteredSections = computed(() => {
-    let result = props.sections || [];
+/** Kueri teks pencarian butir pertanyaan / jawaban kuesioner prodi */
+const searchQueryProdi = ref('');
 
-    if (activeSectionId.value !== 'all') {
-        result = result.filter(s => s.id === activeSectionId.value);
+const filteredProdiSections = computed(() => {
+    let result = props.prodiSections || [];
+
+    if (activeProdiSectionId.value !== 'all') {
+        result = result.filter(s => s.id === activeProdiSectionId.value);
     }
 
-    if (!searchQueryUniv.value.trim()) {
+    if (!searchQueryProdi.value.trim()) {
         return result;
     }
 
-    const query = searchQueryUniv.value.toLowerCase();
+    const query = searchQueryProdi.value.toLowerCase();
     return result.map(section => {
-        const matchesSection = (section.title || section.section || '').toLowerCase().includes(query);
-        const filteredQuestions = (section.subpertanyaans || []).filter(q => {
-            const matchCode = (q.kode_pertanyaan || '').toLowerCase().includes(query);
-            const matchText = (q.subpertanyaan || '').toLowerCase().includes(query);
-            const matchAnswer = (q.answer || '').toLowerCase().includes(query);
+        const matchesSection = (section.title || '').toLowerCase().includes(query);
+        const filteredQuestions = (section.questions || []).filter(q => {
+            const matchCode = (q.code || '').toLowerCase().includes(query);
+            const matchText = (q.question_text || '').toLowerCase().includes(query);
+            const matchAnswer = (q.answer_text || '').toLowerCase().includes(query);
             return matchCode || matchText || matchAnswer;
         });
 
@@ -47,7 +62,7 @@ const filteredSections = computed(() => {
         if (filteredQuestions.length > 0) {
             return {
                 ...section,
-                subpertanyaans: filteredQuestions,
+                questions: filteredQuestions,
             };
         }
 
@@ -63,35 +78,35 @@ const filteredSections = computed(() => {
             <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div>
                     <h3 class="text-sm sm:text-base font-bold text-slate-900">
-                        Kuesioner Tracer Study Universitas
+                        Kuesioner Program Studi: {{ alumni.prodi?.nama_prodi || 'Program Studi' }}
                     </h3>
-                    <p class="text-xs text-slate-500 mt-0.5">Daftar instrumen butir pertanyaan dan jawaban alumni pada kuesioner universitas.</p>
+                    <p class="text-xs text-slate-500 mt-0.5">Daftar instrumen butir evaluasi kurikulum dan kepuasan khusus program studi.</p>
                 </div>
                 <div class="flex items-center gap-2">
                     <span 
                         class="px-2.5 py-0.5 rounded text-[11px] font-semibold border"
-                        :class="evaluasi?.is_complete ? 'bg-emerald-50 text-emerald-800 border-emerald-200' : 'bg-amber-50 text-amber-800 border-amber-200'"
+                        :class="prodiEvaluasi?.is_complete ? 'bg-emerald-50 text-emerald-800 border-emerald-200' : 'bg-amber-50 text-amber-800 border-amber-200'"
                     >
-                        Status: {{ evaluasi?.is_complete ? 'Selesai (100%)' : `Belum Lengkap (${evaluasi?.percentage || 0}%)` }}
+                        Status: {{ prodiEvaluasi?.is_complete ? 'Selesai (100%)' : `Belum Lengkap (${prodiEvaluasi?.percentage || 0}%)` }}
                     </span>
                 </div>
             </div>
 
-            <!-- Dropdown Filter Bagian & Input Pencarian -->
+            <!-- Dropdown Filter Bagian Prodi & Input Pencarian -->
             <div class="pt-3 border-t border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-3">
                 <div class="flex items-center gap-2.5 w-full md:w-auto">
                     <label class="text-xs font-bold text-slate-600 whitespace-nowrap">Filter Bagian:</label>
                     <select 
-                        v-model="activeSectionId"
+                        v-model="activeProdiSectionId"
                         class="w-full md:w-80 px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-xs font-semibold text-slate-800 focus:ring-1 focus:ring-[#0D542B] focus:border-[#0D542B] transition-all cursor-pointer"
                     >
-                        <option value="all">Semua Bagian ({{ sections.length }} Bagian)</option>
+                        <option value="all">Semua Bagian ({{ prodiSections.length }} Bagian)</option>
                         <option 
-                            v-for="s in sections" 
+                            v-for="s in prodiSections" 
                             :key="s.id" 
                             :value="s.id"
                         >
-                            {{ s.title || s.section || ('Bagian ' + s.order) }} {{ s.unanswered_mandatory_count > 0 ? `(${s.unanswered_mandatory_count} belum)` : '' }}
+                            {{ s.title }} {{ s.unanswered_mandatory_count > 0 ? `(${s.unanswered_mandatory_count} belum)` : '' }}
                         </option>
                     </select>
                 </div>
@@ -99,7 +114,7 @@ const filteredSections = computed(() => {
                 <div class="w-full md:w-72">
                     <input 
                         type="text" 
-                        v-model="searchQueryUniv" 
+                        v-model="searchQueryProdi" 
                         placeholder="Cari kode, pertanyaan, jawaban..." 
                         class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-xs text-slate-800 focus:bg-white focus:ring-1 focus:ring-[#0D542B] focus:border-[#0D542B] transition-all"
                     />
@@ -107,7 +122,7 @@ const filteredSections = computed(() => {
             </div>
         </div>
 
-        <!-- Tabel Data Kuesioner Universitas -->
+        <!-- Tabel Data Kuesioner Prodi -->
         <div class="bg-white rounded-xl shadow-xs border border-slate-200 overflow-hidden">
             <div class="overflow-x-auto">
                 <table class="w-full text-left border-collapse">
@@ -123,28 +138,20 @@ const filteredSections = computed(() => {
                         </tr>
                     </thead>
                     <tbody>
-                        <template v-for="section in filteredSections" :key="section.id">
-                            <!-- Header Bagian -->
+                        <template v-for="section in filteredProdiSections" :key="section.id">
+                            <!-- Header Bagian Prodi -->
                             <tr class="bg-amber-50 text-amber-950 border-y border-amber-200 font-bold">
                                 <td colspan="7" class="py-2.5 px-4 text-xs">
-                                    <div class="flex items-center justify-between">
-                                        <span>{{ section.title || section.section || ('Bagian ' + section.order) }}</span>
-                                        <span v-if="section.unanswered_mandatory_count > 0" class="px-2 py-0.5 rounded text-[10px] font-bold bg-rose-100 text-rose-800 border border-rose-200">
-                                            {{ section.unanswered_mandatory_count }} Wajib Belum Dijawab
-                                        </span>
-                                        <span v-else-if="section.unanswered_optional_count > 0" class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-900 border border-amber-300">
-                                            Wajib Lengkap ({{ section.unanswered_optional_count }} Opsional Kosong)
-                                        </span>
-                                        <span v-else class="px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-100 text-emerald-800 border border-emerald-200">
-                                            Lengkap (100%)
-                                        </span>
-                                    </div>
+                                    <span>{{ section.title }}</span>
+                                    <span v-if="section.description" class="font-normal text-slate-600 ml-1">
+                                        &mdash; {{ section.description }}
+                                    </span>
                                 </td>
                             </tr>
 
                             <!-- Baris Butir Pertanyaan -->
                             <tr 
-                                v-for="(q, idx) in section.subpertanyaans" 
+                                v-for="(q, idx) in section.questions" 
                                 :key="q.id"
                                 :class="[
                                     q.is_header 
@@ -157,14 +164,14 @@ const filteredSections = computed(() => {
                                     {{ idx + 1 }}
                                 </td>
                                 <td class="text-center py-2 px-3 font-mono font-semibold text-slate-700 border-r border-slate-100">
-                                    {{ q.kode_pertanyaan || '-' }}
+                                    {{ q.code || '-' }}
                                 </td>
 
                                 <td v-if="q.is_header" colspan="5" class="py-2 px-4 font-bold text-amber-950 text-xs">
-                                    {{ q.subpertanyaan }}
+                                    {{ q.question_text }}
                                 </td>
                                 <td v-else class="py-2 px-4 font-medium text-slate-900 border-r border-slate-100 leading-relaxed">
-                                    {{ q.subpertanyaan }}
+                                    {{ q.question_text }}
                                 </td>
 
                                 <td v-if="!q.is_header" class="text-center py-2 px-3 capitalize font-normal text-slate-500 border-r border-slate-100 text-[11px]">
@@ -191,7 +198,7 @@ const filteredSections = computed(() => {
 
                                 <td v-if="!q.is_header" class="py-2 px-4 text-slate-900 leading-relaxed">
                                     <span v-if="q.is_answered" class="text-xs font-semibold text-slate-900 whitespace-pre-line">
-                                        {{ q.answer }}
+                                        {{ q.answer_text }}
                                     </span>
                                     <span v-else class="text-xs text-rose-400 font-medium italic">
                                         -
@@ -200,9 +207,9 @@ const filteredSections = computed(() => {
                             </tr>
                         </template>
 
-                        <tr v-if="filteredSections.length === 0">
+                        <tr v-if="filteredProdiSections.length === 0">
                             <td colspan="7" class="py-10 text-center text-slate-400 text-xs italic">
-                                Tidak ada butir pertanyaan yang sesuai dengan filter atau pencarian.
+                                Belum ada butir pertanyaan kuesioner program studi yang terkonfigurasi.
                             </td>
                         </tr>
                     </tbody>

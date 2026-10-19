@@ -17,6 +17,7 @@ use App\Models\Propinsi;
 use App\Models\RefNegara;
 use App\Models\Tracer;
 use App\Services\Alumni\AdminAlumniProfileService;
+use App\Services\Alumni\AlumniDirectoryQueryService;
 use App\Services\Alumni\LinkedinTraceHelper;
 use App\Services\Export\AlumniTracerExcelExporter;
 use App\Services\Kuesioner\KelengkapanTracerService;
@@ -24,7 +25,6 @@ use App\Services\Kuesioner\KuesionerSyncService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -42,7 +42,7 @@ class DaftarAlumniProdiController extends Controller
     /**
      * Tampilkan Direktori Mahasiswa & Alumni Khusus Prodi
      */
-    public function index(Request $request): Response
+    public function index(Request $request, AlumniDirectoryQueryService $directoryService): Response
     {
         $user = Auth::user()->load('prodi');
         $prodi = $user->prodi;
@@ -52,180 +52,14 @@ class DaftarAlumniProdiController extends Controller
             abort(403, 'Akun Anda belum dikaitkan dengan Program Studi.');
         }
 
-        $pencarian = $request->input('search');
-        $tahunTerpilih = $request->input('tahun');
-        $semesterTerpilih = $request->input('semester');
-        $statusTerpilih = $request->input('status');
-
-        // 1. Ambil daftar tahun kelulusan unik dari view untuk prodi ini
-        $daftarTahun = DB::table('v_alumni_audit_rekap')
-            ->where('prodi_id', $prodiId)
-            ->where(function ($q) {
-                $q->whereNotNull('tahun_lulus')
-                    ->orWhereNotNull('tahun_akademik_lulus');
-            })
-            ->pluck('tahun_lulus')
-            ->filter()
-            ->map(function ($item) {
-                if (preg_match('/(\d{4})/', (string) $item, $matches)) {
-                    return $matches[1];
-                }
-
-                return trim($item);
-            })->unique()->sortDesc()->values()->all();
-
-        // 1b. Ambil daftar target kelulusan unik
-        $daftarTarget = DB::table('v_alumni_audit_rekap')
-            ->where('prodi_id', $prodiId)
-            ->whereNotNull('tahun_akademik_lulus')
-            ->where('tahun_akademik_lulus', '!=', '')
-            ->distinct()
-            ->pluck('tahun_akademik_lulus')
-            ->filter()
-            ->values()
-            ->all();
-
-        // 2. Kueri cepat berbasis Database View (v_alumni_audit_rekap)
-        $query = DB::table('v_alumni_audit_rekap')
-            ->where('prodi_id', $prodiId);
-
-        // Filter Pencarian (Nama Lengkap atau NIM)
-        if ($pencarian) {
-            $query->where(function ($w) use ($pencarian) {
-                $w->where('nim', 'like', "%{$pencarian}%")
-                    ->orWhere('nama', 'like', "%{$pencarian}%")
-                    ->orWhere('email', 'like', "%{$pencarian}%");
-            });
-        }
-
-        // Filter Tahun Kelulusan (Pencocokan eksak kolom tahun_lulus)
-        if ($tahunTerpilih && $tahunTerpilih !== 'all') {
-            $query->where('tahun_lulus', $tahunTerpilih);
-        }
-
-        // Filter Semester Kelulusan (Gasal / Genap)
-        if ($semesterTerpilih && $semesterTerpilih !== 'all') {
-            $query->where('tahun_akademik_lulus', 'like', "%{$semesterTerpilih}%");
-        }
-
-        // Filter Status Selesai vs Belum Selesai
-        if ($statusTerpilih === 'selesai') {
-            $query->where('is_complete_total', 1);
-        } elseif ($statusTerpilih === 'belum_selesai') {
-            $query->where('is_complete_total', 0);
-        }
-
-        $semuaAlumni = $query->orderBy('nim', 'asc')->get();
-
-        // Ambil evaluasi atasan untuk alumni yang terfilter
-        $biodataIds = $semuaAlumni->pluck('biodata_id')->filter()->all();
-        $evaluasiMap = EvaluasiAtasan::whereIn('biodata_id', $biodataIds)
-            ->get()
-            ->keyBy('biodata_id');
-
-        // 3. Mapping data reaktif untuk Frontend
-        $alumniList = [];
-        $totalSelesai = 0;
-        $totalBelumSelesai = 0;
-
-        foreach ($semuaAlumni as $item) {
-            $isComplete = (bool) $item->is_complete_total;
-            if ($isComplete) {
-                $totalSelesai++;
-            } else {
-                $totalBelumSelesai++;
-            }
-
-            $rawSemesterLulus = $item->tahun_akademik_lulus ?? '-';
-            $semesterLabel = 'Gasal';
-            if (stripos($rawSemesterLulus, 'genap') !== false) {
-                $semesterLabel = 'Genap';
-            } elseif (stripos($rawSemesterLulus, 'gasal') !== false) {
-                $semesterLabel = 'Gasal';
-            }
-
-            $ev = $evaluasiMap->get($item->biodata_id);
-            $evaluasiStatus = 'none';
-            if ($ev) {
-                $evaluasiStatus = $ev->is_submitted ? 'submitted' : 'pending';
-            }
-
-            $alumniList[] = [
-                'id' => $item->biodata_id,
-                'biodata_id' => $item->biodata_id,
-                'nim' => $item->nim,
-                'nama' => $item->nama ?? 'Mahasiswa UKDW',
-                'email' => $item->email_pribadi ?: ($item->email ?: null),
-                'nomor_telepon' => $item->nomor_telepon ?: null,
-                'linkedin_url' => $item->linkedin_url ?? null,
-                'linkedin_username' => $item->linkedin_username ?? null,
-                'prodi' => $item->nama_prodi ?? '-',
-                'prodi_kode' => $item->kode_prodi ?? '',
-                'prodi_id' => $item->prodi_id,
-                'fakultas' => $item->nama_fakultas ?? '-',
-                'fakultas_id' => $item->fakultas_id,
-                'tahun_akademik_lulus' => $rawSemesterLulus,
-                'semester' => $semesterLabel,
-                'tahun_lulus' => $item->tahun_lulus ?? '-',
-                'ipk' => $item->ipk ?? '-',
-                'status_yudisium' => $item->status_yudisium ?? ($item->status_mahasiswa ?? 'Lulus'),
-                'perusahaan' => $item->nama_perusahaan ?? '-',
-                'posisi_jabatan' => $item->posisi_jabatan ?? '-',
-                'kelengkapan' => [
-                    'is_complete' => $isComplete,
-                    'status' => $item->status_tracer_label,
-                    'percentage' => (int) $item->univ_percentage,
-                    'profile' => [
-                        'is_complete' => (bool) $item->is_profile_complete,
-                        'percentage' => $item->is_profile_complete ? 100 : 50,
-                    ],
-                    'questionnaire' => [
-                        'is_complete' => (bool) $item->is_complete_univ,
-                        'percentage' => (int) $item->univ_percentage,
-                        'answered_count' => (int) $item->answered_mandatory_univ,
-                        'total_mandatory' => (int) $item->total_mandatory_univ,
-                    ],
-                    'prodi' => [
-                        'is_complete' => (bool) $item->is_complete_prodi,
-                        'percentage' => (int) $item->prodi_percentage,
-                        'answered_count' => (int) $item->answered_prodi_questions,
-                        'total_questions' => (int) $item->total_prodi_questions,
-                    ],
-                ],
-                'evaluasi_atasan' => [
-                    'has_evaluasi' => (bool) $ev,
-                    'is_submitted' => (bool) ($ev?->is_submitted),
-                    'status' => $evaluasiStatus,
-                    'status_label' => $ev ? ($ev->is_submitted ? 'Sudah Diisi' : 'Menunggu Respon') : 'Belum Ada Atasan',
-                    'submitted_at' => $ev?->submitted_at ? $ev->submitted_at->format('d/m/Y H:i') : null,
-                    'token' => $ev?->token,
-                ],
-            ];
-        }
-
-        $totalFiltered = count($alumniList);
-        $rasioSelesai = $totalFiltered > 0 ? (int) round(($totalSelesai / $totalFiltered) * 100) : 0;
-
-        return Inertia::render('AdminProdi/Alumni/Index', [
-            'user' => $user,
-            'prodi' => $prodi,
-            'biodatas' => $alumniList,
-            'alumnis' => $alumniList,
-            'daftarTahun' => $daftarTahun,
-            'daftarTarget' => $daftarTarget,
-            'filters' => [
-                'search' => $pencarian ?? '',
-                'tahun' => $tahunTerpilih,
-                'semester' => $semesterTerpilih,
-                'status' => $statusTerpilih,
-            ],
-            'stats' => [
-                'total_alumni' => $totalFiltered,
-                'total_selesai' => $totalSelesai,
-                'total_belum_selesai' => $totalBelumSelesai,
-                'persentase_selesai' => $rasioSelesai,
-            ],
+        $data = $directoryService->getDirectoryData($request, [
+            'prodi_id' => $prodiId,
         ]);
+
+        $data['user'] = $user;
+        $data['prodi'] = $prodi;
+
+        return Inertia::render('AdminProdi/Alumni/Index', $data);
     }
 
     /**

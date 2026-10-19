@@ -15,11 +15,11 @@ import { Head, useForm, usePage, Link } from '@inertiajs/vue3';
 import { computed, ref, watch } from 'vue';
 import Swal from 'sweetalert2';
 
-import FormPribadi from './Components/FormPribadi.vue';
-import FormAkademik from './Components/FormAkademik.vue';
-import FormOrangTua from './Components/FormOrangTua.vue';
-import FormKarier from './Components/FormKarier.vue';
-import Stepper from './Components/Stepper.vue';
+import FormPribadi from '@/Components/AlumniProfil/FormPribadi.vue';
+import FormAkademik from '@/Components/AlumniProfil/FormAkademik.vue';
+import FormOrangTua from '@/Components/AlumniProfil/FormOrangTua.vue';
+import FormKarier from '@/Components/AlumniProfil/FormKarier.vue';
+import Stepper from '@/Components/AlumniProfil/Stepper.vue';
 import Navbar from '../Components/Navbar.vue';
 
 /**

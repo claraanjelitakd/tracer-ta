@@ -1,42 +1,69 @@
 <!--
-  Komponen Anak: Tab Hasil Scraping LinkedIn & Staging Audit (Admin View)
-  File: resources/js/Pages/SuperAdmin/Alumni/Components/TabLinkedin.vue
+  Komponen Bersama: Tab Hasil Scraping LinkedIn & Staging Audit (Admin View)
+  Lokasi: resources/js/Components/AlumniAudit/TabLinkedin.vue
+  
+  Mendukung peran Super Admin, Fakultas, Prodi, dan Biro 3 (readonly).
 -->
 <script setup>
 import { ref, computed, watch } from 'vue';
 import { Link, router, useForm } from '@inertiajs/vue3';
 import Swal from 'sweetalert2';
 
+/**
+ * Definisi properti komponen tab sinkronisasi LinkedIn.
+ */
 const props = defineProps({
+    /** Objek data alumni */
     alumni: {
         type: Object,
         required: true,
     },
+    /** Hasil audit sinkronisasi LinkedIn terakhir */
     linkedinSyncResult: {
         type: Object,
         default: null,
     },
+    /** Pemetaan data audit hasil tracing LinkedIn */
     linkedinTraceMapping: {
         type: Array,
         default: () => [],
     },
+    /** Riwayat log sinkronisasi LinkedIn alumni */
     linkedinHistory: {
         type: Array,
         default: () => [],
     },
+    /** Penanda apakah pengguna saat ini adalah Super Administrator */
     isSuperAdmin: {
         type: Boolean,
         default: true,
     },
+    /** Mode murni lihat saja (misal untuk Biro 3) */
+    readonly: {
+        type: Boolean,
+        default: false,
+    },
 });
 
+/** Sub-tab aktif dalam tab LinkedIn ('penyesuaian', 'riwayat', 'mapping') */
 const activeLinkedinTab = ref('penyesuaian');
+
+/** Kueri pencarian filter baris pemetaan data tracing */
 const searchTraceQuery = ref('');
+
+/** Flag status modal/drawer JSON mentah */
 const showRawJson = ref(false);
+
+/** Status loading saat sinkronisasi langsung sedang berlangsung */
 const isDirectSyncing = ref(false);
+
+/** Status loading saat proses approve sedang dikirim */
 const isApprovingSync = ref(false);
+
+/** Status loading saat proses reject sedang dikirim */
 const isRejectingSync = ref(false);
 
+/** Form data Inertia untuk aksi verifikasi / persetujuan audit LinkedIn */
 const approveForm = useForm({
     tipe_pekerjaan: 'pekerja',
     posisi_jabatan: '',
@@ -230,6 +257,7 @@ const filteredTraceMapping = computed(() => {
             <div class="flex items-center gap-2 flex-wrap">
                 <!-- Tombol Tarik Pembaruan LinkedIn -->
                 <button 
+                    v-if="!readonly"
                     type="button" 
                     @click="handleDirectLinkedInSync"
                     :disabled="isDirectSyncing"
@@ -258,6 +286,7 @@ const filteredTraceMapping = computed(() => {
 
                 <!-- Tombol Buka LinkedIn Sync Menu -->
                 <Link 
+                    v-if="!readonly && isSuperAdmin"
                     :href="'/superadmin/linkedin-sync?alumni_id=' + alumni.id + '&search=' + encodeURIComponent(alumni.nim || alumni.nama || '')" 
                     class="px-3.5 py-2 bg-[#0D542B] hover:bg-[#0A4322] text-white text-xs font-semibold rounded-lg transition flex items-center gap-1.5 shadow-2xs"
                     title="Buka direktori lengkap LinkedIn Sync"
@@ -534,7 +563,7 @@ const filteredTraceMapping = computed(() => {
                     </div>
 
                     <!-- Baris Aksi Persetujuan -->
-                    <div v-if="linkedinSyncResult.status === 'pending'" class="pt-2 flex flex-col sm:flex-row items-center justify-end gap-3">
+                    <div v-if="linkedinSyncResult.status === 'pending' && !readonly" class="pt-2 flex flex-col sm:flex-row items-center justify-end gap-3">
                         <button
                             type="button"
                             @click="handleRejectStaging"

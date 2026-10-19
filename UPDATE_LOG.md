@@ -1,5 +1,76 @@
 # UPDATE LOG - SERU (Sistem Ekosistem Rekam Jejak Alumni)
 
+## [2026-10-20] Penyatuan Tampilan Kuesioner Universitas ala Master Data UMP dan Form Evaluasi Atasan Enterprise (Full-Width, Mobile Responsive, Palet Hijau & Emas UKDW)
+
+### Ringkasan Pembaruan
+1. **Penyatuan Tampilan Kuesioner Universitas Terpadu ala Master Data UMP**:
+   - **Navigasi Tab Horizontal Terpadu (`Pertanyaan/Index.vue` & `Section/Index.vue`)**:
+     - Kedua halaman kini menggunakan tata letak header seragam dengan breadcrumb formal: `Dashboard / Manajemen Kuesioner / Kuesioner Universitas`.
+     - Menyediakan bilah navigasi tab horizontal (*Pill Navigation*) beridentitas resmi UKDW (`#0D542B`):
+       - **Tab 1: Butir Pertanyaan** (`/superadmin/pertanyaan`) dengan counter total butir pertanyaan.
+       - **Tab 2: Bagian / Seksi (Section)** (`/superadmin/sections`) dengan counter total seksi kuesioner.
+     - Tombol aksi header dinamis menyesuaikan konteks tab aktif: `+ Tambah Pertanyaan` pada Tab 1, serta `Kelola Kuesioner Induk` dan `+ Tambah Bagian` pada Tab 2.
+     - Admin dapat berpindah antar-manajemen kuesioner dengan cepat tanpa perlu melakukan klik berulang di sidebar.
+   - **Perapian Menu Sidebar Super Administrator (`Sidebar.vue`)**:
+     - Menggabungkan dua menu sebelumnya ("Kelola Bagian / Seksi" dan "Kelola Butir Kuesioner") menjadi satu menu terpadu: **"Kuesioner Universitas"**.
+     - Status menu aktif otomatis terjaga saat admin berada di rute `/superadmin/pertanyaan*` maupun `/superadmin/sections*`.
+
+2. **Perombakan Total Formulir Publik Evaluasi Atasan (`EvaluasiAtasanForm.vue` & `EvaluasiAtasanNotFound.vue`)**:
+   - **Bebas Warna Biru (Palet Tegas Hijau & Kuning/Emas Resmi UKDW)**:
+     - Mengeliminasi seluruh aksen warna biru bawaan dan browser default (seperti `focus:ring-blue-500`, tombol biru, dan radio button default).
+     - Menggunakan skema warna resmi: **Solid Hijau UKDW (`#0D542B`)** dan **Aksen Emas/Kuning UKDW (`#FDC700`)** dengan latar netral slate bersih.
+     - Menambahkan atribut styling `accent-[#0D542B]` pada seluruh kontrol radio button dan selector formulir.
+   - **Layout Full Page Kanan-Kiri (Enterprise Wide Layout)**:
+     - Menghilangkan pembatas sempit `max-w-7xl` sehingga halaman membentang penuh (*full width*) dari tepi kiri ke kanan layar monitor (`w-full px-4 sm:px-6 lg:px-10`).
+     - Header topbar dan footer universitas membentang penuh dengan garis aksen emas 4px di bawahnya.
+   - **100% Responsif di Semua Jenis Smartphone (HP)**:
+     - **Mode Mobile (Layar HP < 768px)**: Tabel 7 kolom yang rentan terpotong di HP digantikan secara otomatis dengan kartu evaluasi per aspek dengan tombol selector sentuh (*touch-friendly thumb pills*). Pilihan yang dipilih atasan langsung berubah warna menjadi hijau `#0D542B` dengan indikator dot emas `#FDC700`.
+     - **Mode Tablet & Desktop (Layar >= 768px)**: Disajikan dalam tabel matriks resmi bergaris tegas, header hijau `#0D542B`, dan baris selang-seling yang nyaman dibaca.
+   - **Penyempurnaan Penanganan Rute `/evaluasi-atasan`**:
+     - Ditambahkan rute `evaluasi-atasan.index` pada `EvaluasiAtasanController::index` yang mengarahkan pembukaan URL root `/evaluasi-atasan` atau `/evaluasi-atasan/` langsung ke formulir evaluasi atasan aktif tanpa memicu error 404.
+     - Halaman fallback `EvaluasiAtasanNotFound.vue` diselaraskan menjadi full width dengan palet hijau-emas dan input kode token mandiri.
+
+3. **Verifikasi & Integritas Sistem**:
+   - Seluruh 150 automated tests PHPUnit (937 assertions) berhasil lulus 100%.
+   - Kompilasi aset Vite `npm run build` sukses 100% tanpa peringatan atau error.
+   - Pengujian tampilan desktop dan mobile via browser subagent menghasilkan tampilan berstandar korporat yang presisi dan bersih.
+
+---
+
+### Ringkasan Pembaruan
+1. **Penerapan Arsitektur Bersih Zero-Cross Boundary & DRY**:
+   - **Eliminasi Boundary Crossing Antar-Role**: Menghapus seluruh import lintas folder role (seperti SuperAdmin mengimport dari Alumni atau sebaliknya).
+   - **Komponen Bersama Profil Alumni (`resources/js/Components/AlumniProfil/`)**:
+     - `FormPribadi.vue`, `FormAkademik.vue`, `FormOrangTua.vue`, `FormKarier.vue`, dan `Stepper.vue` dipusatkan di folder netral bersama.
+     - Folder lama `resources/js/Pages/Alumni/Profil/Components/` dihapus secara permanen.
+   - **Komponen Bersama Audit Kuesioner & Stepper (`resources/js/Components/AlumniAudit/`)**:
+     - `AlumniStepper.vue`: Komponen stepper mandiri berlingkaran nomor dan centang hijau (`✓`) dengan v-model `activeMainTab` dan kalkulasi garis penghubung otomatis.
+     - `TabProfil.vue`: Tab audit biodata alumni dengan integrasi floating scroll button dan mode `readonly`.
+     - `TabKuesionerUniv.vue`, `TabKuesionerProdi.vue`, `TabEvaluasiAtasan.vue`, dan `TabLinkedin.vue` dipusatkan di folder netral bersama.
+     - Folder lama `resources/js/Pages/SuperAdmin/Alumni/Components/` dihapus secara permanen.
+
+2. **Layanan Backend Terpusat (`AlumniDirectoryQueryService.php`)**:
+   - Dibuat di `app/Services/Alumni/AlumniDirectoryQueryService.php` untuk mengeliminasi duplikasi kode query di 4 controller direktori alumni.
+   - Mengenkapsulasi query basis data dari database view `v_alumni_audit_rekap`.
+   - Mengelola filter komprehensif (`search`, `tahun`, `semester`, `target`, `status`, `linkedin_status`, `prodi_id`, `fakultas_id`).
+   - Melakukan kalkulasi 5 kartu statistik ringkasan, evaluasi kelengkapan kuesioner tracer study, evaluasi kepuasan atasan langsung, dan riwayat sinkronisasi LinkedIn.
+   - Seluruh 4 controller (`DaftarAlumniSuperAdminController`, `DaftarAlumniFakultasController`, `DaftarAlumniProdiController`, `DaftarAlumniController`) kini ramping dan murni memanggil service ini.
+
+3. **Pemindahan Controller LinkedIn ke Namespace Shared**:
+   - `LinkedInSyncController` dipindahkan ke `app/Http/Controllers/Shared/LinkedInSyncController.php`.
+   - Seluruh 21 rute web sinkronisasi LinkedIn (`/superadmin/linkedin-sync`, `/prodi/linkedin-sync`, `/fakultas/linkedin-sync`) diperbarui dengan import netral.
+
+4. **Penegakan Hak Akses Read-Only Khusus Biro 3**:
+   - Memastikan role Biro 3 murni memiliki akses audit baca (*Read-Only*) untuk profil alumni dan LinkedIn.
+   - Menghapus tombol pemicu scraping manual LinkedIn di halaman indeks (`AdminBiroTiga/AlumniIndex.vue`).
+   - Menyematkan prop `readonly: true` pada `TabProfil.vue` dan `TabLinkedin.vue` di `AdminBiroTiga/AlumniShow.vue`.
+
+5. **Dokumentasi Kode Komprehensif**:
+   - Seluruh variabel `const`, `ref`, `props`, `emits`, dan methods pada komponen baru dan controller dilengkapi komentar formal (JSDoc dan PHPDoc) tanpa emoticon.
+   - Seluruh 150 automated tests PHPUnit (937 assertions) dan kompilasi Vite `npm run build` lulus 100%.
+
+---
+
 ## [2026-10-19] Pembaruan Direktori Alumni Super Admin: Integrasi Filter LinkedIn, Kartu Statistik LinkedIn, Scorecard Kelengkapan Formal 2x2, dan Audit Trace Staging Review
 
 ### Ringkasan Pembaruan

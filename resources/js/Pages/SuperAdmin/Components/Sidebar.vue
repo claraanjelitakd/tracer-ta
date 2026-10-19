@@ -32,12 +32,8 @@ const isDashboardActive = computed(() => {
     return page.url === '/superadmin' || page.url === '/superadmin/' || page.url.startsWith('/superadmin/dashboard');
 });
 
-const isPertanyaanActive = computed(() => {
-    return page.url.startsWith('/superadmin/pertanyaan');
-});
-
-const isSectionsActive = computed(() => {
-    return page.url.startsWith('/superadmin/sections');
+const isKuesionerUnivActive = computed(() => {
+    return page.url.startsWith('/superadmin/pertanyaan') || page.url.startsWith('/superadmin/sections');
 });
 
 const isProdiKuesionerActive = computed(() => {
@@ -209,30 +205,13 @@ const handleLogout = () => {
                     </span>
                 </div>
 
-                <!-- 2. Kelola Bagian / Seksi -->
-                <Link
-                    href="/superadmin/sections"
-                    @click="closeMobileMenu"
-                    class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-semibold transition-colors"
-                    :class="[
-                        isSectionsActive
-                            ? 'bg-[#0D542B] text-white shadow-2xs'
-                            : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
-                    ]"
-                >
-                    <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-                    </svg>
-                    <span class="truncate">Kelola Bagian / Seksi</span>
-                </Link>
-
-                <!-- 3. Kelola Butir Kuesioner -->
+                <!-- 2. Kuesioner Universitas (Terpadu: Seksi & Butir Pertanyaan) -->
                 <Link
                     href="/superadmin/pertanyaan"
                     @click="closeMobileMenu"
                     class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-semibold transition-colors"
                     :class="[
-                        isPertanyaanActive
+                        isKuesionerUnivActive
                             ? 'bg-[#0D542B] text-white shadow-2xs'
                             : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
                     ]"
@@ -240,7 +219,7 @@ const handleLogout = () => {
                     <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                     </svg>
-                    <span class="truncate">Kelola Butir Kuesioner</span>
+                    <span class="truncate">Kuesioner Universitas</span>
                 </Link>
 
                 <!-- 4. Kuesioner Per Prodi -->

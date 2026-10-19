@@ -1,26 +1,37 @@
 <!--
-  Komponen Anak: Tab Evaluasi Atasan / Pengguna Lulusan (Admin View)
-  File: resources/js/Pages/SuperAdmin/Alumni/Components/TabEvaluasiAtasan.vue
+  Komponen Bersama: Tab Evaluasi Atasan / Pengguna Lulusan (Admin View)
+  Lokasi: resources/js/Components/AlumniAudit/TabEvaluasiAtasan.vue
+  
+  Mendukung peran Super Admin, Fakultas, Prodi, dan Biro 3.
 -->
 <script setup>
 import { computed } from 'vue';
 import Swal from 'sweetalert2';
 
+/**
+ * Definisi properti komponen tab evaluasi atasan.
+ */
 const props = defineProps({
+    /** Objek data alumni */
     alumni: {
         type: Object,
         required: true,
     },
+    /** Data survei evaluasi atasan terkait */
     evaluasiAtasan: {
         type: Object,
         default: null,
     },
+    /** Daftar 13 butir pertanyaan evaluasi pengguna lulusan */
     pertanyaanEvaluasiAtasan: {
         type: Array,
         default: () => [],
     },
 });
 
+/**
+ * Menyalin tautan survei publik evaluasi atasan ke clipboard.
+ */
 const copySurveyUrl = () => {
     if (props.evaluasiAtasan?.survey_url) {
         navigator.clipboard.writeText(props.evaluasiAtasan.survey_url)
@@ -48,11 +59,11 @@ const getSkorLabel = (skor) => {
 
 const getSkorBadgeClass = (skor) => {
     const num = Number(skor);
-    if (num >= 4) return 'bg-emerald-50 text-emerald-800 border-emerald-200';
-    if (num === 3) return 'bg-sky-50 text-sky-800 border-sky-200';
-    if (num === 2) return 'bg-amber-50 text-amber-800 border-amber-200';
-    if (num === 1) return 'bg-rose-50 text-rose-800 border-rose-200';
-    return 'bg-slate-50 text-slate-700 border-slate-200';
+    if (num >= 4) return 'bg-emerald-50 text-emerald-800 border-emerald-300 font-bold';
+    if (num === 3) return 'bg-emerald-50/50 text-slate-800 border-slate-300 font-semibold';
+    if (num === 2) return 'bg-slate-50 text-slate-700 border-slate-300 font-medium';
+    if (num === 1) return 'bg-slate-100 text-slate-800 border-slate-300 font-medium';
+    return 'bg-slate-50 text-slate-600 border-slate-200';
 };
 
 const evaluasiAtasanQuestionsWithAnswers = computed(() => {
@@ -83,17 +94,17 @@ const evaluasiAtasanQuestionsWithAnswers = computed(() => {
 <template>
     <div class="space-y-5">
         <!-- Heading & Kartu Info Atasan -->
-        <div class="bg-white p-4 sm:p-5 rounded-xl shadow-xs border border-slate-200">
-            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-100">
+        <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-2xs">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-200">
                 <div>
                     <div class="flex items-center gap-2.5 flex-wrap">
                         <h3 class="text-sm sm:text-base font-bold text-slate-900">
-                            Hasil Evaluasi Pengguna Lulusan (Atasan)
+                            Evaluasi Pengguna Lulusan (Atasan)
                         </h3>
                         <span 
                             v-if="evaluasiAtasan"
                             class="px-2.5 py-0.5 rounded text-[11px] font-semibold border"
-                            :class="evaluasiAtasan.is_submitted ? 'bg-emerald-50 text-emerald-800 border-emerald-200' : 'bg-amber-50 text-amber-800 border-amber-200'"
+                            :class="evaluasiAtasan.is_submitted ? 'bg-emerald-50 text-emerald-800 border-emerald-200' : 'bg-slate-100 text-slate-700 border-slate-200'"
                         >
                             {{ evaluasiAtasan.is_submitted ? 'Sudah Diisi (Lengkap)' : 'Menunggu Respon Atasan' }}
                         </span>
@@ -102,7 +113,7 @@ const evaluasiAtasanQuestionsWithAnswers = computed(() => {
                         </span>
                     </div>
                     <p class="text-xs text-slate-500 mt-1">
-                        Penilaian langsung dari atasan/pimpinan tempat alumni bekerja mengenai performa kerja, etika, dan kompetensi lulusan.
+                        Instrumen penilaian kepuasan pengguna lulusan terkait performa, etika, dan kompetensi alumni di tempat kerja.
                     </p>
                 </div>
 
@@ -110,7 +121,7 @@ const evaluasiAtasanQuestionsWithAnswers = computed(() => {
                     <button 
                         type="button" 
                         @click="copySurveyUrl" 
-                        class="px-3.5 py-2 bg-[#0D542B] hover:bg-[#08381c] text-white text-xs font-semibold rounded-lg transition flex items-center gap-1.5 shadow-2xs cursor-pointer"
+                        class="px-3.5 py-2 bg-[#0D542B] hover:bg-[#08381c] text-white text-xs font-semibold rounded-lg transition-colors flex items-center gap-1.5 shadow-2xs cursor-pointer"
                         title="Salin tautan formulir survei atasan"
                     >
                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"/></svg>
@@ -122,8 +133,8 @@ const evaluasiAtasanQuestionsWithAnswers = computed(() => {
             <!-- Detail Atasan & Perusahaan jika ada -->
             <div v-if="evaluasiAtasan" class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
                 <!-- Data Atasan Langsung -->
-                <div class="p-3.5 bg-slate-50/70 rounded-lg border border-slate-200 space-y-2">
-                    <span class="text-xs font-bold text-slate-800 block">Data Atasan Langsung</span>
+                <div class="p-3.5 bg-slate-50 rounded-lg border border-slate-200 space-y-2">
+                    <span class="text-xs font-bold text-slate-800 block uppercase tracking-wide">Pimpinan / Atasan Langsung</span>
                     <div class="grid grid-cols-2 gap-2 text-xs">
                         <div>
                             <span class="text-[10px] uppercase font-semibold text-slate-400 block">Nama Atasan</span>
@@ -138,15 +149,15 @@ const evaluasiAtasanQuestionsWithAnswers = computed(() => {
                             <span class="font-mono text-slate-700 truncate block">{{ evaluasiAtasan.atasan?.email || '-' }}</span>
                         </div>
                         <div>
-                            <span class="text-[10px] uppercase font-semibold text-slate-400 block">No. HP / WhatsApp</span>
+                            <span class="text-[10px] uppercase font-semibold text-slate-400 block">No. Telepon / WA</span>
                             <span class="font-medium text-slate-700">{{ evaluasiAtasan.atasan?.no_hp || '-' }}</span>
                         </div>
                     </div>
                 </div>
 
                 <!-- Data Instansi & Token -->
-                <div class="p-3.5 bg-slate-50/70 rounded-lg border border-slate-200 space-y-2">
-                    <span class="text-xs font-bold text-slate-800 block">Instansi & Token Akses</span>
+                <div class="p-3.5 bg-slate-50 rounded-lg border border-slate-200 space-y-2">
+                    <span class="text-xs font-bold text-slate-800 block uppercase tracking-wide">Instansi & Token Akses</span>
                     <div class="grid grid-cols-2 gap-2 text-xs">
                         <div>
                             <span class="text-[10px] uppercase font-semibold text-slate-400 block">Perusahaan / Instansi</span>
@@ -158,7 +169,7 @@ const evaluasiAtasanQuestionsWithAnswers = computed(() => {
                         </div>
                         <div>
                             <span class="text-[10px] uppercase font-semibold text-slate-400 block">Token Akses</span>
-                            <code class="font-mono bg-white px-1.5 py-0.5 rounded border border-slate-200 text-[#0D542B] font-bold text-[11px] inline-block">{{ evaluasiAtasan.token || '-' }}</code>
+                            <code class="font-mono bg-white px-2 py-0.5 rounded border border-slate-200 text-[#0D542B] font-bold text-[11px] inline-block">{{ evaluasiAtasan.token || '-' }}</code>
                         </div>
                         <div>
                             <span class="text-[10px] uppercase font-semibold text-slate-400 block">Status Survei</span>
@@ -169,37 +180,37 @@ const evaluasiAtasanQuestionsWithAnswers = computed(() => {
             </div>
 
             <!-- State Bersih jika Belum Ada Atasan -->
-            <div v-else class="py-8 px-4 text-center bg-slate-50 rounded-lg border border-dashed border-slate-200 mt-4">
+            <div v-else class="py-8 px-4 text-center bg-slate-50 rounded-lg border border-slate-200 mt-4">
                 <svg class="w-8 h-8 mx-auto text-slate-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                 </svg>
                 <h4 class="text-xs font-bold text-slate-800">Belum Ada Informasi Atasan Terdaftar</h4>
                 <p class="text-xs text-slate-500 mt-1 max-w-md mx-auto">
-                    Alumni ini belum mengisi informasi kontak atasan langsung tempat bekerja atau belum ada penugasan survei evaluasi pengguna lulusan.
+                    Alumni ini belum mencantumkan informasi kontak atasan langsung tempat bekerja atau belum ada penugasan survei evaluasi pengguna lulusan.
                 </p>
             </div>
         </div>
 
         <!-- Tabel Hasil Penilaian Aspek Kinerja (Hanya muncul jika ada evaluasiAtasan) -->
-        <div v-if="evaluasiAtasan" class="bg-white rounded-xl shadow-xs border border-slate-200 overflow-hidden">
+        <div v-if="evaluasiAtasan" class="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-2xs">
             <div class="p-4 sm:p-5 bg-slate-50 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                 <div>
                     <h4 class="text-xs font-bold text-slate-800 uppercase tracking-wide">
                         Hasil Penilaian Aspek Kinerja & Kemampuan Alumni
                     </h4>
                     <p class="text-[11px] text-slate-500 mt-0.5">
-                        {{ evaluasiAtasan.is_submitted ? 'Respon penilaian telah diverifikasi dan masuk ke dalam sistem' : 'Survei telah dikirimkan, menunggu atasan mengisi instrumen evaluasi ini' }}
+                        {{ evaluasiAtasan.is_submitted ? 'Respon penilaian telah terverifikasi dan masuk ke dalam basis data' : 'Survei telah terkirim, menunggu pengisian instrumen oleh atasan' }}
                     </p>
                 </div>
                 <div class="flex items-center gap-2">
-                    <span class="px-2.5 py-0.5 bg-[#0D542B] text-white text-[11px] font-bold rounded-full">
+                    <span class="px-2.5 py-0.5 bg-[#0D542B] text-white text-[11px] font-bold rounded-lg">
                         {{ evaluasiAtasanQuestionsWithAnswers.length }} Butir Penilaian
                     </span>
                     <span 
                         class="px-2.5 py-0.5 rounded text-[11px] font-semibold border"
-                        :class="evaluasiAtasan.is_submitted ? 'bg-emerald-50 text-emerald-800 border-emerald-200' : 'bg-amber-50 text-amber-800 border-amber-200'"
+                        :class="evaluasiAtasan.is_submitted ? 'bg-emerald-50 text-emerald-800 border-emerald-200' : 'bg-slate-100 text-slate-700 border-slate-200'"
                     >
-                        {{ evaluasiAtasan.is_submitted ? 'Respon Terverifikasi' : 'Menunggu Pengisian Atasan' }}
+                        {{ evaluasiAtasan.is_submitted ? 'Respon Terverifikasi' : 'Menunggu Respon Atasan' }}
                     </span>
                 </div>
             </div>
@@ -207,12 +218,12 @@ const evaluasiAtasanQuestionsWithAnswers = computed(() => {
             <div class="overflow-x-auto">
                 <table class="w-full text-left text-xs border-collapse">
                     <thead>
-                        <tr class="bg-slate-50 text-slate-700 border-b border-slate-200 text-[11px] uppercase font-bold tracking-wider">
+                        <tr class="bg-gray-100 text-slate-700 border-b border-slate-200 text-[11px] uppercase font-bold tracking-wider">
                             <th class="py-2.5 px-3 text-center w-12 border-r border-slate-200">#</th>
                             <th class="py-2.5 px-4 border-r border-slate-200 w-28">Kode Butir</th>
                             <th class="py-2.5 px-4 border-r border-slate-200 min-w-[280px]">Aspek Penilaian & Deskripsi</th>
                             <th class="py-2.5 px-4 text-center border-r border-slate-200 w-44">Skor / Nilai</th>
-                            <th class="py-2.5 px-4 min-w-[200px]">Catatan / Evaluasi Atasan</th>
+                            <th class="py-2.5 px-4 min-w-[200px]">Catatan Penilai</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-100 text-slate-700">
@@ -237,13 +248,13 @@ const evaluasiAtasanQuestionsWithAnswers = computed(() => {
                             <td class="py-3 px-4 text-center border-r border-slate-100">
                                 <div v-if="item.skor !== null && item.skor !== undefined" class="flex flex-col items-center gap-1">
                                     <span 
-                                        class="px-2.5 py-1 rounded text-[11px] font-bold border"
+                                        class="px-2.5 py-1 rounded text-[11px] border"
                                         :class="getSkorBadgeClass(item.skor)"
                                     >
                                         Skor: {{ item.skor }} - {{ getSkorLabel(item.skor) }}
                                     </span>
                                 </div>
-                                <span v-else class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium bg-amber-50 text-amber-800 border border-amber-200">
+                                <span v-else class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium bg-slate-100 text-slate-600 border border-slate-200">
                                     Menunggu Respon
                                 </span>
                             </td>
@@ -264,9 +275,9 @@ const evaluasiAtasanQuestionsWithAnswers = computed(() => {
         </div>
 
         <!-- Saran Terbuka dari Atasan -->
-        <div v-if="evaluasiAtasan?.saran" class="bg-white rounded-xl p-5 shadow-xs border border-slate-200 space-y-2">
+        <div v-if="evaluasiAtasan?.saran" class="bg-white rounded-xl p-5 border border-slate-200 space-y-2 shadow-2xs">
             <h4 class="text-xs font-bold text-slate-800 uppercase tracking-wide">
-                Saran & Rekomendasi Kurikulum dari Pihak Pengguna Lulusan
+                Saran & Rekomendasi Kurikulum dari Pengguna Lulusan
             </h4>
             <div class="p-3.5 bg-slate-50 rounded-lg border border-slate-200 text-xs text-slate-700 leading-relaxed italic whitespace-pre-line">
                 &ldquo;{{ evaluasiAtasan.saran }}&rdquo;

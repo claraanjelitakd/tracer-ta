@@ -24,6 +24,7 @@ use App\Http\Controllers\EvaluasiAtasanController;
 use App\Http\Controllers\Otentikasi\LoginController;
 use App\Http\Controllers\Otentikasi\LupaKataSandiController;
 use App\Http\Controllers\Otentikasi\UbahKataSandiController;
+use App\Http\Controllers\Shared\LinkedInSyncController;
 use App\Http\Controllers\SuperAdmin\KelolaAlumni\DaftarAlumniSuperAdminController;
 use App\Http\Controllers\SuperAdmin\KelolaAlumni\DetailAlumniSuperAdminController;
 use App\Http\Controllers\SuperAdmin\KelolaEvaluasiAtasanController;
@@ -33,7 +34,6 @@ use App\Http\Controllers\SuperAdmin\KelolaPertanyaan\KelolaOpsiController;
 use App\Http\Controllers\SuperAdmin\KelolaPertanyaan\SimpanPertanyaanController;
 use App\Http\Controllers\SuperAdmin\KelolaSection\KelolaKuesionerController;
 use App\Http\Controllers\SuperAdmin\KelolaSection\KelolaSectionController;
-use App\Http\Controllers\SuperAdmin\LinkedIn\LinkedInSyncController;
 use App\Http\Controllers\SuperAdmin\LogAktivitasController;
 use App\Http\Controllers\SuperAdmin\ManajemenAkunController;
 use App\Http\Controllers\SuperAdmin\MasterWilayah\MasterWilayahController;
@@ -47,6 +47,7 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', [BerandaController::class, 'tampilkanBeranda']);
 
 // Public Route: Kuesioner Evaluasi Pengguna Lulusan / Atasan UKDW (Tanpa Login)
+Route::get('/evaluasi-atasan', [EvaluasiAtasanController::class, 'index'])->name('evaluasi-atasan.index');
 Route::get('/evaluasi-atasan/{token}', [EvaluasiAtasanController::class, 'show'])->name('evaluasi-atasan.show');
 Route::post('/evaluasi-atasan/{token}', [EvaluasiAtasanController::class, 'store'])->name('evaluasi-atasan.store');
 

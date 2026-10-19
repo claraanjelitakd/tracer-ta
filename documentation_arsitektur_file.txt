@@ -158,8 +158,8 @@ c:/study/tracerstudy/app/Http/Controllers/SuperAdmin/ManajemenAkunController.php
 c:/study/tracerstudy/app/Http/Controllers/SuperAdmin/LogAktivitasController.php
 - Menampilkan tabel audit trail log aktivitas sistem (`/superadmin/logs`), pencarian realtime, filter jenis aksi, dan modal detail JSON old/new values.
 
-c:/study/tracerstudy/app/Http/Controllers/SuperAdmin/LinkedIn/LinkedInSyncController.php
-- Mengelola sinkronisasi profil LinkedIn alumni untuk Superadmin (`/superadmin/linkedin-sync`), metrik analitik kelulusan, aksi single sync asinkron, dan bulk sync batch per angkatan.
+c:/study/tracerstudy/app/Http/Controllers/SuperAdmin/LinkedIn/LinkedInSyncController.php -> Dipindahkan ke c:/study/tracerstudy/app/Http/Controllers/Shared/LinkedInSyncController.php
+- Mengelola sinkronisasi profil LinkedIn alumni secara terpusat untuk peran yang memiliki hak akses (Superadmin, Fakultas, Prodi).
 
 G. MODUL ADMIN BIRO 3 (Role: admin_biro3)
 ----------------------------------------------------------------------------------------------------
@@ -167,16 +167,24 @@ c:/study/tracerstudy/app/Http/Controllers/AdminBiroTiga/Dashboard/DashboardContr
 - Monitoring jumlah responden per semester/tahun kelulusan dan statistik kelulusan yudisium.
 
 c:/study/tracerstudy/app/Http/Controllers/AdminBiroTiga/KelolaAlumni/DaftarAlumniController.php
-- Direktori alumni yang berstatus Yudisium 'Lulus' terfilter per periode kelulusan aktif.
+- Direktori alumni yang berstatus Yudisium 'Lulus' terfilter per periode kelulusan aktif melalui `AlumniDirectoryQueryService`.
+- Biro 3 bersifat Read-Only untuk data audit dan profil LinkedIn (tidak dapat melakukan scraping/sinkronisasi).
 
 c:/study/tracerstudy/app/Http/Controllers/AdminBiroTiga/KelolaAlumni/DetailAlumniController.php
-- Tampilan detail profil alumni untuk kebutuhan audit rekam jejak karier Biro Kemahasiswaan & Alumni.
-
-c:/study/tracerstudy/app/Http/Controllers/AdminBiroTiga/KelolaAlumni/SinkronisasiLinkedinController.php
-- Menangani sinkronisasi profil profesional LinkedIn alumni menggunakan `LinkedInProfileService` resmi.
+- Tampilan detail profil alumni untuk kebutuhan audit rekam jejak karier Biro Kemahasiswaan & Alumni (mode Read-Only).
 
 c:/study/tracerstudy/app/Http/Controllers/AdminBiroTiga/KelolaPertanyaan/KelolaPertanyaanController.php
 - Menampilkan bank soal kuesioner universitas untuk monitoring tim Biro 3.
+
+H. MODUL BERSAMA LINTAS PERAN (Shared)
+----------------------------------------------------------------------------------------------------
+c:/study/tracerstudy/app/Http/Controllers/Shared/LinkedInSyncController.php
+- Controller netral bersama (zero-cross) yang menangani seluruh operasi sinkronisasi scraping LinkedIn:
+  - Eksekusi single sync via Apify Engine (`singleSync`)
+  - Riwayat audit trace scraping (`history`)
+  - Verifikasi persetujuan data karir ke database alumni (`approveSync`)
+  - Penolakan hasil scraping LinkedIn (`rejectSync`)
+  - Hapus riwayat log sinkronisasi (`deleteHistory`)
 
 ====================================================================================================
 3. BACKEND: ELOQUENT MODELS (app/Models)
@@ -259,6 +267,10 @@ c:/study/tracerstudy/app/Models/AlumniAuditRekap.php (VIEW: `v_alumni_audit_reka
 ====================================================================================================
 4. BACKEND: DOMAIN SERVICES (app/Services)
 ====================================================================================================
+c:/study/tracerstudy/app/Services/Alumni/AlumniDirectoryQueryService.php
+- Service terpusat pembacaan direktori mahasiswa & alumni lintas seluruh peran (Super Admin, Fakultas, Prodi, Biro 3).
+- Mengenkapsulasi query basis data dari view database `v_alumni_audit_rekap`, filter pencarian terpadu (search, tahun, semester, target yudisium, status kuesioner, linkedin_status, prodi_id, fakultas_id), kalkulasi 5 kartu statistik interaktif, kelengkapan kuesioner tracer, evaluasi atasan, dan riwayat audit sinkronisasi LinkedIn.
+
 c:/study/tracerstudy/app/Services/Alumni/AdminAlumniProfileService.php
 - Service terpusat pembacaan dan penyimpanan profil biodata alumni oleh admin lintas stakeholder.
 
@@ -427,43 +439,92 @@ c:/study/tracerstudy/resources/js/Pages/Alumni/Components/Kuesioner/Navigasi.vue
 c:/study/tracerstudy/resources/js/Pages/Alumni/Profil/Index.vue
 - Halaman kelola data diri, riwayat perkuliahan, data keluarga, dan karier alumni.
 
-c:/study/tracerstudy/resources/js/Pages/Alumni/Profil/Components/FormPribadi.vue
+c:/study/tracerstudy/resources/js/Pages/Alumni/Profil/Index.vue
+- Halaman kelola data diri, riwayat perkuliahan, data keluarga, dan karier alumni (mengimpor sub-komponen dari resources/js/Components/AlumniProfil/).
+
+B. KOMPONEN BERSAMA PROFIL ALUMNI (resources/js/Components/AlumniProfil)
+----------------------------------------------------------------------------------------------------
+c:/study/tracerstudy/resources/js/Components/AlumniProfil/FormPribadi.vue
 - Form kontak, domisili, media sosial, dan minat keahlian.
 
-c:/study/tracerstudy/resources/js/Pages/Alumni/Profil/Components/FormAkademik.vue
+c:/study/tracerstudy/resources/js/Components/AlumniProfil/FormAkademik.vue
 - Form data perkuliahan, IPK, nomor ijazah, dan asal sekolah.
 
-c:/study/tracerstudy/resources/js/Pages/Alumni/Profil/Components/FormOrangTua.vue
+c:/study/tracerstudy/resources/js/Components/AlumniProfil/FormOrangTua.vue
 - Form kontak dan pekerjaan orang tua/wali.
 
-c:/study/tracerstudy/resources/js/Pages/Alumni/Profil/Components/FormKarier.vue
+c:/study/tracerstudy/resources/js/Components/AlumniProfil/FormKarier.vue
 - Form pekerjaan, perusahaan, atasan langsung, dan riwayat gaji.
 
-B. HALAMAN ADMIN PROGRAM STUDI (AdminProdi)
+c:/study/tracerstudy/resources/js/Components/AlumniProfil/Stepper.vue
+- Stepper navigasi horizontal interaktif untuk pengisian profil mandiri alumni.
+
+C. KOMPONEN BERSAMA AUDIT & STEPPER MAHASISWA (resources/js/Components/AlumniAudit)
+----------------------------------------------------------------------------------------------------
+c:/study/tracerstudy/resources/js/Components/AlumniAudit/AlumniStepper.vue
+- Komponen bersama: Stepper navigasi tahapan audit mahasiswa & alumni UKDW (mendukung Super Admin, Fakultas, Prodi, Biro 3).
+- Bulatan nomor langkah (1..5) dengan centang hijau selesai (`✓`), garis penghubung otomatis, dan indikator persentase.
+
+c:/study/tracerstudy/resources/js/Components/AlumniAudit/TabProfil.vue
+- Tab audit profil biodata mahasiswa, mendukung 4 role dan mode `readonly` (khusus Biro 3). Mengintegrasikan form profil bersama dan tombol floating scroll.
+
+c:/study/tracerstudy/resources/js/Components/AlumniAudit/TabKuesionerUniv.vue
+- Lembar jawaban kuesioner tracer study universitas (Dikti) bertabel kontinu ala Excel beserta filter seksi dan pencarian.
+
+c:/study/tracerstudy/resources/js/Components/AlumniAudit/TabKuesionerProdi.vue
+- Lembar jawaban instrumen kuesioner khusus program studi mahasiswa dengan tabel matriks kontinu dan filter seksi.
+
+c:/study/tracerstudy/resources/js/Components/AlumniAudit/TabEvaluasiAtasan.vue
+- Hasil pengisian survei evaluasi kinerja & kepuasan atasan (pengguna lulusan) dengan tabel 13 butir penilaian formal dan salin tautan survei.
+
+c:/study/tracerstudy/resources/js/Components/AlumniAudit/TabLinkedin.vue
+- Tab audit trace penelusuran LinkedIn, komparasi data mentah Apify dengan database biodata, modal verifikasi, dan histori sinkronisasi (mendukung mode `readonly` untuk Biro 3).
+
+D. HALAMAN ADMIN PROGRAM STUDI (AdminProdi)
 ----------------------------------------------------------------------------------------------------
 c:/study/tracerstudy/resources/js/Pages/AdminProdi/Dashboard.vue
 c:/study/tracerstudy/resources/js/Pages/AdminProdi/Alumni/Index.vue
+- Direktori alumni prodi menggunakan `AlumniDirectoryQueryService`, tabel data master rapi, dan filter pencarian.
 c:/study/tracerstudy/resources/js/Pages/AdminProdi/Alumni/Show.vue
+- Halaman detail audit mahasiswa menggunakan stepper modular `AlumniStepper` dan sub-tab bersama dari `@/Components/AlumniAudit/`.
 c:/study/tracerstudy/resources/js/Pages/AdminProdi/Pertanyaan/Index.vue
 c:/study/tracerstudy/resources/js/Pages/AdminProdi/Section/Index.vue
 c:/study/tracerstudy/resources/js/Pages/AdminProdi/Components/Navbar.vue
 
-C. HALAMAN SUPER ADMIN (SuperAdmin)
+E. HALAMAN SUPER ADMIN (SuperAdmin)
 ----------------------------------------------------------------------------------------------------
 c:/study/tracerstudy/resources/js/Pages/SuperAdmin/Dashboard.vue
 c:/study/tracerstudy/resources/js/Pages/SuperAdmin/Alumni/Index.vue
+- Direktori alumni universitas berformat tabel master data bergaris rapi (min-w-[1200px], overflow-x-auto, fixed saat window dikecilkan), 5 kartu metrik statistik formal (Total Terdaftar, Kuesioner Univ Lengkap, Kuesioner Prodi Lengkap, Profil Lengkap, LinkedIn Disinkronkan), filter status sinkronisasi LinkedIn, serta aksi cepat WhatsApp, email, dan audit alumni.
 c:/study/tracerstudy/resources/js/Pages/SuperAdmin/Alumni/Show.vue
-- Halaman detail komprehensif profil alumni, audit kuesioner universitas, kuesioner prodi, dan Tab 4: Hasil Scraping & Trace LinkedIn (tabel audit pemetaan database mentah Apify, status sinkronisasi, syntax JSON viewer, dan histori staging).
+- Halaman detail komprehensif profil alumni menggunakan stepper modular `AlumniStepper` dan 5 tab modular terpusat di `@/Components/AlumniAudit/`.
 c:/study/tracerstudy/resources/js/Pages/SuperAdmin/LinkedIn/Index.vue
 - Halaman dashboard kendali Sinkronisasi LinkedIn SuperAdmin dengan kartu KPI, filter tahun kelulusan, aksi single sync asinkron, review perbandingan staging (Approve / Reject), dan bulk batch sync.
 c:/study/tracerstudy/resources/js/Pages/SuperAdmin/Pertanyaan/Index.vue
+- Halaman terpadu Kuesioner Universitas (Tab Butir Pertanyaan) ala Master Data UMP: Navigasi tab horizontal terpadu, modal tambah pertanyaan, modal kelola opsi jawaban beserta jump logic, dan tabel butir instrumen Dikti.
 c:/study/tracerstudy/resources/js/Pages/SuperAdmin/Section/Index.vue
+- Halaman terpadu Kuesioner Universitas (Tab Bagian / Seksi) ala Master Data UMP: Navigasi tab horizontal terpadu, modal tambah/edit seksi, tombol & modal kendali Kuesioner Induk, dan penataan nomor urut seksi.
+c:/study/tracerstudy/resources/js/Pages/SuperAdmin/EvaluasiAtasan/Index.vue
+- Halaman administrasi kuesioner evaluasi atasan langsung (pengguna lulusan): tab pills UKDW (Butir Aspek Penilaian & Riwayat Respon), modal Vue formal detail respon hasil evaluasi atasan, dan integrasi tautan kuesioner publik.
+c:/study/tracerstudy/resources/js/Pages/Public/EvaluasiAtasanForm.vue
+- Formulir publik enterprise pengisian survei evaluasi kepuasan & kinerja alumni oleh pimpinan langsung perusahaan (/evaluasi-atasan/{token}), skema warna resmi UKDW (#0D542B & #FDC700), matriks skala Likert 12 aspek kinerja formal, dan identitas resmi universitas.
 
-D. HALAMAN ADMIN BIRO 3 (AdminBiroTiga)
+F. HALAMAN ADMIN FAKULTAS (AdminFakultas)
+----------------------------------------------------------------------------------------------------
+c:/study/tracerstudy/resources/js/Pages/AdminFakultas/Dashboard.vue
+c:/study/tracerstudy/resources/js/Pages/AdminFakultas/Alumni/Index.vue
+- Direktori alumni tingkat fakultas berformat tabel master data bergaris rapi, 5 kartu statistik formal se-fakultas, dan filter status sinkronisasi LinkedIn.
+c:/study/tracerstudy/resources/js/Pages/AdminFakultas/Alumni/Show.vue
+- Detail audit alumni se-fakultas menggunakan stepper modular `AlumniStepper` dan sub-komponen terpusat di `@/Components/AlumniAudit/`.
+
+G. HALAMAN ADMIN BIRO 3 (AdminBiroTiga)
 ----------------------------------------------------------------------------------------------------
 c:/study/tracerstudy/resources/js/Pages/AdminBiroTiga/Dashboard.vue
 c:/study/tracerstudy/resources/js/Pages/AdminBiroTiga/AlumniIndex.vue
+- Direktori alumni se-universitas khusus Biro 3 berformat tabel master data rapi, 5 kartu statistik formal, filter status LinkedIn, tombol kontak WA resmi, dan kirim email pengingat (Biro 3 bersifat Read-Only untuk LinkedIn).
 c:/study/tracerstudy/resources/js/Pages/AdminBiroTiga/AlumniShow.vue
+- Detail audit alumni khusus Biro 3 menggunakan stepper modular `AlumniStepper` dan sub-komponen terpusat di `@/Components/AlumniAudit/` dengan mode `readonly`, fitur kirim email flash otomatis, modal kirim WhatsApp, dan ekspor lembar jawaban ke Excel.
+
 
 E. HALAMAN AUTENTIKASI & PUBLIK
 ----------------------------------------------------------------------------------------------------

@@ -727,13 +727,13 @@ const handleOpenLinkedInHistory = async (alumni) => {
                     </div>
                 </div>
 
-                <!-- Card Tabel Mahasiswa ala DataTables Modern (Tanpa Horizontal Scroll & Bebas Warna-Warni Menumpuk) -->
-                <div class="bg-white rounded-xl border border-slate-200 shadow-2xs overflow-hidden">
+                <!-- Card Tabel Mahasiswa ala Master Data (Border Rapi, Tetap/Fixed saat Layar Dikecilkan) -->
+                <div class="bg-white rounded-xl border border-gray-300 shadow-2xs overflow-hidden">
                     <!-- Bar Kontrol DataTables -->
-                    <div class="p-3.5 sm:p-4 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-50/70">
-                        <div class="flex items-center gap-2 text-xs font-medium text-slate-600">
+                    <div class="p-3.5 sm:p-4 border-b border-gray-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-gray-50/70">
+                        <div class="flex items-center gap-2 text-xs font-medium text-gray-600">
                             <span>Tampilkan</span>
-                            <select v-model="perPage" class="text-xs rounded-lg border border-slate-200 bg-white py-1.5 px-2.5 font-bold text-slate-800 outline-none focus:border-[#0D542B] focus:ring-1 focus:ring-[#0D542B]">
+                            <select v-model="perPage" class="text-xs rounded-lg border border-gray-300 bg-white py-1.5 px-2.5 font-bold text-gray-800 outline-none focus:border-[#0D542B] focus:ring-1 focus:ring-[#0D542B] cursor-pointer">
                                 <option :value="5">5</option>
                                 <option :value="10">10</option>
                                 <option :value="25">25</option>
@@ -742,101 +742,106 @@ const handleOpenLinkedInHistory = async (alumni) => {
                             <span>data per halaman</span>
                         </div>
 
-                        <div class="text-xs text-slate-500 font-medium">
-                            Menampilkan <span class="font-bold text-slate-900">{{ (currentPage - 1) * perPage + (alumnis.length > 0 ? 1 : 0) }}</span> &ndash; 
-                            <span class="font-bold text-slate-900">{{ Math.min(currentPage * perPage, alumnis.length) }}</span> dari 
-                            <span class="font-bold text-slate-900">{{ alumnis.length }}</span> total mahasiswa (Tahun {{ tahun }})
+                        <div class="text-xs text-gray-500 font-medium">
+                            Menampilkan <span class="font-bold text-gray-900">{{ (currentPage - 1) * perPage + (alumnis.length > 0 ? 1 : 0) }}</span> &ndash; 
+                            <span class="font-bold text-gray-900">{{ Math.min(currentPage * perPage, alumnis.length) }}</span> dari 
+                            <span class="font-bold text-gray-900">{{ alumnis.length }}</span> total mahasiswa (Tahun {{ tahun }})
                         </div>
                     </div>
 
-                    <!-- Tabel Data (Fit 100% Viewport Width Tanpa Scroll Horizontal) -->
-                    <div class="w-full">
-                        <table class="w-full text-left border-collapse border border-slate-200 text-xs bg-white">
+                    <!-- Tabel Data ala Master Data (min-w-[1200px] dengan overflow-x-auto agar fixed/stay saat dikecilkan) -->
+                    <div class="w-full overflow-x-auto">
+                        <table class="w-full min-w-[1200px] text-left border-collapse border border-gray-300 text-xs bg-white">
                             <thead>
-                                <tr class="bg-slate-100/90 text-slate-700 font-semibold border-b border-slate-200 text-[11px]">
-                                    <th class="border-r border-slate-200 px-2 py-2.5 text-center w-10">No</th>
-                                    <th class="border-r border-slate-200 px-3 py-2.5 w-[21%]">Mahasiswa / Alumni</th>
-                                    <th class="border-r border-slate-200 px-3 py-2.5 w-[15%]">Program Studi</th>
-                                    <th class="border-r border-slate-200 px-3 py-2.5 w-[13%]">Target Kelulusan</th>
-                                    <th class="border-r border-slate-200 px-3 py-2.5 w-[22%]">Status Kelengkapan</th>
-                                    <th class="border-r border-slate-200 px-3 py-2.5 w-[21%]">Sinkronisasi LinkedIn</th>
-                                    <th class="px-2 py-2.5 text-center w-20">Aksi</th>
+                                <tr class="bg-gray-100 text-gray-800 font-semibold border-b border-gray-300 text-[11px] whitespace-nowrap">
+                                    <th class="border border-gray-300 px-2.5 py-2.5 text-center w-12 whitespace-nowrap">No</th>
+                                    <th class="border border-gray-300 px-3 py-2.5 min-w-[220px] w-64 whitespace-nowrap">Mahasiswa / Alumni</th>
+                                    <th class="border border-gray-300 px-3 py-2.5 min-w-[180px] w-52 whitespace-nowrap">Program Studi</th>
+                                    <th class="border border-gray-300 px-3 py-2.5 min-w-[160px] w-44 whitespace-nowrap">Target Kelulusan</th>
+                                    <th class="border border-gray-300 px-3 py-2.5 min-w-[210px] w-56 whitespace-nowrap">Status Kelengkapan</th>
+                                    <th class="border border-gray-300 px-3 py-2.5 min-w-[240px] w-64 whitespace-nowrap">Sinkronisasi LinkedIn</th>
+                                    <th class="border border-gray-300 px-2.5 py-2.5 text-center w-32 whitespace-nowrap">Aksi</th>
                                 </tr>
                             </thead>
-                            <tbody class="divide-y divide-slate-100">
+                            <tbody>
+                                <tr v-if="paginatedAlumnis.length === 0">
+                                    <td colspan="7" class="border border-gray-300 p-8 text-center text-gray-400 italic">
+                                        Tidak ada data mahasiswa atau alumni yang cocok dengan kriteria filter aktif saat ini.
+                                    </td>
+                                </tr>
                                 <tr 
                                     v-for="(alumni, idx) in paginatedAlumnis" 
                                     :key="alumni.id" 
-                                    class="hover:bg-slate-50/80 transition-colors"
-                                    :class="idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/30'"
+                                    class="hover:bg-gray-50/80 transition-colors"
+                                    :class="idx % 2 === 0 ? 'bg-white' : 'bg-gray-50/30'"
                                 >
                                     <!-- No -->
-                                    <td class="border-r border-slate-100 px-2 py-3 text-center font-mono font-medium text-slate-500">
+                                    <td class="border border-gray-300 px-2.5 py-3 text-center font-mono font-medium text-gray-500">
                                         {{ (currentPage - 1) * perPage + idx + 1 }}
                                     </td>
 
                                     <!-- Identitas Mahasiswa (Nama & NIM Bersih) -->
-                                    <td class="border-r border-slate-100 px-3 py-3">
-                                        <div class="font-bold text-slate-900 text-xs">
+                                    <td class="border border-gray-300 px-3 py-3">
+                                        <div class="font-bold text-gray-900 text-xs">
                                             {{ alumni.nama }}
                                         </div>
-                                        <div class="font-mono text-[11px] text-slate-500 mt-0.5">
+                                        <div class="font-mono text-[11px] text-gray-500 mt-0.5">
                                             {{ alumni.nim }}
                                         </div>
-                                        <div v-if="alumni.email" class="text-[10px] text-slate-400 truncate max-w-[200px] mt-0.5" :title="alumni.email">
+                                        <div v-if="alumni.email" class="text-[10px] text-gray-400 truncate max-w-[200px] mt-0.5" :title="alumni.email">
                                             {{ alumni.email }}
                                         </div>
                                     </td>
 
                                     <!-- Program Studi -->
-                                    <td class="border-r border-slate-100 px-3 py-3">
-                                        <div class="font-medium text-slate-800 text-xs">
+                                    <td class="border border-gray-300 px-3 py-3">
+                                        <div class="font-medium text-gray-800 text-xs">
                                             {{ alumni.prodi }}
                                         </div>
-                                        <div v-if="alumni.fakultas && alumni.fakultas !== '-'" class="text-[10px] text-slate-500 mt-0.5">
+                                        <div v-if="alumni.fakultas && alumni.fakultas !== '-'" class="text-[10px] text-gray-500 mt-0.5">
                                             {{ alumni.fakultas }}
                                         </div>
                                     </td>
 
                                     <!-- Periode / Target Kelulusan (Bersih & Rapi) -->
-                                    <td class="border-r border-slate-100 px-3 py-3">
-                                        <div class="font-medium text-slate-800 text-xs">
+                                    <td class="border border-gray-300 px-3 py-3">
+                                        <div class="font-medium text-gray-800 text-xs">
                                             {{ alumni.tahun_akademik_lulus }}
                                         </div>
-                                        <div class="text-[10px] text-slate-500 mt-0.5">
+                                        <div class="text-[10px] text-gray-500 mt-0.5">
                                             Tahun {{ alumni.tahun_lulus }} &bull; {{ alumni.status_yudisium || 'Lulus' }}
                                         </div>
                                     </td>
 
                                     <!-- Kolom Status Kelengkapan: Format Bersih, Proporsional & Formal -->
-                                    <td class="border-r border-slate-100 px-3.5 py-3">
+                                    <td class="border border-gray-300 px-3.5 py-3">
                                         <div class="space-y-1.5 text-xs">
                                             <div class="flex items-center gap-1.5 flex-wrap">
                                                 <span 
                                                     class="px-2 py-0.5 rounded text-[11px] font-semibold border"
-                                                    :class="alumni.kelengkapan?.questionnaire?.is_complete ? 'bg-emerald-50 text-emerald-800 border-emerald-200' : 'bg-slate-100 text-slate-700 border-slate-200'"
+                                                    :class="alumni.kelengkapan?.questionnaire?.is_complete ? 'bg-emerald-50 text-emerald-800 border-emerald-200' : 'bg-gray-100 text-gray-700 border-gray-200'"
                                                     title="Kuesioner Universitas"
                                                 >
                                                     Univ: {{ alumni.kelengkapan?.questionnaire?.is_complete ? '100%' : `${alumni.kelengkapan?.questionnaire?.percentage || 0}%` }}
                                                 </span>
                                                 <span 
                                                     class="px-2 py-0.5 rounded text-[11px] font-semibold border"
-                                                    :class="alumni.kelengkapan?.prodi?.is_complete ? 'bg-emerald-50 text-emerald-800 border-emerald-200' : 'bg-slate-100 text-slate-700 border-slate-200'"
+                                                    :class="alumni.kelengkapan?.prodi?.is_complete ? 'bg-emerald-50 text-emerald-800 border-emerald-200' : 'bg-gray-100 text-gray-700 border-gray-200'"
                                                     title="Kuesioner Program Studi"
                                                 >
                                                     Prodi: {{ alumni.kelengkapan?.prodi?.is_complete ? '100%' : `${alumni.kelengkapan?.prodi?.percentage || 0}%` }}
                                                 </span>
                                             </div>
-                                            <div class="text-[11px] text-slate-500 flex items-center gap-2 pt-0.5">
-                                                <span>Profil: <span class="font-semibold" :class="alumni.kelengkapan?.profile?.is_complete ? 'text-emerald-700' : 'text-slate-600'">{{ alumni.kelengkapan?.profile?.is_complete ? 'Lengkap' : 'Belum' }}</span></span>
-                                                <span class="text-slate-300">&bull;</span>
-                                                <span>Atasan: <span class="font-semibold" :class="alumni.evaluasi_atasan?.is_submitted ? 'text-emerald-700' : (alumni.evaluasi_atasan?.has_evaluasi ? 'text-amber-700' : 'text-slate-500')">{{ alumni.evaluasi_atasan?.is_submitted ? 'Diisi' : (alumni.evaluasi_atasan?.has_evaluasi ? 'Menunggu' : 'Belum Ada') }}</span></span>
+                                            <div class="text-[11px] text-gray-500 flex items-center gap-2 pt-0.5">
+                                                <span>Profil: <span class="font-semibold" :class="alumni.kelengkapan?.profile?.is_complete ? 'text-emerald-700' : 'text-gray-600'">{{ alumni.kelengkapan?.profile?.is_complete ? 'Lengkap' : 'Belum' }}</span></span>
+                                                <span class="text-gray-300">&bull;</span>
+                                                <span>Atasan: <span class="font-semibold" :class="alumni.evaluasi_atasan?.is_submitted ? 'text-emerald-700' : (alumni.evaluasi_atasan?.has_evaluasi ? 'text-amber-700' : 'text-gray-500')">{{ alumni.evaluasi_atasan?.is_submitted ? 'Diisi' : (alumni.evaluasi_atasan?.has_evaluasi ? 'Menunggu' : 'Belum Ada') }}</span></span>
                                             </div>
                                         </div>
                                     </td>
 
-                                    <!-- Kolom Sinkronisasi LinkedIn: Keterangan Waktu, Reviewer, dan Pekerjaan (Tanpa Tombol Rincian) -->
-                                    <td class="border-r border-slate-100 px-3.5 py-3">
+                                    <!-- Kolom Sinkronisasi LinkedIn: Keterangan Waktu, Reviewer, dan Pekerjaan -->
+                                    <td class="border border-gray-300 px-3.5 py-3">
                                         <div class="space-y-1">
                                             <!-- Status Badge -->
                                             <div>
@@ -860,45 +865,45 @@ const handleOpenLinkedInHistory = async (alumni) => {
                                                 </span>
                                                 <span 
                                                     v-else
-                                                    class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium bg-slate-100 text-slate-600 border border-slate-200"
+                                                    class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium bg-gray-100 text-gray-600 border border-gray-200"
                                                 >
                                                     Belum Disinkron
                                                 </span>
                                             </div>
 
                                             <!-- Terakhir Kapan & Oleh Siapa -->
-                                            <div v-if="alumni.linkedin_sync?.waktu_terakhir" class="text-[11px] text-slate-600 leading-tight pt-0.5">
+                                            <div v-if="alumni.linkedin_sync?.waktu_terakhir" class="text-[11px] text-gray-600 leading-tight pt-0.5">
                                                 <div>
-                                                    <span class="text-slate-400">Terakhir:</span> 
-                                                    <span class="font-medium text-slate-700 ml-1">{{ alumni.linkedin_sync.waktu_terakhir }}</span>
+                                                    <span class="text-gray-400">Terakhir:</span> 
+                                                    <span class="font-medium text-gray-700 ml-1">{{ alumni.linkedin_sync.waktu_terakhir }}</span>
                                                 </div>
-                                                <div v-if="alumni.linkedin_sync.reviewer_name" class="text-slate-500 truncate max-w-[210px]" :title="alumni.linkedin_sync.reviewer_name">
-                                                    <span class="text-slate-400">Oleh:</span> 
-                                                    <span class="font-medium text-slate-700 ml-1">{{ alumni.linkedin_sync.reviewer_name }}</span>
+                                                <div v-if="alumni.linkedin_sync.reviewer_name" class="text-gray-500 truncate max-w-[210px]" :title="alumni.linkedin_sync.reviewer_name">
+                                                    <span class="text-gray-400">Oleh:</span> 
+                                                    <span class="font-medium text-gray-700 ml-1">{{ alumni.linkedin_sync.reviewer_name }}</span>
                                                 </div>
                                             </div>
-                                            <div v-else class="text-[11px] text-slate-400 italic pt-0.5">
+                                            <div v-else class="text-[11px] text-gray-400 italic pt-0.5">
                                                 Belum ada riwayat
                                             </div>
 
                                             <!-- Pekerjaan LinkedIn Terakhir jika ada -->
                                             <div 
-                                                v-if="alumni.linkedin_sync?.last_job" 
-                                                class="text-[11px] text-slate-600 truncate max-w-[210px] font-medium pt-0.5"
-                                                :title="`${alumni.linkedin_sync.last_job} di ${alumni.linkedin_sync.last_company || '-'}`"
+                                                v-if="alumni.linkedin_sync?.current_job || alumni.linkedin_sync?.last_job" 
+                                                class="text-[11px] text-gray-600 truncate max-w-[210px] font-medium pt-0.5"
+                                                :title="`${alumni.linkedin_sync.current_job || alumni.linkedin_sync.last_job} di ${alumni.linkedin_sync.current_company || alumni.linkedin_sync.last_company || '-'}`"
                                             >
-                                                {{ alumni.linkedin_sync.last_job }} <span v-if="alumni.linkedin_sync.last_company">&bull; {{ alumni.linkedin_sync.last_company }}</span>
+                                                {{ alumni.linkedin_sync.current_job || alumni.linkedin_sync.last_job }} <span v-if="alumni.linkedin_sync.current_company || alumni.linkedin_sync.last_company">&bull; {{ alumni.linkedin_sync.current_company || alumni.linkedin_sync.last_company }}</span>
                                             </div>
                                         </div>
                                     </td>
 
                                     <!-- Kolom Aksi Terpadu (Monokrom, Formal & Bersih) -->
-                                    <td class="px-2.5 py-3 text-center">
+                                    <td class="border border-gray-300 px-2.5 py-3 text-center">
                                         <div class="inline-flex items-center justify-center gap-1">
                                             <!-- 1. Detail Profil & Kuesioner -->
                                             <Link 
                                                 :href="`/superadmin/alumni/${alumni.id}`" 
-                                                class="p-1.5 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+                                                class="p-1.5 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
                                                 title="Lihat Detail Alumni & Kuesioner"
                                                 aria-label="Lihat Detail Alumni"
                                             >
@@ -912,7 +917,7 @@ const handleOpenLinkedInHistory = async (alumni) => {
                                             <button 
                                                 type="button"
                                                 @click="openWhatsAppModal(alumni)"
-                                                class="p-1.5 text-slate-600 hover:text-emerald-700 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+                                                class="p-1.5 text-gray-600 hover:text-emerald-700 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
                                                 title="Hubungi via WhatsApp (Undangan Kuesioner)"
                                                 aria-label="Hubungi via WhatsApp"
                                             >
@@ -925,7 +930,7 @@ const handleOpenLinkedInHistory = async (alumni) => {
                                             <button 
                                                 type="button"
                                                 @click="handleSendSingleEmail(alumni)"
-                                                class="p-1.5 text-slate-600 hover:text-sky-700 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+                                                class="p-1.5 text-gray-600 hover:text-sky-700 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
                                                 title="Kirim Email Pengingat Kuesioner Langsung"
                                                 aria-label="Kirim Email Pengingat"
                                             >
@@ -936,11 +941,11 @@ const handleOpenLinkedInHistory = async (alumni) => {
 
                                             <!-- 4. Riwayat / Sinkronisasi LinkedIn Direct -->
                                             <Link
-                                                v-if="alumni.linkedin_sync?.has_sync"
+                                                v-if="alumni.linkedin_sync?.status === 'approved' || alumni.linkedin_sync?.status === 'pending'"
                                                 :href="`/superadmin/alumni/${alumni.id}?tab=linkedin`"
                                                 class="p-1.5 rounded-lg transition-colors cursor-pointer"
-                                                :class="alumni.linkedin_sync.status === 'approved' ? 'text-[#0077B5] hover:bg-sky-50' : (alumni.linkedin_sync.status === 'pending' ? 'text-amber-700 hover:bg-amber-50' : 'text-slate-600 hover:bg-slate-100')"
-                                                :title="`Buka Riwayat LinkedIn: Status ${alumni.linkedin_sync.status_label}${alumni.linkedin_sync.last_company ? ' (' + (alumni.linkedin_sync.last_job || '-') + ' di ' + alumni.linkedin_sync.last_company + ')' : ''}`"
+                                                :class="alumni.linkedin_sync.status === 'approved' ? 'text-[#0077B5] hover:bg-sky-50' : 'text-amber-700 hover:bg-amber-50'"
+                                                :title="`Buka Riwayat LinkedIn: Status ${alumni.linkedin_sync.status_label}`"
                                                 aria-label="Buka Riwayat LinkedIn"
                                             >
                                                 <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24">
@@ -951,7 +956,7 @@ const handleOpenLinkedInHistory = async (alumni) => {
                                                 v-else
                                                 type="button"
                                                 @click="handleSyncLinkedIn(alumni)"
-                                                class="p-1.5 text-slate-400 hover:text-[#0077B5] hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+                                                class="p-1.5 text-gray-400 hover:text-[#0077B5] hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
                                                 :title="alumni.linkedin_url ? `Sinkronkan LinkedIn: ${alumni.linkedin_url}` : 'Sinkronkan LinkedIn Alumni (Belum Disinkron)'"
                                                 aria-label="Sinkronkan LinkedIn"
                                             >
@@ -960,28 +965,6 @@ const handleOpenLinkedInHistory = async (alumni) => {
                                                 </svg>
                                             </button>
                                         </div>
-                                    </td>
-                                </tr>
-
-                                <!-- Empty State -->
-                                <tr v-if="alumnis.length === 0">
-                                    <td colspan="6" class="py-16 text-center text-slate-500">
-                                        <div class="w-12 h-12 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center mx-auto mb-3">
-                                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2 2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
-                                            </svg>
-                                        </div>
-                                        <p class="font-bold text-slate-800 text-sm">Tidak Ada Mahasiswa Ditemukan</p>
-                                        <p class="text-xs text-slate-400 mt-1 max-w-sm mx-auto">Tidak ada data alumni untuk Tahun Kelulusan {{ tahun }} yang cocok dengan kriteria filter aktif saat ini.</p>
-                                        <button 
-                                            @click="resetFilters" 
-                                            class="mt-4 px-4 py-2 bg-[#0D542B] text-white text-xs font-bold rounded-xl hover:bg-[#08381c] transition-colors shadow-2xs inline-flex items-center gap-1.5 cursor-pointer"
-                                        >
-                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                                            </svg>
-                                            <span>Kembalikan Semua Filter</span>
-                                        </button>
                                     </td>
                                 </tr>
                             </tbody>

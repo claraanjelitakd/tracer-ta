@@ -612,7 +612,7 @@ erDiagram
 | `evaluasi_atasan` | 1 : N | `respon_evaluasi_atasan` | `respon_evaluasi_atasan.evaluasi_atasan_id` | Rekaman butir jawaban evaluasi atasan per survei. |
 | `pertanyaan_evaluasi_atasan` | 1 : N | `respon_evaluasi_atasan` | `respon_evaluasi_atasan.pertanyaan_id` | Referensi butir aspek penilaian/kesiapan kerja. |
 | `biodata` | 1 : N | `linkedin_sync_results` | `linkedin_sync_results.biodata_id` | Riwayat staging dan ekstraksi profil LinkedIn per alumni. |
-| `users` | 1 : N | `linkedin_sync_results` | `linkedin_sync_results.reviewed_by` | Akun Super Admin peninjau dan penyetuju data scraping LinkedIn. |
+| `users` | 1 : N | `linkedin_sync_results` | `linkedin_sync_results.reviewed_by` | Akun Administrator (Super Admin / Admin Fakultas / Admin Prodi / Admin Biro 3) peninjau dan penyetuju data scraping LinkedIn. |
 | `propinsi` | 1 : N | `kabupaten` | `kabupaten.propinsi_id` | Hierarki kewilayahan provinsi ke kabupaten/kota. |
 | `propinsi` | 1 : 1 | `ump` | `ump.kode_provinsi` | Standar UMP ketetapan pemerintah provinsi. |
 | `kuesioner` | 1 : N | `kelompok_pertanyaan` | `kelompok_pertanyaan.kuesioner_id` | Seksi/bagian dalam instrumen tracer study universitas. |

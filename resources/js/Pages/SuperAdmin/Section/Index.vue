@@ -475,15 +475,22 @@ const handleDeleteKuesioner = (k) => {
 
         <!-- Area Konten Utama -->
         <div class="flex-1 flex flex-col min-w-0 lg:pl-72">
-            <!-- Header Halaman Bersih & Flat -->
+            <!-- Header Halaman Bersih & Flat Terpadu -->
             <div class="bg-white border-b border-gray-200 px-6 py-5">
                 <div class="w-full flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div>
+                        <div class="flex items-center gap-2 text-xs text-gray-500 font-medium mb-1">
+                            <Link href="/superadmin/dashboard" class="hover:text-emerald-700">Dashboard</Link>
+                            <span>/</span>
+                            <span>Manajemen Kuesioner</span>
+                            <span>/</span>
+                            <span class="text-gray-900 font-semibold">Kuesioner Universitas</span>
+                        </div>
                         <h1 class="text-xl font-bold text-gray-900">
-                            Kelola Bagian Kuesioner (Section)
+                            Kuesioner Universitas (Tracer Study Dikti)
                         </h1>
                         <p class="text-xs text-gray-500 mt-0.5">
-                            Pengaturan struktur kelompok bab/bagian kuesioner dan urutan alur pengisian alumni.
+                            Instrumen kuesioner tingkat universitas, struktur bagian/seksi, opsi jawaban, dan kuesioner induk.
                         </p>
                     </div>
 
@@ -517,8 +524,30 @@ const handleDeleteKuesioner = (k) => {
                 </div>
             </div>
 
-            <!-- Konten Tabel Utama -->
+            <!-- Konten Utama -->
             <main class="w-full p-6 space-y-4">
+                <!-- TABS NAVIGASI TERPADU KUESIONER UNIVERSITAS -->
+                <div class="flex items-center gap-2 flex-wrap">
+                    <Link
+                        href="/superadmin/pertanyaan"
+                        class="px-4 py-2 text-xs font-bold rounded-lg transition-colors flex items-center gap-1.5 bg-white text-gray-600 hover:bg-gray-100 border border-gray-200"
+                    >
+                        <span>Butir Pertanyaan</span>
+                        <span class="px-1.5 py-0.5 rounded-full text-[10px] bg-gray-100 text-gray-700">
+                            {{ totalQuestionsCount }}
+                        </span>
+                    </Link>
+
+                    <Link
+                        href="/superadmin/sections"
+                        class="px-4 py-2 text-xs font-bold rounded-lg transition-colors flex items-center gap-1.5 bg-[#0D542B] text-white shadow-xs"
+                    >
+                        <span>Bagian / Seksi (Section)</span>
+                        <span class="px-1.5 py-0.5 rounded-full text-[10px] bg-white/20 text-white">
+                            {{ sections.length }}
+                        </span>
+                    </Link>
+                </div>
                 <!-- Bilah Pencarian & Ringkasan -->
                 <div class="bg-white p-4 rounded-xl border border-gray-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
                     <div class="flex items-center gap-3">

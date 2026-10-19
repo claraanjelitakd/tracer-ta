@@ -14,12 +14,13 @@ import { Head, Link } from '@inertiajs/vue3';
 import { ref, computed, watch } from 'vue';
 import Sidebar from '../Components/Sidebar.vue';
 
-// Sub-komponen modular untuk setiap tab stepper
-import TabProfil from '@/Pages/SuperAdmin/Alumni/Components/TabProfil.vue';
-import TabKuesionerUniv from '@/Pages/SuperAdmin/Alumni/Components/TabKuesionerUniv.vue';
-import TabKuesionerProdi from '@/Pages/SuperAdmin/Alumni/Components/TabKuesionerProdi.vue';
-import TabEvaluasiAtasan from '@/Pages/SuperAdmin/Alumni/Components/TabEvaluasiAtasan.vue';
-import TabLinkedin from '@/Pages/SuperAdmin/Alumni/Components/TabLinkedin.vue';
+// Sub-komponen modular untuk setiap tab audit alumni
+import AlumniStepper from '@/Components/AlumniAudit/AlumniStepper.vue';
+import TabProfil from '@/Components/AlumniAudit/TabProfil.vue';
+import TabKuesionerUniv from '@/Components/AlumniAudit/TabKuesionerUniv.vue';
+import TabKuesionerProdi from '@/Components/AlumniAudit/TabKuesionerProdi.vue';
+import TabEvaluasiAtasan from '@/Components/AlumniAudit/TabEvaluasiAtasan.vue';
+import TabLinkedin from '@/Components/AlumniAudit/TabLinkedin.vue';
 
 const props = defineProps({
     user: Object,
@@ -262,86 +263,8 @@ const statusYudisium = computed(() => {
             <!-- Main Content Area -->
             <main class="max-w-[1400px] w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6 pb-16">
 
-                <!-- Stepper Navigasi Utama -->
-                <div class="w-full bg-white rounded-2xl shadow-xs border border-gray-200 overflow-x-auto py-3.5 sm:py-4 px-4 sm:px-6">
-                    <div class="flex items-center justify-between min-w-max max-w-5xl mx-auto">
-                        <template v-for="(tab, index) in stepperTabs" :key="tab.id">
-                            <!-- Bulatan & Label Tahapan -->
-                            <div 
-                                class="flex flex-col relative items-center justify-center cursor-pointer group px-2 sm:px-4 py-1 transition-all duration-200"
-                                @click="activeMainTab = tab.id"
-                                :title="tab.title"
-                            >
-                                <!-- Lingkaran Angka / Centang Selesai -->
-                                <div 
-                                    class="flex items-center justify-center w-10 h-10 sm:w-11 sm:h-11 md:w-12 md:h-12 rounded-full font-black text-xs sm:text-sm md:text-base transition-all duration-200 z-10 shadow-xs relative"
-                                    :class="[
-                                        activeMainTab === tab.id
-                                            ? 'bg-[#0D542B] text-white shadow-md scale-105 sm:scale-110 ring-2 sm:ring-4 ring-[#0D542B]/20' : 
-                                        (tab.isComplete 
-                                            ? 'bg-emerald-700 text-white shadow-xs group-hover:bg-emerald-800 group-hover:scale-105' : 
-                                            'bg-slate-100 text-slate-500 group-hover:bg-slate-200 group-hover:text-slate-700')
-                                    ]"
-                                >
-                                    <svg 
-                                        v-if="tab.isComplete && activeMainTab !== tab.id" 
-                                        class="w-5 h-5 text-white" 
-                                        fill="none" 
-                                        stroke="currentColor" 
-                                        viewBox="0 0 24 24"
-                                    >
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3.5" d="M5 13l4 4L19 7"></path>
-                                    </svg>
-                                    
-                                    <span v-else>{{ index + 1 }}</span>
-
-                                    <span 
-                                        v-if="activeMainTab === tab.id && tab.isComplete" 
-                                        class="absolute -top-1 -right-1 w-4 h-4 bg-[#0D542B] text-white rounded-full flex items-center justify-center text-[9px] font-black shadow-xs ring-2 ring-white"
-                                        title="Bagian ini sudah lengkap"
-                                    >
-                                        ✓
-                                    </span>
-                                </div>
-                                
-                                <!-- Judul Nama Seksi di Bawah Lingkaran -->
-                                <span 
-                                    class="text-[10px] sm:text-[11px] md:text-xs mt-1.5 sm:mt-2 text-center w-24 sm:w-28 leading-tight transition-colors line-clamp-2"
-                                    :class="[
-                                        activeMainTab === tab.id
-                                            ? 'text-[#0D542B] font-black' : 
-                                        (tab.isComplete 
-                                            ? 'text-[#0D542B] font-bold group-hover:text-[#0A4322]' : 
-                                            'text-slate-400 group-hover:text-slate-600 font-medium')
-                                    ]"
-                                >
-                                    {{ tab.title }}
-                                </span>
-
-                                <span 
-                                    v-if="tab.subtitle"
-                                    class="text-[9px] sm:text-[10px] text-center text-gray-400 truncate max-w-[110px]"
-                                >
-                                    {{ tab.subtitle }}
-                                </span>
-
-                                <span 
-                                    class="text-[9px] sm:text-[10px] mt-0.5 text-center font-bold"
-                                    :class="tab.isComplete ? 'text-[#005B3C]' : 'text-gray-400'"
-                                >
-                                    {{ tab.statusText }}
-                                </span>
-                            </div>
-                            
-                            <!-- Garis Penghubung Antar Lingkaran Stepper -->
-                            <div 
-                                v-if="index < stepperTabs.length - 1" 
-                                class="flex-1 h-1 sm:h-1.5 rounded-full transition-colors duration-300 mx-1 sm:mx-2 md:mx-3 min-w-[14px] sm:min-w-[20px]" 
-                                :class="isStepperLineCompleted(index) ? 'bg-[#005B3C]' : 'bg-gray-200'"
-                            ></div>
-                        </template>
-                    </div>
-                </div>
+                <!-- Navigasi Stepper Tahapan Audit Alumni Terpadu -->
+                <AlumniStepper :tabs="stepperTabs" v-model="activeMainTab" />
 
                 <!-- ============================================================= -->
                 <!-- 1. TAB DETAIL PROFIL ALUMNI                                   -->

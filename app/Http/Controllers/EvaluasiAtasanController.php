@@ -17,6 +17,29 @@ use Inertia\Response;
 class EvaluasiAtasanController extends Controller
 {
     /**
+     * Mengarahkan akses rute publik /evaluasi-atasan ke token evaluasi yang tersedia
+     */
+    public function index(Request $request)
+    {
+        $token = $request->query('token');
+        if ($token) {
+            return redirect()->route('evaluasi-atasan.show', ['token' => $token]);
+        }
+
+        // Cari evaluasi yang belum disubmit untuk kemudahan akses langsung / pengetesan
+        $latest = EvaluasiAtasan::where('is_submitted', false)->latest()->first()
+            ?? EvaluasiAtasan::latest()->first();
+
+        if ($latest && $latest->token) {
+            return redirect()->route('evaluasi-atasan.show', ['token' => $latest->token]);
+        }
+
+        return Inertia::render('Public/EvaluasiAtasanNotFound', [
+            'message' => 'Belum ada formulir evaluasi atasan yang tersedia untuk diakses.',
+        ]);
+    }
+
+    /**
      * Menampilkan Halaman Formulir Evaluasi Atasan (Public Access via Token)
      */
     public function show(string $token): Response

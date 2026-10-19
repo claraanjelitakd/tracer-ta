@@ -152,69 +152,18 @@ const deleteQuestion = (question) => {
     });
 };
 
-// Detail Respon Evaluasi Atasan Modal
+// State Modal Vue Detail Respon Evaluasi Atasan
+const showDetailModal = ref(false);
+const selectedEvaluasi = ref(null);
+
 const viewDetailEvaluasi = (evaluasi) => {
-    const alumniName = evaluasi.biodata?.nama || evaluasi.biodata?.data_akademik?.nama || '-';
-    const nim = evaluasi.biodata?.nim || '-';
-    const prodi = evaluasi.biodata?.prodi?.nama_prodi || '-';
-    const namaPerusahaan = evaluasi.perusahaan?.nama_perusahaan || evaluasi.nama_perusahaan || '-';
-    const atasanNama = evaluasi.atasan?.nama || '-';
-    const atasanEmail = evaluasi.atasan?.email || '-';
-    const atasanTelp = evaluasi.atasan?.telepon || '-';
+    selectedEvaluasi.value = evaluasi;
+    showDetailModal.value = true;
+};
 
-    let responsHtml = '<p class="text-gray-400 italic">Belum ada respon yang diisi.</p>';
-    if (evaluasi.respons && evaluasi.respons.length > 0) {
-        responsHtml = `
-            <table class="w-full text-xs text-left border border-gray-300 mt-2">
-                <thead>
-                    <tr class="bg-gray-100 text-gray-800">
-                        <th class="border border-gray-300 px-2 py-1">No</th>
-                        <th class="border border-gray-300 px-2 py-1">Aspek Kinerja</th>
-                        <th class="border border-gray-300 px-2 py-1 text-center">Nilai</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    ${evaluasi.respons.map((r, i) => `
-                        <tr>
-                            <td class="border border-gray-300 px-2 py-1 text-center">${i + 1}</td>
-                            <td class="border border-gray-300 px-2 py-1 font-semibold">${r.pertanyaan?.aspek || '-'}</td>
-                            <td class="border border-gray-300 px-2 py-1 text-center font-bold text-[#0D542B]">${r.nilai || '-'}</td>
-                        </tr>
-                    `).join('')}
-                </tbody>
-            </table>
-        `;
-    }
-
-    Swal.fire({
-        title: `<span class="text-base font-bold text-gray-900">Detail Hasil Evaluasi Pengguna Lulusan</span>`,
-        html: `
-            <div class="text-left text-xs space-y-3 pt-1 text-gray-800">
-                <div class="p-3 bg-gray-50 border border-gray-200 rounded space-y-1">
-                    <div><span class="text-gray-500">Nama Alumni:</span> <strong>${alumniName}</strong> (${nim})</div>
-                    <div><span class="text-gray-500">Program Studi:</span> <strong>${prodi}</strong></div>
-                    <div><span class="text-gray-500">Perusahaan:</span> <strong>${namaPerusahaan}</strong></div>
-                    <div><span class="text-gray-500">Nama Atasan:</span> <strong>${atasanNama}</strong> (${atasanEmail} / ${atasanTelp})</div>
-                    <div class="pt-1"><span class="text-gray-500">Status:</span> <span class="font-bold ${evaluasi.is_submitted ? 'text-emerald-700' : 'text-amber-600'}">${evaluasi.is_submitted ? '✓ Sudah Mengisi' : 'Menunggu Pengisian'}</span></div>
-                </div>
-
-                <div>
-                    <span class="font-bold text-gray-700 block">Hasil Penilaian Kinerja Lulusan:</span>
-                    ${responsHtml}
-                </div>
-
-                ${evaluasi.catatan_lainnya ? `
-                    <div class="p-2.5 bg-yellow-50/80 border border-yellow-200 rounded text-xs text-yellow-900">
-                        <span class="font-bold block mb-0.5">Catatan / Saran Tambahan:</span>
-                        ${evaluasi.catatan_lainnya}
-                    </div>
-                ` : ''}
-            </div>
-        `,
-        width: '600px',
-        confirmButtonText: 'Tutup',
-        confirmButtonColor: '#0D542B',
-    });
+const closeDetailModal = () => {
+    showDetailModal.value = false;
+    selectedEvaluasi.value = null;
 };
 </script>
 
@@ -260,23 +209,25 @@ const viewDetailEvaluasi = (evaluasi) => {
                 </div>
             </div>
 
-            <!-- Tab Navigasi -->
-            <div class="px-6 pt-4 bg-white border-b border-gray-200 flex gap-4 text-xs font-bold">
+            <!-- TABS NAVIGASI PILLS RESMI -->
+            <div class="px-6 pt-5 flex items-center gap-2 flex-wrap">
                 <button
+                    type="button"
                     @click="activeTab = 'questions'"
-                    class="pb-3 border-b-2 transition-colors cursor-pointer flex items-center gap-2"
-                    :class="activeTab === 'questions' ? 'border-[#0D542B] text-[#0D542B]' : 'border-transparent text-gray-500 hover:text-gray-800'"
+                    class="px-4 py-2 text-xs font-bold rounded-lg transition-colors flex items-center gap-1.5 cursor-pointer"
+                    :class="activeTab === 'questions' ? 'bg-[#0D542B] text-white shadow-xs' : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'"
                 >
-                    <span>Butir Aspek Evaluasi (Instrumen)</span>
-                    <span class="px-2 py-0.5 rounded-full text-[10px] bg-emerald-100 text-[#0D542B]">{{ stats.active_questions }}</span>
+                    <span>Butir Aspek Penilaian</span>
+                    <span class="px-1.5 py-0.5 rounded-full text-[10px]" :class="activeTab === 'questions' ? 'bg-white/20 text-white' : 'bg-gray-100 text-gray-700'">{{ stats.active_questions }}</span>
                 </button>
                 <button
+                    type="button"
                     @click="activeTab = 'responses'"
-                    class="pb-3 border-b-2 transition-colors cursor-pointer flex items-center gap-2"
-                    :class="activeTab === 'responses' ? 'border-[#0D542B] text-[#0D542B]' : 'border-transparent text-gray-500 hover:text-gray-800'"
+                    class="px-4 py-2 text-xs font-bold rounded-lg transition-colors flex items-center gap-1.5 cursor-pointer"
+                    :class="activeTab === 'responses' ? 'bg-[#0D542B] text-white shadow-xs' : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'"
                 >
-                    <span>Daftar Undangan & Respon Atasan</span>
-                    <span class="px-2 py-0.5 rounded-full text-[10px] bg-slate-100 text-slate-700">{{ stats.submitted_evaluasi }} / {{ stats.total_evaluasi }}</span>
+                    <span>Riwayat Respon Pengguna Lulusan</span>
+                    <span class="px-1.5 py-0.5 rounded-full text-[10px]" :class="activeTab === 'responses' ? 'bg-white/20 text-white' : 'bg-gray-100 text-gray-700'">{{ stats.submitted_evaluasi }} / {{ stats.total_evaluasi }}</span>
                 </button>
             </div>
 
@@ -438,6 +389,150 @@ const viewDetailEvaluasi = (evaluasi) => {
             <footer class="text-gray-400 text-xs text-center mt-12 py-6 border-t border-gray-100">
                 &copy; {{ new Date().getFullYear() }} Universitas Kristen Duta Wacana. Hak Cipta Dilindungi.
             </footer>
+        </div>
+
+        <!-- MODAL FORMAL: DETAIL RESPO EVALUASI PENGGUNA LULUSAN -->
+        <div
+            v-if="showDetailModal && selectedEvaluasi"
+            class="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4"
+        >
+            <div class="relative bg-white rounded-xl shadow-xl max-w-2xl w-full overflow-hidden border border-slate-200">
+                <!-- Header Modal Formal -->
+                <div class="px-5 py-4 border-b border-gray-200 flex items-center justify-between bg-slate-50">
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <h3 class="text-sm font-bold text-gray-900">
+                                Lembar Evaluasi Pengguna Lulusan
+                            </h3>
+                            <span
+                                class="px-2 py-0.5 rounded text-[10px] font-bold"
+                                :class="selectedEvaluasi.is_submitted ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'"
+                            >
+                                {{ selectedEvaluasi.is_submitted ? 'Terisi Lengkap' : 'Menunggu Respon' }}
+                            </span>
+                        </div>
+                        <p class="text-[11px] text-gray-500 mt-0.5">
+                            Hasil penilaian kinerja dan kompetensi alumni oleh pimpinan langsung perusahaan.
+                        </p>
+                    </div>
+
+                    <button
+                        type="button"
+                        @click="closeDetailModal"
+                        class="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-200 transition-colors cursor-pointer"
+                    >
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+
+                <!-- Konten Modal Formal -->
+                <div class="p-5 space-y-4 max-h-[75vh] overflow-y-auto text-xs">
+                    <!-- Kartu Informasi Alumni & Atasan (2 Kolom) -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div class="p-3 bg-slate-50 rounded-lg border border-gray-200 space-y-1">
+                            <span class="text-[10px] uppercase font-bold text-gray-500 block">Identitas Alumni</span>
+                            <div class="text-gray-900 font-bold text-sm">
+                                {{ selectedEvaluasi.biodata?.nama || selectedEvaluasi.biodata?.data_akademik?.nama || '-' }}
+                            </div>
+                            <div class="text-gray-600">
+                                NIM: <span class="font-mono font-semibold">{{ selectedEvaluasi.biodata?.nim || '-' }}</span>
+                            </div>
+                            <div class="text-gray-600">
+                                Program Studi: {{ selectedEvaluasi.biodata?.prodi?.nama_prodi || '-' }}
+                            </div>
+                        </div>
+
+                        <div class="p-3 bg-slate-50 rounded-lg border border-gray-200 space-y-1">
+                            <span class="text-[10px] uppercase font-bold text-gray-500 block">Pimpinan / Pengguna Lulusan</span>
+                            <div class="text-gray-900 font-bold text-sm">
+                                {{ selectedEvaluasi.atasan?.nama || '-' }}
+                            </div>
+                            <div class="text-gray-600">
+                                Instansi: {{ selectedEvaluasi.perusahaan?.nama_perusahaan || selectedEvaluasi.nama_perusahaan || '-' }}
+                            </div>
+                            <div class="text-gray-600 truncate">
+                                Kontak: {{ selectedEvaluasi.atasan?.email || '-' }} / {{ selectedEvaluasi.atasan?.telepon || '-' }}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tabel Hasil Penilaian Aspek Kinerja -->
+                    <div>
+                        <span class="font-bold text-gray-800 block mb-1.5 uppercase text-[11px] tracking-wider">
+                            Rincian Penilaian Aspek Kinerja & Kompetensi
+                        </span>
+                        <div class="border border-gray-200 rounded-lg overflow-hidden">
+                            <table class="w-full text-left border-collapse text-xs">
+                                <thead>
+                                    <tr class="bg-gray-100 text-gray-800 font-semibold border-b border-gray-200 text-[11px]">
+                                        <th class="py-2 px-3 text-center w-10 border-r border-gray-200">No</th>
+                                        <th class="py-2 px-3 border-r border-gray-200">Aspek Kinerja</th>
+                                        <th class="py-2 px-3 text-center w-28">Skor / Nilai</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <template v-if="selectedEvaluasi.respons && selectedEvaluasi.respons.length > 0">
+                                        <tr
+                                            v-for="(r, idx) in selectedEvaluasi.respons"
+                                            :key="idx"
+                                            class="border-b border-gray-100 hover:bg-gray-50/60"
+                                        >
+                                            <td class="py-2 px-3 text-center font-mono text-gray-500 border-r border-gray-100">
+                                                {{ idx + 1 }}
+                                            </td>
+                                            <td class="py-2 px-3 font-medium text-gray-900 border-r border-gray-100">
+                                                {{ r.pertanyaan?.aspek || '-' }}
+                                            </td>
+                                            <td class="py-2 px-3 text-center font-bold text-[#0D542B]">
+                                                {{ r.nilai || '-' }}
+                                            </td>
+                                        </tr>
+                                    </template>
+                                    <tr v-else>
+                                        <td colspan="3" class="py-6 text-center text-gray-400 italic">
+                                            Belum ada respon butir penilaian yang tersimpan.
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Catatan & Saran Tambahan Atasan -->
+                    <div v-if="selectedEvaluasi.catatan_lainnya" class="space-y-1">
+                        <span class="font-bold text-gray-800 block uppercase text-[11px] tracking-wider">
+                            Catatan & Saran Pengguna Lulusan
+                        </span>
+                        <div class="p-3 bg-slate-50 rounded-lg border border-gray-200 text-gray-700 leading-relaxed italic">
+                            &ldquo;{{ selectedEvaluasi.catatan_lainnya }}&rdquo;
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Footer Modal Formal -->
+                <div class="px-5 py-3 border-t border-gray-200 bg-gray-50 flex items-center justify-between">
+                    <a
+                        :href="`/evaluasi-atasan/${selectedEvaluasi.token}`"
+                        target="_blank"
+                        class="text-xs text-emerald-800 hover:text-emerald-950 font-semibold flex items-center gap-1.5"
+                    >
+                        <span>Buka Tautan Survei Asli</span>
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                        </svg>
+                    </a>
+
+                    <button
+                        type="button"
+                        @click="closeDetailModal"
+                        class="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 text-xs font-semibold rounded-lg transition-colors cursor-pointer"
+                    >
+                        Tutup
+                    </button>
+                </div>
+            </div>
         </div>
     </div>
 </template>
