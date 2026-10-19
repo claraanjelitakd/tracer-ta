@@ -188,6 +188,16 @@ class LinkedinSyncResult extends Model
         $currentCompanyLocation = null;
         $currentCompanyUrl = null;
 
+        $activeJob = null;
+        $activeCompany = null;
+        $activeLoc = null;
+        $activeUrl = null;
+
+        $firstJob = null;
+        $firstCompany = null;
+        $firstLoc = null;
+        $firstUrl = null;
+
         if (is_array($rawExp)) {
             foreach ($rawExp as $pos) {
                 if (! is_array($pos)) {
@@ -218,30 +228,64 @@ class LinkedinSyncResult extends Model
                     'description' => $pos['description'] ?? null,
                 ];
 
-                // Pilih pengalaman aktif pertama atau teratas
-                if (! $currentJob && $jobTitle) {
-                    $currentJob = $jobTitle;
-                    $currentCompany = $company;
-                    $currentCompanyLocation = $loc;
-                    $currentCompanyUrl = $compUrl;
-                } elseif ($isCurrent && ! $currentJob) {
-                    $currentJob = $jobTitle;
-                    $currentCompany = $company;
-                    $currentCompanyLocation = $loc;
-                    $currentCompanyUrl = $compUrl;
+                if ($isCurrent && ! $activeJob && $jobTitle) {
+                    $activeJob = $jobTitle;
+                    $activeCompany = $company;
+                    $activeLoc = $loc;
+                    $activeUrl = $compUrl;
+                }
+
+                if (! $firstJob && $jobTitle) {
+                    $firstJob = $jobTitle;
+                    $firstCompany = $company;
+                    $firstLoc = $loc;
+                    $firstUrl = $compUrl;
                 }
             }
         }
 
-        // Fallback jika tidak ada array experiences, gunakan root fields dari Actor
+        // Tentukan Pekerjaan & Perusahaan Saat Ini (Current):
+        // 1. Prioritaskan entri pengalaman kerja yang berstatus aktif (is_current)
+        if ($activeJob || $activeCompany) {
+            $currentJob = $activeJob;
+            $currentCompany = $activeCompany;
+            $currentCompanyLocation = $activeLoc;
+            $currentCompanyUrl = $activeUrl;
+        }
+
+        // 2. Jika tidak ada yang aktif di experiences, gunakan root metadata Apify
+        if (! $currentCompany && ! empty($item['company_name'])) {
+            $currentCompany = trim($item['company_name']);
+            $currentCompanyUrl = ! empty($item['li_company_url']) ? trim($item['li_company_url']) : null;
+        }
         if (! $currentJob && ! empty($item['job_title'])) {
             $currentJob = trim($item['job_title']);
         }
-        if (! $currentCompany && ! empty($item['company_name'])) {
-            $currentCompany = trim($item['company_name']);
+
+        // 3. Jika currentJob belum didapat tapi ada headline, ekstrak jabatan saat ini dari headline
+        if (! $currentJob && ! empty($item['headline'])) {
+            $rawHeadline = trim($item['headline']);
+            $segments = preg_split('/\s*\|\s*|\s*•\s*/', $rawHeadline);
+            if (! empty($segments[0])) {
+                $firstSegment = trim($segments[0]);
+                if (preg_match('/^(.*?)\s+(?:at|di)\s+/i', $firstSegment, $matches)) {
+                    $currentJob = trim($matches[1]);
+                } else {
+                    $currentJob = $firstSegment;
+                }
+            } else {
+                $currentJob = $rawHeadline;
+            }
         }
-        if (! $currentCompanyUrl && ! empty($item['li_company_url'])) {
-            $currentCompanyUrl = trim($item['li_company_url']);
+
+        // 4. Fallback jika tidak ada data aktif dan root company kosong
+        if (! $currentJob && $firstJob) {
+            $currentJob = $firstJob;
+        }
+        if (! $currentCompany && $firstCompany) {
+            $currentCompany = $firstCompany;
+            $currentCompanyLocation = $firstLoc;
+            $currentCompanyUrl = $firstUrl;
         }
 
         // 8. Pendidikan (Education / Educations)
@@ -264,7 +308,7 @@ class LinkedinSyncResult extends Model
             }
         }
 
-        // 9. Keahlian (Skills) - Mendukung berbagai skema key dan format data
+        // 9. Keahlian (Skills) - Mendukung berbagai skema key dan ekstraksi otomatis dari summary/about
         $rawSkills = $item['skills']
             ?? $item['skill']
             ?? $item['all_skills']

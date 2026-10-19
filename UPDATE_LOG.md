@@ -1,5 +1,47 @@
 # UPDATE LOG - SERU (Sistem Ekosistem Rekam Jejak Alumni)
 
+## [2026-10-19] Pembaruan Direktori Alumni Super Admin: Integrasi Filter LinkedIn, Kartu Statistik LinkedIn, Scorecard Kelengkapan Formal 2x2, dan Audit Trace Staging Review
+
+### Ringkasan Pembaruan
+1. **Peningkatan Format Status Kelengkapan Menjadi Scorecard Formal 2x2 (`/superadmin/alumni`)**:
+   - Menghilangkan format teks bertumpuk lama (`Univ: 100% Prodi: 100% Profil: Lengkap • Atasan: Belum Ada`).
+   - Menerapkan format **Scorecard Mini 2x2 berbingkai slate formal** (`bg-slate-50/90 border border-slate-200/80`):
+     - **Univ**: Persentase kuesioner universitas Dikti dengan badge hijau formal (`text-emerald-700`).
+     - **Prodi**: Persentase kuesioner program studi.
+     - **Profil**: Status kelengkapan data diri dan kontak (*Lengkap* / *Belum*).
+     - **Atasan**: Status respon evaluasi kepuasan atasan (*Diisi* / *Menunggu* / *Belum Ada*).
+   - Memenuhi pedoman antarmuka enterprise: bersih, datar (*flat*), simetris, dan bebas emoticon.
+
+2. **Penambahan Kolom Terdedikasi Sinkronisasi LinkedIn**:
+   - Menambahkan kolom terpisah **Sinkronisasi LinkedIn** pada tabel alumni tanpa menimbulkan horizontal scrollbar.
+   - Menyajikan informasi komprehensif:
+     - **Status Badge Formal**: *Sudah Disinkronkan* (hijau emerald), *Pending Review* (amber), *Belum Disinkron* (slate), atau *Ditolak* (rose).
+     - **Waktu Terakhir Sinkronisasi**: Tanggal dan jam persetujuan / penarikan scraping (format `DD/MM/YYYY HH:mm`).
+     - **Nama Reviewer**: Menampilkan identitas admin yang meninjau dan menetapkan data (*Super Administrator* atau *Admin Prodi*).
+     - **Pekerjaan & Instansi**: Menampilkan ringkasan posisi jabatan dan nama instansi yang disinkronkan dari LinkedIn.
+     - **Tautan Cepat**: Tombol *Rincian* yang langsung mengarahkan ke tab audit trace scraping LinkedIn alumni (`/superadmin/alumni/{id}?tab=linkedin`).
+
+3. **Penambahan 1 Kartu Statistik Interaktif LinkedIn (5 Kartu)**:
+   - Menambahkan kartu metrik ke-5 di baris atas statistik direktori: **Tersinkron LinkedIn**.
+   - Menampilkan total alumni tersinkron LinkedIn dan persentase kepatuhan terhadap total populasi alumni pada tahun kelulusan aktif.
+   - Kartu dapat diklik langsung untuk memfilter tabel menampilkan alumni yang telah tersinkronisasi.
+
+4. **Penambahan Dropdown Filter Status LinkedIn**:
+   - Menambahkan kontrol pilihan **Status LinkedIn** pada panel form pencarian:
+     - *Semua LinkedIn*
+     - *Sudah Disinkronkan*
+     - *Pending Review*
+     - *Belum Disinkron*
+     - *Ditolak*
+
+5. **Optimalisasi Backend & Eager Loading Reviewer (`DaftarAlumniSuperAdminController.php`)**:
+   - Mengimplementasikan eager loading `reviewer:id,name,email` pada query `LinkedinSyncResult` untuk efisiensi kueri database.
+   - Menangani kalkulasi metrik `total_linkedin_synced` dan `persentase_linkedin` secara dinamis.
+   - Membaca dan memproses parameter filter `linkedin_status`.
+   - Menambahkan dokumentasi PHPDoc lengkap pada seluruh method controller.
+
+---
+
 ## [2026-10-19] Standardisasi Desain UI Formal Super Admin, Refaktorisasi Modular Kuesioner Prodi, dan Peningkatan UX Profil Alumni (Stepper & Unified Navigation)
 
 ### Ringkasan Pembaruan

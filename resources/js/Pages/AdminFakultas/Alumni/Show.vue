@@ -14,7 +14,7 @@
 -->
 <script setup>
 import { Head, Link, useForm, router } from '@inertiajs/vue3';
-import { ref, computed } from 'vue';
+import { ref, computed, watch } from 'vue';
 import Swal from 'sweetalert2';
 import Sidebar from '../Components/Sidebar.vue';
 
@@ -261,6 +261,171 @@ const copyRawJson = () => {
 // =========================================================================
 const isDirectSyncing = ref(false);
 const isApprovingSync = ref(false);
+const isRejectingSync = ref(false);
+
+const approveForm = ref({
+    tipe_pekerjaan: 'pekerja',
+    posisi_jabatan: '',
+    posisi_wiraswasta: '',
+    nama_perusahaan: '',
+    skills: '',
+    sync_foto: true,
+});
+
+const activeLinkedinTab = ref('penyesuaian');
+
+const applyCareerToForm = (exp) => {
+    if (!exp) return;
+    if (exp.role) {
+        approveForm.value.posisi_jabatan = exp.role;
+        approveForm.value.posisi_wiraswasta = exp.role;
+    }
+    if (exp.company) {
+        approveForm.value.nama_perusahaan = exp.company;
+    }
+    activeLinkedinTab.value = 'penyesuaian';
+    Swal.fire({
+        toast: true,
+        position: 'top-end',
+        icon: 'success',
+        title: `Jabatan "${exp.role || '-'}" di ${exp.company || '-'} diterapkan ke usulan`,
+        showConfirmButton: false,
+        timer: 2000,
+    });
+};
+
+const initApproveForm = () => {
+    const preview = props.linkedinSyncResult?.preview || {};
+    approveForm.value = {
+        tipe_pekerjaan: 'pekerja',
+        posisi_jabatan: preview.current_job || props.alumni.posisi_jabatan || '',
+        posisi_wiraswasta: '',
+        nama_perusahaan: preview.current_company || props.alumni.perusahaan?.nama_perusahaan || '',
+        skills: Array.isArray(preview.skills) ? preview.skills.join(', ') : (props.alumni.keahlian || props.alumni.skills || ''),
+        sync_foto: !!preview.profile_picture,
+    };
+};
+
+initApproveForm();
+
+watch(() => props.linkedinSyncResult, () => {
+    initApproveForm();
+}, { deep: true });
+
+const handleApproveStagingWithForm = async () => {
+    if (!props.linkedinSyncResult || props.linkedinSyncResult.status !== 'pending') return;
+
+    const confirm = await Swal.fire({
+        title: 'Setujui Hasil Scraping LinkedIn?',
+        text: 'Data yang telah disesuaikan akan disimpan ke database utama profil alumni (biodata, riwayat pekerjaan, & keahlian).',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#0D542B',
+        cancelButtonColor: '#94a3b8',
+        confirmButtonText: 'Ya, Setujui & Simpan',
+        cancelButtonText: 'Batal',
+    });
+
+    if (!confirm.isConfirmed) return;
+
+    isApprovingSync.value = true;
+    try {
+        const response = await fetch(`/fakultas/linkedin-sync/results/${props.linkedinSyncResult.id}/approve`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+            },
+            body: JSON.stringify(approveForm.value),
+        });
+
+        const data = await response.json();
+
+        if (response.ok && data.success) {
+            await Swal.fire({
+                icon: 'success',
+                title: 'Berhasil Disetujui!',
+                text: data.message || 'Data profil alumni telah diperbarui dengan data LinkedIn.',
+                confirmButtonColor: '#0D542B',
+            });
+            router.reload({ preserveScroll: true });
+        } else {
+            Swal.fire({
+                icon: 'error',
+                title: 'Gagal Menyetujui',
+                text: data.message || 'Terjadi kesalahan saat menyetujui.',
+                confirmButtonColor: '#0D542B',
+            });
+        }
+    } catch (e) {
+        Swal.fire({
+            icon: 'error',
+            title: 'Kesalahan Sistem',
+            text: 'Gagal memproses persetujuan hasil staging.',
+            confirmButtonColor: '#0D542B',
+        });
+    } finally {
+        isApprovingSync.value = false;
+    }
+};
+
+const handleRejectStaging = async () => {
+    if (!props.linkedinSyncResult || props.linkedinSyncResult.status !== 'pending') return;
+
+    const confirm = await Swal.fire({
+        title: 'Tolak Hasil Scraping LinkedIn?',
+        text: 'Hasil scraping ini akan ditandai ditolak dan tidak akan diterapkan ke profil alumni.',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#b91c1c',
+        cancelButtonColor: '#94a3b8',
+        confirmButtonText: 'Ya, Tolak',
+        cancelButtonText: 'Batal',
+    });
+
+    if (!confirm.isConfirmed) return;
+
+    isRejectingSync.value = true;
+    try {
+        const response = await fetch(`/fakultas/linkedin-sync/results/${props.linkedinSyncResult.id}/reject`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+            },
+        });
+
+        const data = await response.json();
+
+        if (response.ok && data.success) {
+            await Swal.fire({
+                icon: 'success',
+                title: 'Hasil Ditolak',
+                text: data.message || 'Hasil scraping telah ditandai ditolak.',
+                confirmButtonColor: '#0D542B',
+            });
+            router.reload({ preserveScroll: true });
+        } else {
+            Swal.fire({
+                icon: 'error',
+                title: 'Gagal Menolak',
+                text: data.message || 'Terjadi kesalahan saat menolak data.',
+                confirmButtonColor: '#0D542B',
+            });
+        }
+    } catch (e) {
+        Swal.fire({
+            icon: 'error',
+            title: 'Kesalahan Sistem',
+            text: 'Gagal menghubungi server.',
+            confirmButtonColor: '#0D542B',
+        });
+    } finally {
+        isRejectingSync.value = false;
+    }
+};
 
 const handleDirectLinkedInSync = async () => {
     let targetUrl = props.alumni.linkedin_url || '';
@@ -660,10 +825,10 @@ const statusYudisium = computed(() => {
                                     class="flex items-center justify-center w-10 h-10 sm:w-11 sm:h-11 md:w-12 md:h-12 rounded-full font-black text-xs sm:text-sm md:text-base transition-all duration-200 z-10 shadow-xs relative"
                                     :class="[
                                         activeMainTab === tab.id
-                                            ? 'bg-[#FFD700] text-[#005B3C] shadow-md scale-105 sm:scale-110 ring-2 sm:ring-4 ring-[#005B3C]/20' : 
+                                            ? 'bg-[#0D542B] text-white shadow-md scale-105 sm:scale-110 ring-2 sm:ring-4 ring-[#0D542B]/20' : 
                                         (tab.isComplete 
-                                            ? 'bg-[#005B3C] text-white shadow-xs group-hover:bg-[#00482f] group-hover:scale-105' : 
-                                            'bg-gray-100 text-gray-400 group-hover:bg-gray-200 group-hover:text-gray-600')
+                                            ? 'bg-[#0D542B] text-white shadow-xs group-hover:bg-[#093d20] group-hover:scale-105' : 
+                                            'bg-slate-100 text-slate-400 group-hover:bg-slate-200 group-hover:text-slate-600')
                                     ]"
                                 >
                                     <!-- 1.1 Tanda centang putih jika seksi sudah lengkap terisi dan tidak sedang dibuka -->
@@ -1446,21 +1611,6 @@ const statusYudisium = computed(() => {
                                     <span>{{ isDirectSyncing ? 'Menyinkronkan...' : 'Sinkronkan LinkedIn Sekarang' }}</span>
                                 </button>
 
-                                <!-- Tombol Setujui Staging Langsung (Jika Status Pending) -->
-                                <button
-                                    v-if="linkedinSyncResult && linkedinSyncResult.status === 'pending'"
-                                    type="button"
-                                    @click="handleDirectApproveStaging"
-                                    :disabled="isApprovingSync"
-                                    class="px-4 py-2 bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold rounded-xl transition flex items-center gap-1.5 shadow-2xs disabled:opacity-60 cursor-pointer"
-                                    title="Setujui hasil scraping dan terapkan ke profil alumni tanpa meninggalkan halaman"
-                                >
-                                    <svg class="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                                    </svg>
-                                    <span>{{ isApprovingSync ? 'Menyetujui...' : 'Setujui Hasil LinkedIn' }}</span>
-                                </button>
-
                                 <button 
                                     v-if="linkedinSyncResult?.scraped_data"
                                     type="button" 
@@ -1537,171 +1687,572 @@ const statusYudisium = computed(() => {
                     </div>
 
                     <!-- ========================================================= -->
-                    <!-- TABEL TRACE & PEMETAAN SELURUH DATA SCRAPING              -->
+                    <!-- PANEL TERPADU: PENINJAUAN, RIWAYAT KARIER & LOG SINKRONISASI -->
                     <!-- ========================================================= -->
-                    <div class="bg-white rounded-2xl shadow-xs border border-gray-200 overflow-hidden">
-                        <!-- Toolbar Filter Pencarian -->
-                        <div class="p-4 sm:p-5 bg-gray-50/80 border-b border-gray-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                            <div class="flex items-center gap-2">
-                                <span class="text-xs font-extrabold text-gray-700 uppercase tracking-wider">Tabel Penelusuran Pemetaan (Audit Trace Table)</span>
-                                <span class="px-2.5 py-0.5 bg-[#0D542B] text-white text-[10px] font-bold rounded-full">
-                                    {{ filteredTraceMapping.length }} Baris Terpetakan
+                    <div v-if="linkedinSyncResult && linkedinSyncResult.status === 'pending'" class="bg-white rounded-2xl shadow-xs border border-slate-200 overflow-hidden">
+                        <!-- Header Formal Korporat (Tanpa Kuning AI) -->
+                        <div class="p-4 sm:p-5 bg-slate-50 border-b border-slate-200 flex flex-col md:flex-row md:items-center justify-between gap-3">
+                            <div class="flex items-start gap-3">
+                                <div class="w-8 h-8 rounded-lg bg-slate-200 text-slate-700 flex items-center justify-center shrink-0 mt-0.5 font-bold text-xs">
+                                    LI
+                                </div>
+                                <div>
+                                    <div class="flex items-center gap-2">
+                                        <h3 class="font-bold text-slate-900 text-sm">Peninjauan Sinkronisasi LinkedIn (Menunggu Persetujuan)</h3>
+                                        <span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-slate-200 text-slate-800">Pending Review</span>
+                                    </div>
+                                    <p class="text-slate-600 text-xs mt-1 leading-relaxed">
+                                        Data hasil penelusuran LinkedIn belum diterapkan ke basis data utama alumni. Tinjau usulan, periksa riwayat karier lengkap atau riwayat sinkronisasi sebelum menyetujui.
+                                    </p>
+                                </div>
+                            </div>
+
+                            <!-- Navigasi 3 Sub-Tab Peninjauan -->
+                            <div class="flex items-center bg-white p-1 rounded-xl border border-slate-200 shrink-0 text-xs shadow-2xs">
+                                <button
+                                    type="button"
+                                    @click="activeLinkedinTab = 'penyesuaian'"
+                                    :class="[activeLinkedinTab === 'penyesuaian' ? 'bg-[#0D542B] text-white font-bold shadow-2xs' : 'text-slate-600 hover:text-slate-900']"
+                                    class="px-3 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1.5"
+                                >
+                                    <span>Persetujuan & Usulan</span>
+                                </button>
+                                <button
+                                    type="button"
+                                    @click="activeLinkedinTab = 'riwayat_profil'"
+                                    :class="[activeLinkedinTab === 'riwayat_profil' ? 'bg-[#0D542B] text-white font-bold shadow-2xs' : 'text-slate-600 hover:text-slate-900']"
+                                    class="px-3 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1.5"
+                                >
+                                    <span>Riwayat Karier & Pendidikan</span>
+                                    <span v-if="linkedinSyncResult.preview?.experience?.length" class="px-1.5 py-0.2 rounded-full text-[10px] bg-white/20">
+                                        {{ linkedinSyncResult.preview.experience.length }}
+                                    </span>
+                                </button>
+                                <button
+                                    type="button"
+                                    @click="activeLinkedinTab = 'history_log'"
+                                    :class="[activeLinkedinTab === 'history_log' ? 'bg-[#0D542B] text-white font-bold shadow-2xs' : 'text-slate-600 hover:text-slate-900']"
+                                    class="px-3 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1.5"
+                                >
+                                    <span>Riwayat Sinkronisasi</span>
+                                    <span v-if="linkedinHistory?.length" class="px-1.5 py-0.2 rounded-full text-[10px] bg-slate-200 text-slate-700">
+                                        {{ linkedinHistory.length }}
+                                    </span>
+                                </button>
+                                <button
+                                    type="button"
+                                    @click="activeLinkedinTab = 'audit_trace'"
+                                    :class="[activeLinkedinTab === 'audit_trace' ? 'bg-[#0D542B] text-white font-bold shadow-2xs' : 'text-slate-600 hover:text-slate-900']"
+                                    class="px-3 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1.5"
+                                >
+                                    <span>Pemetaan Database</span>
+                                    <span v-if="filteredTraceMapping.length" class="px-1.5 py-0.2 rounded-full text-[10px] bg-slate-200 text-slate-700">
+                                        {{ filteredTraceMapping.length }}
+                                    </span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- TAB 1: FORM PENYESUAIAN & USULAN -->
+                        <div v-show="activeLinkedinTab === 'penyesuaian'" class="p-5 sm:p-6 space-y-4">
+                            <div class="grid grid-cols-1 lg:grid-cols-3 gap-5 text-xs">
+                                <!-- Data Saat Ini di Sistem -->
+                                <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-3">
+                                    <div class="flex items-center justify-between border-b border-slate-200 pb-2">
+                                        <span class="text-[10px] font-bold text-slate-600 uppercase tracking-wider">
+                                            Data Saat Ini di Sistem
+                                        </span>
+                                        <span class="text-[10px] text-slate-500">Basis Data Kampus</span>
+                                    </div>
+                                    <div class="space-y-2.5 text-xs">
+                                        <div>
+                                            <span class="text-slate-500 text-[11px] block">Jabatan / Posisi:</span>
+                                            <b class="text-slate-800 block text-xs">{{ alumni.posisi_jabatan || '- Belum diisi -' }}</b>
+                                        </div>
+                                        <div>
+                                            <span class="text-slate-500 text-[11px] block">Perusahaan / Instansi:</span>
+                                            <b class="text-slate-800 block text-xs">{{ alumni.perusahaan?.nama_perusahaan || '- Belum diisi -' }}</b>
+                                        </div>
+                                        <div>
+                                            <span class="text-slate-500 text-[11px] block">Keahlian (Skills):</span>
+                                            <span class="text-slate-700 block truncate" :title="alumni.keahlian || alumni.skills || ''">{{ alumni.keahlian || alumni.skills || '- Belum diisi -' }}</span>
+                                        </div>
+                                        <div>
+                                            <span class="text-slate-500 text-[11px] block">Kategori Pekerjaan:</span>
+                                            <span class="text-slate-700 block">{{ alumni.kategori_pekerjaan || '- Belum diisi -' }}</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Form Penyesuaian Usulan LinkedIn -->
+                                <div class="lg:col-span-2 bg-slate-50/60 p-4 sm:p-5 rounded-xl border border-slate-200 space-y-3.5">
+                                    <div class="flex items-center justify-between flex-wrap gap-2 border-b border-slate-200 pb-2.5">
+                                        <span class="text-[11px] font-bold text-slate-900 uppercase tracking-wider">
+                                            Usulan Data yang Akan Disimpan ke Profil:
+                                        </span>
+                                        <!-- Toggle Kategori Pekerjaan -->
+                                        <div class="inline-flex rounded-lg border border-slate-300 p-0.5 bg-white text-[11px] shadow-2xs">
+                                            <button
+                                                type="button"
+                                                @click="approveForm.tipe_pekerjaan = 'pekerja'"
+                                                :class="[approveForm.tipe_pekerjaan === 'pekerja' ? 'bg-[#0D542B] text-white font-bold shadow-2xs' : 'text-slate-600 hover:text-slate-900']"
+                                                class="px-2.5 py-1 rounded-md transition-all cursor-pointer flex items-center gap-1.5"
+                                            >
+                                                <span>Karyawan / Pekerja</span>
+                                            </button>
+                                            <button
+                                                type="button"
+                                                @click="approveForm.tipe_pekerjaan = 'wirausaha'"
+                                                :class="[approveForm.tipe_pekerjaan === 'wirausaha' ? 'bg-[#0D542B] text-white font-bold shadow-2xs' : 'text-slate-600 hover:text-slate-900']"
+                                                class="px-2.5 py-1 rounded-md transition-all cursor-pointer flex items-center gap-1.5"
+                                            >
+                                                <span>Wirausaha / Bisnis</span>
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                                        <!-- Posisi Jabatan -->
+                                        <div>
+                                            <label class="block text-[11px] font-semibold text-slate-800 mb-1">
+                                                {{ approveForm.tipe_pekerjaan === 'wirausaha' ? 'Posisi Wiraswasta / Usaha:' : 'Posisi / Jabatan Pekerjaan:' }}
+                                            </label>
+                                            <input
+                                                v-if="approveForm.tipe_pekerjaan === 'wirausaha'"
+                                                type="text"
+                                                v-model="approveForm.posisi_wiraswasta"
+                                                :placeholder="approveForm.posisi_jabatan || 'contoh: Founder, Owner, Direktur'"
+                                                class="w-full px-3 py-2 text-xs bg-white border border-slate-300 rounded-lg focus:ring-1 focus:ring-[#0D542B] focus:border-[#0D542B]"
+                                            />
+                                            <input
+                                                v-else
+                                                type="text"
+                                                v-model="approveForm.posisi_jabatan"
+                                                placeholder="contoh: Software Engineer, Analis Sistem"
+                                                class="w-full px-3 py-2 text-xs bg-white border border-slate-300 rounded-lg focus:ring-1 focus:ring-[#0D542B] focus:border-[#0D542B]"
+                                            />
+                                        </div>
+
+                                        <!-- Nama Perusahaan -->
+                                        <div>
+                                            <label class="block text-[11px] font-semibold text-slate-800 mb-1">
+                                                {{ approveForm.tipe_pekerjaan === 'wirausaha' ? 'Nama Unit Usaha / Bisnis:' : 'Nama Perusahaan / Instansi:' }}
+                                            </label>
+                                            <input
+                                                type="text"
+                                                v-model="approveForm.nama_perusahaan"
+                                                placeholder="contoh: PT K-24 INDONESIA OFFICIAL"
+                                                class="w-full px-3 py-2 text-xs bg-white border border-slate-300 rounded-lg focus:ring-1 focus:ring-[#0D542B] focus:border-[#0D542B]"
+                                            />
+                                        </div>
+
+                                        <!-- Kolom Keahlian (Skills) -->
+                                        <div class="sm:col-span-2">
+                                            <label class="block text-[11px] font-semibold text-slate-800 mb-1 flex items-center justify-between">
+                                                <span>Keahlian / Skills yang Akan Disimpan ke Profil:</span>
+                                                <span class="text-[10px] text-slate-500 font-normal">Sinkron ke kolom Keahlian profil alumni (pisahkan dengan koma)</span>
+                                            </label>
+                                            <input
+                                                type="text"
+                                                v-model="approveForm.skills"
+                                                placeholder="contoh: Professional Expertise in Sistem Informasi, SQL, Analysis..."
+                                                class="w-full px-3 py-2 text-xs bg-white border border-slate-300 rounded-lg focus:ring-1 focus:ring-[#0D542B] focus:border-[#0D542B]"
+                                            />
+                                        </div>
+
+                                        <!-- Checkbox Foto LinkedIn -->
+                                        <div v-if="linkedinSyncResult.preview?.profile_picture" class="sm:col-span-2 p-3 bg-white rounded-xl border border-slate-300 flex items-center justify-between gap-3">
+                                            <div class="flex items-center gap-3">
+                                                <img :src="linkedinSyncResult.preview.profile_picture" class="w-10 h-10 rounded-lg object-cover border border-slate-200 shrink-0" />
+                                                <div>
+                                                    <span class="text-xs font-bold text-slate-900 block">Terapkan Foto Profil LinkedIn ke Biodata Alumni</span>
+                                                    <span class="text-[10px] text-slate-500">Foto akan disimpan ke sistem /uploads/profile/</span>
+                                                </div>
+                                            </div>
+                                            <label class="inline-flex items-center gap-2 cursor-pointer shrink-0">
+                                                <input type="checkbox" v-model="approveForm.sync_foto" class="w-4 h-4 text-[#0D542B] rounded border-slate-300 focus:ring-[#0D542B]" />
+                                                <span class="text-xs font-semibold text-slate-700">Gunakan</span>
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- TAB 2: RIWAYAT KARIER & PENDIDIKAN DARI LINKEDIN -->
+                        <div v-show="activeLinkedinTab === 'riwayat_profil'" class="p-5 sm:p-6 space-y-5">
+                            <!-- Headline & Ringkasan / About -->
+                            <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-2">
+                                <div class="flex items-center justify-between text-xs">
+                                    <span class="font-bold text-slate-700 uppercase tracking-wider text-[10px]">Headline Profil LinkedIn</span>
+                                    <span class="text-slate-500">{{ linkedinSyncResult.preview?.location || '-' }}</span>
+                                </div>
+                                <p class="text-slate-900 font-medium text-xs">{{ linkedinSyncResult.preview?.headline || '-' }}</p>
+                                <div v-if="linkedinSyncResult.preview?.about" class="pt-2 border-t border-slate-200">
+                                    <span class="font-bold text-slate-700 uppercase tracking-wider text-[10px] block mb-1">Tentang / Ringkasan (About)</span>
+                                    <p class="text-slate-700 text-xs leading-relaxed whitespace-pre-line">{{ linkedinSyncResult.preview.about }}</p>
+                                </div>
+                                <div class="flex items-center gap-4 pt-1 text-[11px] text-slate-500">
+                                    <span>Koneksi: <strong class="text-slate-800">{{ linkedinSyncResult.preview?.connections || '-' }}</strong></span>
+                                    <span>Pengikut: <strong class="text-slate-800">{{ linkedinSyncResult.preview?.followers || '-' }}</strong></span>
+                                </div>
+                            </div>
+
+                            <!-- Daftar Riwayat Pekerjaan (Work Experience) -->
+                            <div class="space-y-3">
+                                <div class="flex items-center justify-between">
+                                    <h4 class="text-xs font-bold text-slate-900 uppercase tracking-wider">
+                                        Riwayat Pengalaman Kerja (Experience)
+                                    </h4>
+                                    <span class="text-[11px] text-slate-500">
+                                        Total {{ linkedinSyncResult.preview?.experience?.length || 0 }} Riwayat Terdeteksi
+                                    </span>
+                                </div>
+
+                                <div v-if="linkedinSyncResult.preview?.experience?.length" class="space-y-2.5">
+                                    <div
+                                        v-for="(exp, expIdx) in linkedinSyncResult.preview.experience"
+                                        :key="expIdx"
+                                        class="bg-white p-3.5 rounded-xl border border-slate-200 hover:border-slate-300 transition flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs"
+                                    >
+                                        <div class="space-y-1">
+                                            <div class="flex items-center gap-2">
+                                                <span class="font-bold text-slate-900 text-xs sm:text-sm">{{ exp.role || '-' }}</span>
+                                                <span v-if="expIdx === 0" class="px-2 py-0.5 rounded text-[10px] font-bold bg-[#0D542B] text-white">
+                                                    Paling Baru
+                                                </span>
+                                            </div>
+                                            <div class="text-slate-700 font-medium">
+                                                {{ exp.company || '-' }} &bull; <span class="text-slate-500 font-normal">{{ exp.duration || '-' }}</span>
+                                            </div>
+                                            <div v-if="exp.location" class="text-slate-500 text-[11px]">
+                                                Lokasi: {{ exp.location }}
+                                            </div>
+                                            <div v-if="exp.description" class="text-slate-600 text-[11px] leading-relaxed pt-1 whitespace-pre-line">
+                                                {{ exp.description }}
+                                            </div>
+                                        </div>
+
+                                        <!-- Tombol Cepat: Terapkan Jabatan Ini ke Usulan -->
+                                        <button
+                                            type="button"
+                                            @click="applyCareerToForm(exp)"
+                                            class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 text-[11px] font-semibold rounded-lg transition shrink-0 self-start sm:self-auto cursor-pointer border border-slate-200"
+                                            title="Gunakan posisi dan perusahaan ini untuk disetujui"
+                                        >
+                                            Gunakan Jabatan Ini
+                                        </button>
+                                    </div>
+                                </div>
+                                <div v-else class="text-center py-6 bg-slate-50 rounded-xl border border-slate-200 text-slate-500 text-xs">
+                                    Tidak ada riwayat pekerjaan terperinci yang berhasil diekstrak dari profil ini.
+                                </div>
+                            </div>
+
+                            <!-- Daftar Riwayat Pendidikan (Education) -->
+                            <div class="space-y-3 pt-2">
+                                <div class="flex items-center justify-between">
+                                    <h4 class="text-xs font-bold text-slate-900 uppercase tracking-wider">
+                                        Riwayat Pendidikan (Education)
+                                    </h4>
+                                    <span class="text-[11px] text-slate-500">
+                                        Total {{ linkedinSyncResult.preview?.education?.length || 0 }} Riwayat
+                                    </span>
+                                </div>
+
+                                <div v-if="linkedinSyncResult.preview?.education?.length" class="space-y-2">
+                                    <div
+                                        v-for="(edu, eduIdx) in linkedinSyncResult.preview.education"
+                                        :key="eduIdx"
+                                        class="bg-white p-3 rounded-xl border border-slate-200 text-xs"
+                                    >
+                                        <div class="font-bold text-slate-900">{{ edu.school || '-' }}</div>
+                                        <div class="text-slate-700">{{ edu.degree || '-' }} <span v-if="edu.fieldOfStudy">&bull; {{ edu.fieldOfStudy }}</span></div>
+                                        <div v-if="edu.period" class="text-slate-500 text-[11px]">{{ edu.period }}</div>
+                                    </div>
+                                </div>
+                                <div v-else class="text-center py-4 bg-slate-50 rounded-xl border border-slate-200 text-slate-500 text-xs">
+                                    Tidak ada data riwayat pendidikan.
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- TAB 3: RIWAYAT SINKRONISASI (HISTORY LOG) -->
+                        <div v-show="activeLinkedinTab === 'history_log'" class="p-5 sm:p-6 space-y-4">
+                            <div class="flex items-center justify-between">
+                                <h4 class="text-xs font-bold text-slate-900 uppercase tracking-wider">
+                                    Log Riwayat Sinkronisasi LinkedIn
+                                </h4>
+                                <span class="text-[11px] text-slate-500">
+                                    Menampilkan rekaman aktivitas penelusuran scraping LinkedIn
                                 </span>
                             </div>
 
-                            <div class="w-full sm:w-80">
-                                <input 
-                                    type="text" 
-                                    v-model="searchTraceQuery" 
-                                    placeholder="Cari atribut, tabel, atau nilai..."
-                                    class="w-full px-3.5 py-2 text-xs rounded-xl border border-gray-300 bg-white focus:outline-hidden focus:ring-2 focus:ring-[#0D542B]/20 focus:border-[#0D542B]"
-                                />
+                            <div v-if="linkedinHistory?.length" class="overflow-x-auto border border-slate-200 rounded-xl">
+                                <table class="w-full text-left text-xs">
+                                    <thead class="bg-slate-50 border-b border-slate-200 text-[10px] uppercase font-bold text-slate-600 tracking-wider">
+                                        <tr>
+                                            <th class="px-4 py-2.5">Waktu Scrape</th>
+                                            <th class="px-4 py-2.5">Target LinkedIn</th>
+                                            <th class="px-4 py-2.5">Pekerjaan & Perusahaan Terdeteksi</th>
+                                            <th class="px-4 py-2.5">Status</th>
+                                            <th class="px-4 py-2.5">Petugas Peninjau</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="divide-y divide-slate-100 text-slate-700">
+                                        <tr v-for="log in linkedinHistory" :key="log.id" :class="[log.id === linkedinSyncResult.id ? 'bg-slate-50/80 font-medium' : 'hover:bg-slate-50/50']">
+                                            <td class="px-4 py-3 whitespace-nowrap">
+                                                <div class="font-semibold text-slate-900">
+                                                    {{ log.scraped_at ? new Date(log.scraped_at).toLocaleString('id-ID') : '-' }}
+                                                </div>
+                                                <span v-if="log.id === linkedinSyncResult.id" class="text-[10px] text-[#0D542B] font-bold">
+                                                    (Aktif Ditinjau)
+                                                </span>
+                                            </td>
+                                            <td class="px-4 py-3 max-w-[200px] truncate">
+                                                <a v-if="log.target_url" :href="log.target_url" target="_blank" class="text-blue-600 hover:underline">
+                                                    {{ log.target_url }}
+                                                </a>
+                                                <span v-else class="text-slate-400">-</span>
+                                            </td>
+                                            <td class="px-4 py-3">
+                                                <div class="font-semibold text-slate-900">
+                                                    {{ log.preview?.current_job || '-' }}
+                                                </div>
+                                                <div class="text-[11px] text-slate-500">
+                                                    {{ log.preview?.current_company || '-' }}
+                                                </div>
+                                            </td>
+                                            <td class="px-4 py-3 whitespace-nowrap">
+                                                <span
+                                                    v-if="log.status === 'approved'"
+                                                    class="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-emerald-100 text-emerald-800"
+                                                >
+                                                    Approved
+                                                </span>
+                                                <span
+                                                    v-else-if="log.status === 'pending'"
+                                                    class="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-slate-200 text-slate-800"
+                                                >
+                                                    Pending
+                                                </span>
+                                                <span
+                                                    v-else-if="log.status === 'rejected'"
+                                                    class="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-rose-100 text-rose-800"
+                                                >
+                                                    Rejected
+                                                </span>
+                                                <span
+                                                    v-else
+                                                    class="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-gray-100 text-gray-700"
+                                                >
+                                                    {{ log.status }}
+                                                </span>
+                                            </td>
+                                            <td class="px-4 py-3 whitespace-nowrap text-slate-600 text-[11px]">
+                                                {{ log.reviewer?.name || (log.status === 'approved' ? 'Admin Fakultas' : '-') }}
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div v-else class="text-center py-6 bg-slate-50 rounded-xl border border-slate-200 text-slate-500 text-xs">
+                                Belum ada riwayat sinkronisasi terdahulu.
                             </div>
                         </div>
 
-                        <!-- Data Table Mapping -->
-                        <div class="overflow-x-auto">
-                            <table class="w-full text-left text-xs border-collapse">
-                                <thead>
-                                    <tr class="bg-slate-100 text-slate-700 border-b border-gray-200">
-                                        <th class="py-3 px-3 text-center font-bold w-12 border-r border-gray-200">#</th>
-                                        <th class="py-3 px-4 font-bold border-r border-gray-200 min-w-[160px]">Atribut Scraping (Key)</th>
-                                        <th class="py-3 px-4 font-bold border-r border-gray-200 min-w-[170px]">Deskripsi Field</th>
-                                        <th class="py-3 px-4 font-bold border-r border-gray-200 min-w-[220px]">Nilai Hasil Scraping (Apify Raw)</th>
-                                        <th class="py-3 px-4 font-bold border-r border-gray-200 min-w-[210px] bg-emerald-50/70 text-[#0D542B]">Target Pemetaan Database (Tabel & Kolom)</th>
-                                        <th class="py-3 px-4 font-bold border-r border-gray-200 min-w-[200px]">Nilai Aktual di Database Saat Ini</th>
-                                        <th class="py-3 px-4 font-bold text-center min-w-[130px]">Status Audit</th>
-                                    </tr>
-                                </thead>
-                                <tbody class="divide-y divide-gray-100">
-                                    <tr 
-                                        v-for="(row, idx) in filteredTraceMapping" 
-                                        :key="idx" 
-                                        class="hover:bg-slate-50/80 transition-colors"
-                                        :class="idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/30'"
-                                    >
-                                        <!-- # -->
-                                        <td class="py-3 px-3 text-center font-mono font-bold text-gray-400 border-r border-gray-100">
-                                            {{ idx + 1 }}
-                                        </td>
+                        <!-- ========================================================= -->
+                        <!-- TAB 4: PEMETAAN BASIS DATA TRACER STUDY (AUDIT TRACE)     -->
+                        <!-- ========================================================= -->
+                        <div v-show="activeLinkedinTab === 'audit_trace'" class="p-5 sm:p-6 space-y-4">
+                            <!-- Toolbar Filter Pencarian -->
+                            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-200">
+                                <div>
+                                    <h4 class="text-xs font-bold text-slate-900 uppercase tracking-wider">
+                                        Pemetaan Atribut LinkedIn ke Basis Data Kampus
+                                    </h4>
+                                    <p class="text-[11px] text-slate-500 mt-0.5">
+                                        Memverifikasi kolom target basis data tracer study (biodata, perusahaan, data akademik)
+                                    </p>
+                                </div>
 
-                                        <!-- Atribut Scraping (Key) -->
-                                        <td class="py-3 px-4 font-mono font-bold text-gray-900 border-r border-gray-100">
-                                            <span class="bg-slate-100 px-2 py-0.5 rounded text-[11px] text-slate-800 border border-slate-200/80">
-                                                {{ row.key }}
-                                            </span>
-                                        </td>
+                                <div class="w-full sm:w-72">
+                                    <input 
+                                        type="text" 
+                                        v-model="searchTraceQuery" 
+                                        placeholder="Cari atribut atau kolom target..."
+                                        class="w-full px-3 py-1.5 text-xs rounded-xl border border-slate-300 bg-white focus:outline-hidden focus:ring-1 focus:ring-[#0D542B] focus:border-[#0D542B]"
+                                    />
+                                </div>
+                            </div>
 
-                                        <!-- Deskripsi Field -->
-                                        <td class="py-3 px-4 font-semibold text-gray-700 border-r border-gray-100">
-                                            {{ row.label }}
-                                            <p v-if="row.note" class="text-[10px] text-gray-400 font-normal mt-0.5">{{ row.note }}</p>
-                                        </td>
-
-                                        <!-- Nilai Hasil Scraping -->
-                                        <td class="py-3 px-4 text-gray-800 border-r border-gray-100 break-words max-w-xs font-medium">
-                                            <!-- Preview jika URL foto -->
-                                            <div v-if="row.key === 'li_profile_image_url' && row.scraped_value && row.scraped_value.startsWith('http')" class="flex items-center gap-2">
-                                                <img :src="row.scraped_value" class="w-10 h-10 rounded-lg object-cover border border-gray-200 shadow-2xs shrink-0" />
-                                                <span class="truncate text-[11px] text-[#0077B5] font-mono">{{ row.scraped_value }}</span>
-                                            </div>
-                                            <span v-else class="text-xs">
-                                                {{ row.scraped_value }}
-                                            </span>
-                                        </td>
-
-                                        <!-- Target Pemetaan Database (Tabel & Kolom) -->
-                                        <td class="py-3 px-4 border-r border-gray-100 bg-emerald-50/30">
-                                            <div class="flex items-center gap-1.5 flex-wrap">
-                                                <span class="px-2 py-0.5 bg-[#0D542B] text-white font-mono font-extrabold text-[10px] rounded">
-                                                    {{ row.target_table }}
+                            <!-- Data Table Mapping Bersih & Flat -->
+                            <div class="overflow-x-auto border border-slate-200 rounded-xl">
+                                <table class="w-full text-left text-xs border-collapse">
+                                    <thead>
+                                        <tr class="bg-slate-50 text-slate-700 border-b border-slate-200 text-[10px] uppercase font-bold tracking-wider">
+                                            <th class="py-2.5 px-3 text-center w-10">#</th>
+                                            <th class="py-2.5 px-3 min-w-[140px]">Atribut Scraping</th>
+                                            <th class="py-2.5 px-3 min-w-[160px]">Deskripsi Field</th>
+                                            <th class="py-2.5 px-3 min-w-[200px]">Nilai Hasil LinkedIn</th>
+                                            <th class="py-2.5 px-3 min-w-[180px] bg-slate-100/70 text-slate-800">Target Kolom Database</th>
+                                            <th class="py-2.5 px-3 min-w-[180px]">Nilai di Database Kampus</th>
+                                            <th class="py-2.5 px-3 text-center min-w-[110px]">Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="divide-y divide-slate-100 text-slate-700">
+                                        <tr 
+                                            v-for="(row, idx) in filteredTraceMapping" 
+                                            :key="idx" 
+                                            class="hover:bg-slate-50/60 transition-colors"
+                                            :class="idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/20'"
+                                        >
+                                            <td class="py-2.5 px-3 text-center font-mono text-slate-400 font-semibold text-[11px]">
+                                                {{ idx + 1 }}
+                                            </td>
+                                            <td class="py-2.5 px-3 font-mono font-bold text-slate-900">
+                                                <span class="bg-slate-100 px-2 py-0.5 rounded text-[11px] text-slate-800 border border-slate-200">
+                                                    {{ row.key }}
                                                 </span>
-                                                <span class="text-gray-400 font-bold">&rarr;</span>
-                                                <span class="px-2 py-0.5 bg-emerald-100 text-[#0D542B] font-mono font-bold text-[10px] rounded border border-emerald-200">
-                                                    {{ row.target_column }}
+                                            </td>
+                                            <td class="py-2.5 px-3 font-semibold text-slate-800">
+                                                {{ row.label }}
+                                                <p v-if="row.note" class="text-[10px] text-slate-400 font-normal mt-0.5">{{ row.note }}</p>
+                                            </td>
+                                            <td class="py-2.5 px-3 break-words max-w-xs">
+                                                <div v-if="row.key === 'li_profile_image_url' && row.scraped_value && row.scraped_value.startsWith('http')" class="flex items-center gap-2">
+                                                    <img :src="row.scraped_value" class="w-8 h-8 rounded-lg object-cover border border-slate-200 shrink-0" />
+                                                    <span class="truncate text-[11px] text-blue-600 font-mono">{{ row.scraped_value }}</span>
+                                                </div>
+                                                <span v-else class="text-xs text-slate-900 font-medium">
+                                                    {{ row.scraped_value }}
                                                 </span>
-                                            </div>
-                                        </td>
+                                            </td>
+                                            <td class="py-2.5 px-3 bg-slate-50/50">
+                                                <div class="flex items-center gap-1 flex-wrap font-mono text-[10px]">
+                                                    <span class="px-1.5 py-0.5 bg-[#0D542B] text-white font-bold rounded">
+                                                        {{ row.target_table }}
+                                                    </span>
+                                                    <span class="text-slate-400 font-bold">&rarr;</span>
+                                                    <span class="px-1.5 py-0.5 bg-slate-200 text-slate-800 font-bold rounded">
+                                                        {{ row.target_column }}
+                                                    </span>
+                                                </div>
+                                            </td>
+                                            <td class="py-2.5 px-3 font-semibold break-words max-w-xs">
+                                                <div v-if="row.target_column === 'foto' && row.db_value && row.db_value !== '(Belum tersimpan di biodata)'" class="flex items-center gap-2">
+                                                    <img :src="row.db_value" class="w-8 h-8 rounded-lg object-cover border border-slate-200 shrink-0" />
+                                                    <code class="text-[10px] font-mono text-[#0D542B] truncate">{{ row.db_value }}</code>
+                                                </div>
+                                                <span v-else :class="row.db_value && !row.db_value.startsWith('(') ? 'text-slate-900 font-bold' : 'text-slate-400 italic font-normal'">
+                                                    {{ row.db_value }}
+                                                </span>
+                                            </td>
+                                            <td class="py-2.5 px-3 text-center">
+                                                <span 
+                                                    class="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider inline-block whitespace-nowrap"
+                                                    :class="{
+                                                        'bg-emerald-100 text-emerald-800': row.badge === 'emerald',
+                                                        'bg-sky-100 text-sky-800': row.badge === 'sky',
+                                                        'bg-amber-100 text-amber-800': row.badge === 'amber',
+                                                        'bg-rose-100 text-rose-800': row.badge === 'rose',
+                                                        'bg-slate-100 text-slate-700': row.badge === 'slate'
+                                                    }"
+                                                >
+                                                    {{ row.status }}
+                                                </span>
+                                            </td>
+                                        </tr>
+                                        <tr v-if="filteredTraceMapping.length === 0">
+                                            <td colspan="7" class="py-8 text-center text-slate-400 text-xs">
+                                                Tidak ada atribut yang cocok dengan kata kunci pencarian.
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
 
-                                        <!-- Nilai Aktual di Database Saat Ini -->
-                                        <td class="py-3 px-4 text-gray-900 border-r border-gray-100 font-semibold break-words max-w-xs">
-                                            <!-- Preview jika foto -->
-                                            <div v-if="row.target_column === 'foto' && row.db_value && row.db_value !== '(Belum tersimpan di biodata)'" class="flex items-center gap-2">
-                                                <img :src="row.db_value" class="w-9 h-9 rounded-lg object-cover border border-emerald-200 shadow-2xs shrink-0" />
-                                                <code class="text-[11px] font-mono text-[#0D542B] truncate">{{ row.db_value }}</code>
-                                            </div>
-                                            <span v-else :class="row.db_value && !row.db_value.startsWith('(') ? 'text-gray-900 font-bold' : 'text-gray-400 italic font-normal'">
-                                                {{ row.db_value }}
-                                            </span>
-                                        </td>
+                        <!-- Footer Aksi Persetujuan (Formal & Bersih) -->
+                        <div class="p-4 sm:p-5 bg-slate-50 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-3">
+                            <div class="text-xs text-slate-500">
+                                Peninjau: <span class="font-semibold text-slate-700">Admin Fakultas</span> &bull; Waktu Scrape: <span class="font-mono">{{ linkedinSyncResult.scraped_at ? new Date(linkedinSyncResult.scraped_at).toLocaleString('id-ID') : '-' }}</span>
+                            </div>
 
-                                        <!-- Status Audit -->
-                                        <td class="py-3 px-4 text-center">
-                                            <span 
-                                                class="px-2.5 py-1 rounded-full text-[10px] font-black inline-block whitespace-nowrap"
-                                                :class="{
-                                                    'bg-emerald-100 text-emerald-800 border border-emerald-200': row.badge === 'emerald',
-                                                    'bg-sky-100 text-sky-800 border border-sky-200': row.badge === 'sky',
-                                                    'bg-amber-100 text-amber-800 border border-amber-200': row.badge === 'amber',
-                                                    'bg-rose-100 text-rose-800 border border-rose-200': row.badge === 'rose',
-                                                    'bg-slate-100 text-slate-700 border border-slate-200': row.badge === 'slate'
-                                                }"
-                                            >
-                                                {{ row.status }}
-                                            </span>
-                                        </td>
-                                    </tr>
+                            <div class="flex items-center gap-3 w-full sm:w-auto justify-end">
+                                <button
+                                    type="button"
+                                    @click="handleRejectStaging"
+                                    :disabled="isRejectingSync || isApprovingSync"
+                                    class="px-4 py-2 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-xs font-bold rounded-xl transition cursor-pointer disabled:opacity-50"
+                                >
+                                    <span v-if="isRejectingSync">Menolak...</span>
+                                    <span v-else>Tolak (Reject)</span>
+                                </button>
 
-                                    <!-- State Kosong jika belum ada data sinkronisasi -->
-                                    <tr v-if="filteredTraceMapping.length === 0">
-                                        <td colspan="7" class="py-14 text-center">
-                                            <div class="flex flex-col items-center justify-center text-gray-400 space-y-2">
-                                                <svg class="w-10 h-10 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-                                                <p class="font-bold text-gray-600 text-sm">
-                                                    {{ searchTraceQuery ? 'Tidak ada atribut yang cocok dengan kata kunci pencarian.' : 'Belum Ada Data Scraping LinkedIn untuk Mahasiswa Ini' }}
-                                                </p>
-                                                <p class="text-xs text-gray-400 max-w-md">
-                                                    Jalankan sinkronisasi LinkedIn pada menu Admin Fakultas &gt; Sinkronisasi LinkedIn untuk mengambil data profil terkini dari Apify.
-                                                </p>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                </tbody>
-                            </table>
+                                <button
+                                    type="button"
+                                    @click="handleApproveStagingWithForm"
+                                    :disabled="isApprovingSync || isRejectingSync"
+                                    class="px-5 py-2 bg-[#0D542B] hover:bg-[#093c1f] text-white text-xs font-bold rounded-xl transition shadow-2xs flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                                >
+                                    <svg v-if="!isApprovingSync" class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                                    </svg>
+                                    <span>{{ isApprovingSync ? 'Menyimpan & Menerapkan...' : 'Setujui & Terapkan Data' }}</span>
+                                </button>
+                            </div>
                         </div>
                     </div>
 
-                    <!-- Histori Sinkronisasi LinkedIn Sebelumnya (Jika Lebih dari 1 Kali) -->
-                    <div v-if="linkedinHistory && linkedinHistory.length > 1" class="bg-white rounded-2xl p-6 shadow-xs border border-gray-200">
-                        <h3 class="text-sm font-extrabold text-gray-900 mb-3">Histori Log Staging LinkedIn ({{ linkedinHistory.length }} Riwayat)</h3>
-                        <div class="overflow-x-auto">
-                            <table class="w-full text-xs text-left">
-                                <thead>
-                                    <tr class="border-b border-gray-100 text-gray-400 uppercase text-[10px]">
-                                        <th class="py-2 px-3">ID Staging</th>
-                                        <th class="py-2 px-3">URL Profil</th>
-                                        <th class="py-2 px-3">Status</th>
-                                        <th class="py-2 px-3">Waktu Scraping</th>
-                                        <th class="py-2 px-3">Waktu Review</th>
-                                    </tr>
-                                </thead>
-                                <tbody class="divide-y divide-gray-50">
-                                    <tr v-for="h in linkedinHistory" :key="h.id" class="hover:bg-gray-50/50">
-                                        <td class="py-2.5 px-3 font-mono font-bold text-gray-600">#{{ h.id }}</td>
-                                        <td class="py-2.5 px-3 text-[#0077B5] truncate max-w-xs">{{ h.linkedin_url }}</td>
-                                        <td class="py-2.5 px-3">
-                                            <span 
-                                                class="px-2 py-0.5 rounded text-[10px] font-bold capitalize"
-                                                :class="h.status === 'approved' ? 'bg-emerald-100 text-emerald-800' : 'bg-gray-100 text-gray-700'"
-                                            >
-                                                {{ h.status }}
-                                            </span>
-                                        </td>
-                                        <td class="py-2.5 px-3 text-gray-600">{{ h.scraped_at ? new Date(h.scraped_at).toLocaleString('id-ID') : '-' }}</td>
-                                        <td class="py-2.5 px-3 text-gray-600">{{ h.reviewed_at ? new Date(h.reviewed_at).toLocaleString('id-ID') : '-' }}</td>
-                                    </tr>
-                                </tbody>
-                            </table>
+                    <!-- Banner Konfirmasi Jika Data Sudah Diapprove -->
+                    <div v-else-if="linkedinSyncResult && linkedinSyncResult.status === 'approved'" class="bg-emerald-50/70 border border-emerald-200 rounded-2xl p-4 sm:p-5 flex items-start gap-3">
+                        <div class="w-8 h-8 rounded-full bg-emerald-100 text-emerald-800 flex items-center justify-center shrink-0 mt-0.5">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                            </svg>
+                        </div>
+                        <div class="text-xs">
+                            <div class="flex items-center gap-2">
+                                <h4 class="font-bold text-emerald-950 text-sm">Hasil Sinkronisasi LinkedIn Telah Disetujui (Approved)</h4>
+                                <span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-emerald-200 text-emerald-900">Aktif di Biodata</span>
+                            </div>
+                            <p class="text-emerald-800 mt-1 leading-relaxed">
+                                Data profil LinkedIn alumni ini telah diverifikasi dan diterapkan ke database utama oleh <strong>{{ linkedinSyncResult.reviewer?.name || 'Admin Fakultas' }}</strong> pada {{ linkedinSyncResult.reviewed_at ? new Date(linkedinSyncResult.reviewed_at).toLocaleString('id-ID') : '-' }}. Rincian atribut tersimpan dapat ditinjau pada tabel audit & trace di bawah.
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Panel State Bersih jika Belum Ada Data Sinkronisasi -->
+                    <div v-else-if="!linkedinSyncResult" class="bg-white rounded-2xl p-6 border border-gray-200 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
+                        <div class="space-y-1">
+                            <div class="flex items-center gap-2">
+                                <h3 class="font-bold text-gray-900 text-sm">Belum Ada Riwayat Scraping LinkedIn untuk Alumni Ini</h3>
+                                <span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-gray-100 text-gray-600">Belum Disinkron</span>
+                            </div>
+                            <p class="text-xs text-gray-500 leading-relaxed max-w-2xl">
+                                Data profil LinkedIn belum pernah diambil dari engine Apify. 
+                                <span v-if="alumni.linkedin_url">Tautan LinkedIn terdaftar: <a :href="alumni.linkedin_url" target="_blank" class="text-[#0077B5] font-semibold hover:underline">{{ alumni.linkedin_url }}</a></span>
+                                <span v-else>Alumni belum memiliki URL profil LinkedIn terdaftar di biodata kampus.</span>
+                            </p>
+                        </div>
+                        <div class="flex items-center gap-2 shrink-0">
+                            <button
+                                v-if="alumni.linkedin_url"
+                                type="button"
+                                @click="handleDirectLinkedInSync"
+                                :disabled="isDirectSyncing"
+                                class="px-4 py-2.5 bg-[#0D542B] hover:bg-[#08381c] text-white text-xs font-bold rounded-xl transition flex items-center gap-2 shadow-xs cursor-pointer disabled:opacity-60"
+                            >
+                                <svg v-if="!isDirectSyncing" class="w-3.5 h-3.5 fill-current shrink-0" viewBox="0 0 24 24"><path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/></svg>
+                                <span>{{ isDirectSyncing ? 'Mengambil Data...' : 'Ambil Data LinkedIn Sekarang' }}</span>
+                            </button>
+                            <Link
+                                :href="'/fakultas/linkedin-sync?alumni_id=' + alumni.id"
+                                class="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl transition cursor-pointer"
+                            >
+                                Buka Direktori LinkedIn Sync
+                            </Link>
                         </div>
                     </div>
                 </div>

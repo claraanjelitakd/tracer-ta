@@ -30,13 +30,14 @@ class LinkedinTraceHelper
             return [];
         }
 
+        $preview = $syncResult->getPreviewData();
         $plot = self::getPlotSummary($alumni);
 
         $rows = [];
         $handledKeys = [];
 
         // 1. Foto Profil
-        $scrapedFoto = $item['li_profile_image_url'] ?? ($item['profile_picture'] ?? ($item['profilePicture'] ?? ($item['picture_url'] ?? null)));
+        $scrapedFoto = $preview['profile_picture'] ?? ($item['li_profile_image_url'] ?? ($item['profile_picture'] ?? ($item['profilePicture'] ?? ($item['picture_url'] ?? null))));
         $dbFoto = $alumni->foto;
         $rows[] = [
             'key' => 'li_profile_image_url',
@@ -52,7 +53,7 @@ class LinkedinTraceHelper
         $handledKeys = array_merge($handledKeys, ['li_profile_image_url', 'profile_picture', 'profilePicture', 'picture_url']);
 
         // 2. Posisi Jabatan / Job Title
-        $scrapedJob = $item['job_title'] ?? ($item['jobTitle'] ?? ($item['experiences'][0]['title'] ?? ($item['headline'] ?? null)));
+        $scrapedJob = $preview['current_job'] ?? ($item['job_title'] ?? ($item['jobTitle'] ?? ($item['headline'] ?? null)));
         $dbJob = $alumni->posisi_jabatan;
         $rows[] = [
             'key' => 'job_title',
@@ -69,7 +70,7 @@ class LinkedinTraceHelper
 
         // 3. Status Pekerjaan (Aktivitas Utama)
         $dbKategori = $alumni->kategori_pekerjaan;
-        $derivedStatus = (! empty($scrapedJob) || ! empty($item['company_name'])) ? 'Pekerja' : 'Belum Bekerja';
+        $derivedStatus = (! empty($scrapedJob) || ! empty($preview['current_company']) || ! empty($item['company_name'])) ? 'Pekerja' : 'Belum Bekerja';
         $rows[] = [
             'key' => 'status_pekerjaan',
             'label' => 'Status Pekerjaan / Aktivitas Utama',
@@ -83,7 +84,7 @@ class LinkedinTraceHelper
         ];
 
         // 4. Nama Perusahaan / Tempat Bekerja
-        $scrapedCompany = $item['company_name'] ?? ($item['companyName'] ?? ($item['experiences'][0]['company_name'] ?? null));
+        $scrapedCompany = $preview['current_company'] ?? ($item['company_name'] ?? ($item['companyName'] ?? null));
         $dbCompany = $alumni->perusahaan?->nama_perusahaan;
         $rows[] = [
             'key' => 'company_name',
@@ -269,14 +270,16 @@ class LinkedinTraceHelper
         }
 
         // 14. Keahlian (Skills)
-        $rawSkills = $item['skills'] ?? [];
-        $skillsList = [];
-        if (is_array($rawSkills)) {
-            foreach ($rawSkills as $skill) {
-                if (is_string($skill)) {
-                    $skillsList[] = $skill;
-                } elseif (is_array($skill) && ! empty($skill['name'])) {
-                    $skillsList[] = $skill['name'];
+        $skillsList = $preview['skills'] ?? [];
+        if (empty($skillsList) && ! empty($item['skills'])) {
+            $rawSkills = $item['skills'];
+            if (is_array($rawSkills)) {
+                foreach ($rawSkills as $skill) {
+                    if (is_string($skill)) {
+                        $skillsList[] = $skill;
+                    } elseif (is_array($skill) && ! empty($skill['name'])) {
+                        $skillsList[] = $skill['name'];
+                    }
                 }
             }
         }
@@ -316,29 +319,15 @@ class LinkedinTraceHelper
             $handledKeys = array_merge($handledKeys, ['experiences', 'experience', 'positions']);
         }
 
-        // 16. Metadata Tambahan
-        foreach ($item as $rawKey => $rawVal) {
-            if (in_array($rawKey, $handledKeys)) {
-                continue;
-            }
-
-            $displayVal = is_array($rawVal) ? json_encode($rawVal, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) : (string) $rawVal;
-            if (strlen($displayVal) > 120) {
-                $displayVal = substr($displayVal, 0, 117).'...';
-            }
-
-            $rows[] = [
-                'key' => $rawKey,
-                'label' => 'Metadata: '.str_replace(['_', '.'], ' ', ucwords($rawKey, '_')),
-                'scraped_value' => $displayVal,
-                'target_table' => 'linkedin_sync_results',
-                'target_column' => "scraped_data->{$rawKey}",
-                'db_value' => $displayVal,
-                'status' => 'Metadata Scraping',
-                'badge' => 'slate',
-                'note' => 'Metadata mentah dari engine Apify scraper',
-            ];
-        }
+        // Daftar key teknis / internal Apify & duplikat yang tidak perlu dipetakan ulang
+        $ignoredTechnicalKeys = [
+            'summary', 'about', 'headline', 'skills', 'experience', 'experiences', 'positions',
+            'past_job_title', 'past_company_name',
+            'operation', 'scraped_at', 'entity_type', 'li_profile_id', 'li_company_url',
+            'li_number_followers', 'li_number_connections', 'volunteer_experiences',
+            'input', 'url', 'source_url', 'li_school_url', 'publicIdentifier',
+        ];
+        $handledKeys = array_merge($handledKeys, $ignoredTechnicalKeys);
 
         return $rows;
     }

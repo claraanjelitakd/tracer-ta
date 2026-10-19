@@ -460,22 +460,42 @@ Sistem Tracer Study UKDW merangkum **22 Use Case diskret** yang mencakup seluruh
 - **Usecase ID**: UC-13
 - **Usecase Name**: Mengelola Direktori Alumni & Audit Detail
 - **Actors Involved**: Admin Program Studi, Admin Fakultas, Admin Biro III, Superadmin
-- **Description**: Menelusuri seluruh data alumni, melakukan pencarian dan penyaringan berjenjang (angkatan, prodi, status kerja), meninjau rincian biodata, riwayat karir (keahlian & pengalaman), lembar respon kuesioner nasional, respon kuesioner prodi, kuesioner atasan, serta navigasi terarah (*deep link*) ke modul sinkronisasi LinkedIn.
+- **Description**: Menelusuri seluruh data alumni, melakukan pencarian dan penyaringan berjenjang (tahun kelulusan, semester, target kelulusan, prodi, status kuesioner, status sinkronisasi LinkedIn), meninjau scorecard kelengkapan 4 pilar (Univ, Prodi, Profil, Atasan), memantau ringkasan status LinkedIn alumni beserta reviewer dan timestamp terakhir, meninjau rincian biodata, riwayat karir (keahlian & pengalaman), lembar respon kuesioner nasional, respon kuesioner prodi, kuesioner atasan, serta navigasi terarah (*deep link*) ke tab audit trace LinkedIn.
 - **Scope & Role Authorization**:
   - **Admin Prodi** (`/prodi/alumni`): Terbatas pada alumni program studinya sendiri.
   - **Admin Fakultas** (`/fakultas/alumni`): Alumni seluruh prodi dalam naungan fakultasnya (disertai dropdown filter prodi fakultas).
   - **Admin Biro III** (`/biro3/alumni`): Seluruh alumni universitas lintas fakultas dan prodi.
-  - **Superadmin** (`/superadmin/alumni`): Akses audit global seluruh alumni universitas dilengkapi deep link audit scraping LinkedIn.
+  - **Superadmin** (`/superadmin/alumni`): Akses audit global seluruh alumni universitas dilengkapi deep link audit scraping LinkedIn, kartu statistik LinkedIn, filter status LinkedIn, dan ekspor ZIP Excel per prodi.
 - **Preconditions**: Aktor membuka modul direktori alumni sesuai perannya.
 - **Main Flow (Basic Flow)**:
-  1. Sistem menyajikan daftar tabel alumni sesuai batasan hak akses peran.
-  2. Aktor menerapkan filter pencarian (NIM, Nama, Angkatan, Program Studi, Status Bekerja).
-  3. Aktor mengklik salah satu nama alumni untuk membuka halaman detail audit (`{base_route}/alumni/{id}`).
-  4. Sistem menampilkan tabulasi lengkap: Profil Biodata, Riwayat Karir (`skills` & `experience`), Lembar Jawaban Kuesioner Universitas, Jawaban Kuesioner Prodi, dan Evaluasi Atasan.
-  5. Aktor dapat mengoreksi data profil jika ditemukan ketidaksesuaian (`POST {base_route}/alumni/{id}/profile`).
-  6. **Deep Link ke LinkedIn Sync**: Pada halaman detail alumni, admin dapat mengklik logo LinkedIn / tombol sinkronisasi untuk langsung membuka modul sinkronisasi LinkedIn dengan parameter `alumni_id` dan `search` otomatis.
+  1. Sistem menyajikan daftar tabel alumni sesuai batasan hak akses peran dengan fit 100% viewport (bebas horizontal scrollbar berlebih).
+  2. Sistem menampilkan 5 Kartu Statistik Interaktif di bagian atas:
+     - Total Mahasiswa
+     - Kuesioner Selesai (100%)
+     - Belum Selesai (Perlu tindak lanjut)
+     - Rasio Penyelesaian (%)
+     - **Tersinkron LinkedIn** (Menampilkan total alumni tersinkron dan rasio kepatuhan, dapat diklik untuk memfilter langsung alumni yang tersinkron).
+  3. Aktor menerapkan filter pencarian:
+     - Pencarian Kata Kunci (Nama, NIM, Email)
+     - Tahun Kelulusan (Default ke tahun terbaru)
+     - Target Kelulusan (Semester + Tahun)
+     - Semester Kelulusan (Gasal / Genap)
+     - Status Kuesioner (Semua, Selesai 100%, Belum Selesai)
+     - **Status LinkedIn** (*Semua LinkedIn, Sudah Disinkronkan, Pending Review, Belum Disinkron, Ditolak*)
+     - Program Studi
+  4. Sistem menyajikan data tabel dengan kolom:
+     - **Mahasiswa / Alumni**: Nama, NIM, dan Email kontak resmi.
+     - **Program Studi & Fakultas**.
+     - **Periode / Target Kelulusan**: Semester, tahun lulus, dan status kelulusan.
+     - **Status Kelengkapan (Scorecard 2x2 Formal)**: Menampilkan Univ %, Prodi %, Profil (Lengkap/Belum), dan Atasan (Diisi/Menunggu/Belum Ada) dalam format grid simetris tanpa emoticon.
+     - **Sinkronisasi LinkedIn**: Menampilkan badge status sinkronisasi, tanggal dan waktu terakhir disinkronkan, nama reviewer (admin pemeriksa), posisi pekerjaan terkini, serta link cepat ke rincian tab audit.
+     - **Aksi Terpadu**: Tombol Detail Profil, WhatsApp pengingat, kirim email kuesioner, dan tautan langsung ke tab audit LinkedIn (`?tab=linkedin`).
+  5. Aktor mengklik salah satu nama alumni atau tombol detail untuk membuka halaman detail audit (`{base_route}/alumni/{id}`).
+  6. Sistem menampilkan 5 Tab Utama: Profil Biodata, Riwayat Karir (`skills` & `experience`), Lembar Jawaban Kuesioner Universitas, Jawaban Kuesioner Prodi, dan **Tab Hasil LinkedIn & Audit Trace Scraping**.
+  7. Aktor dapat mengoreksi data profil jika ditemukan ketidaksesuaian (`POST {base_route}/alumni/{id}/profile`).
+  8. **Deep Link ke LinkedIn Tab**: Tombol LinkedIn di direktori alumni mengarahkan langsung ke Tab ke-5 (`/superadmin/alumni/{id}?tab=linkedin`) yang memuat tabel penelusuran audit trace mapping 10-27 baris dan form usulan data LinkedIn.
 - **Alternate Flow (Alternative Flow)**:
-  - Aktor dapat mengunduh berkas laporan dalam format Excel [UC-14].
+  - Aktor dapat mengunduh berkas laporan dalam format Excel [UC-14] atau mengunduh arsip ZIP Excel per Program Studi untuk tahun aktif.
 - **Post Conditions**: Data direktori alumni terpantau, terverifikasi keabsahannya, dan siap diaudit.
 
 ---

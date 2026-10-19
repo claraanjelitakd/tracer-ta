@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Mail\PengingatKuesionerAlumniMail;
 use App\Models\Biodata;
 use App\Models\EvaluasiAtasan;
+use App\Models\LinkedinSyncResult;
 use App\Models\Prodi;
 use App\Services\Export\AlumniTracerExcelExporter;
 use Illuminate\Http\RedirectResponse;
@@ -14,6 +15,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use Inertia\Inertia;
 use Inertia\Response;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 /**
  * DaftarAlumniSuperAdminController
@@ -26,7 +28,14 @@ use Inertia\Response;
 class DaftarAlumniSuperAdminController extends Controller
 {
     /**
-     * Tampilkan Halaman Index Daftar Alumni
+     * Tampilkan Halaman Index Daftar Alumni Terpadu.
+     *
+     * Menangani pemfilteran dinamis berdasarkan Program Studi, Tahun Kelulusan,
+     * Semester Kelulusan, Target Periode, Status Kuesioner (Selesai/Belum),
+     * Pencarian Nama/NIM, serta Status Sinkronisasi LinkedIn.
+     *
+     * @param  Request  $request  HTTP request yang memuat parameter filter
+     * @return Response Inertia render halaman direktori alumni Super Admin
      */
     public function index(Request $request): Response
     {
@@ -35,6 +44,7 @@ class DaftarAlumniSuperAdminController extends Controller
         $statusTerpilih = $request->input('status');
         $prodiIdTerpilih = $request->input('prodi_id');
         $targetTerpilih = $request->input('target');
+        $linkedinStatusTerpilih = $request->input('linkedin_status', 'all');
 
         // 1. Ambil list tahun kelulusan unik dari view untuk dropdown filter
         $daftarTahun = DB::table('v_alumni_audit_rekap')
@@ -118,10 +128,18 @@ class DaftarAlumniSuperAdminController extends Controller
             ->get()
             ->keyBy('biodata_id');
 
+        // Ambil riwayat hasil sinkronisasi LinkedIn terbaru beserta user reviewer
+        $syncMap = LinkedinSyncResult::whereIn('biodata_id', $biodataIds)
+            ->with('reviewer:id,name,email')
+            ->orderBy('id', 'desc')
+            ->get()
+            ->groupBy('biodata_id');
+
         // 3. Mapping data reaktif untuk Frontend
         $alumniList = [];
         $totalSelesai = 0;
         $totalBelumSelesai = 0;
+        $totalLinkedinSynced = 0;
 
         foreach ($semuaAlumni as $item) {
             $isComplete = (bool) $item->is_complete_total;
@@ -144,6 +162,54 @@ class DaftarAlumniSuperAdminController extends Controller
             $evaluasiStatus = 'none';
             if ($ev) {
                 $evaluasiStatus = $ev->is_submitted ? 'submitted' : 'pending';
+            }
+
+            $syncList = $syncMap->get($item->biodata_id);
+            $latestSync = $syncList ? $syncList->first() : null;
+            $syncCount = $syncList ? $syncList->count() : 0;
+            $currentLinkedinStatus = $latestSync?->status ?? 'belum_sinkron';
+
+            if ($currentLinkedinStatus === 'approved') {
+                $totalLinkedinSynced++;
+            }
+
+            // Filter status LinkedIn jika dispesifikasikan oleh pengguna
+            if ($linkedinStatusTerpilih && $linkedinStatusTerpilih !== 'all') {
+                if ($linkedinStatusTerpilih === 'sudah_sinkron' && $currentLinkedinStatus !== 'approved') {
+                    continue;
+                }
+                if ($linkedinStatusTerpilih === 'pending' && $currentLinkedinStatus !== 'pending') {
+                    continue;
+                }
+                if ($linkedinStatusTerpilih === 'belum_sinkron' && $currentLinkedinStatus !== 'belum_sinkron') {
+                    continue;
+                }
+                if ($linkedinStatusTerpilih === 'ditolak' && $currentLinkedinStatus !== 'rejected') {
+                    continue;
+                }
+            }
+
+            // Identifikasi siapa reviewer dan kapan terakhir disinkronkan / disetujui
+            $reviewerName = null;
+            if ($latestSync) {
+                if ($latestSync->reviewer) {
+                    $reviewerName = $latestSync->reviewer->name;
+                } elseif ($latestSync->status === 'approved') {
+                    $reviewerName = 'Super Administrator';
+                } elseif ($latestSync->status === 'pending') {
+                    $reviewerName = 'Sistem (Scraper)';
+                }
+            }
+
+            $waktuTerakhir = null;
+            if ($latestSync) {
+                if ($latestSync->reviewed_at) {
+                    $waktuTerakhir = $latestSync->reviewed_at->format('d/m/Y H:i');
+                } elseif ($latestSync->scraped_at) {
+                    $waktuTerakhir = $latestSync->scraped_at->format('d/m/Y H:i');
+                } elseif ($latestSync->updated_at) {
+                    $waktuTerakhir = $latestSync->updated_at->format('d/m/Y H:i');
+                }
             }
 
             $alumniList[] = [
@@ -196,11 +262,30 @@ class DaftarAlumniSuperAdminController extends Controller
                     'submitted_at' => $ev?->submitted_at ? $ev->submitted_at->format('d/m/Y H:i') : null,
                     'token' => $ev?->token,
                 ],
+                'linkedin_sync' => [
+                    'has_sync' => (bool) $latestSync,
+                    'sync_count' => $syncCount,
+                    'status' => $currentLinkedinStatus,
+                    'status_label' => match ($currentLinkedinStatus) {
+                        'approved' => 'Sudah Disinkronkan',
+                        'pending' => 'Pending Review',
+                        'rejected' => 'Ditolak',
+                        default => 'Belum Disinkron'
+                    },
+                    'scraped_at' => $latestSync?->scraped_at ? $latestSync->scraped_at->format('d/m/Y H:i') : null,
+                    'reviewed_at' => $latestSync?->reviewed_at ? $latestSync->reviewed_at->format('d/m/Y H:i') : null,
+                    'waktu_terakhir' => $waktuTerakhir,
+                    'reviewer_name' => $reviewerName,
+                    'last_job' => $latestSync?->preview['current_job'] ?? null,
+                    'last_company' => $latestSync?->preview['current_company'] ?? null,
+                    'sync_id' => $latestSync?->id,
+                ],
             ];
         }
 
-        $totalFiltered = count($alumniList);
-        $rasioSelesai = $totalFiltered > 0 ? (int) round(($totalSelesai / $totalFiltered) * 100) : 0;
+        $totalSemua = count($semuaAlumni);
+        $rasioSelesai = $totalSemua > 0 ? (int) round(($totalSelesai / $totalSemua) * 100) : 0;
+        $rasioLinkedin = $totalSemua > 0 ? (int) round(($totalLinkedinSynced / $totalSemua) * 100) : 0;
 
         // 4. Master Program Studi
         $daftarProdi = Prodi::orderBy('kode_prodi', 'asc')->get();
@@ -218,18 +303,24 @@ class DaftarAlumniSuperAdminController extends Controller
                 'target' => $targetTerpilih ?? 'all',
                 'status' => $statusTerpilih,
                 'prodi_id' => $prodiIdTerpilih,
+                'linkedin_status' => $linkedinStatusTerpilih,
             ],
             'stats' => [
-                'total_alumni' => $totalFiltered,
+                'total_alumni' => $totalSemua,
                 'total_selesai' => $totalSelesai,
                 'total_belum_selesai' => $totalBelumSelesai,
                 'persentase_selesai' => $rasioSelesai,
+                'total_linkedin_synced' => $totalLinkedinSynced,
+                'persentase_linkedin' => $rasioLinkedin,
             ],
         ]);
     }
 
     /**
-     * Download Berkas ZIP berisi Excel (.xls) per Lulusan untuk Prodi dan Tahun Tertentu
+     * Download Berkas ZIP berisi Excel (.xls) per Lulusan untuk Prodi dan Tahun Tertentu.
+     *
+     * @param  Request  $request  HTTP request yang memuat prodi_id dan tahun
+     * @return BinaryFileResponse|RedirectResponse
      */
     public function exportZip(Request $request)
     {
@@ -334,9 +425,13 @@ class DaftarAlumniSuperAdminController extends Controller
     }
 
     /**
-     * Kirim Email Pengingat Kuesioner ke Satu Alumni Tertentu (Flash Notifikasi)
+     * Kirim Email Pengingat Kuesioner ke Satu Alumni Tertentu.
+     *
+     * @param  Request  $request  HTTP request
+     * @param  int|string  $id  ID biodata alumni target
+     * @return RedirectResponse Redirect kembali dengan flash notification
      */
-    public function sendReminderEmail(Request $request, $id): RedirectResponse
+    public function sendReminderEmail(Request $request, int|string $id): RedirectResponse
     {
         $alumni = Biodata::with(['user', 'dataAkademik'])->findOrFail($id);
         $targetEmail = $alumni->email_pribadi ?: ($alumni->dataAkademik?->email_pribadi ?: $alumni->user?->email);
