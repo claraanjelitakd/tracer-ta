@@ -214,6 +214,9 @@ const evaluasiAtasanQuestionsWithAnswers = computed(() => {
         const resp = responsMap[q.id];
         return {
             ...q,
+            kode_pertanyaan: q.kode || q.kode_pertanyaan || '-',
+            aspek_penilaian: q.aspek || q.aspek_penilaian || '-',
+            keterangan: q.deskripsi || q.keterangan || '',
             skor: resp ? resp.skor : null,
             catatan: resp ? resp.catatan : null,
             has_response: !!resp,
@@ -1394,9 +1397,13 @@ const statusYudisium = computed(() => {
                         </div>
 
                         <!-- Empty State jika belum ada atasan terdaftar -->
-                        <div v-else class="py-8 text-center bg-gray-50/50 rounded-xl border border-dashed border-gray-200 mt-6">
-                            <p class="text-xs text-gray-500 font-medium">
-                                Alumni ini belum mengisi informasi kontak atasan tempat bekerja atau belum ada penugasan evaluasi atasan.
+                        <div v-else class="py-8 px-4 text-center bg-slate-50 rounded-xl border border-dashed border-slate-200 mt-6">
+                            <svg class="w-8 h-8 mx-auto text-slate-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                            </svg>
+                            <h4 class="text-xs font-bold text-slate-800">Belum Ada Informasi Atasan Terdaftar</h4>
+                            <p class="text-xs text-slate-500 mt-1 max-w-md mx-auto">
+                                Alumni ini belum mengisi informasi kontak atasan langsung tempat bekerja atau belum ada penugasan survei evaluasi pengguna lulusan.
                             </p>
                         </div>
                     </div>
@@ -1404,69 +1411,80 @@ const statusYudisium = computed(() => {
                     <!-- ========================================================= -->
                     <!-- TABEL HASIL PENILAIAN ASPEK KOMPETENSI                    -->
                     <!-- ========================================================= -->
-                    <div class="bg-white rounded-2xl shadow-xs border border-gray-200 overflow-hidden">
-                        <div class="p-4 sm:p-5 bg-gray-50/80 border-b border-gray-200 flex items-center justify-between">
+                    <div v-if="evaluasiAtasan" class="bg-white rounded-xl shadow-xs border border-slate-200 overflow-hidden">
+                        <div class="p-4 sm:p-5 bg-slate-50 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                            <div>
+                                <h4 class="text-xs font-bold text-slate-800 uppercase tracking-wide">
+                                    Hasil Penilaian Aspek Kinerja & Kemampuan Alumni
+                                </h4>
+                                <p class="text-[11px] text-slate-500 mt-0.5">
+                                    {{ evaluasiAtasan.is_submitted ? 'Respon penilaian telah diverifikasi dan masuk ke dalam sistem' : 'Survei telah dikirimkan, menunggu atasan mengisi instrumen evaluasi ini' }}
+                                </p>
+                            </div>
                             <div class="flex items-center gap-2">
-                                <span class="text-xs font-extrabold text-gray-800 uppercase tracking-wider">Hasil Penilaian Aspek Kinerja & Kemampuan Alumni</span>
-                                <span class="px-2.5 py-0.5 bg-[#0D542B] text-white text-[10px] font-bold rounded-full">
+                                <span class="px-2.5 py-0.5 bg-[#0D542B] text-white text-[11px] font-bold rounded-full">
                                     {{ evaluasiAtasanQuestionsWithAnswers.length }} Butir Penilaian
                                 </span>
+                                <span 
+                                    class="px-2.5 py-0.5 rounded text-[11px] font-semibold border"
+                                    :class="evaluasiAtasan.is_submitted ? 'bg-emerald-50 text-emerald-800 border-emerald-200' : 'bg-amber-50 text-amber-800 border-amber-200'"
+                                >
+                                    {{ evaluasiAtasan.is_submitted ? 'Respon Terverifikasi' : 'Menunggu Pengisian Atasan' }}
+                                </span>
                             </div>
-                            <span v-if="evaluasiAtasan?.is_submitted" class="text-xs font-semibold text-emerald-700 flex items-center gap-1">
-                                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
-                                Respon Terverifikasi
-                            </span>
                         </div>
 
                         <div class="overflow-x-auto">
                             <table class="w-full text-left text-xs border-collapse">
                                 <thead>
-                                    <tr class="bg-slate-100 text-slate-700 border-b border-gray-200">
-                                        <th class="py-3 px-3 text-center font-bold w-12 border-r border-gray-200">#</th>
-                                        <th class="py-3 px-4 font-bold border-r border-gray-200 w-28">Kode Butir</th>
-                                        <th class="py-3 px-4 font-bold border-r border-gray-200 min-w-[280px]">Aspek Penilaian & Deskripsi</th>
-                                        <th class="py-3 px-4 font-bold text-center border-r border-gray-200 w-36">Skor / Nilai</th>
-                                        <th class="py-3 px-4 font-bold min-w-[200px]">Catatan / Evaluasi Atasan</th>
+                                    <tr class="bg-slate-50 text-slate-700 border-b border-slate-200 text-[11px] uppercase font-bold tracking-wider">
+                                        <th class="py-2.5 px-3 text-center w-12 border-r border-slate-200">#</th>
+                                        <th class="py-2.5 px-4 border-r border-slate-200 w-28">Kode Butir</th>
+                                        <th class="py-2.5 px-4 border-r border-slate-200 min-w-[280px]">Aspek Penilaian & Deskripsi</th>
+                                        <th class="py-2.5 px-4 text-center border-r border-slate-200 w-44">Skor / Nilai</th>
+                                        <th class="py-2.5 px-4 min-w-[200px]">Catatan / Evaluasi Atasan</th>
                                     </tr>
                                 </thead>
-                                <tbody class="divide-y divide-gray-100">
+                                <tbody class="divide-y divide-slate-100 text-slate-700">
                                     <tr 
                                         v-for="(item, idx) in evaluasiAtasanQuestionsWithAnswers" 
                                         :key="item.id || idx"
-                                        class="hover:bg-slate-50/80 transition-colors"
-                                        :class="idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/30'"
+                                        class="hover:bg-slate-50/60 transition-colors"
+                                        :class="idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/20'"
                                     >
-                                        <td class="py-3 px-3 text-center font-mono font-bold text-gray-400 border-r border-gray-100">
+                                        <td class="py-3 px-3 text-center font-mono font-bold text-slate-400 border-r border-slate-100">
                                             {{ idx + 1 }}
                                         </td>
-                                        <td class="py-3 px-4 font-mono font-bold text-gray-800 border-r border-gray-100">
-                                            <span class="bg-slate-100 px-2 py-0.5 rounded text-[11px] text-slate-700 border border-slate-200">
+                                        <td class="py-3 px-4 font-mono font-bold text-slate-800 border-r border-slate-100">
+                                            <span class="bg-slate-100 px-2 py-0.5 rounded text-[11px] text-slate-800 border border-slate-200">
                                                 {{ item.kode_pertanyaan }}
                                             </span>
                                         </td>
-                                        <td class="py-3 px-4 border-r border-gray-100">
-                                            <div class="font-bold text-gray-900">{{ item.aspek_penilaian }}</div>
-                                            <p v-if="item.keterangan" class="text-[11px] text-gray-500 mt-0.5">{{ item.keterangan }}</p>
+                                        <td class="py-3 px-4 border-r border-slate-100">
+                                            <div class="font-bold text-slate-900">{{ item.aspek_penilaian }}</div>
+                                            <p v-if="item.keterangan" class="text-[11px] text-slate-500 mt-0.5 leading-relaxed">{{ item.keterangan }}</p>
                                         </td>
-                                        <td class="py-3 px-4 text-center border-r border-gray-100">
+                                        <td class="py-3 px-4 text-center border-r border-slate-100">
                                             <div v-if="item.skor !== null && item.skor !== undefined" class="flex flex-col items-center gap-1">
                                                 <span 
-                                                    class="px-2.5 py-1 rounded-full text-[11px] font-black border"
+                                                    class="px-2.5 py-1 rounded text-[11px] font-bold border"
                                                     :class="getSkorBadgeClass(item.skor)"
                                                 >
                                                     Skor: {{ item.skor }} - {{ getSkorLabel(item.skor) }}
                                                 </span>
                                             </div>
-                                            <span v-else class="text-gray-400 italic font-medium">Belum Diisi</span>
+                                            <span v-else class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium bg-amber-50 text-amber-800 border border-amber-200">
+                                                Menunggu Respon
+                                            </span>
                                         </td>
-                                        <td class="py-3 px-4 text-gray-800">
+                                        <td class="py-3 px-4 text-slate-700">
                                             <span v-if="item.catatan" class="font-medium text-xs">{{ item.catatan }}</span>
-                                            <span v-else class="text-gray-400 italic text-[11px]">-</span>
+                                            <span v-else class="text-slate-400 italic text-[11px]">-</span>
                                         </td>
                                     </tr>
 
                                     <tr v-if="evaluasiAtasanQuestionsWithAnswers.length === 0">
-                                        <td colspan="5" class="py-12 text-center text-gray-400 font-medium">
+                                        <td colspan="5" class="py-8 text-center text-slate-400 text-xs italic">
                                             Belum ada butir pertanyaan kuesioner evaluasi atasan yang dikonfigurasi.
                                         </td>
                                     </tr>
