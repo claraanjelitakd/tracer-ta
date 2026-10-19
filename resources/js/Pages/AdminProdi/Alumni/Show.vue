@@ -869,43 +869,6 @@ const statusYudisium = computed(() => {
                 <!-- ============================================================= -->
                 <div v-if="activeMainTab === 'profil'" class="space-y-6">
                     
-                    <!-- Banner LinkedIn Sync Tersedia jika ada -->
-                    <div 
-                        v-if="linkedinSyncResult"
-                        class="p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-sky-50 via-emerald-50 to-white border border-sky-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-2xs"
-                    >
-                        <div class="flex items-center gap-3.5">
-                            <div class="w-11 h-11 rounded-xl bg-[#0077B5] text-white flex items-center justify-center font-black text-lg shrink-0 shadow-xs">
-                                in
-                            </div>
-                            <div>
-                                <div class="flex items-center gap-2 flex-wrap">
-                                    <h4 class="text-xs sm:text-sm font-black text-gray-900">
-                                        Data Scraping LinkedIn Tersedia
-                                    </h4>
-                                    <span 
-                                        class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider"
-                                        :class="linkedinSyncResult.status === 'approved' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'"
-                                    >
-                                        {{ linkedinSyncResult.status }}
-                                    </span>
-                                </div>
-                                <p class="text-xs text-gray-600 mt-0.5">
-                                    {{ linkedinTraceMapping.length }} atribut profil LinkedIn siap ditelusuri pemetaannya ke basis data kampus.
-                                </p>
-                            </div>
-                        </div>
-
-                        <button 
-                            type="button" 
-                            @click="activeMainTab = 'linkedin'" 
-                            class="px-4 py-2 bg-[#0077B5] hover:bg-[#005f93] text-white text-xs font-bold rounded-xl transition shadow-2xs cursor-pointer flex items-center gap-1.5 self-start sm:self-auto shrink-0"
-                        >
-                            <span>Buka Tabel Audit & Trace</span>
-                            <span class="text-base leading-none">&rarr;</span>
-                        </button>
-                    </div>
-                    
                     <!-- Sub-navigasi Tab Profil & Tombol Simpan -->
                     <div class="bg-white p-4 sm:p-5 rounded-2xl shadow-xs border border-gray-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                         <div class="flex flex-wrap gap-2">
