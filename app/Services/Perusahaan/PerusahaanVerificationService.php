@@ -61,13 +61,17 @@ class PerusahaanVerificationService
             ->with([
                 'propinsi',
                 'kabupaten',
+                'creator:id,name,role,username',
                 'creator.biodata.prodi:id,nama_prodi',
+                'creator.biodata.dataAkademik:nim,nama,tahun_lulus,angkatan_masuk',
                 'createdProdi:id,nama_prodi',
+                'latestVerificationLog.user:id,name,role,username',
                 'biodata' => function ($q) {
                     $q->select('id', 'user_id', 'nim', 'prodi_id', 'posisi_jabatan', 'kategori_pekerjaan', 'perusahaan_id')
-                        ->with(['dataAkademik:nim,nama,tahun_lulus', 'prodi:id,nama_prodi']);
+                        ->with(['dataAkademik:nim,nama,tahun_lulus,angkatan_masuk', 'prodi:id,nama_prodi']);
                 },
-            ]);
+            ])
+            ->withCount('biodata');
 
         $status = $filters['status'] ?? 'all';
         if ($status !== 'all') {

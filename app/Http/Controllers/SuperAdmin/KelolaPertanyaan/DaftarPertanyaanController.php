@@ -4,9 +4,11 @@ namespace App\Http\Controllers\SuperAdmin\KelolaPertanyaan;
 
 use App\Http\Controllers\Controller;
 use App\Models\KelompokPertanyaan;
+use App\Models\Kuesioner;
 use App\Models\Prodi;
 use App\Models\RefSubpertanyaan2021;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -15,35 +17,47 @@ use Inertia\Response;
  * Class DaftarPertanyaanController
  *
  * Fungsi:
- * Controller khusus untuk menampilkan daftar butir pertanyaan instrumen kuesioner Tracer Study bagi Superadmin.
- * Mengambil data section, subpertanyaans, prodi, dan mapping target percabangan (jump logic) untuk dirender di Frontend.
+ * Controller terpadu untuk instrumen Kuesioner Universitas (Tracer Study Dikti).
+ * Menampilkan dan mengelola:
+ * 1. Struktur Bagian / Seksi (Sections)
+ * 2. Butir Pertanyaan & Opsi Jawaban (Questions)
+ * 3. Kuesioner Induk Tracer Study (Questionnaires)
  */
 class DaftarPertanyaanController extends Controller
 {
     /**
-     * Menampilkan halaman utama Kelola Pertanyaan kuesioner dengan filter section & jump target.
+     * Menampilkan halaman utama Kelola Kuesioner Universitas terpadu.
      *
      * @return Response
      */
     public function index(Request $request)
     {
+        $user = Auth::user();
+
         // 1. Ambil seluruh pertanyaan beserta relasi section dan opsi
         $subpertanyaans = RefSubpertanyaan2021::with(['kelompokPertanyaan.kuesioner', 'detils'])
             ->orderBy('order', 'asc')
             ->get();
 
-        // 2. Ambil seluruh section kuesioner berurutan
+        // 2. Ambil seluruh section kuesioner berurutan beserta relasi dan jumlah pertanyaan
         $sections = KelompokPertanyaan::with('kuesioner')
+            ->withCount('subpertanyaans')
             ->orderBy('order', 'asc')
             ->get();
 
-        // 3. Ambil daftar program studi aktif
+        // 3. Ambil daftar kuesioner induk
+        $kuesioners = Kuesioner::withCount('kelompokPertanyaan')
+            ->orderBy('year', 'desc')
+            ->orderBy('id', 'desc')
+            ->get(['id', 'title', 'description', 'year', 'is_active']);
+
+        // 4. Ambil daftar program studi aktif
         $prodis = Prodi::orderBy('kode_prodi', 'asc')->get(['id', 'kode_prodi', 'nama_prodi']);
 
-        // 4. Map kode pertanyaan ke teks pertanyaan untuk label percabangan jump_to
+        // 5. Map kode pertanyaan ke teks pertanyaan untuk label percabangan jump_to
         $targetQuestionMap = RefSubpertanyaan2021::pluck('subpertanyaan', 'kode_pertanyaan')->toArray();
 
-        // 5. Susun daftar pilihan target lompatan untuk dropdown dan pemilih bertingkat (grouped by section)
+        // 6. Susun daftar pilihan target lompatan untuk dropdown dan pemilih bertingkat (grouped by section)
         $availableJumpTargets = RefSubpertanyaan2021::with('kelompokPertanyaan')
             ->orderBy('order', 'asc')
             ->get()
@@ -64,13 +78,35 @@ class DaftarPertanyaanController extends Controller
                 ];
             });
 
-        // 6. Render komponen Vue SuperAdmin/Pertanyaan/Index
+        // 7. Ambil kuesioner aktif
+        $activeKuesioner = $kuesioners->firstWhere('is_active', true) ?? $kuesioners->first();
+
+        $totalTracerQuestions = $subpertanyaans->filter(function ($q) {
+            return $q->tampil_di !== 'profil' && $q->tampil_di !== 'profile';
+        })->count();
+
+        $totalProfileQuestions = $subpertanyaans->filter(function ($q) {
+            return $q->tampil_di === 'profil' || $q->tampil_di === 'profile' || $q->tampil_di === 'both';
+        })->count();
+
+        // 8. Render komponen Vue SuperAdmin/Pertanyaan/Index
         return Inertia::render('SuperAdmin/Pertanyaan/Index', [
+            'user' => $user,
             'subpertanyaans' => $subpertanyaans,
             'sections' => $sections,
+            'kuesioners' => $kuesioners,
+            'activeKuesioner' => $activeKuesioner,
             'prodis' => $prodis,
             'availableJumpTargets' => $availableJumpTargets,
             'targetQuestionMap' => $targetQuestionMap,
+            'initialTab' => $request->query('tab', 'sections'),
+            'stats' => [
+                'total_kuesioners' => $kuesioners->count(),
+                'total_sections' => $sections->count(),
+                'total_tracer_questions' => $totalTracerQuestions,
+                'total_profile_questions' => $totalProfileQuestions,
+                'total_questions' => $subpertanyaans->count(),
+            ],
         ]);
     }
 }

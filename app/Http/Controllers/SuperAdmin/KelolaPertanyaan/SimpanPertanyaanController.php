@@ -34,7 +34,7 @@ class SimpanPertanyaanController extends Controller
             'type' => 'required|string|in:radio,single_choice,radio_input,radio_text,multiple_choice,checkbox,rating_5,multiple_number,matrix,matrix_dual,multiple_textbox,text,textarea,number,date,time,dropdown,searchable_select,file,header',
             'keterangan' => 'nullable|string|max:500',
             'wajib' => 'required|boolean',
-            'tampil_di' => 'nullable|string|in:kuesioner,profile,both',
+            'tampil_di' => 'nullable|string|in:kuesioner,profile,profil,both',
             'order' => 'nullable|integer',
         ]);
 
@@ -71,7 +71,7 @@ class SimpanPertanyaanController extends Controller
             'type' => 'required|string|in:radio,single_choice,radio_input,radio_text,multiple_choice,checkbox,rating_5,multiple_number,matrix,matrix_dual,multiple_textbox,text,textarea,number,date,time,dropdown,searchable_select,file,header',
             'keterangan' => 'nullable|string|max:500',
             'wajib' => 'required|boolean',
-            'tampil_di' => 'nullable|string|in:kuesioner,profile,both',
+            'tampil_di' => 'nullable|string|in:kuesioner,profile,profil,both',
             'order' => 'nullable|integer',
         ]);
 

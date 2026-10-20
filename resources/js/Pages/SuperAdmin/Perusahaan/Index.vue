@@ -1,8 +1,13 @@
 <!--
-  Halaman: Verifikasi & Approval Perusahaan Super Admin
+  Halaman: Pengelolaan & Verifikasi Master Perusahaan
   File: resources/js/Pages/SuperAdmin/Perusahaan/Index.vue
 
-  Desain Identik dengan Admin Prodi (Bebas Emoticon & Menggunakan Diksi Formal)
+  Standar Antarmuka Resmi Universitas Kristen Duta Wacana:
+  - Header solid hijau resmi UKDW #0D542B dengan kartu statistik interaktif (-mt-10) yang dapat diklik untuk memfilter data
+  - Modal "Tambah Perusahaan Baru" identik 100% dengan rancangan visual form profil (Radio Lokasi, F11, Provinsi/Kabupaten/Negara, Kode Pos, Skala, Alamat)
+  - Tabel institusi formal, bersih, tanpa kolom Alumni Bekerja terpisah
+  - Bilah Aksi horizontal (inline-flex, whitespace-nowrap) memuat Hamburger (Alumni), Mata (Review), V (Setujui), X (Tolak dengan Alasan), dan Pensil (Edit)
+  - Modal Konsolidasi Master Data terstruktur dan elegan
 -->
 <script setup>
 import { Head, Link, router } from '@inertiajs/vue3';
@@ -25,6 +30,10 @@ const props = defineProps({
         type: Array,
         default: () => [],
     },
+    negaras: {
+        type: Array,
+        default: () => [],
+    },
     filters: {
         type: Object,
         default: () => ({}),
@@ -32,13 +41,17 @@ const props = defineProps({
     stats: {
         type: Object,
         default: () => ({
+            total_all: 0,
             total_pending_all: 0,
             total_verified: 0,
+            total_rejected: 0,
         }),
     },
 });
 
-// State Filter & Pencarian
+// ========================================================
+// STATE FILTER & PENCARIAN
+// ========================================================
 const search = ref(props.filters.search || '');
 const selectedProdiId = ref(props.filters.prodi_id || '');
 const scope = ref(props.filters.scope || 'all');
@@ -53,7 +66,7 @@ const handleSearch = () => {
     }, 400);
 };
 
-const changeStatusTab = (newStatus) => {
+const filterByStatus = (newStatus) => {
     statusFilter.value = newStatus;
     applyFilters();
 };
@@ -81,352 +94,436 @@ const resetFilters = () => {
 };
 
 // ========================================================
-// SWEETALERT2: DETAIL MASTER PERUSAHAAN (ICON 'i')
+// HELPER FORMAT & ALUMNI
 // ========================================================
-const openRecDetail = (parentCompany, rec) => {
-    Swal.fire({
-        title: `<span class="text-base font-bold text-gray-900">Detail Master Perusahaan</span>`,
-        html: `
-            <div class="text-left text-xs space-y-2 pt-1 text-gray-800">
-                <div class="border border-gray-300 rounded p-3 bg-gray-50/70 space-y-1.5">
-                    <div>
-                        <span class="text-gray-500 text-[11px]">Nama Perusahaan Resmi:</span>
-                        <div class="font-bold text-sm text-[#0D542B]">${rec.nama_perusahaan}</div>
-                    </div>
-                    <div>
-                        <span class="text-gray-500 text-[11px]">Alamat Lengkap:</span>
-                        <div class="font-medium text-gray-900">${rec.alamat || '-'}</div>
-                    </div>
-                    <div class="grid grid-cols-2 gap-2 text-[11px] pt-1 border-t border-gray-200">
-                        <div><span class="text-gray-500">Provinsi:</span> <strong>${rec.nama_provinsi || '-'}</strong></div>
-                        <div><span class="text-gray-500">Kabupaten/Kota:</span> <strong>${rec.nama_kabupaten || '-'}</strong></div>
-                        <div><span class="text-gray-500">Kode Pos:</span> <strong>${rec.kode_pos || '-'}</strong></div>
-                        <div><span class="text-gray-500">Negara:</span> <strong>${rec.negara || 'Indonesia'}</strong></div>
-                    </div>
-                </div>
-            </div>
-        `,
-        showCancelButton: true,
-        confirmButtonText: 'Gantikan ke Master Ini',
-        cancelButtonText: 'Tutup',
-        confirmButtonColor: '#0D542B',
-        cancelButtonColor: '#6B7280',
-        width: '520px',
-    }).then((result) => {
-        if (result.isConfirmed) {
-            handleAutoReplace(parentCompany, rec);
-        }
-    });
+const formatDate = (dateString) => {
+    if (!dateString) return '-';
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return '-';
+    return new Intl.DateTimeFormat('id-ID', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+    }).format(date);
 };
 
-// ========================================================
-// SWEETALERT2: PENINJAUAN LENGKAP PENGAJUAN PERUSAHAAN
-// ========================================================
-const openReviewModal = (company) => {
-    let alumniListHtml = '<span class="text-gray-400 italic">Belum ada data alumni</span>';
+const getRoleLabel = (role) => {
+    switch (role) {
+        case 'superadmin':
+            return 'Super Administrator';
+        case 'admin_biro_tiga':
+            return 'Biro III Kemahasiswaan';
+        case 'admin_fakultas':
+            return 'Admin Fakultas';
+        case 'admin_prodi':
+            return 'Admin Program Studi';
+        case 'alumni':
+            return 'Alumni';
+        default:
+            return role ? role.replace('_', ' ').toUpperCase() : 'Verifikator';
+    }
+};
+
+const getCompanyAlumniList = (company) => {
+    if (!company) return [];
     if (company.biodata && company.biodata.length > 0) {
-        alumniListHtml = company.biodata.map(b => `
-            <div class="py-1 border-b border-gray-100 last:border-b-0 text-left">
-                <span class="font-bold text-gray-900">${b.nama}</span> <span class="text-gray-500 font-mono">(${b.nim})</span><br>
-                <span class="text-gray-600 text-xs">${b.prodi?.nama_prodi || '-'} ${b.posisi_jabatan ? '• Jabatan: ' + b.posisi_jabatan : ''}</span>
-            </div>
-        `).join('');
-    } else if (company.creator) {
-        alumniListHtml = `
-            <div class="py-1 text-left">
-                <span class="font-bold text-gray-900">${company.creator.biodata?.nama || company.creator.name}</span> <span class="text-gray-500 font-mono">(${company.creator.biodata?.nim || company.creator.username})</span><br>
-                <span class="text-gray-600 text-xs">${company.created_prodi?.nama_prodi || company.creator.biodata?.prodi?.nama_prodi || '-'} (Pengaju Baru)</span>
-            </div>
-        `;
+        return company.biodata;
     }
-
-    let recListHtml = '<p class="text-gray-400 italic text-xs py-1">Tidak ditemukan nama master terverifikasi yang mirip.</p>';
-    if (company.recommendations && company.recommendations.length > 0) {
-        recListHtml = `
-            <table class="w-full text-left border-collapse border border-gray-300 text-xs mt-1">
-                <thead>
-                    <tr class="bg-gray-100 text-gray-800">
-                        <th class="border border-gray-300 px-2.5 py-1.5 font-semibold">Master Perusahaan</th>
-                        <th class="border border-gray-300 px-2.5 py-1.5 font-semibold">Lokasi Master</th>
-                        <th class="border border-gray-300 px-2 py-1.5 text-center font-semibold w-24">Aksi</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    ${company.recommendations.map(r => `
-                        <tr>
-                            <td class="border border-gray-300 px-2.5 py-1.5 font-bold text-gray-900">${r.nama_perusahaan}</td>
-                            <td class="border border-gray-300 px-2.5 py-1.5 text-gray-600">${r.nama_kabupaten || '-'}, ${r.nama_provinsi || '-'}</td>
-                            <td class="border border-gray-300 px-2 py-1.5 text-center">
-                                <button type="button" class="swal-rec-replace-btn px-2.5 py-1 bg-[#0D542B] text-white font-semibold rounded text-[11px] hover:bg-[#08381c] cursor-pointer" data-id="${r.id}">
-                                    Pilih
-                                </button>
-                            </td>
-                        </tr>
-                    `).join('')}
-                </tbody>
-            </table>
-        `;
+    if (company.creator && company.creator.biodata) {
+        return [company.creator.biodata];
     }
+    return [];
+};
 
-    Swal.fire({
-        title: `<span class="text-base font-bold text-gray-900">Peninjauan Pengajuan Perusahaan</span>`,
-        html: `
-            <div class="text-left text-xs space-y-3 pt-1 text-gray-800">
-                <!-- 1. Data Inputan Alumni -->
-                <div class="border border-gray-300 rounded p-3 bg-gray-50/70 space-y-1.5">
-                    <div class="flex items-center justify-between border-b border-gray-200 pb-1.5">
-                        <span class="font-bold text-gray-700 uppercase text-[10px] tracking-wider">1. DATA YANG DIINPUTKAN ALUMNI</span>
-                        <span class="text-amber-800 font-semibold text-[11px]">${company.status_verifikasi || 'Menunggu Verifikasi'}</span>
-                    </div>
-                    <div>
-                        <span class="text-gray-500">Nama Perusahaan:</span>
-                        <span class="font-bold text-gray-900 block text-sm">${company.nama_perusahaan}</span>
-                    </div>
-                    <div>
-                        <span class="text-gray-500">Alamat Lengkap:</span>
-                        <span class="text-gray-900 font-medium block">${company.alamat || '-'} (Kode Pos: ${company.kode_pos || '-'})</span>
-                    </div>
-                    <div class="grid grid-cols-2 gap-2 text-[11px] pt-1 border-t border-gray-200">
-                        <div><span class="text-gray-500">Provinsi:</span> <strong>${company.propinsi?.nama_provinsi || '-'}</strong></div>
-                        <div><span class="text-gray-500">Kabupaten/Kota:</span> <strong>${company.kabupaten?.nama_kabupaten || '-'}</strong></div>
-                        <div><span class="text-gray-500">Skala Instansi:</span> <strong>${company.skala || '-'}</strong></div>
-                        <div><span class="text-gray-500">Jenis Usaha:</span> <strong>${company.jenis_perusahaan || '-'}</strong></div>
-                    </div>
-                    <div class="pt-2 border-t border-gray-200">
-                        <span class="text-gray-500 font-semibold block mb-0.5">Alumni Terkait:</span>
-                        <div>${alumniListHtml}</div>
-                    </div>
-                </div>
+const getAlumniDisplayName = (alumni) => {
+    return alumni.data_akademik?.nama || alumni.user?.name || alumni.nama || 'Nama Alumni';
+};
 
-                <!-- 2. Rekomendasi Master Mirip -->
-                <div>
-                    <span class="font-bold text-gray-700 uppercase text-[10px] tracking-wider block mb-1">2. REKOMENDASI MASTER TERVERIFIKASI (AUTO REPLACE)</span>
-                    ${recListHtml}
-                </div>
-            </div>
-        `,
-        showCancelButton: true,
-        showDenyButton: true,
-        confirmButtonText: 'Verifikasi Sesuai Inputan',
-        denyButtonText: 'Edit',
-        cancelButtonText: 'Tutup',
-        confirmButtonColor: '#0D542B',
-        denyButtonColor: '#D97706',
-        cancelButtonColor: '#6B7280',
-        width: '640px',
-        didOpen: () => {
-            const popup = Swal.getPopup();
-            popup.querySelectorAll('.swal-rec-replace-btn').forEach(btn => {
-                btn.addEventListener('click', () => {
-                    const recId = btn.getAttribute('data-id');
-                    const targetRec = company.recommendations?.find(r => r.id == recId);
-                    if (targetRec) {
-                        Swal.close();
-                        handleAutoReplace(company, targetRec);
-                    }
-                });
+const getAlumniProdi = (alumni) => {
+    return alumni.prodi?.nama_prodi || '-';
+};
+
+const getAlumniAngkatan = (alumni) => {
+    if (alumni.data_akademik?.angkatan_masuk) {
+        return `Angkatan ${alumni.data_akademik.angkatan_masuk}`;
+    }
+    if (alumni.data_akademik?.tahun_lulus) {
+        return `Lulus ${alumni.data_akademik.tahun_lulus}`;
+    }
+    return '-';
+};
+
+const getAlumniJabatan = (alumni) => {
+    return alumni.posisi_jabatan || 'Alumni / Pegawai Aktif';
+};
+
+// ========================================================
+// MODAL 1: DAFTAR ALUMNI BEKERJA (MENU LIST HAMBURGER)
+// ========================================================
+const showAlumniModal = ref(false);
+const activeCompanyForAlumni = ref(null);
+const alumniSearchQuery = ref('');
+
+const openAlumniModal = (company) => {
+    activeCompanyForAlumni.value = company;
+    alumniSearchQuery.value = '';
+    showAlumniModal.value = true;
+};
+
+const closeAlumniModal = () => {
+    showAlumniModal.value = false;
+    activeCompanyForAlumni.value = null;
+    alumniSearchQuery.value = '';
+};
+
+const filteredAlumniList = computed(() => {
+    const list = getCompanyAlumniList(activeCompanyForAlumni.value);
+    if (!alumniSearchQuery.value.trim()) return list;
+
+    const q = alumniSearchQuery.value.toLowerCase().trim();
+    return list.filter((alumni) => {
+        const name = getAlumniDisplayName(alumni).toLowerCase();
+        const nim = (alumni.nim || '').toLowerCase();
+        const prodi = getAlumniProdi(alumni).toLowerCase();
+        const jabatan = getAlumniJabatan(alumni).toLowerCase();
+        return name.includes(q) || nim.includes(q) || prodi.includes(q) || jabatan.includes(q);
+    });
+});
+
+// ========================================================
+// MODAL 2: PENINJAUAN LENGKAP USULAN PERUSAHAAN
+// ========================================================
+const showReviewModal = ref(false);
+const activeCompanyForReview = ref(null);
+
+const openReviewModal = (company) => {
+    activeCompanyForReview.value = company;
+    showReviewModal.value = true;
+};
+
+const closeReviewModal = () => {
+    showReviewModal.value = false;
+    activeCompanyForReview.value = null;
+};
+
+// ========================================================
+// MODAL 3: KONSOLIDASI MASTER TERVERIFIKASI
+// ========================================================
+const showConsolidateModal = ref(false);
+const activePendingCompany = ref(null);
+const activeTargetVerifiedCompany = ref(null);
+const isSubmittingConsolidate = ref(false);
+
+const openConsolidateModal = (pendingCompany, targetVerifiedCompany) => {
+    activePendingCompany.value = pendingCompany;
+    activeTargetVerifiedCompany.value = targetVerifiedCompany;
+    showConsolidateModal.value = true;
+};
+
+const closeConsolidateModal = () => {
+    showConsolidateModal.value = false;
+    activePendingCompany.value = null;
+    activeTargetVerifiedCompany.value = null;
+};
+
+const submitConsolidate = () => {
+    if (!activePendingCompany.value || !activeTargetVerifiedCompany.value) return;
+    isSubmittingConsolidate.value = true;
+    router.post(`/superadmin/perusahaan/${activePendingCompany.value.id}/replace`, {
+        target_company_id: activeTargetVerifiedCompany.value.id,
+    }, {
+        preserveScroll: true,
+        onSuccess: () => {
+            isSubmittingConsolidate.value = false;
+            closeConsolidateModal();
+            if (showReviewModal.value) closeReviewModal();
+            Swal.fire({
+                icon: 'success',
+                title: 'Konsolidasi Berhasil',
+                text: `Data usulan berhasil dikonsolidasikan ke master "${activeTargetVerifiedCompany.value.nama_perusahaan}".`,
+                confirmButtonColor: '#0D542B',
             });
-        }
-    }).then((result) => {
-        if (result.isConfirmed) {
-            handleVerifyDirect(company);
-        } else if (result.isDenied) {
-            openEditModal(company);
-        }
+        },
+        onError: () => {
+            isSubmittingConsolidate.value = false;
+        },
     });
 };
 
-// Aksi 1: Verifikasi Langsung Sesuai Inputan Alumni
+// ========================================================
+// MODAL 4: PENOLAKAN USULAN (TOMBOL X DENGAN ALASAN)
+// ========================================================
+const showRejectModal = ref(false);
+const activeCompanyForReject = ref(null);
+const rejectReason = ref('');
+const isSubmittingReject = ref(false);
+
+const openRejectModal = (company) => {
+    activeCompanyForReject.value = company;
+    rejectReason.value = '';
+    showRejectModal.value = true;
+};
+
+const closeRejectModal = () => {
+    showRejectModal.value = false;
+    activeCompanyForReject.value = null;
+    rejectReason.value = '';
+};
+
+const setQuickReason = (reason) => {
+    rejectReason.value = reason;
+};
+
+const submitReject = () => {
+    if (!activeCompanyForReject.value) return;
+    isSubmittingReject.value = true;
+    router.post(`/superadmin/perusahaan/${activeCompanyForReject.value.id}/reject`, {
+        alasan: rejectReason.value.trim() || undefined,
+    }, {
+        preserveScroll: true,
+        onSuccess: () => {
+            isSubmittingReject.value = false;
+            closeRejectModal();
+            if (showReviewModal.value) closeReviewModal();
+            Swal.fire({
+                icon: 'success',
+                title: 'Usulan Ditolak',
+                text: `Pengajuan "${activeCompanyForReject.value.nama_perusahaan}" telah ditandai Ditolak.`,
+                confirmButtonColor: '#0D542B',
+            });
+        },
+        onError: () => {
+            isSubmittingReject.value = false;
+        },
+    });
+};
+
+// ========================================================
+// MODAL 5: TAMBAH PERUSAHAAN BARU (IDENTIK GAMBAR 1 & 2)
+// ========================================================
+const showCreateModal = ref(false);
+const isSubmittingCreate = ref(false);
+const createForm = ref({
+    jenis_lokasi: 'Dalam Negeri',
+    nama_perusahaan: '',
+    jenis_perusahaan: '3 - Perusahaan swasta',
+    propinsi_id: '',
+    kabupaten_id: '',
+    negara: '',
+    kode_pos: '',
+    skala: 'Nasional',
+    alamat: '',
+});
+
+const openCreateModal = () => {
+    createForm.value = {
+        jenis_lokasi: 'Dalam Negeri',
+        nama_perusahaan: '',
+        jenis_perusahaan: '3 - Perusahaan swasta',
+        propinsi_id: '',
+        kabupaten_id: '',
+        negara: '',
+        kode_pos: '',
+        skala: 'Nasional',
+        alamat: '',
+    };
+    showCreateModal.value = true;
+};
+
+const closeCreateModal = () => {
+    showCreateModal.value = false;
+};
+
+const filteredKabupatensForCreate = computed(() => {
+    if (!createForm.value.propinsi_id) return [];
+    return props.kabupatens.filter(k => k.propinsi_id == createForm.value.propinsi_id);
+});
+
+const handlePropinsiChangeCreate = () => {
+    createForm.value.kabupaten_id = '';
+};
+
+const submitCreateForm = () => {
+    if (!createForm.value.nama_perusahaan.trim()) {
+        Swal.fire({
+            icon: 'error',
+            title: 'Validasi Data',
+            text: 'Nama Perusahaan / Instansi wajib diisi.',
+            confirmButtonColor: '#0D542B',
+        });
+        return;
+    }
+
+    if (createForm.value.jenis_lokasi === 'Dalam Negeri') {
+        if (!createForm.value.propinsi_id) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Validasi Data',
+                text: 'Provinsi wajib dipilih untuk institusi dalam negeri.',
+                confirmButtonColor: '#0D542B',
+            });
+            return;
+        }
+        if (!createForm.value.kabupaten_id) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Validasi Data',
+                text: 'Kabupaten / Kota wajib dipilih.',
+                confirmButtonColor: '#0D542B',
+            });
+            return;
+        }
+    } else {
+        if (!createForm.value.negara) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Validasi Data',
+                text: 'Negara Tempat Bekerja wajib dipilih untuk institusi luar negeri.',
+                confirmButtonColor: '#0D542B',
+            });
+            return;
+        }
+    }
+
+    isSubmittingCreate.value = true;
+    router.post('/superadmin/perusahaan', createForm.value, {
+        preserveScroll: true,
+        onSuccess: () => {
+            isSubmittingCreate.value = false;
+            closeCreateModal();
+            Swal.fire({
+                icon: 'success',
+                title: 'Perusahaan Berhasil Disimpan',
+                text: `"${createForm.value.nama_perusahaan}" telah resmi ditambahkan ke master terverifikasi.`,
+                confirmButtonColor: '#0D542B',
+            });
+        },
+        onError: (err) => {
+            isSubmittingCreate.value = false;
+            const msg = Object.values(err)[0] || 'Terjadi kesalahan saat menyimpan data.';
+            Swal.fire({
+                icon: 'error',
+                title: 'Gagal Menyimpan',
+                text: msg,
+                confirmButtonColor: '#0D542B',
+            });
+        },
+    });
+};
+
+// ========================================================
+// MODAL 6: SUNTING DATA PERUSAHAAN (SESUAI FORM IDENTIK)
+// ========================================================
+const showEditModal = ref(false);
+const isSubmittingEdit = ref(false);
+const editForm = ref({
+    id: null,
+    jenis_lokasi: 'Dalam Negeri',
+    nama_perusahaan: '',
+    jenis_perusahaan: '3 - Perusahaan swasta',
+    propinsi_id: '',
+    kabupaten_id: '',
+    negara: '',
+    kode_pos: '',
+    skala: 'Nasional',
+    alamat: '',
+});
+
+const openEditModal = (company) => {
+    editForm.value = {
+        id: company.id,
+        jenis_lokasi: company.jenis_lokasi || 'Dalam Negeri',
+        nama_perusahaan: company.nama_perusahaan || '',
+        jenis_perusahaan: company.jenis_perusahaan || '3 - Perusahaan swasta',
+        propinsi_id: company.propinsi_id ? String(company.propinsi_id) : '',
+        kabupaten_id: company.kabupaten_id ? String(company.kabupaten_id) : '',
+        negara: company.negara || '',
+        kode_pos: company.kode_pos || '',
+        skala: company.skala || 'Nasional',
+        alamat: company.alamat || '',
+    };
+    showEditModal.value = true;
+};
+
+const closeEditModal = () => {
+    showEditModal.value = false;
+    editForm.value.id = null;
+};
+
+const filteredKabupatensForEdit = computed(() => {
+    if (!editForm.value.propinsi_id) return [];
+    return props.kabupatens.filter(k => k.propinsi_id == editForm.value.propinsi_id);
+});
+
+const handlePropinsiChangeEdit = () => {
+    editForm.value.kabupaten_id = '';
+};
+
+const submitEditForm = () => {
+    if (!editForm.value.nama_perusahaan.trim()) {
+        Swal.fire({
+            icon: 'error',
+            title: 'Validasi Data',
+            text: 'Nama Perusahaan / Instansi wajib diisi.',
+            confirmButtonColor: '#0D542B',
+        });
+        return;
+    }
+
+    isSubmittingEdit.value = true;
+    router.put(`/superadmin/perusahaan/${editForm.value.id}`, editForm.value, {
+        preserveScroll: true,
+        onSuccess: () => {
+            isSubmittingEdit.value = false;
+            closeEditModal();
+            if (showReviewModal.value) closeReviewModal();
+            Swal.fire({
+                icon: 'success',
+                title: 'Data Berhasil Diperbarui',
+                text: 'Informasi institusi telah berhasil diperbarui dan diverifikasi.',
+                confirmButtonColor: '#0D542B',
+            });
+        },
+        onError: (err) => {
+            isSubmittingEdit.value = false;
+            const msg = Object.values(err)[0] || 'Terjadi kendala saat memperbarui data.';
+            Swal.fire({
+                icon: 'error',
+                title: 'Pembaruan Gagal',
+                text: msg,
+                confirmButtonColor: '#0D542B',
+            });
+        },
+    });
+};
+
+// ========================================================
+// OPERASI AKSI CEPAT: VERIFIKASI LANGSUNG (TOMBOL V)
+// ========================================================
 const handleVerifyDirect = (company) => {
     Swal.fire({
-        title: 'Verifikasi Perusahaan?',
-        text: `Apakah Anda yakin ingin memverifikasi "${company.nama_perusahaan}" sebagai master data perusahaan baru?`,
+        title: 'Verifikasi sebagai Master Resmi?',
+        text: `Apakah Anda yakin ingin memverifikasi "${company.nama_perusahaan}" sebagai data master institusi resmi universitas?`,
         icon: 'question',
         showCancelButton: true,
-        confirmButtonText: 'Ya, Verifikasi',
+        confirmButtonText: 'Ya, Verifikasi Institusi',
         cancelButtonText: 'Batal',
         confirmButtonColor: '#0D542B',
-        cancelButtonColor: '#6B7280',
+        cancelButtonColor: '#64748B',
     }).then((result) => {
         if (result.isConfirmed) {
             router.post(`/superadmin/perusahaan/${company.id}/verify`, {}, {
                 preserveScroll: true,
                 onSuccess: () => {
-                    Swal.fire('Berhasil!', `Perusahaan "${company.nama_perusahaan}" telah diverifikasi.`, 'success');
-                },
-            });
-        }
-    });
-};
-
-// Aksi 2: Auto Replace dengan Perusahaan Terverifikasi yang Dipilih
-const handleAutoReplace = (pendingCompany, targetVerifiedCompany) => {
-    Swal.fire({
-        title: 'Gantikan dengan Perusahaan Ini?',
-        html: `
-            <div class="text-left text-xs space-y-2">
-                <p>Data inputan alumni: <strong class="text-rose-700">${pendingCompany.nama_perusahaan}</strong></p>
-                <p>Akan digantikan dengan master resmi: <strong class="text-emerald-800">${targetVerifiedCompany.nama_perusahaan}</strong></p>
-                <div class="p-2.5 bg-amber-50 border border-amber-200 rounded text-amber-900 mt-2">
-                    - Semua relasi alumni yang memilih perusahaan ini akan dialihkan ke master resmi.<br>
-                    - Record pengajuan duplikat akan dibersihkan dari antrean verifikasi.
-                </div>
-            </div>
-        `,
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonText: 'Ya, Gantikan Perusahaan',
-        cancelButtonText: 'Batal',
-        confirmButtonColor: '#0D542B',
-        cancelButtonColor: '#6B7280',
-    }).then((result) => {
-        if (result.isConfirmed) {
-            router.post(`/superadmin/perusahaan/${pendingCompany.id}/replace`, {
-                target_company_id: targetVerifiedCompany.id,
-            }, {
-                preserveScroll: true,
-                onSuccess: () => {
-                    Swal.fire('Berhasil Digantikan!', `Perusahaan berhasil digantikan dengan master "${targetVerifiedCompany.nama_perusahaan}".`, 'success');
-                },
-            });
-        }
-    });
-};
-
-// Aksi 3: Tolak Pengajuan
-const handleReject = (company) => {
-    Swal.fire({
-        title: 'Tolak Pengajuan Perusahaan?',
-        text: `Apakah Anda yakin ingin menolak pengajuan "${company.nama_perusahaan}"? Status akan diubah menjadi Ditolak.`,
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonText: 'Ya, Tolak',
-        cancelButtonText: 'Batal',
-        confirmButtonColor: '#DC2626',
-        cancelButtonColor: '#6B7280',
-    }).then((result) => {
-        if (result.isConfirmed) {
-            router.post(`/superadmin/perusahaan/${company.id}/reject`, {}, {
-                preserveScroll: true,
-                onSuccess: () => {
-                    Swal.fire('Ditolak!', `Pengajuan perusahaan "${company.nama_perusahaan}" telah ditolak.`, 'success');
-                },
-            });
-        }
-    });
-};
-
-// ========================================================
-// SWEETALERT2: SUNTING DATA PERUSAHAAN OLEH SUPERADMIN
-// ========================================================
-const openEditModal = (company) => {
-    const propOptions = (props.propinsis || []).map(p => 
-        `<option value="${p.id}" ${p.id == company.propinsi_id ? 'selected' : ''}>${p.nama_provinsi}</option>`
-    ).join('');
-
-    const getKabOptions = (selectedPropId, currentKabId) => {
-        if (!selectedPropId) return '<option value="">-- Pilih Provinsi Dahulu --</option>';
-        const kabs = (props.kabupatens || []).filter(k => k.propinsi_id == selectedPropId);
-        return '<option value="">-- Pilih Kabupaten/Kota --</option>' + kabs.map(k => 
-            `<option value="${k.id}" ${k.id == currentKabId ? 'selected' : ''}>${k.nama_kabupaten}</option>`
-        ).join('');
-    };
-
-    const initialKabOptions = getKabOptions(company.propinsi_id, company.kabupaten_id);
-
-    Swal.fire({
-        title: `<span class="text-base font-bold text-gray-900">Sunting & Verifikasi Perusahaan</span>`,
-        html: `
-            <div class="text-left text-xs space-y-3 pt-1 text-gray-800">
-                <div>
-                    <label class="block font-bold text-gray-700 mb-1">Nama Perusahaan / Instansi *</label>
-                    <input id="swal-edit-nama" type="text" class="w-full px-3 py-2 border border-gray-300 rounded text-xs focus:outline-none focus:ring-1 focus:ring-emerald-700" value="${(company.nama_perusahaan || '').replace(/"/g, '&quot;')}" placeholder="Contoh: PT Bank Central Asia Tbk" />
-                </div>
-                <div class="grid grid-cols-2 gap-2">
-                    <div>
-                        <label class="block font-bold text-gray-700 mb-1">Provinsi</label>
-                        <select id="swal-edit-prov" class="w-full px-2 py-2 border border-gray-300 rounded text-xs bg-white focus:outline-none focus:ring-1 focus:ring-emerald-700">
-                            <option value="">-- Pilih Provinsi --</option>
-                            ${propOptions}
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block font-bold text-gray-700 mb-1">Kabupaten/Kota</label>
-                        <select id="swal-edit-kab" class="w-full px-2 py-2 border border-gray-300 rounded text-xs bg-white focus:outline-none focus:ring-1 focus:ring-emerald-700">
-                            ${initialKabOptions}
-                        </select>
-                    </div>
-                </div>
-                <div>
-                    <label class="block font-bold text-gray-700 mb-1">Alamat Lengkap</label>
-                    <textarea id="swal-edit-alamat" rows="2" class="w-full px-3 py-2 border border-gray-300 rounded text-xs focus:outline-none focus:ring-1 focus:ring-emerald-700" placeholder="Alamat jalan, gedung, dsb...">${company.alamat || ''}</textarea>
-                </div>
-                <div class="grid grid-cols-3 gap-2">
-                    <div>
-                        <label class="block font-bold text-gray-700 mb-1">Kode Pos</label>
-                        <input id="swal-edit-kodepos" type="text" class="w-full px-2 py-2 border border-gray-300 rounded text-xs" value="${company.kode_pos || ''}" placeholder="55224" />
-                    </div>
-                    <div>
-                        <label class="block font-bold text-gray-700 mb-1">Skala Usaha</label>
-                        <select id="swal-edit-skala" class="w-full px-2 py-2 border border-gray-300 rounded text-xs bg-white">
-                            <option value="Nasional" ${company.skala === 'Nasional' ? 'selected' : ''}>Nasional</option>
-                            <option value="Multinasional/Internasional" ${company.skala === 'Multinasional/Internasional' ? 'selected' : ''}>Multinasional</option>
-                            <option value="Regional/Lokal" ${company.skala === 'Regional/Lokal' ? 'selected' : ''}>Regional/Lokal</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block font-bold text-gray-700 mb-1">Jenis Usaha</label>
-                        <select id="swal-edit-jenis" class="w-full px-2 py-2 border border-gray-300 rounded text-xs bg-white">
-                            <option value="Perusahaan swasta" ${company.jenis_perusahaan === 'Perusahaan swasta' ? 'selected' : ''}>Swasta</option>
-                            <option value="BUMN/BUMD" ${company.jenis_perusahaan === 'BUMN/BUMD' ? 'selected' : ''}>BUMN/BUMD</option>
-                            <option value="Instansi pemerintah" ${company.jenis_perusahaan === 'Instansi pemerintah' ? 'selected' : ''}>Pemerintah</option>
-                            <option value="Organisasi non-profit/LSM" ${company.jenis_perusahaan === 'Organisasi non-profit/LSM' ? 'selected' : ''}>Non-profit</option>
-                            <option value="Wiraswasta/Perusahaan sendiri" ${company.jenis_perusahaan === 'Wiraswasta/Perusahaan sendiri' ? 'selected' : ''}>Wiraswasta</option>
-                        </select>
-                    </div>
-                </div>
-            </div>
-        `,
-        width: '600px',
-        showCancelButton: true,
-        confirmButtonText: 'Simpan & Verifikasi',
-        cancelButtonText: 'Batal',
-        confirmButtonColor: '#0D542B',
-        cancelButtonColor: '#6B7280',
-        didOpen: () => {
-            const provSelect = document.getElementById('swal-edit-prov');
-            const kabSelect = document.getElementById('swal-edit-kab');
-            if (provSelect && kabSelect) {
-                provSelect.addEventListener('change', (e) => {
-                    kabSelect.innerHTML = getKabOptions(e.target.value, '');
-                });
-            }
-        },
-        preConfirm: () => {
-            const nama = document.getElementById('swal-edit-nama')?.value?.trim();
-            if (!nama) {
-                Swal.showValidationMessage('Nama perusahaan wajib diisi.');
-                return false;
-            }
-            return {
-                id: company.id,
-                nama_perusahaan: nama,
-                propinsi_id: document.getElementById('swal-edit-prov')?.value || null,
-                kabupaten_id: document.getElementById('swal-edit-kab')?.value || null,
-                alamat: document.getElementById('swal-edit-alamat')?.value || '',
-                kode_pos: document.getElementById('swal-edit-kodepos')?.value || '',
-                skala: document.getElementById('swal-edit-skala')?.value || 'Nasional',
-                jenis_perusahaan: document.getElementById('swal-edit-jenis')?.value || 'Perusahaan swasta',
-                jenis_lokasi: 'Dalam Negeri',
-                negara: 'Indonesia',
-            };
-        }
-    }).then((result) => {
-        if (result.isConfirmed && result.value) {
-            router.put(`/superadmin/perusahaan/${result.value.id}`, result.value, {
-                preserveScroll: true,
-                onSuccess: () => {
-                    Swal.fire('Berhasil Disimpan!', 'Data perusahaan telah diperbarui dan diverifikasi.', 'success');
+                    if (showReviewModal.value) closeReviewModal();
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Institusi Terverifikasi',
+                        text: `"${company.nama_perusahaan}" kini berstatus resmi sebagai Master Data Terverifikasi.`,
+                        confirmButtonColor: '#0D542B',
+                    });
                 },
             });
         }
@@ -435,271 +532,433 @@ const openEditModal = (company) => {
 </script>
 
 <template>
-    <Head title="Verifikasi Perusahaan - Super Admin Tracer Study UKDW" />
+    <Head title="Pengelolaan Master Perusahaan - Super Admin Tracer Study UKDW" />
 
-    <div class="min-h-screen bg-slate-50 flex font-sans">
-        <!-- Sidebar Terpadu Super Admin -->
+    <div class="min-h-screen bg-[#F8FAFC] text-slate-800 font-sans flex">
+        <!-- Sidebar Resmi Super Admin -->
         <Sidebar :user="user" />
 
         <!-- Area Konten Utama -->
         <div class="flex-1 flex flex-col min-w-0 lg:pl-72">
-            <!-- Header Halaman Bersih & Flat -->
-            <div class="bg-white border-b border-gray-200 px-6 py-5">
-                <div class="w-full flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <!-- Header Solid Hijau Resmi UKDW #0D542B (Sesuai Gambar 3) -->
+            <header class="bg-[#0D542B] text-white pt-8 pb-16 px-4 sm:px-6 lg:px-8 border-b border-emerald-900/40">
+                <div class="w-full max-w-[1440px] mx-auto flex flex-col md:flex-row md:items-center justify-between gap-6">
                     <div>
-                        <div class="flex items-center gap-2 text-xs text-gray-500 font-medium mb-1">
-                            <Link href="/superadmin/dashboard" class="hover:underline hover:text-[#0D542B]">Dashboard</Link>
-                            <span>/</span>
-                            <span class="text-gray-800 font-semibold">Super Admin</span>
-                            <span>/</span>
-                            <span class="text-[#0D542B] font-bold">Verifikasi Perusahaan</span>
-                        </div>
-                        <h1 class="text-xl font-bold text-gray-900">
-                            Verifikasi & Approval Perusahaan Alumni
+                        <!-- Breadcrumbs -->
+                        <nav class="flex items-center gap-2 text-xs text-emerald-100 font-medium mb-2.5">
+                            <Link href="/superadmin/dashboard" class="hover:text-white transition-colors flex items-center gap-1">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+                                </svg>
+                                <span>Dashboard</span>
+                            </Link>
+                            <span class="text-emerald-300/60">/</span>
+                            <span class="text-white font-bold bg-white/10 px-2 py-0.5 rounded-md">Master Perusahaan</span>
+                        </nav>
+
+                        <h1 class="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-white tracking-tight">
+                            Pengelolaan Master Perusahaan & Kemitraan
                         </h1>
-                        <p class="text-xs text-gray-500 mt-0.5">
-                            Pusat verifikasi, pencocokan kemiripan nama & kota, serta auto-replace perusahaan pengajuan alumni.
+                        <p class="text-emerald-100/90 text-xs sm:text-sm font-normal mt-1.5 max-w-2xl leading-relaxed">
+                            Pusat validasi data mitra institusi, verifikasi usulan instansi kerja, dan konsolidasi profil karir alumni Universitas Kristen Duta Wacana.
                         </p>
-                    </div>
 
-                    <!-- Widget Statistik Dual Sesuai Foto Pengguna -->
-                    <div class="bg-slate-50/80 border border-slate-200/80 rounded-2xl px-8 py-3.5 flex items-center gap-8 text-center shadow-2xs">
-                        <div>
-                            <div class="text-2xl font-black text-[#0D542B] leading-none mb-1.5">{{ stats.total_pending_all }}</div>
-                            <div class="text-[11px] font-bold text-slate-600 tracking-wide uppercase">MENUNGGU VERIFIKASI</div>
-                        </div>
-                        <div class="w-px h-10 bg-slate-300/80"></div>
-                        <div>
-                            <div class="text-2xl font-black text-[#D97706] leading-none mb-1.5">{{ stats.total_verified }}</div>
-                            <div class="text-[11px] font-bold text-slate-600 tracking-wide uppercase">MASTER TERVERIFIKASI</div>
+                        <!-- Tombol Aksi Cepat Header (Sesuai Desain Tombol Gambar 3) -->
+                        <div class="flex items-center gap-3 mt-4 flex-wrap">
+                            <button
+                                type="button"
+                                @click="openCreateModal"
+                                class="inline-flex items-center gap-2 px-4 py-2 bg-[#FDC700] hover:bg-[#e6b400] text-slate-900 rounded-xl text-xs font-extrabold transition-all shadow-xs cursor-pointer active:scale-95"
+                                title="Tambah entri perusahaan baru ke master data resmi"
+                            >
+                                <svg class="w-4 h-4 text-slate-900" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                                </svg>
+                                <span>Tambah Perusahaan Baru</span>
+                            </button>
                         </div>
                     </div>
                 </div>
-            </div>
+            </header>
 
-            <!-- Konten Utama -->
-            <main class="w-full p-6 space-y-4">
+            <!-- Main Content Container dengan Negative Top Margin (-mt-10) Menumpuk Header Hijau -->
+            <main class="w-full max-w-[1440px] mx-auto -mt-10 px-4 sm:px-6 lg:px-8 space-y-6 pb-12">
+                <!-- 4 Kartu Statistik Interaktif & Filter Cepat (Sesuai Gambar 3, Bisa Diklik!) -->
+                <div class="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3.5 sm:gap-4">
+                    <!-- 1. Total Institusi (Filter: Semua Status) -->
+                    <div
+                        @click="filterByStatus('all')"
+                        class="bg-white rounded-xl p-4.5 border cursor-pointer transition-all select-none"
+                        :class="statusFilter === 'all' ? 'border-[#0D542B] ring-1 ring-[#0D542B] shadow-xs' : 'border-slate-200 hover:border-slate-300 shadow-2xs'"
+                        title="Klik untuk menampilkan seluruh perusahaan"
+                    >
+                        <div class="flex items-center justify-between gap-1.5">
+                            <p class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Total Perusahaan</p>
+                            <span v-if="statusFilter === 'all'" class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-[#0D542B] text-white">Aktif</span>
+                        </div>
+                        <p class="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight mt-1.5">{{ stats.total_all }}</p>
+                        <p class="text-xs text-slate-500 mt-1">Semua data terdaftar</p>
+                    </div>
 
-                <!-- Tab Navigasi Filter Status Perusahaan -->
-                <div class="flex items-center gap-2 border-b border-gray-200 pb-2">
-                    <button
-                        @click="changeStatusTab('all')"
-                        class="px-4 py-2 text-xs font-bold rounded-lg transition-colors flex items-center gap-1.5 cursor-pointer"
-                        :class="statusFilter === 'all' ? 'bg-[#0D542B] text-white shadow-xs' : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'"
+                    <!-- 2. Menunggu Peninjauan (Filter: Menunggu Verifikasi) -->
+                    <div
+                        @click="filterByStatus('Menunggu Verifikasi')"
+                        class="bg-white rounded-xl p-4.5 border cursor-pointer transition-all select-none"
+                        :class="statusFilter === 'Menunggu Verifikasi' ? 'border-[#0D542B] ring-1 ring-[#0D542B] shadow-xs' : 'border-slate-200 hover:border-slate-300 shadow-2xs'"
+                        title="Klik untuk memfilter perusahaan yang menunggu verifikasi"
                     >
-                        <span>Semua Perusahaan</span>
-                        <span class="px-1.5 py-0.5 rounded-full text-[10px]" :class="statusFilter === 'all' ? 'bg-white/20 text-white' : 'bg-gray-100 text-gray-700'">{{ stats.total_all || companies.total }}</span>
-                    </button>
-                    <button
-                        @click="changeStatusTab('Menunggu Verifikasi')"
-                        class="px-4 py-2 text-xs font-bold rounded-lg transition-colors flex items-center gap-1.5 cursor-pointer"
-                        :class="statusFilter === 'Menunggu Verifikasi' ? 'bg-[#0D542B] text-white shadow-xs' : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'"
+                        <div class="flex items-center justify-between gap-1.5">
+                            <p class="text-[11px] font-bold text-slate-600 uppercase tracking-wider">Menunggu Peninjauan</p>
+                            <span v-if="statusFilter === 'Menunggu Verifikasi'" class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-[#0D542B] text-white">Aktif</span>
+                        </div>
+                        <p class="text-2xl sm:text-3xl font-extrabold text-slate-800 tracking-tight mt-1.5">{{ stats.total_pending_all }}</p>
+                        <p class="text-xs text-slate-500 mt-1">Perlu tindakan verifikasi</p>
+                    </div>
+
+                    <!-- 3. Master Terverifikasi (Filter: Terverifikasi) -->
+                    <div
+                        @click="filterByStatus('Terverifikasi')"
+                        class="bg-white rounded-xl p-4.5 border cursor-pointer transition-all select-none"
+                        :class="statusFilter === 'Terverifikasi' ? 'border-[#0D542B] ring-1 ring-[#0D542B] shadow-xs' : 'border-slate-200 hover:border-slate-300 shadow-2xs'"
+                        title="Klik untuk memfilter master perusahaan resmi terverifikasi"
                     >
-                        <span>Menunggu Verifikasi</span>
-                        <span class="px-1.5 py-0.5 rounded-full text-[10px]" :class="statusFilter === 'Menunggu Verifikasi' ? 'bg-white/20 text-white' : 'bg-amber-100 text-amber-800'">{{ stats.total_pending_all }}</span>
-                    </button>
-                    <button
-                        @click="changeStatusTab('Terverifikasi')"
-                        class="px-4 py-2 text-xs font-bold rounded-lg transition-colors flex items-center gap-1.5 cursor-pointer"
-                        :class="statusFilter === 'Terverifikasi' ? 'bg-[#0D542B] text-white shadow-xs' : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'"
+                        <div class="flex items-center justify-between gap-1.5">
+                            <p class="text-[11px] font-bold text-slate-600 uppercase tracking-wider">Master Terverifikasi</p>
+                            <span v-if="statusFilter === 'Terverifikasi'" class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-[#0D542B] text-white">Aktif</span>
+                        </div>
+                        <p class="text-2xl sm:text-3xl font-extrabold text-[#0D542B] tracking-tight mt-1.5">{{ stats.total_verified }}</p>
+                        <p class="text-xs text-slate-500 mt-1">Mitra sah universitas</p>
+                    </div>
+
+                    <!-- 4. Usulan Ditolak (Filter: Ditolak) -->
+                    <div
+                        @click="filterByStatus('Ditolak')"
+                        class="bg-white rounded-xl p-4.5 border cursor-pointer transition-all select-none"
+                        :class="statusFilter === 'Ditolak' ? 'border-[#0D542B] ring-1 ring-[#0D542B] shadow-xs' : 'border-slate-200 hover:border-slate-300 shadow-2xs'"
+                        title="Klik untuk memfilter pengajuan yang ditolak"
                     >
-                        <span>Master Terverifikasi</span>
-                        <span class="px-1.5 py-0.5 rounded-full text-[10px]" :class="statusFilter === 'Terverifikasi' ? 'bg-white/20 text-white' : 'bg-emerald-100 text-emerald-800'">{{ stats.total_verified }}</span>
-                    </button>
+                        <div class="flex items-center justify-between gap-1.5">
+                            <p class="text-[11px] font-bold text-slate-600 uppercase tracking-wider">Usulan Ditolak</p>
+                            <span v-if="statusFilter === 'Ditolak'" class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-[#0D542B] text-white">Aktif</span>
+                        </div>
+                        <p class="text-2xl sm:text-3xl font-extrabold text-rose-800 tracking-tight mt-1.5">{{ stats.total_rejected }}</p>
+                        <p class="text-xs text-slate-500 mt-1">Tidak memenuhi syarat</p>
+                    </div>
                 </div>
 
-                <!-- Bilah Filter & Pencarian (DataTables Top Bar) -->
-                <div class="bg-white p-3.5 rounded-lg border border-gray-200 flex flex-col md:flex-row md:items-center justify-between gap-3 text-xs shadow-2xs">
-                    <div class="flex items-center gap-3 flex-wrap">
-                        <!-- Filter Lingkup / Prodi -->
-                        <div class="flex items-center gap-1.5">
-                            <span class="font-bold text-gray-700">Filter Prodi:</span>
+                <!-- Bilah Penyaringan & Pencarian (Format Identik Gambar 3) -->
+                <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-2xs space-y-4">
+                    <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                        <div class="flex items-center gap-2">
+                            <span class="text-xs font-bold text-slate-900 uppercase tracking-wider">
+                                Filter & Pencarian Perusahaan
+                            </span>
+                            <span v-if="statusFilter !== 'all'" class="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-700 border border-slate-300">
+                                Status: {{ statusFilter }}
+                            </span>
+                        </div>
+                        <button
+                            v-if="search || selectedProdiId || scope !== 'all' || statusFilter !== 'all' || perPage != 10"
+                            @click="resetFilters"
+                            class="text-xs font-bold text-slate-500 hover:text-[#0D542B] transition-colors cursor-pointer"
+                        >
+                            Reset Filter
+                        </button>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5 text-xs">
+                        <!-- Kotak Pencarian -->
+                        <div>
+                            <label class="block text-[11px] font-bold text-slate-600 uppercase mb-1">Cari Nama / Kota</label>
+                            <div class="relative">
+                                <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                                    </svg>
+                                </span>
+                                <input
+                                    type="text"
+                                    v-model="search"
+                                    @input="handleSearch"
+                                    placeholder="Ketik nama perusahaan..."
+                                    class="w-full pl-8 pr-3 py-2 border border-slate-200 rounded-xl text-xs bg-slate-50/50 focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#0D542B]"
+                                />
+                            </div>
+                        </div>
+
+                        <!-- Filter Program Studi -->
+                        <div>
+                            <label class="block text-[11px] font-bold text-slate-600 uppercase mb-1">Program Studi</label>
                             <select
                                 v-model="selectedProdiId"
                                 @change="applyFilters"
-                                class="px-2.5 py-1.5 border border-gray-300 rounded-lg text-xs bg-white focus:outline-none focus:ring-1 focus:ring-emerald-700 font-medium cursor-pointer"
+                                class="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs bg-slate-50/50 focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#0D542B] font-medium cursor-pointer"
                             >
-                                <option value="">Semua Program Studi (All)</option>
+                                <option value="">Semua Program Studi</option>
                                 <option v-for="p in prodis" :key="p.id" :value="p.id">
                                     {{ p.kode_prodi ? `[${p.kode_prodi}] ` : '' }}{{ p.nama_prodi }}
                                 </option>
                             </select>
                         </div>
 
-                        <!-- Filter Scope Pengajuan -->
-                        <div class="flex items-center gap-1.5">
-                            <span class="font-bold text-gray-700">Lingkup:</span>
+                        <!-- Filter Status Verifikasi -->
+                        <div>
+                            <label class="block text-[11px] font-bold text-slate-600 uppercase mb-1">Status Verifikasi</label>
+                            <select
+                                v-model="statusFilter"
+                                @change="applyFilters"
+                                class="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs bg-slate-50/50 focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#0D542B] font-medium cursor-pointer"
+                            >
+                                <option value="all">Semua Status</option>
+                                <option value="Menunggu Verifikasi">Menunggu Verifikasi</option>
+                                <option value="Terverifikasi">Master Terverifikasi</option>
+                                <option value="Ditolak">Usulan Ditolak</option>
+                            </select>
+                        </div>
+
+                        <!-- Filter Lingkup Pengajuan -->
+                        <div>
+                            <label class="block text-[11px] font-bold text-slate-600 uppercase mb-1">Lingkup Pengajuan</label>
                             <select
                                 v-model="scope"
                                 @change="applyFilters"
-                                class="px-2.5 py-1.5 border border-gray-300 rounded-lg text-xs bg-white focus:outline-none focus:ring-1 focus:ring-emerald-700 font-medium cursor-pointer"
+                                class="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs bg-slate-50/50 focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#0D542B] font-medium cursor-pointer"
                             >
-                                <option value="all">Semua Pengajuan Pending ({{ stats.total_pending_all }})</option>
-                                <option value="prodi">Pengajuan Khusus Prodi Terkait</option>
+                                <option value="all">Seluruh Universitas</option>
+                                <option value="prodi">Sesuai Prodi Terpilih</option>
                             </select>
                         </div>
-
-                        <!-- Per Page Dropdown -->
-                        <div class="flex items-center gap-1.5">
-                            <span class="text-gray-500 font-medium">Tampilkan:</span>
-                            <select
-                                v-model="perPage"
-                                @change="applyFilters"
-                                class="px-2 py-1.5 border border-gray-300 rounded-lg text-xs bg-white focus:outline-none focus:ring-1 focus:ring-emerald-700 font-medium cursor-pointer"
-                            >
-                                <option :value="10">10 data</option>
-                                <option :value="25">25 data</option>
-                                <option :value="50">50 data</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <!-- Kotak Pencarian (DataTables Filter) -->
-                    <div class="relative w-full md:w-80">
-                        <span class="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none text-gray-400">
-                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                            </svg>
-                        </span>
-                        <input
-                            type="text"
-                            v-model="search"
-                            @input="handleSearch"
-                            placeholder="Cari perusahaan, kota, atau nama alumni..."
-                            class="w-full pl-8 pr-3 py-1.5 border border-gray-300 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-emerald-700"
-                        />
                     </div>
                 </div>
 
-                <!-- Info Jumlah Data & Tombol Reset -->
-                <div class="flex items-center justify-between text-xs text-gray-500 px-1">
+                <!-- Bilah Info Jumlah Data & Per Page -->
+                <div class="flex items-center justify-between text-xs text-slate-600 px-1">
+                    <div class="flex items-center gap-2">
+                        <span>Tampilkan:</span>
+                        <select
+                            v-model="perPage"
+                            @change="applyFilters"
+                            class="px-2 py-1 border border-slate-300 rounded-lg text-xs bg-white focus:outline-none focus:ring-1 focus:ring-[#0D542B] font-medium cursor-pointer"
+                        >
+                            <option :value="10">10</option>
+                            <option :value="25">25</option>
+                            <option :value="50">50</option>
+                        </select>
+                        <span>data per halaman</span>
+                    </div>
                     <span>
-                        Menampilkan <strong>{{ companies.data?.length || 0 }}</strong> dari total <strong>{{ companies.total || 0 }}</strong> perusahaan menunggu verifikasi
+                        Menampilkan <strong>{{ companies.from || 0 }} - {{ companies.to || 0 }}</strong> dari total <strong>{{ companies.total || 0 }}</strong> institusi terdaftar
                     </span>
-                    <button
-                        v-if="search || selectedProdiId || scope !== 'all' || perPage != 10"
-                        @click="resetFilters"
-                        class="text-emerald-800 font-semibold hover:underline cursor-pointer"
-                    >
-                        Reset Filter
-                    </button>
                 </div>
 
-                <!-- Tabel Data Pengajuan Perusahaan (Identik dengan Admin Prodi) -->
-                <div class="bg-white border border-gray-300 overflow-x-auto shadow-2xs">
-                    <table class="w-full min-w-full text-left border-collapse border border-gray-300 text-xs bg-white">
+                <!-- Tabel Data Master & Usulan Perusahaan (Rapi & Bersih) -->
+                <div class="bg-white border border-slate-200 rounded-2xl overflow-x-auto shadow-2xs">
+                    <table class="w-full min-w-full text-left border-collapse text-xs bg-white">
                         <thead>
-                            <tr class="bg-gray-100 text-gray-800 font-semibold border-b border-gray-300 text-[11px] whitespace-nowrap">
-                                <th class="border border-gray-300 px-2.5 py-2 text-center w-10 whitespace-nowrap">No</th>
-                                <th class="border border-gray-300 px-3 py-2 w-48 whitespace-nowrap">Nama Perusahaan</th>
-                                <th class="border border-gray-300 px-3 py-2 min-w-[220px] whitespace-nowrap">Lokasi Lengkap</th>
-                                <th class="border border-gray-300 px-3 py-2 text-center w-32 whitespace-nowrap">Status</th>
-                                <th class="border border-gray-300 px-3 py-2 w-44 whitespace-nowrap">User</th>
-                                <th class="border border-gray-300 px-3 py-2 min-w-[200px] whitespace-nowrap">Rekomendasi</th>
-                                <th class="border border-gray-300 px-2.5 py-2 text-center w-28 whitespace-nowrap">Aksi</th>
+                            <tr class="bg-slate-50 text-slate-800 font-bold border-b border-slate-200 text-[11px] whitespace-nowrap">
+                                <th class="border-r border-slate-200 px-3 py-3 text-center w-12">No</th>
+                                <th class="border-r border-slate-200 px-3.5 py-3 min-w-[200px]">Nama Institusi / Perusahaan</th>
+                                <th class="border-r border-slate-200 px-3.5 py-3 min-w-[200px]">Wilayah & Alamat Kantor</th>
+                                <th class="border-r border-slate-200 px-3.5 py-3 min-w-[170px]">Pengaju Usulan</th>
+                                <th class="border-r border-slate-200 px-3.5 py-3 min-w-[210px]">Status & Info Verifikasi</th>
+                                <th class="border-r border-slate-200 px-3.5 py-3 min-w-[190px]">Rekomendasi Master</th>
+                                <th class="px-4 py-3 text-center min-w-[170px] whitespace-nowrap">Aksi</th>
                             </tr>
                         </thead>
-                        <tbody>
+                        <tbody class="divide-y divide-slate-100">
                             <tr v-if="!companies.data || companies.data.length === 0">
-                                <td colspan="7" class="border border-gray-300 p-8 text-center text-gray-400 italic">
-                                    Tidak ada data pengajuan perusahaan yang menunggu verifikasi.
+                                <td colspan="7" class="p-8 text-center text-slate-400 italic">
+                                    Tidak ada data institusi yang sesuai dengan kriteria penyaringan saat ini.
                                 </td>
                             </tr>
                             <tr
                                 v-for="(company, index) in companies.data"
                                 :key="company.id"
-                                class="hover:bg-gray-50/80 transition-colors"
+                                class="hover:bg-slate-50/80 transition-colors"
                             >
                                 <!-- No -->
-                                <td class="border border-gray-300 px-2.5 py-2 text-center text-gray-600 font-medium">
+                                <td class="border-r border-slate-100 px-3 py-3 text-center text-slate-600 font-medium">
                                     {{ ((companies.current_page - 1) * companies.per_page) + index + 1 }}
                                 </td>
 
-                                <!-- Nama Perusahaan -->
-                                <td class="border border-gray-300 px-3 py-2 font-bold text-gray-900">
-                                    {{ company.nama_perusahaan }}
+                                <!-- Nama Perusahaan & Karakteristik -->
+                                <td class="border-r border-slate-100 px-3.5 py-3">
+                                    <div class="font-bold text-slate-900 leading-snug">
+                                        {{ company.nama_perusahaan }}
+                                    </div>
+                                    <div class="text-[11px] text-slate-500 mt-0.5">
+                                        <span>{{ company.skala || 'Nasional' }}</span>
+                                        <span v-if="company.jenis_perusahaan"> • {{ company.jenis_perusahaan }}</span>
+                                    </div>
+                                    <div v-if="company.homepage" class="text-[10px] text-slate-600 font-mono mt-0.5 truncate max-w-[180px]">
+                                        {{ company.homepage }}
+                                    </div>
                                 </td>
 
-                                <!-- Lokasi Lengkap -->
-                                <td class="border border-gray-300 px-3 py-2 text-gray-700">
-                                    <div v-if="company.alamat" class="font-medium text-gray-900 mb-0.5">
+                                <!-- Wilayah & Alamat Kantor -->
+                                <td class="border-r border-slate-100 px-3.5 py-3 text-slate-700">
+                                    <div v-if="company.alamat" class="font-medium text-slate-900 leading-snug mb-0.5">
                                         {{ company.alamat }}
                                     </div>
-                                    <div class="text-gray-600">
-                                        {{ company.kabupaten?.nama_kabupaten || '-' }}, {{ company.propinsi?.nama_provinsi || '-' }}
-                                        <span v-if="company.kode_pos">({{ company.kode_pos }})</span>
+                                    <div class="text-slate-600 text-[11px]">
+                                        <span v-if="company.kabupaten">{{ company.kabupaten.nama_kabupaten }}, </span>
+                                        <span v-if="company.propinsi">{{ company.propinsi.nama_provinsi }}</span>
+                                        <span v-if="!company.kabupaten && !company.propinsi">{{ company.negara || 'Indonesia' }}</span>
+                                        <span v-if="company.kode_pos" class="font-mono text-slate-400"> ({{ company.kode_pos }})</span>
                                     </div>
-                                    <div class="text-gray-400 text-[11px]">
-                                        {{ company.negara || 'Indonesia' }} • {{ company.skala || 'Nasional' }}
+                                    <div class="text-[10px] text-slate-400 mt-0.5">
+                                        {{ company.jenis_lokasi || 'Dalam Negeri' }} • {{ company.negara || 'Indonesia' }}
                                     </div>
                                 </td>
 
-                                <!-- Status -->
-                                <td class="border border-gray-300 px-3 py-2 text-center">
-                                    <span class="text-amber-800 font-medium text-[11px]">
-                                        {{ company.status_verifikasi }}
-                                    </span>
-                                </td>
-
-                                <!-- User (Alumni Pengaju) -->
-                                <td class="border border-gray-300 px-3 py-2 text-gray-700">
-                                    <div v-if="company.biodata && company.biodata.length > 0">
-                                        <div class="font-bold text-gray-900 leading-tight">{{ company.biodata[0].nama }}</div>
-                                        <div class="text-gray-500 text-[11px] font-mono mt-0.5">{{ company.biodata[0].nim }} • {{ company.biodata[0].prodi?.nama_prodi || '-' }}</div>
+                                <!-- Kolom Pengaju Usulan -->
+                                <td class="border-r border-slate-100 px-3.5 py-3">
+                                    <div v-if="company.creator?.biodata">
+                                        <div class="font-semibold text-slate-900 leading-tight">
+                                            {{ getAlumniDisplayName(company.creator.biodata) }}
+                                        </div>
+                                        <div class="text-slate-500 text-[11px] font-mono mt-0.5">
+                                            {{ company.creator.biodata.nim || '-' }} • {{ getAlumniProdi(company.creator.biodata) }}
+                                        </div>
+                                        <div class="text-[10px] text-slate-400 mt-0.5">
+                                            Diajukan: {{ formatDate(company.created_at) }}
+                                        </div>
                                     </div>
                                     <div v-else-if="company.creator">
-                                        <div class="font-bold text-gray-900 leading-tight">{{ company.creator.biodata?.nama || company.creator.name }}</div>
-                                        <div class="text-gray-500 text-[11px] font-mono mt-0.5">{{ company.creator.biodata?.nim || company.creator.username }} • {{ company.created_prodi?.nama_prodi || company.creator.biodata?.prodi?.nama_prodi || '-' }}</div>
+                                        <div class="font-semibold text-slate-900 leading-tight">
+                                            {{ company.creator.name }}
+                                        </div>
+                                        <div class="text-slate-500 text-[11px] mt-0.5">
+                                            Role: {{ getRoleLabel(company.creator.role) }}
+                                        </div>
+                                        <div class="text-[10px] text-slate-400 mt-0.5">
+                                            Dibuat: {{ formatDate(company.created_at) }}
+                                        </div>
                                     </div>
-                                    <span v-else class="text-gray-400 italic">-</span>
+                                    <div v-else-if="company.biodata && company.biodata.length > 0">
+                                        <div class="font-semibold text-slate-900 leading-tight">
+                                            {{ getAlumniDisplayName(company.biodata[0]) }}
+                                        </div>
+                                        <div class="text-slate-500 text-[11px] font-mono mt-0.5">
+                                            {{ company.biodata[0].nim || '-' }} • {{ getAlumniProdi(company.biodata[0]) }}
+                                        </div>
+                                        <div class="text-[10px] text-slate-400 mt-0.5">
+                                            Tercatat: {{ formatDate(company.created_at) }}
+                                        </div>
+                                    </div>
+                                    <span v-else class="text-slate-400 italic text-[11px]">Master Internal Sistem</span>
                                 </td>
 
-                                <!-- Rekomendasi -->
-                                <td class="border border-gray-300 px-3 py-2">
-                                    <div v-if="company.recommendations && company.recommendations.length > 0">
+                                <!-- Kolom Status & Info Verifikasi -->
+                                <td class="border-r border-slate-100 px-3.5 py-3">
+                                    <div class="mb-1">
+                                        <span
+                                            v-if="company.status_verifikasi === 'Terverifikasi'"
+                                            class="inline-block px-2 py-0.5 text-[11px] font-semibold rounded bg-slate-100 text-[#0D542B] border border-[#0D542B]/40"
+                                        >
+                                            Terverifikasi
+                                        </span>
+                                        <span
+                                            v-else-if="company.status_verifikasi === 'Menunggu Verifikasi'"
+                                            class="inline-block px-2 py-0.5 text-[11px] font-semibold rounded bg-slate-100 text-slate-800 border border-slate-300"
+                                        >
+                                            Menunggu Peninjauan
+                                        </span>
+                                        <span
+                                            v-else-if="company.status_verifikasi === 'Ditolak'"
+                                            class="inline-block px-2 py-0.5 text-[11px] font-semibold rounded bg-slate-100 text-rose-800 border border-rose-300"
+                                        >
+                                            Ditolak
+                                        </span>
+                                        <span
+                                            v-else
+                                            class="inline-block px-2 py-0.5 text-[11px] font-semibold rounded bg-slate-100 text-slate-700 border border-slate-300"
+                                        >
+                                            {{ company.status_verifikasi }}
+                                        </span>
+                                    </div>
+
+                                    <div v-if="company.status_verifikasi === 'Terverifikasi'" class="text-[10px] text-slate-600 leading-tight space-y-0.5">
+                                        <div>
+                                            <span class="text-slate-400">Oleh:</span>
+                                            <strong class="text-slate-800 ml-1">
+                                                {{ company.latest_verification_log?.user?.name || company.creator?.name || 'Super Administrator' }}
+                                            </strong>
+                                        </div>
+                                        <div class="text-slate-500">
+                                            Role: {{ getRoleLabel(company.latest_verification_log?.user?.role || company.creator?.role || 'superadmin') }}
+                                        </div>
+                                        <div class="text-slate-400 font-mono">
+                                            {{ formatDate(company.latest_verification_log?.created_at || company.updated_at) }}
+                                        </div>
+                                    </div>
+                                    <div v-else-if="company.status_verifikasi === 'Ditolak'" class="text-[10px] text-rose-700 leading-tight space-y-0.5">
+                                        <div>
+                                            <span class="text-slate-400">Ditolak oleh:</span>
+                                            <strong class="text-slate-800 ml-1">
+                                                {{ company.latest_verification_log?.user?.name || 'Super Administrator' }}
+                                            </strong>
+                                        </div>
+                                        <div class="text-slate-400 font-mono">
+                                            {{ formatDate(company.latest_verification_log?.created_at || company.updated_at) }}
+                                        </div>
+                                    </div>
+                                    <div v-else class="text-[10px] text-slate-400 italic">
+                                        Belum diverifikasi oleh admin
+                                    </div>
+                                </td>
+
+                                <!-- Rekomendasi Master -->
+                                <td class="border-r border-slate-100 px-3.5 py-3">
+                                    <div v-if="company.recommendations && company.recommendations.length > 0" class="space-y-1.5">
                                         <div
                                             v-for="rec in company.recommendations"
                                             :key="rec.id"
-                                            class="flex items-center justify-between gap-2 py-1 border-b border-gray-200 last:border-b-0"
+                                            class="p-1.5 bg-slate-50 border border-slate-200 rounded text-[11px]"
                                         >
-                                            <span class="text-gray-900 font-medium">{{ rec.nama_perusahaan }}</span>
-                                            <div class="flex items-center gap-1 shrink-0">
-                                                <!-- Icon Info (i) -->
+                                            <div class="font-semibold text-slate-900 truncate">{{ rec.nama_perusahaan }}</div>
+                                            <div class="text-slate-500 text-[10px] truncate">
+                                                {{ rec.nama_kabupaten || '-' }}, {{ rec.nama_provinsi || '-' }}
+                                            </div>
+                                            <div class="mt-1">
                                                 <button
                                                     type="button"
-                                                    @click="openRecDetail(company, rec)"
-                                                    class="w-5 h-5 rounded hover:bg-gray-200 text-gray-600 flex items-center justify-center font-serif text-[11px] font-bold cursor-pointer"
-                                                    title="Lihat detail rekomendasi"
+                                                    @click="openConsolidateModal(company, rec)"
+                                                    class="inline-flex items-center gap-1 px-2 py-0.5 bg-[#0D542B] hover:bg-[#08381c] text-white font-semibold rounded text-[10px] transition-colors cursor-pointer"
+                                                    title="Buka dialog konsolidasi master resmi"
                                                 >
-                                                    i
-                                                </button>
-
-                                                <!-- Icon Swap (Auto Replace) -->
-                                                <button
-                                                    type="button"
-                                                    @click="handleAutoReplace(company, rec)"
-                                                    class="w-5 h-5 rounded hover:bg-gray-200 text-[#0D542B] flex items-center justify-center cursor-pointer"
-                                                    title="Gantikan (Auto Replace)"
-                                                >
-                                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+                                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                                                     </svg>
+                                                    <span>Sinkronkan</span>
                                                 </button>
                                             </div>
                                         </div>
                                     </div>
-                                    <span v-else class="text-gray-400 italic text-[11px]">-</span>
+                                    <span v-else class="text-slate-400 italic text-[11px]">-</span>
                                 </td>
 
-                                <!-- Aksi (Icon-only Toolbar) -->
-                                <td class="border border-gray-300 px-2.5 py-2 text-center">
-                                    <div class="flex items-center justify-center gap-1">
-                                        <!-- Detail Mata (Review Modal) -->
+                                <!-- Kolom Aksi Terpadu Horizontal -->
+                                <td class="px-4 py-3 text-center whitespace-nowrap">
+                                    <div class="inline-flex items-center justify-center gap-1.5 whitespace-nowrap">
+                                        <!-- 1. Tombol Ikon Hamburger (Daftar Alumni Bekerja) -->
+                                        <button
+                                            type="button"
+                                            @click="openAlumniModal(company)"
+                                            class="p-1.5 text-slate-700 hover:text-slate-900 hover:bg-slate-100 rounded border border-slate-300 transition-colors cursor-pointer shrink-0"
+                                            title="Lihat Daftar Alumni Bekerja (Menu List)"
+                                        >
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                                            </svg>
+                                        </button>
+
+                                        <!-- 2. Tombol Detail Peninjauan (Ikon Mata) -->
                                         <button
                                             type="button"
                                             @click="openReviewModal(company)"
-                                            class="p-1 text-blue-600 hover:bg-blue-50 rounded cursor-pointer transition-colors"
-                                            title="Tinjau Detail Pengajuan"
+                                            class="p-1.5 text-blue-700 hover:bg-blue-50 rounded border border-blue-200 transition-colors cursor-pointer shrink-0"
+                                            title="Peninjauan Lengkap Usulan Perusahaan & Alumni"
                                         >
                                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -707,40 +966,37 @@ const openEditModal = (company) => {
                                             </svg>
                                         </button>
 
-                                        <!-- Verifikasi Langsung (Checkmark) -->
+                                        <!-- 3. Tombol Cepat V (Setujui Langsung) jika Menunggu Verifikasi -->
                                         <button
                                             v-if="company.status_verifikasi !== 'Terverifikasi'"
                                             type="button"
                                             @click="handleVerifyDirect(company)"
-                                            class="p-1 text-emerald-700 hover:bg-emerald-50 rounded cursor-pointer transition-colors"
-                                            title="Verifikasi Langsung Sesuai Inputan"
+                                            class="w-7 h-7 flex items-center justify-center font-bold text-xs bg-[#0D542B] hover:bg-[#08381c] text-white rounded shadow-2xs transition-colors cursor-pointer shrink-0"
+                                            title="Setujui sebagai Master Resmi (Tombol V)"
                                         >
-                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                                            </svg>
+                                            V
                                         </button>
 
-                                        <!-- Sunting (Pencil) -->
+                                        <!-- 4. Tombol Cepat X (Tolak Usulan) jika Belum Ditolak -->
+                                        <button
+                                            v-if="company.status_verifikasi !== 'Ditolak'"
+                                            type="button"
+                                            @click="openRejectModal(company)"
+                                            class="w-7 h-7 flex items-center justify-center font-bold text-xs bg-rose-700 hover:bg-rose-800 text-white rounded shadow-2xs transition-colors cursor-pointer shrink-0"
+                                            title="Tolak Usulan dengan Alasan (Tombol X)"
+                                        >
+                                            X
+                                        </button>
+
+                                        <!-- 5. Tombol Sunting (Pensil) -->
                                         <button
                                             type="button"
                                             @click="openEditModal(company)"
-                                            class="p-1 text-amber-600 hover:bg-amber-50 rounded cursor-pointer transition-colors"
-                                            :title="company.status_verifikasi === 'Terverifikasi' ? 'Edit Perusahaan' : 'Edit & Verifikasi'"
+                                            class="p-1.5 text-slate-600 hover:bg-slate-100 rounded border border-slate-300 transition-colors cursor-pointer shrink-0"
+                                            title="Sunting Data Institusi"
                                         >
-                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                                            </svg>
-                                        </button>
-
-                                        <!-- Tolak (Trash) -->
-                                        <button
-                                            type="button"
-                                            @click="handleReject(company)"
-                                            class="p-1 text-rose-600 hover:bg-rose-50 rounded cursor-pointer transition-colors"
-                                            :title="company.status_verifikasi === 'Terverifikasi' ? 'Tolak / Batalkan Verifikasi' : 'Tolak Pengajuan'"
-                                        >
-                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                                             </svg>
                                         </button>
                                     </div>
@@ -749,11 +1005,956 @@ const openEditModal = (company) => {
                         </tbody>
                     </table>
                 </div>
+
+                <!-- Navigasi Paginasi Halaman -->
+                <div v-if="companies.links && companies.links.length > 3" class="flex items-center justify-between text-xs pt-2">
+                    <span class="text-slate-500">
+                        Halaman <strong>{{ companies.current_page }}</strong> dari <strong>{{ companies.last_page }}</strong>
+                    </span>
+                    <div class="flex items-center gap-1">
+                        <template v-for="(link, i) in companies.links" :key="i">
+                            <Link
+                                v-if="link.url"
+                                :href="link.url"
+                                class="px-3 py-1.5 rounded-lg border text-xs font-semibold transition-colors"
+                                :class="link.active ? 'bg-[#0D542B] text-white border-[#0D542B]' : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-100'"
+                                v-html="link.label"
+                            />
+                            <span
+                                v-else
+                                class="px-3 py-1.5 rounded-lg border border-slate-100 text-xs text-slate-400 bg-slate-50"
+                                v-html="link.label"
+                            />
+                        </template>
+                    </div>
+                </div>
             </main>
 
-            <footer class="text-gray-400 text-xs text-center mt-12 py-6 border-t border-gray-100">
+            <!-- Footer Institusional -->
+            <footer class="text-slate-400 text-xs text-center mt-12 py-6 border-t border-slate-200">
                 &copy; {{ new Date().getFullYear() }} Universitas Kristen Duta Wacana. Hak Cipta Dilindungi.
             </footer>
+        </div>
+    </div>
+
+    <!-- ======================================================== -->
+    <!-- MODAL 1: DAFTAR ALUMNI BEKERJA (MENU LIST HAMBURGER)     -->
+    <!-- ======================================================== -->
+    <div
+        v-if="showAlumniModal && activeCompanyForAlumni"
+        class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4"
+    >
+        <div class="bg-white rounded-2xl shadow-xl border border-slate-200 w-full max-w-3xl max-h-[90vh] flex flex-col">
+            <!-- Header Modal -->
+            <div class="px-6 py-4 border-b border-slate-200 flex items-center justify-between bg-slate-50 rounded-t-2xl">
+                <div>
+                    <h3 class="text-base font-bold text-slate-900">
+                        Daftar Alumni Bekerja
+                    </h3>
+                    <p class="text-xs text-slate-600 mt-0.5">
+                        Institusi: <strong class="text-[#0D542B]">{{ activeCompanyForAlumni.nama_perusahaan }}</strong>
+                    </p>
+                </div>
+                <button
+                    type="button"
+                    @click="closeAlumniModal"
+                    class="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-200 transition-colors cursor-pointer"
+                >
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Bilah Pencarian Cepat di Dalam Modal -->
+            <div class="p-4 border-b border-slate-200 bg-white flex items-center justify-between gap-4 text-xs">
+                <div class="relative flex-1">
+                    <span class="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none text-slate-400">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                        </svg>
+                    </span>
+                    <input
+                        type="text"
+                        v-model="alumniSearchQuery"
+                        placeholder="Cari berdasarkan nama alumni, NIM, prodi, atau jabatan..."
+                        class="w-full pl-8 pr-3 py-1.5 border border-slate-300 rounded-xl text-xs focus:outline-none focus:ring-1 focus:ring-[#0D542B]"
+                    />
+                </div>
+                <span class="text-slate-600 font-medium whitespace-nowrap">
+                    Total: <strong>{{ filteredAlumniList.length }} Alumni</strong>
+                </span>
+            </div>
+
+            <!-- Badan Tabel Alumni -->
+            <div class="overflow-y-auto p-4 flex-1">
+                <table class="w-full text-left border-collapse border border-slate-200 text-xs bg-white rounded-xl overflow-hidden">
+                    <thead>
+                        <tr class="bg-slate-50 text-slate-800 font-bold border-b border-slate-200 text-[11px]">
+                            <th class="border border-slate-200 px-3 py-2 text-center w-10">No</th>
+                            <th class="border border-slate-200 px-3 py-2 min-w-[180px]">Nama Mahasiswa / Alumni</th>
+                            <th class="border border-slate-200 px-3 py-2 w-28">NIM</th>
+                            <th class="border border-slate-200 px-3 py-2 min-w-[150px]">Program Studi</th>
+                            <th class="border border-slate-200 px-3 py-2 w-28 text-center">Angkatan</th>
+                            <th class="border border-slate-200 px-3 py-2 min-w-[140px]">Jabatan / Posisi</th>
+                            <th class="border border-slate-200 px-3 py-2 text-center w-20">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr v-if="filteredAlumniList.length === 0">
+                            <td colspan="7" class="border border-slate-200 p-6 text-center text-slate-400 italic">
+                                Belum ada data alumni yang tercatat aktif bekerja pada institusi ini.
+                            </td>
+                        </tr>
+                        <tr
+                            v-for="(alumni, idx) in filteredAlumniList"
+                            :key="alumni.id || idx"
+                            class="hover:bg-slate-50/80 transition-colors"
+                        >
+                            <td class="border border-slate-200 px-3 py-2 text-center text-slate-600 font-medium">
+                                {{ idx + 1 }}
+                            </td>
+                            <td class="border border-slate-200 px-3 py-2 font-bold text-slate-900">
+                                {{ getAlumniDisplayName(alumni) }}
+                            </td>
+                            <td class="border border-slate-200 px-3 py-2 font-mono text-slate-700">
+                                {{ alumni.nim || '-' }}
+                            </td>
+                            <td class="border border-slate-200 px-3 py-2 text-slate-700">
+                                {{ getAlumniProdi(alumni) }}
+                            </td>
+                            <td class="border border-slate-200 px-3 py-2 text-center text-slate-700">
+                                {{ getAlumniAngkatan(alumni) }}
+                            </td>
+                            <td class="border border-slate-200 px-3 py-2 text-slate-800 font-medium">
+                                {{ getAlumniJabatan(alumni) }}
+                            </td>
+                            <td class="border border-slate-200 px-3 py-2 text-center">
+                                <Link
+                                    v-if="alumni.id"
+                                    :href="`/superadmin/alumni/${alumni.id}`"
+                                    class="inline-flex items-center justify-center p-1.5 text-blue-700 hover:bg-blue-50 rounded transition-colors"
+                                    title="Lihat Detail Profil Alumni"
+                                >
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                    </svg>
+                                </Link>
+                                <span v-else class="text-slate-400 text-[11px]">-</span>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Footer Modal -->
+            <div class="px-6 py-3 border-t border-slate-200 bg-slate-50 rounded-b-2xl flex justify-end">
+                <button
+                    type="button"
+                    @click="closeAlumniModal"
+                    class="px-5 py-2 bg-slate-700 hover:bg-slate-800 text-white font-bold rounded-xl text-xs transition-colors cursor-pointer"
+                >
+                    Tutup
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ======================================================== -->
+    <!-- MODAL 2: PENINJAUAN LENGKAP USULAN PERUSAHAAN             -->
+    <!-- ======================================================== -->
+    <div
+        v-if="showReviewModal && activeCompanyForReview"
+        class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4"
+    >
+        <div class="bg-white rounded-2xl shadow-xl border border-slate-200 w-full max-w-3xl max-h-[92vh] flex flex-col">
+            <!-- Header Modal -->
+            <div class="px-6 py-4 border-b border-slate-200 flex items-center justify-between bg-slate-50 rounded-t-2xl">
+                <div>
+                    <h3 class="text-base font-bold text-slate-900">
+                        Peninjauan Usulan Perusahaan Alumni
+                    </h3>
+                    <p class="text-xs text-slate-600 mt-0.5">
+                        Verifikasi keabsahan data usulan institusi kerja dan konsolidasi terhadap master data terdaftar.
+                    </p>
+                </div>
+                <button
+                    type="button"
+                    @click="closeReviewModal"
+                    class="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-200 transition-colors cursor-pointer"
+                >
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Badan Modal Scrollable -->
+            <div class="overflow-y-auto p-6 space-y-5 text-xs flex-1">
+                <!-- 1. Data Usulan Institusi -->
+                <div class="border border-slate-200 rounded-xl p-4 bg-slate-50/70 space-y-2.5">
+                    <div class="flex items-center justify-between border-b border-slate-200 pb-2">
+                        <span class="font-bold text-slate-700 tracking-wider text-[11px] uppercase">
+                            1. DATA USULAN INSTITUSI KERJA
+                        </span>
+                        <span
+                            class="px-2.5 py-0.5 rounded text-[11px] font-semibold border"
+                            :class="activeCompanyForReview.status_verifikasi === 'Terverifikasi' ? 'bg-slate-100 text-[#0D542B] border-[#0D542B]/40' : 'bg-slate-100 text-slate-800 border-slate-300'"
+                        >
+                            {{ activeCompanyForReview.status_verifikasi || 'Menunggu Peninjauan' }}
+                        </span>
+                    </div>
+
+                    <div>
+                        <span class="text-slate-500 text-[11px] block">Nama Institusi / Perusahaan:</span>
+                        <div class="text-base font-bold text-slate-900">{{ activeCompanyForReview.nama_perusahaan }}</div>
+                    </div>
+
+                    <div>
+                        <span class="text-slate-500 text-[11px] block">Alamat Lengkap Kantor:</span>
+                        <div class="font-medium text-slate-900">{{ activeCompanyForReview.alamat || 'Alamat tidak dicantumkan' }}</div>
+                    </div>
+
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-3 pt-2 border-t border-slate-200 text-[11px]">
+                        <div>
+                            <span class="text-slate-500 block">Provinsi:</span>
+                            <strong class="text-slate-900">{{ activeCompanyForReview.propinsi?.nama_provinsi || '-' }}</strong>
+                        </div>
+                        <div>
+                            <span class="text-slate-500 block">Kabupaten/Kota:</span>
+                            <strong class="text-slate-900">{{ activeCompanyForReview.kabupaten?.nama_kabupaten || '-' }}</strong>
+                        </div>
+                        <div>
+                            <span class="text-slate-500 block">Skala Institusi:</span>
+                            <strong class="text-slate-900">{{ activeCompanyForReview.skala || '-' }}</strong>
+                        </div>
+                        <div>
+                            <span class="text-slate-500 block">Jenis Usaha:</span>
+                            <strong class="text-slate-900">{{ activeCompanyForReview.jenis_perusahaan || '-' }}</strong>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 2. Data Alumni Terkait / Pengaju -->
+                <div class="space-y-2">
+                    <span class="font-bold text-slate-700 tracking-wider text-[11px] uppercase block">
+                        2. DATA ALUMNI TERKAIT / PENGAJU
+                    </span>
+                    <div class="border border-slate-200 rounded-xl overflow-hidden bg-white">
+                        <table class="w-full text-left border-collapse text-xs">
+                            <thead>
+                                <tr class="bg-slate-50 text-slate-800 font-bold border-b border-slate-200 text-[11px]">
+                                    <th class="px-3 py-2 border-r border-slate-200">Nama Lengkap Alumni</th>
+                                    <th class="px-3 py-2 border-r border-slate-200 w-28">NIM</th>
+                                    <th class="px-3 py-2 border-r border-slate-200 min-w-[140px]">Program Studi</th>
+                                    <th class="px-3 py-2 border-r border-slate-200 w-24 text-center">Angkatan</th>
+                                    <th class="px-3 py-2 border-r border-slate-200 min-w-[130px]">Posisi / Jabatan</th>
+                                    <th class="px-3 py-2 text-center w-16">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-100">
+                                <tr v-if="getCompanyAlumniList(activeCompanyForReview).length === 0">
+                                    <td colspan="6" class="p-4 text-center text-slate-400 italic">
+                                        Tidak ada data alumni yang tercatat mengajukan usulan ini.
+                                    </td>
+                                </tr>
+                                <tr
+                                    v-for="(alumni, aIdx) in getCompanyAlumniList(activeCompanyForReview)"
+                                    :key="alumni.id || aIdx"
+                                    class="hover:bg-slate-50"
+                                >
+                                    <td class="px-3 py-2 font-bold text-slate-900 border-r border-slate-100">
+                                        {{ getAlumniDisplayName(alumni) }}
+                                    </td>
+                                    <td class="px-3 py-2 font-mono text-slate-700 border-r border-slate-100">
+                                        {{ alumni.nim || '-' }}
+                                    </td>
+                                    <td class="px-3 py-2 text-slate-700 border-r border-slate-100">
+                                        {{ getAlumniProdi(alumni) }}
+                                    </td>
+                                    <td class="px-3 py-2 text-center text-slate-700 border-r border-slate-100">
+                                        {{ getAlumniAngkatan(alumni) }}
+                                    </td>
+                                    <td class="px-3 py-2 text-slate-800 font-medium border-r border-slate-100">
+                                        {{ getAlumniJabatan(alumni) }}
+                                    </td>
+                                    <td class="px-3 py-2 text-center">
+                                        <Link
+                                            v-if="alumni.id"
+                                            :href="`/superadmin/alumni/${alumni.id}`"
+                                            class="inline-flex items-center justify-center p-1 text-blue-700 hover:bg-blue-50 rounded transition-colors"
+                                            title="Buka Profil Lengkap Alumni"
+                                        >
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                            </svg>
+                                        </Link>
+                                        <span v-else class="text-slate-400 text-[11px]">-</span>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- 3. Rekomendasi Master Kemiripan -->
+                <div class="space-y-2">
+                    <span class="font-bold text-slate-700 tracking-wider text-[11px] uppercase block">
+                        3. REKOMENDASI MASTER TERVERIFIKASI (KONSOLIDASI DATA)
+                    </span>
+                    <div
+                        v-if="activeCompanyForReview.recommendations && activeCompanyForReview.recommendations.length > 0"
+                        class="border border-slate-200 rounded-xl overflow-hidden bg-white"
+                    >
+                        <table class="w-full text-left border-collapse text-xs">
+                            <thead>
+                                <tr class="bg-slate-50 text-slate-800 font-bold border-b border-slate-200 text-[11px]">
+                                    <th class="px-3 py-2 border-r border-slate-200">Nama Master Resmi</th>
+                                    <th class="px-3 py-2 border-r border-slate-200 min-w-[200px]">Wilayah Kantor</th>
+                                    <th class="px-3 py-2 text-center w-36">Aksi Konsolidasi</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-100">
+                                <tr
+                                    v-for="rec in activeCompanyForReview.recommendations"
+                                    :key="rec.id"
+                                    class="hover:bg-slate-50"
+                                >
+                                    <td class="px-3 py-2 font-bold text-slate-900 border-r border-slate-100">
+                                        {{ rec.nama_perusahaan }}
+                                    </td>
+                                    <td class="px-3 py-2 text-slate-600 border-r border-slate-100">
+                                        {{ rec.nama_kabupaten || '-' }}, {{ rec.nama_provinsi || '-' }}
+                                    </td>
+                                    <td class="px-3 py-2 text-center">
+                                        <button
+                                            type="button"
+                                            @click="openConsolidateModal(activeCompanyForReview, rec)"
+                                            class="px-2.5 py-1 bg-[#0D542B] hover:bg-[#08381c] text-white font-bold rounded-lg text-[11px] transition-colors cursor-pointer"
+                                        >
+                                            Sinkronkan
+                                        </button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div v-else class="p-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-500 italic text-[11px]">
+                        Tidak ditemukan master terverifikasi dengan nama yang serupa dalam basis data. Usulan ini layak diverifikasi langsung sebagai master baru.
+                    </div>
+                </div>
+            </div>
+
+            <!-- Footer Modal Aksi -->
+            <div class="px-6 py-3.5 border-t border-slate-200 bg-slate-50 rounded-b-2xl flex flex-wrap items-center justify-between gap-3">
+                <div class="flex items-center gap-2">
+                    <button
+                        v-if="activeCompanyForReview.status_verifikasi !== 'Ditolak'"
+                        type="button"
+                        @click="openRejectModal(activeCompanyForReview)"
+                        class="px-4 py-2 border border-rose-300 text-rose-700 hover:bg-rose-50 font-bold rounded-xl text-xs transition-colors cursor-pointer"
+                    >
+                        Tolak Usulan (X)
+                    </button>
+                    <button
+                        type="button"
+                        @click="openEditModal(activeCompanyForReview)"
+                        class="px-4 py-2 bg-slate-700 hover:bg-slate-800 text-white font-bold rounded-xl text-xs transition-colors cursor-pointer"
+                    >
+                        Sunting Data
+                    </button>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button
+                        type="button"
+                        @click="closeReviewModal"
+                        class="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold rounded-xl text-xs transition-colors cursor-pointer"
+                    >
+                        Tutup
+                    </button>
+                    <button
+                        v-if="activeCompanyForReview.status_verifikasi !== 'Terverifikasi'"
+                        type="button"
+                        @click="handleVerifyDirect(activeCompanyForReview)"
+                        class="px-5 py-2 bg-[#0D542B] hover:bg-[#08381c] text-white font-bold rounded-xl text-xs transition-colors shadow-xs cursor-pointer"
+                    >
+                        Setujui sebagai Master Resmi (V)
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ======================================================== -->
+    <!-- MODAL 3: KONSOLIDASI MASTER TERVERIFIKASI                 -->
+    <!-- ======================================================== -->
+    <div
+        v-if="showConsolidateModal && activePendingCompany && activeTargetVerifiedCompany"
+        class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4"
+    >
+        <div class="bg-white rounded-2xl shadow-xl border border-slate-300 w-full max-w-2xl flex flex-col">
+            <!-- Header Modal -->
+            <div class="px-6 py-4 border-b border-slate-200 flex items-center justify-between bg-slate-50 rounded-t-2xl">
+                <div>
+                    <h3 class="text-base font-bold text-slate-900">
+                        Konsolidasi ke Master Terverifikasi
+                    </h3>
+                    <p class="text-xs text-slate-600 mt-0.5">
+                        Pencegahan duplikasi data institusi mitra dengan pengalihan ke master resmi universitas.
+                    </p>
+                </div>
+                <button
+                    type="button"
+                    @click="closeConsolidateModal"
+                    class="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-200 transition-colors cursor-pointer"
+                >
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Badan Modal: Perbandingan Institusional -->
+            <div class="p-6 space-y-4 text-xs">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <!-- Sisi Kiri: Usulan Alumni -->
+                    <div class="p-4 bg-slate-50 border border-slate-300 rounded-xl space-y-1.5">
+                        <span class="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">
+                            USULAN PENGAJUAN ALUMNI
+                        </span>
+                        <div class="text-sm font-bold text-rose-800">
+                            {{ activePendingCompany.nama_perusahaan }}
+                        </div>
+                        <div class="text-slate-600 text-[11px]">
+                            {{ activePendingCompany.alamat || 'Alamat tidak ada' }}
+                        </div>
+                        <div class="text-slate-500 text-[11px]">
+                            {{ activePendingCompany.kabupaten?.nama_kabupaten || '-' }}, {{ activePendingCompany.propinsi?.nama_provinsi || '-' }}
+                        </div>
+                    </div>
+
+                    <!-- Sisi Kanan: Master Resmi -->
+                    <div class="p-4 bg-slate-50 border border-[#0D542B]/40 rounded-xl space-y-1.5">
+                        <span class="text-[10px] font-bold text-[#0D542B] uppercase tracking-wider block">
+                            DIALIHKAN KE MASTER RESMI
+                        </span>
+                        <div class="text-sm font-bold text-[#0D542B]">
+                            {{ activeTargetVerifiedCompany.nama_perusahaan }}
+                        </div>
+                        <div class="text-slate-600 text-[11px]">
+                            {{ activeTargetVerifiedCompany.alamat || 'Alamat resmi tercatat' }}
+                        </div>
+                        <div class="text-slate-500 text-[11px]">
+                            {{ activeTargetVerifiedCompany.nama_kabupaten || activeTargetVerifiedCompany.kabupaten?.nama_kabupaten || '-' }}, {{ activeTargetVerifiedCompany.nama_provinsi || activeTargetVerifiedCompany.propinsi?.nama_provinsi || '-' }}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Keterangan Formal Sistem -->
+                <div class="p-3 bg-slate-100 border border-slate-300 rounded-xl text-slate-700 leading-relaxed text-[11px]">
+                    Seluruh relasi profil, riwayat karir, dan jawaban tracer study alumni yang terhubung dengan usulan ini akan otomatis dialihkan ke institusi master resmi pilihan. Usulan pengajuan akan ditutup untuk menjaga kebersihan pangkalan data.
+                </div>
+            </div>
+
+            <!-- Footer Modal -->
+            <div class="px-6 py-3 border-t border-slate-200 bg-slate-50 rounded-b-2xl flex justify-end gap-2.5">
+                <button
+                    type="button"
+                    @click="closeConsolidateModal"
+                    class="px-5 py-2 bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold rounded-xl text-xs transition-colors cursor-pointer"
+                >
+                    Batal
+                </button>
+                <button
+                    type="button"
+                    :disabled="isSubmittingConsolidate"
+                    @click="submitConsolidate"
+                    class="px-6 py-2 bg-[#0D542B] hover:bg-[#08381c] text-white font-bold rounded-xl text-xs transition-colors shadow-xs cursor-pointer disabled:opacity-50"
+                >
+                    {{ isSubmittingConsolidate ? 'Memproses Konsolidasi...' : 'Konfirmasi Konsolidasi Data' }}
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ======================================================== -->
+    <!-- MODAL 4: PENOLAKAN USULAN (TOMBOL X DENGAN ALASAN)       -->
+    <!-- ======================================================== -->
+    <div
+        v-if="showRejectModal && activeCompanyForReject"
+        class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4"
+    >
+        <div class="bg-white rounded-2xl shadow-xl border border-slate-300 w-full max-w-lg flex flex-col">
+            <!-- Header Modal -->
+            <div class="px-6 py-4 border-b border-slate-200 flex items-center justify-between bg-slate-50 rounded-t-2xl">
+                <div>
+                    <h3 class="text-base font-bold text-slate-900">
+                        Tolak Usulan Institusi (Tombol X)
+                    </h3>
+                    <p class="text-xs text-slate-600 mt-0.5">
+                        Berikan alasan penolakan usulan untuk dicatat pada log audit sistem.
+                    </p>
+                </div>
+                <button
+                    type="button"
+                    @click="closeRejectModal"
+                    class="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-200 transition-colors cursor-pointer"
+                >
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Form Penolakan -->
+            <div class="p-6 space-y-3.5 text-xs">
+                <div>
+                    <span class="text-slate-500 block text-[11px]">Nama Institusi Usulan:</span>
+                    <strong class="text-sm font-bold text-slate-900">{{ activeCompanyForReject.nama_perusahaan }}</strong>
+                </div>
+
+                <div>
+                    <label class="block font-semibold text-slate-700 mb-1">
+                        Pilih Alasan Standar Penolakan:
+                    </label>
+                    <div class="flex flex-wrap gap-1.5 mb-2">
+                        <button
+                            type="button"
+                            @click="setQuickReason('Duplikat dengan master resmi yang sudah terdaftar')"
+                            class="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg border border-slate-300 text-[10px] font-medium cursor-pointer"
+                        >
+                            Duplikat Master
+                        </button>
+                        <button
+                            type="button"
+                            @click="setQuickReason('Nama perusahaan fiktif atau tidak valid')"
+                            class="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg border border-slate-300 text-[10px] font-medium cursor-pointer"
+                        >
+                            Nama Tidak Valid
+                        </button>
+                        <button
+                            type="button"
+                            @click="setQuickReason('Data alamat dan wilayah tidak lengkap/jelas')"
+                            class="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg border border-slate-300 text-[10px] font-medium cursor-pointer"
+                        >
+                            Data Tidak Lengkap
+                        </button>
+                    </div>
+
+                    <label class="block font-semibold text-slate-700 mb-1">
+                        Catatan / Alasan Penolakan:
+                    </label>
+                    <textarea
+                        v-model="rejectReason"
+                        rows="3"
+                        placeholder="Tuliskan catatan alasan penolakan pengajuan perusahaan..."
+                        class="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs focus:outline-none focus:ring-1 focus:ring-[#0D542B]"
+                    ></textarea>
+                </div>
+            </div>
+
+            <!-- Footer Modal -->
+            <div class="px-6 py-3 border-t border-slate-200 bg-slate-50 rounded-b-2xl flex justify-end gap-2.5">
+                <button
+                    type="button"
+                    @click="closeRejectModal"
+                    class="px-5 py-2 bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold rounded-xl text-xs transition-colors cursor-pointer"
+                >
+                    Batal
+                </button>
+                <button
+                    type="button"
+                    :disabled="isSubmittingReject"
+                    @click="submitReject"
+                    class="px-6 py-2 bg-rose-700 hover:bg-rose-800 text-white font-bold rounded-xl text-xs transition-colors shadow-xs cursor-pointer disabled:opacity-50"
+                >
+                    {{ isSubmittingReject ? 'Menolak Usulan...' : 'Konfirmasi Tolak Usulan' }}
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ======================================================== -->
+    <!-- MODAL 5: TAMBAH PERUSAHAAN BARU (IDENTIK GAMBAR 1 & 2)   -->
+    <!-- ======================================================== -->
+    <div
+        v-if="showCreateModal"
+        class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4"
+    >
+        <div class="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-xl max-h-[92vh] flex flex-col">
+            <!-- Header Modal: Centered Title persis Gambar 1 & 2 -->
+            <div class="pt-6 pb-2 px-6 text-center">
+                <h3 class="text-xl font-bold text-slate-900 tracking-tight">
+                    Tambah Perusahaan Baru
+                </h3>
+            </div>
+
+            <!-- Form Badan Modal Scrollable -->
+            <form @submit.prevent="submitCreateForm" class="overflow-y-auto px-6 py-4 space-y-4 text-xs flex-1">
+                <!-- 1. Jenis Lokasi Perusahaan (Radio Button Sesuai Gambar 1 & 2) -->
+                <div>
+                    <label class="block font-semibold text-slate-700 mb-1.5">
+                        Jenis Lokasi Perusahaan <span class="text-rose-600">*</span>
+                    </label>
+                    <div class="flex items-center gap-6">
+                        <label class="flex items-center gap-2 cursor-pointer font-medium text-slate-800 text-xs select-none">
+                            <input
+                                type="radio"
+                                value="Dalam Negeri"
+                                v-model="createForm.jenis_lokasi"
+                                class="w-4 h-4 text-[#0D542B] border-slate-300 focus:ring-[#0D542B] cursor-pointer"
+                            />
+                            <span>Dalam Negeri (Indonesia)</span>
+                        </label>
+                        <label class="flex items-center gap-2 cursor-pointer font-medium text-slate-800 text-xs select-none">
+                            <input
+                                type="radio"
+                                value="Luar Negeri"
+                                v-model="createForm.jenis_lokasi"
+                                class="w-4 h-4 text-[#0D542B] border-slate-300 focus:ring-[#0D542B] cursor-pointer"
+                            />
+                            <span>Luar Negeri (Abroad)</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- 2. Nama Perusahaan / Instansi * -->
+                <div>
+                    <label class="block font-semibold text-slate-700 mb-1">
+                        Nama Perusahaan / Instansi <span class="text-rose-600">*</span>
+                    </label>
+                    <input
+                        type="text"
+                        v-model="createForm.nama_perusahaan"
+                        required
+                        placeholder="Contoh: PT Teknologi Nusantara / Google Singapore"
+                        class="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0D542B]"
+                    />
+                </div>
+
+                <!-- 3. Jenis Perusahaan / Instansi (F11) -->
+                <div>
+                    <label class="block font-semibold text-slate-700 mb-1">
+                        Jenis Perusahaan / Instansi (F11)
+                    </label>
+                    <select
+                        v-model="createForm.jenis_perusahaan"
+                        class="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-xs bg-white text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#0D542B] cursor-pointer"
+                    >
+                        <option value="1 - Instansi pemerintah">1 - Instansi pemerintah</option>
+                        <option value="2 - Organisasi non-profit/LSM">2 - Organisasi non-profit/LSM</option>
+                        <option value="3 - Perusahaan swasta">3 - Perusahaan swasta</option>
+                        <option value="4 - BUMN / BUMD">4 - BUMN / BUMD</option>
+                        <option value="5 - Institusi / Organisasi Multilateral">5 - Institusi / Organisasi Multilateral</option>
+                        <option value="6 - Perguruan Tinggi / Lembaga Pendidikan">6 - Perguruan Tinggi / Lembaga Pendidikan</option>
+                        <option value="7 - Usaha Mandiri / Wirausaha">7 - Usaha Mandiri / Wirausaha</option>
+                        <option value="8 - Lainnya">8 - Lainnya</option>
+                    </select>
+                </div>
+
+                <!-- 4. Kondisional: Provinsi & Kabupaten (Dalam Negeri) vs Negara Tempat Bekerja (Luar Negeri) -->
+                <div v-if="createForm.jenis_lokasi === 'Dalam Negeri'" class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                    <div>
+                        <label class="block font-semibold text-slate-700 mb-1">
+                            Provinsi <span class="text-rose-600">*</span>
+                        </label>
+                        <select
+                            v-model="createForm.propinsi_id"
+                            @change="handlePropinsiChangeCreate"
+                            class="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-xs bg-white text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#0D542B] cursor-pointer"
+                        >
+                            <option value="">-- Pilih Provinsi --</option>
+                            <option v-for="p in propinsis" :key="p.id" :value="p.id">
+                                {{ p.nama_provinsi }}
+                            </option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block font-semibold text-slate-700 mb-1">
+                            Kabupaten / Kota <span class="text-rose-600">*</span>
+                        </label>
+                        <select
+                            v-model="createForm.kabupaten_id"
+                            :disabled="!createForm.propinsi_id"
+                            class="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-xs bg-white text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#0D542B] cursor-pointer disabled:bg-slate-100 disabled:cursor-not-allowed"
+                        >
+                            <option value="">-- Pilih Kabupaten --</option>
+                            <option v-for="k in filteredKabupatensForCreate" :key="k.id" :value="k.id">
+                                {{ k.nama_kabupaten }}
+                            </option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Luar Negeri: Dropdown Negara Tempat Bekerja (Persis Gambar 2) -->
+                <div v-else>
+                    <label class="block font-semibold text-slate-700 mb-1">
+                        Negara Tempat Bekerja <span class="text-rose-600">*</span>
+                    </label>
+                    <select
+                        v-model="createForm.negara"
+                        required
+                        class="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-xs bg-white text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#0D542B] cursor-pointer"
+                    >
+                        <option value="">-- Pilih Negara di Luar Negeri --</option>
+                        <option v-for="n in negaras" :key="n.id" :value="n.nama_negara">
+                            {{ n.nama_negara }}
+                        </option>
+                    </select>
+                </div>
+
+                <!-- 5. Kode Pos Perusahaan & Skala Perusahaan (Grid 2 Kolom Persis Gambar 1 & 2) -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                    <div>
+                        <label class="block font-semibold text-slate-700 mb-1">
+                            Kode Pos Perusahaan
+                        </label>
+                        <input
+                            type="text"
+                            v-model="createForm.kode_pos"
+                            placeholder="55281"
+                            class="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0D542B]"
+                        />
+                    </div>
+
+                    <div>
+                        <label class="block font-semibold text-slate-700 mb-1">
+                            Skala Perusahaan
+                        </label>
+                        <select
+                            v-model="createForm.skala"
+                            class="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-xs bg-white text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#0D542B] cursor-pointer"
+                        >
+                            <option value="Lokal">Lokal</option>
+                            <option value="Nasional">Nasional</option>
+                            <option value="Internasional">Internasional</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- 6. Alamat Jalan / Gedung Perusahaan (Textarea Persis Gambar 1 & 2) -->
+                <div>
+                    <label class="block font-semibold text-slate-700 mb-1">
+                        Alamat Jalan / Gedung Perusahaan
+                    </label>
+                    <textarea
+                        v-model="createForm.alamat"
+                        rows="3"
+                        placeholder="Nama Jalan, Gedung, Nomor..."
+                        class="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0D542B]"
+                    ></textarea>
+                </div>
+
+                <!-- 7. Tombol Footer Centered (Persis Gambar 1 & 2) -->
+                <div class="pt-3 pb-2 flex items-center justify-center gap-3">
+                    <button
+                        type="submit"
+                        :disabled="isSubmittingCreate"
+                        class="px-6 py-2.5 bg-[#005833] hover:bg-[#004226] text-white font-bold rounded-lg text-xs shadow-xs transition-colors cursor-pointer disabled:opacity-50"
+                    >
+                        {{ isSubmittingCreate ? 'Menyimpan...' : 'Simpan Perusahaan' }}
+                    </button>
+                    <button
+                        type="button"
+                        @click="closeCreateModal"
+                        class="px-6 py-2.5 bg-[#8C98A4] hover:bg-[#788592] text-white font-bold rounded-lg text-xs transition-colors cursor-pointer"
+                    >
+                        Batal
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ======================================================== -->
+    <!-- MODAL 6: SUNTING DATA PERUSAHAAN                         -->
+    <!-- ======================================================== -->
+    <div
+        v-if="showEditModal && editForm.id"
+        class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4"
+    >
+        <div class="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-xl max-h-[92vh] flex flex-col">
+            <!-- Header Modal -->
+            <div class="pt-6 pb-2 px-6 text-center">
+                <h3 class="text-xl font-bold text-slate-900 tracking-tight">
+                    Sunting Data Perusahaan
+                </h3>
+            </div>
+
+            <!-- Form Badan Modal -->
+            <form @submit.prevent="submitEditForm" class="overflow-y-auto px-6 py-4 space-y-4 text-xs flex-1">
+                <!-- Jenis Lokasi -->
+                <div>
+                    <label class="block font-semibold text-slate-700 mb-1.5">
+                        Jenis Lokasi Perusahaan <span class="text-rose-600">*</span>
+                    </label>
+                    <div class="flex items-center gap-6">
+                        <label class="flex items-center gap-2 cursor-pointer font-medium text-slate-800 text-xs select-none">
+                            <input
+                                type="radio"
+                                value="Dalam Negeri"
+                                v-model="editForm.jenis_lokasi"
+                                class="w-4 h-4 text-[#0D542B] border-slate-300 focus:ring-[#0D542B] cursor-pointer"
+                            />
+                            <span>Dalam Negeri (Indonesia)</span>
+                        </label>
+                        <label class="flex items-center gap-2 cursor-pointer font-medium text-slate-800 text-xs select-none">
+                            <input
+                                type="radio"
+                                value="Luar Negeri"
+                                v-model="editForm.jenis_lokasi"
+                                class="w-4 h-4 text-[#0D542B] border-slate-300 focus:ring-[#0D542B] cursor-pointer"
+                            />
+                            <span>Luar Negeri (Abroad)</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Nama Perusahaan -->
+                <div>
+                    <label class="block font-semibold text-slate-700 mb-1">
+                        Nama Perusahaan / Instansi <span class="text-rose-600">*</span>
+                    </label>
+                    <input
+                        type="text"
+                        v-model="editForm.nama_perusahaan"
+                        required
+                        class="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-xs text-slate-900 focus:outline-none focus:ring-1 focus:ring-[#0D542B]"
+                    />
+                </div>
+
+                <!-- Jenis F11 -->
+                <div>
+                    <label class="block font-semibold text-slate-700 mb-1">
+                        Jenis Perusahaan / Instansi (F11)
+                    </label>
+                    <select
+                        v-model="editForm.jenis_perusahaan"
+                        class="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-xs bg-white text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#0D542B] cursor-pointer"
+                    >
+                        <option value="1 - Instansi pemerintah">1 - Instansi pemerintah</option>
+                        <option value="2 - Organisasi non-profit/LSM">2 - Organisasi non-profit/LSM</option>
+                        <option value="3 - Perusahaan swasta">3 - Perusahaan swasta</option>
+                        <option value="4 - BUMN / BUMD">4 - BUMN / BUMD</option>
+                        <option value="5 - Institusi / Organisasi Multilateral">5 - Institusi / Organisasi Multilateral</option>
+                        <option value="6 - Perguruan Tinggi / Lembaga Pendidikan">6 - Perguruan Tinggi / Lembaga Pendidikan</option>
+                        <option value="7 - Usaha Mandiri / Wirausaha">7 - Usaha Mandiri / Wirausaha</option>
+                        <option value="8 - Lainnya">8 - Lainnya</option>
+                    </select>
+                </div>
+
+                <!-- Provinsi & Kabupaten vs Negara -->
+                <div v-if="editForm.jenis_lokasi === 'Dalam Negeri'" class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                    <div>
+                        <label class="block font-semibold text-slate-700 mb-1">
+                            Provinsi <span class="text-rose-600">*</span>
+                        </label>
+                        <select
+                            v-model="editForm.propinsi_id"
+                            @change="handlePropinsiChangeEdit"
+                            class="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-xs bg-white text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#0D542B] cursor-pointer"
+                        >
+                            <option value="">-- Pilih Provinsi --</option>
+                            <option v-for="p in propinsis" :key="p.id" :value="p.id">
+                                {{ p.nama_provinsi }}
+                            </option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block font-semibold text-slate-700 mb-1">
+                            Kabupaten / Kota <span class="text-rose-600">*</span>
+                        </label>
+                        <select
+                            v-model="editForm.kabupaten_id"
+                            :disabled="!editForm.propinsi_id"
+                            class="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-xs bg-white text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#0D542B] cursor-pointer disabled:bg-slate-100 disabled:cursor-not-allowed"
+                        >
+                            <option value="">-- Pilih Kabupaten --</option>
+                            <option v-for="k in filteredKabupatensForEdit" :key="k.id" :value="k.id">
+                                {{ k.nama_kabupaten }}
+                            </option>
+                        </select>
+                    </div>
+                </div>
+
+                <div v-else>
+                    <label class="block font-semibold text-slate-700 mb-1">
+                        Negara Tempat Bekerja <span class="text-rose-600">*</span>
+                    </label>
+                    <select
+                        v-model="editForm.negara"
+                        required
+                        class="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-xs bg-white text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#0D542B] cursor-pointer"
+                    >
+                        <option value="">-- Pilih Negara di Luar Negeri --</option>
+                        <option v-for="n in negaras" :key="n.id" :value="n.nama_negara">
+                            {{ n.nama_negara }}
+                        </option>
+                    </select>
+                </div>
+
+                <!-- Kode Pos & Skala -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                    <div>
+                        <label class="block font-semibold text-slate-700 mb-1">
+                            Kode Pos Perusahaan
+                        </label>
+                        <input
+                            type="text"
+                            v-model="editForm.kode_pos"
+                            class="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-xs text-slate-900 focus:outline-none focus:ring-1 focus:ring-[#0D542B]"
+                        />
+                    </div>
+
+                    <div>
+                        <label class="block font-semibold text-slate-700 mb-1">
+                            Skala Perusahaan
+                        </label>
+                        <select
+                            v-model="editForm.skala"
+                            class="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-xs bg-white text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#0D542B] cursor-pointer"
+                        >
+                            <option value="Lokal">Lokal</option>
+                            <option value="Nasional">Nasional</option>
+                            <option value="Internasional">Internasional</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Alamat -->
+                <div>
+                    <label class="block font-semibold text-slate-700 mb-1">
+                        Alamat Jalan / Gedung Perusahaan
+                    </label>
+                    <textarea
+                        v-model="editForm.alamat"
+                        rows="3"
+                        class="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-xs text-slate-900 focus:outline-none focus:ring-1 focus:ring-[#0D542B]"
+                    ></textarea>
+                </div>
+
+                <!-- Footer Centered -->
+                <div class="pt-3 pb-2 flex items-center justify-center gap-3">
+                    <button
+                        type="submit"
+                        :disabled="isSubmittingEdit"
+                        class="px-6 py-2.5 bg-[#005833] hover:bg-[#004226] text-white font-bold rounded-lg text-xs shadow-xs transition-colors cursor-pointer disabled:opacity-50"
+                    >
+                        {{ isSubmittingEdit ? 'Menyimpan...' : 'Simpan Perubahan' }}
+                    </button>
+                    <button
+                        type="button"
+                        @click="closeEditModal"
+                        class="px-6 py-2.5 bg-[#8C98A4] hover:bg-[#788592] text-white font-bold rounded-lg text-xs transition-colors cursor-pointer"
+                    >
+                        Batal
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
 </template>

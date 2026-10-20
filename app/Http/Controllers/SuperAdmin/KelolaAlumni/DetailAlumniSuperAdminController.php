@@ -86,7 +86,7 @@ class DetailAlumniSuperAdminController extends Controller
                     ->with(['subpertanyaans' => function ($qQuery) {
                         $qQuery->where(function ($w) {
                             $w->whereNull('tampil_di')
-                                ->orWhere('tampil_di', '!=', 'profil');
+                                ->orWhereNotIn('tampil_di', ['profil', 'profile']);
                         })->where(function ($w) {
                             $w->whereNull('kelompok')
                                 ->orWhere('kelompok', '!=', 'BIO');

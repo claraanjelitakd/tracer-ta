@@ -50,7 +50,7 @@ class SuperAdminKelolaSectionTest extends TestCase
         $response = $this->actingAs($this->superadmin)
             ->get(route('superadmin.sections.index'));
 
-        $response->assertStatus(200);
+        $response->assertRedirect(route('superadmin.pertanyaan.index', ['tab' => 'sections']));
     }
 
     /**

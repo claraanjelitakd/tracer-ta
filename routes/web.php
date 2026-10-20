@@ -260,6 +260,7 @@ Route::middleware('auth')->group(function () {
 
             // Verifikasi & Approval Perusahaan Pengajuan Alumni (Superadmin Scope: All / Per Prodi)
             Route::get('/superadmin/perusahaan', [VerifikasiPerusahaanSuperAdminController::class, 'index'])->name('superadmin.perusahaan.index');
+            Route::post('/superadmin/perusahaan', [VerifikasiPerusahaanSuperAdminController::class, 'store'])->name('superadmin.perusahaan.store');
             Route::post('/superadmin/perusahaan/{id}/verify', [VerifikasiPerusahaanSuperAdminController::class, 'verify'])->name('superadmin.perusahaan.verify');
             Route::post('/superadmin/perusahaan/{id}/replace', [VerifikasiPerusahaanSuperAdminController::class, 'replace'])->name('superadmin.perusahaan.replace');
             Route::put('/superadmin/perusahaan/{id}', [VerifikasiPerusahaanSuperAdminController::class, 'updateAndVerify'])->name('superadmin.perusahaan.update');

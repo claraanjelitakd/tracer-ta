@@ -7,6 +7,7 @@ use App\Models\Kabupaten;
 use App\Models\Perusahaan;
 use App\Models\Prodi;
 use App\Models\Propinsi;
+use App\Models\RefNegara;
 use App\Services\Perusahaan\PerusahaanVerificationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -51,13 +52,17 @@ class VerifikasiPerusahaanSuperAdminController extends Controller
                 ->with([
                     'propinsi',
                     'kabupaten',
+                    'creator:id,name,role,username',
                     'creator.biodata.prodi:id,nama_prodi',
+                    'creator.biodata.dataAkademik:nim,nama,tahun_lulus,angkatan_masuk',
                     'createdProdi:id,nama_prodi',
+                    'latestVerificationLog.user:id,name,role,username',
                     'biodata' => function ($q) {
                         $q->select('id', 'user_id', 'nim', 'prodi_id', 'posisi_jabatan', 'kategori_pekerjaan', 'perusahaan_id')
-                            ->with(['dataAkademik:nim,nama,tahun_lulus', 'prodi:id,nama_prodi']);
+                            ->with(['dataAkademik:nim,nama,tahun_lulus,angkatan_masuk', 'prodi:id,nama_prodi']);
                     },
-                ]);
+                ])
+                ->withCount('biodata');
 
             if ($filters['status'] !== 'all') {
                 $query->where('status_verifikasi', $filters['status']);
@@ -83,6 +88,13 @@ class VerifikasiPerusahaanSuperAdminController extends Controller
         // 1) Text Preprocessing & Stopword stripping (PT/CV), 2) Exact match, 3) Acronym matching (misal BCA),
         // 4) Substring & Token overlap, 5) Levenshtein/similar_text, 6) Geographic bonus (kota & provinsi).
         $companies->getCollection()->transform(function ($company) {
+            if ($company->biodata->isEmpty() && $company->creator && $company->creator->biodata) {
+                $company->setRelation('biodata', collect([$company->creator->biodata]));
+                if (($company->biodata_count ?? 0) === 0) {
+                    $company->biodata_count = 1;
+                }
+            }
+
             $company->recommendations = $this->verificationService->getSimilarRecommendations($company, 5);
 
             return $company;
@@ -90,6 +102,7 @@ class VerifikasiPerusahaanSuperAdminController extends Controller
 
         $propinsis = Propinsi::select('id', 'nama_provinsi')->orderBy('nama_provinsi')->get();
         $kabupatens = Kabupaten::select('id', 'propinsi_id', 'nama_kabupaten')->orderBy('nama_kabupaten')->get();
+        $negaras = RefNegara::select('id', 'nama_negara')->orderBy('nama_negara')->get();
 
         return Inertia::render('SuperAdmin/Perusahaan/Index', [
             'user' => $user,
@@ -97,12 +110,66 @@ class VerifikasiPerusahaanSuperAdminController extends Controller
             'companies' => $companies,
             'propinsis' => $propinsis,
             'kabupatens' => $kabupatens,
+            'negaras' => $negaras,
             'filters' => $filters,
             'stats' => [
+                'total_all' => Perusahaan::count(),
                 'total_pending_all' => Perusahaan::where('status_verifikasi', 'Menunggu Verifikasi')->count(),
                 'total_verified' => Perusahaan::where('status_verifikasi', 'Terverifikasi')->count(),
+                'total_rejected' => Perusahaan::where('status_verifikasi', 'Ditolak')->count(),
             ],
         ]);
+    }
+
+    /**
+     * Menambahkan institusi / perusahaan baru langsung ke master data terverifikasi universitas.
+     */
+    public function store(Request $request): RedirectResponse
+    {
+        $jenisLokasi = $request->input('jenis_lokasi', 'Dalam Negeri');
+
+        $rules = [
+            'nama_perusahaan' => 'required|string|max:255',
+            'jenis_lokasi' => 'required|string|in:Dalam Negeri,Luar Negeri',
+            'negara' => $jenisLokasi === 'Luar Negeri' ? 'required|string|max:100' : 'nullable|string|max:100',
+            'propinsi_id' => $jenisLokasi === 'Dalam Negeri' ? 'nullable|exists:propinsi,id' : 'nullable',
+            'kabupaten_id' => $jenisLokasi === 'Dalam Negeri' ? 'nullable|exists:kabupaten,id' : 'nullable',
+            'alamat' => 'nullable|string|max:500',
+            'kode_pos' => 'nullable|string|max:15',
+            'skala' => 'nullable|string|in:Lokal,Nasional,Internasional',
+            'jenis_perusahaan' => 'nullable|string|max:100',
+            'jenis_perusahaan_lainnya' => 'nullable|string|max:150',
+            'sektor' => 'nullable|string|max:100',
+            'homepage' => 'nullable|string|max:255',
+            'no_telp_fax' => 'nullable|string|max:100',
+        ];
+
+        $messages = [
+            'nama_perusahaan.required' => 'Nama perusahaan / institusi wajib diisi.',
+            'negara.required' => 'Nama negara wajib dipilih untuk instansi luar negeri.',
+        ];
+
+        $validated = $request->validate($rules, $messages);
+
+        $perusahaan = Perusahaan::create([
+            'nama_perusahaan' => $validated['nama_perusahaan'],
+            'jenis_lokasi' => $jenisLokasi,
+            'negara' => $jenisLokasi === 'Luar Negeri' ? $validated['negara'] : 'Indonesia',
+            'propinsi_id' => $jenisLokasi === 'Dalam Negeri' ? ($validated['propinsi_id'] ?? null) : null,
+            'kabupaten_id' => $jenisLokasi === 'Dalam Negeri' ? ($validated['kabupaten_id'] ?? null) : null,
+            'alamat' => $validated['alamat'] ?? null,
+            'kode_pos' => $validated['kode_pos'] ?? null,
+            'skala' => $validated['skala'] ?? ($jenisLokasi === 'Luar Negeri' ? 'Internasional' : 'Nasional'),
+            'jenis_perusahaan' => $validated['jenis_perusahaan'] ?? null,
+            'jenis_perusahaan_lainnya' => $validated['jenis_perusahaan_lainnya'] ?? null,
+            'sektor' => $validated['sektor'] ?? null,
+            'homepage' => $validated['homepage'] ?? null,
+            'no_telp_fax' => $validated['no_telp_fax'] ?? null,
+            'status_verifikasi' => 'Terverifikasi',
+            'created_by_user_id' => Auth::id(),
+        ]);
+
+        return redirect()->back()->with('success', "Institusi \"{$perusahaan->nama_perusahaan}\" berhasil ditambahkan ke master data resmi universitas.");
     }
 
     /**
@@ -169,8 +236,9 @@ class VerifikasiPerusahaanSuperAdminController extends Controller
     public function reject(Request $request, int $id): RedirectResponse
     {
         $company = Perusahaan::findOrFail($id);
+        $alasan = $request->input('alasan');
 
-        $this->verificationService->rejectCompany($company);
+        $this->verificationService->rejectCompany($company, $alasan);
 
         return redirect()->back()->with('success', "Pengajuan perusahaan \"{$company->nama_perusahaan}\" telah ditolak.");
     }

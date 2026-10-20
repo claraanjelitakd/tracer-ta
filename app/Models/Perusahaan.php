@@ -78,4 +78,13 @@ class Perusahaan extends Model
     {
         return $this->createdProdi();
     }
+
+    public function latestVerificationLog()
+    {
+        return $this->hasOne(LogActivity::class, 'model_id')
+            ->where('model_type', self::class)
+            ->whereIn('action', ['ACC_VERIFIKASI_PERUSAHAAN', 'UPDATE_VERIFIKASI_PERUSAHAAN', 'REJECT_PERUSAHAAN', 'GANTI_PERUSAHAAN'])
+            ->with('user:id,name,role,username')
+            ->latestOfMany();
+    }
 }

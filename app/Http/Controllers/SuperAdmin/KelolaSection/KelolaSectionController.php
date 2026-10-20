@@ -7,8 +7,6 @@ use App\Models\KelompokPertanyaan;
 use App\Models\Kuesioner;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Inertia\Inertia;
-use Inertia\Response;
 
 /**
  * Class KelolaSectionController
@@ -27,31 +25,13 @@ use Inertia\Response;
 class KelolaSectionController extends Controller
 {
     /**
-     * Menampilkan halaman utama Kelola Section Kuesioner.
+     * Menampilkan halaman utama Kelola Section Kuesioner (dialihkan ke halaman kuesioner terpadu tab sections).
      *
      * @param  Request  $request  Objek HTTP request yang masuk
-     * @return Response Respons Inertia yang merender komponen SuperAdmin/Section/Index
      */
-    public function index(Request $request): Response
+    public function index(Request $request): RedirectResponse
     {
-        // 1. Ambil seluruh data section berurutan beserta relasi kuesioner dan total pertanyaan
-        $sections = KelompokPertanyaan::with('kuesioner')
-            ->withCount('subpertanyaans')
-            ->orderBy('order', 'asc')
-            ->get();
-
-        // 2. Ambil seluruh kuesioner beserta jumlah seksi dan atribut lengkap
-        $kuesioners = Kuesioner::withCount('kelompokPertanyaan')
-            ->orderBy('year', 'desc')
-            ->orderBy('id', 'desc')
-            ->get(['id', 'title', 'description', 'year', 'is_active']);
-
-        // 3. Render halaman Vue dengan data yang dibutuhkan
-        return Inertia::render('SuperAdmin/Section/Index', [
-            'sections' => $sections,
-            'kuesioners' => $kuesioners,
-            'questionnaires' => $kuesioners,
-        ]);
+        return redirect()->route('superadmin.pertanyaan.index', ['tab' => 'sections']);
     }
 
     /**
@@ -67,6 +47,7 @@ class KelolaSectionController extends Controller
             'kuesioner_id' => 'nullable|exists:kuesioner,id',
             'questionnaire_id' => 'nullable|exists:kuesioner,id',
             'title' => 'required|string|max:255',
+            'description' => 'nullable|string',
             'order' => 'nullable|integer|min:1',
         ]);
 
@@ -107,6 +88,7 @@ class KelolaSectionController extends Controller
             'kuesioner_id' => 'nullable|exists:kuesioner,id',
             'questionnaire_id' => 'nullable|exists:kuesioner,id',
             'title' => 'required|string|max:255',
+            'description' => 'nullable|string',
             'order' => 'nullable|integer|min:1',
         ]);
 
