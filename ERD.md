@@ -439,13 +439,13 @@ erDiagram
 
     pertanyaan_evaluasi_atasan {
         bigint id PK
-        string kategori "kesiapan_kerja, kinerja_lulusan"
-        string kode_aspek "20, nullable, e.g. KES_1, ASP_01..12"
-        string aspek_penilaian
+        string kategori "50, default Kinerja"
+        string kode UK "50"
+        string aspek
         text deskripsi "nullable"
         string tipe "50, likert_5, pilihan_ganda, text, textarea"
         json pilihan_jawaban "nullable, untuk opsi pilihan_ganda"
-        int urutan
+        int order
         boolean is_active "default true"
         timestamp created_at
         timestamp updated_at
@@ -455,8 +455,7 @@ erDiagram
         bigint id PK
         bigint evaluasi_atasan_id FK "references evaluasi_atasan.id"
         bigint pertanyaan_id FK "references pertanyaan_evaluasi_atasan.id"
-        int nilai "nullable, 1-5 untuk skala Likert"
-        text jawaban_teks "nullable, jawaban opsi pilihan ganda / teks bebas"
+        string nilai "100, jawaban sesuai tipe instrumen"
         text catatan "nullable"
         timestamp created_at
         timestamp updated_at
@@ -481,8 +480,8 @@ erDiagram
 ### B. Modul Wilayah & Master Institusi
 1. **`prodi`**: Master program studi di lingkungan UKDW (Sistem Informasi, Informatika, Arsitektur, Desain Produk, Manajemen, Akuntansi, Biologi, Kedokteran, Teologi, dll.).
 2. **`ref_fakultas`**: Master fakultas di UKDW yang menaungi program studi terkait.
-3. **`ref_negara`**: Master data 194 negara resmi dunia (kode ISO 2 unik, nama negara unik, ibu kota, benua) untuk lokasi perusahaan internasional dan kewarganegaraan alumni. Disinkronkan dari berkas [`data/daftar_negara_dunia.csv`](file:///c:/study/tracerstudy/data/daftar_negara_dunia.csv).
-4. **`propinsi`** & **`kabupaten`**: Master data wilayah administratif Republik Indonesia (38 Provinsi dan 514 Kabupaten/Kota). Disinkronkan dari berkas [`data/provinsi.csv`](file:///c:/study/tracerstudy/data/provinsi.csv) dan [`data/kabupaten_kota.csv`](file:///c:/study/tracerstudy/data/kabupaten_kota.csv).
+3. **`ref_negara`**: Master data 194 negara resmi dunia (kode ISO 2 unik, nama negara unik, ibu kota, benua) untuk lokasi perusahaan internasional dan kewarganegaraan alumni. Disinkronkan dari berkas [`data/daftar_negara_dunia.csv`](data/daftar_negara_dunia.csv).
+4. **`propinsi`** & **`kabupaten`**: Master data wilayah administratif Republik Indonesia (38 Provinsi dan 514 Kabupaten/Kota). Disinkronkan dari berkas [`data/provinsi.csv`](data/provinsi.csv) dan [`data/kabupaten_kota.csv`](data/kabupaten_kota.csv).
 5. **`ump`**: Data Upah Minimum Provinsi (UMP) tahun 2026 terhubung via `kode_provinsi` untuk evaluasi kesesuaian gaji standar kelayakan hidup.
 
 ---
@@ -549,37 +548,37 @@ erDiagram
 ---
 
 ### F. Database Views Terkonsolidasi
-*(Dokumentasi kueri DDL lengkap dan kamus data tersedia di [`docs/database-views.md`](file:///c:/study/tracerstudy/docs/database-views.md))*
+*(Dokumentasi kueri DDL lengkap dan kamus data tersedia di [`docs/database-views.md`](docs/database-views.md))*
 
-1. **`v_alumni_audit_rekap`** (Model: [`AlumniAuditRekap`](file:///c:/study/tracerstudy/app/Models/AlumniAuditRekap.php)): View agregat utama 89 kolom yang menyatukan profil biodata, status kuesioner universitas, dan status kuesioner prodi untuk direktori alumni tanpa masalah query N+1.
-2. **`v_alumni_profile_summary`** (Model: [`AlumniProfileSummary`](file:///c:/study/tracerstudy/app/Models/AlumniProfileSummary.php)): View ringkasan profil lengkap 4 sub-tab (Pribadi, Akademik, Orang Tua, Karier).
-3. **`v_alumni_tracer_univ_status`** (Model: [`AlumniTracerUnivStatus`](file:///c:/study/tracerstudy/app/Models/AlumniTracerUnivStatus.php)): Menghitung persentase dan progres kelengkapan kuesioner universitas (otomatis mengecualikan butir identitas Seksi 1).
-4. **`v_alumni_tracer_prodi_status`** (Model: [`AlumniTracerProdiStatus`](file:///c:/study/tracerstudy/app/Models/AlumniTracerProdiStatus.php)): Menghitung status pengisian kuesioner mandiri program studi.
-5. **`v_alumni_kuesioner_autofill`** (Model: [`AlumniKuesionerAutofill`](file:///c:/study/tracerstudy/app/Models/AlumniKuesionerAutofill.php)): Pemetaan data profil alumni ke kode pertanyaan kuesioner untuk pengisian otomatis.
-6. **`v_question_mappings`** (Model: [`QuestionMapping`](file:///c:/study/tracerstudy/app/Models/QuestionMapping.php)): Tabel kamus relasional yang memetakan kode pertanyaan kuesioner dengan tabel dan kolom sumber basis data.
-7. **`v_alumni_linkedin_plot`** (Model: [`AlumniLinkedinPlot`](file:///c:/study/tracerstudy/app/Models/AlumniLinkedinPlot.php)): View perbandingan data scraping LinkedIn (`linkedin_sync_results`) berdampingan dengan profil `biodata`, dilengkapi verifikasi kecocokan nama alumni (`is_nama_sesuai`), deteksi kesamaan data perusahaan/posisi, dan status plot ke sistem (`status_plot_label`).
+1. **`v_alumni_audit_rekap`** (Model: [`AlumniAuditRekap`](app/Models/AlumniAuditRekap.php)): View agregat utama 89 kolom yang menyatukan profil biodata, status kuesioner universitas, dan status kuesioner prodi untuk direktori alumni tanpa masalah query N+1.
+2. **`v_alumni_profile_summary`** (Model: [`AlumniProfileSummary`](app/Models/AlumniProfileSummary.php)): View ringkasan profil lengkap 4 sub-tab (Pribadi, Akademik, Orang Tua, Karier).
+3. **`v_alumni_tracer_univ_status`** (Model: [`AlumniTracerUnivStatus`](app/Models/AlumniTracerUnivStatus.php)): Menghitung persentase dan progres kelengkapan kuesioner universitas (otomatis mengecualikan butir identitas Seksi 1).
+4. **`v_alumni_tracer_prodi_status`** (Model: [`AlumniTracerProdiStatus`](app/Models/AlumniTracerProdiStatus.php)): Menghitung status pengisian kuesioner mandiri program studi.
+5. **`v_alumni_kuesioner_autofill`** (Model: [`AlumniKuesionerAutofill`](app/Models/AlumniKuesionerAutofill.php)): Pemetaan data profil alumni ke kode pertanyaan kuesioner untuk pengisian otomatis.
+6. **`v_question_mappings`** (Model: [`QuestionMapping`](app/Models/QuestionMapping.php)): Tabel kamus relasional yang memetakan kode pertanyaan kuesioner dengan tabel dan kolom sumber basis data.
+7. **`v_alumni_linkedin_plot`** (Model: [`AlumniLinkedinPlot`](app/Models/AlumniLinkedinPlot.php)): View perbandingan data scraping LinkedIn (`linkedin_sync_results`) berdampingan dengan profil `biodata`, dilengkapi verifikasi kecocokan nama alumni (`is_nama_sesuai`), deteksi kesamaan data perusahaan/posisi, dan status plot ke sistem (`status_plot_label`).
 
 ---
 
 ### G. Modul Evaluasi Pengguna Lulusan (Atasan Langsung)
-1. **`evaluasi_atasan`** (Model: [`EvaluasiAtasan`](file:///c:/study/tracerstudy/app/Models/EvaluasiAtasan.php)):
+1. **`evaluasi_atasan`** (Model: [`EvaluasiAtasan`](app/Models/EvaluasiAtasan.php)):
    - Sesi survei evaluasi tingkat kepuasan dan kinerja lulusan UKDW oleh pimpinan/atasan tempat alumni bekerja.
-   - Kolom: `id`, `biodata_id` (FK), `perusahaan_id` (FK), `atasan_id` (FK), `token` (Unique, 64-char URL token), `is_submitted` (boolean), `submitted_at` (datetime), `jumlah_alumni_ukdw` (rentang jumlah lulusan UKDW di perusahaan), `standar_gaji_pertama` (standar gaji awal alumni UKDW per bulan).
+   - Kolom: `id`, `biodata_id` (FK), `perusahaan_id` (FK), `atasan_id` (FK), `token` (VARCHAR(64), unik; controller saat ini menghasilkan 40 karakter), `is_submitted` (boolean), `submitted_at` (datetime), `jumlah_alumni_ukdw` (rentang jumlah lulusan UKDW di perusahaan), `standar_gaji_pertama` (standar gaji awal alumni UKDW per bulan).
    - Diakses publik tanpa perlu autentikasi login via `/evaluasi-atasan/{token}`.
-2. **`pertanyaan_evaluasi_atasan`** (Model: [`PertanyaanEvaluasiAtasan`](file:///c:/study/tracerstudy/app/Models/PertanyaanEvaluasiAtasan.php)):
+2. **`pertanyaan_evaluasi_atasan`** (Model: [`PertanyaanEvaluasiAtasan`](app/Models/PertanyaanEvaluasiAtasan.php)):
    - Bank butir instrumen evaluasi kepuasan atasan dinamis.
-   - Kolom: `id`, `kategori` (`kesiapan_kerja`, `kinerja_lulusan`), `kode_aspek`, `aspek_penilaian`, `deskripsi`, `tipe` (`pilihan_ganda`, `likert_5`, `text`, `textarea`), `pilihan_jawaban` (JSON array opsi), `urutan`, `is_active`.
+   - Kolom: `id`, `kategori` (string kategori instrumen), `kode`, `aspek`, `deskripsi`, `tipe` (tipe pertanyaan instrumen), `pilihan_jawaban` (JSON array opsi), `order`, `is_active`.
    - Memuat:
      - 1 butir tingkat kesiapan kerja alumni (`Sangat siap`, `Cukup Siap`, `Kurang siap`, `Tidak siap`).
      - 12 butir aspek kinerja lulusan (Etika, Keahlian Bidang Ilmu, Bhs Inggris, TI, Komunikasi, Kerja Tim, Pengembangan Diri, Kepemimpinan, Etos Kerja, Tanggung Jawab, Adaptasi, Inisiatif).
-3. **`respon_evaluasi_atasan`** (Model: [`ResponEvaluasiAtasan`](file:///c:/study/tracerstudy/app/Models/ResponEvaluasiAtasan.php)):
+3. **`respon_evaluasi_atasan`** (Model: [`ResponEvaluasiAtasan`](app/Models/ResponEvaluasiAtasan.php)):
    - Menyimpan rekaman butir jawaban dari pimpinan/atasan.
-   - Kolom: `id`, `evaluasi_atasan_id` (FK), `pertanyaan_id` (FK), `nilai` (1-5 untuk skala Likert), `jawaban_teks` (untuk butir pilihan ganda / teks bebas), `catatan` (masukan/saran khusus).
+   - Kolom: `id`, `evaluasi_atasan_id` (FK), `pertanyaan_id` (FK), `nilai` (VARCHAR(100), jawaban sesuai tipe instrumen), `catatan` (masukan/saran khusus).
 
 ---
 
 ### H. Modul Integrasi & Sinkronisasi LinkedIn
-1. **`linkedin_sync_results`** (Model: [`LinkedinSyncResult`](file:///c:/study/tracerstudy/app/Models/LinkedinSyncResult.php)):
+1. **`linkedin_sync_results`** (Model: [`LinkedinSyncResult`](app/Models/LinkedinSyncResult.php)):
    - Tabel staging penampung hasil penarikan (*scraping*) data profil profesional alumni via LinkedIn Provider (Apify Actor / Official API).
    - Kolom: `id`, `biodata_id` (FK ke `biodata.id`), `status` (`pending`, `approved`, `rejected`), `linkedin_url`, `linkedin_username`, `scraped_data` (JSON mentah lengkap profil), `scraped_at` (datetime), `reviewed_by` (FK ke `users.id`), `reviewed_at` (datetime), `review_notes` (catatan revisi/penolakan).
    - Menjamin isolasi data mentah scraping sebelum disetujui (*Approve*) oleh Super Admin untuk masuk ke tabel profil `biodata`.
@@ -626,3 +625,11 @@ erDiagram
 | `prodi_question` | 1 : N | `prodi_question_option` | `prodi_question_option.prodi_question_id` | Pilihan opsi kuesioner mandiri program studi. |
 | `biodata` | 1 : N | `prodi_response` | `prodi_response.biodata_id` | Rekaman jawaban butir kuesioner mandiri program studi. |
 | `prodi_question` | 1 : N | `prodi_response` | `prodi_response.prodi_question_id` | Referensi butir soal kuesioner program studi. |
+
+## Catatan konsistensi model (21 Oktober 2026)
+
+Data akademik, yudisium dan orang tua tersedia dalam tabel lokal. Asal data universitas tidak membuktikan adanya integrasi API SIAKAD. DFD terkini mengelompokkannya sebagai D12; tidak menambah aktor SIAKAD tanpa konektor. View database merupakan proyeksi tabel, bukan penyimpanan bisnis baru.
+
+`evaluasi_atasan.token` menampung sampai 64 karakter, sedangkan controller membuat token 40 karakter. Penyimpanan profil dan pengiriman undangan adalah aksi terpisah. Tidak terdapat field kedaluwarsa token pada migrasi evaluasi, dan handler POST tidak memeriksa penolakan submit ulang berdasarkan `is_submitted`.
+
+Untuk nama kolom dan tipe fisik, migrasi `database/migrations` adalah rujukan implementasi. [DFD](docs/dfd.md) adalah model aliran logis, bukan pengganti ERD.

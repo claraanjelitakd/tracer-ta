@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\Atasan;
 use App\Models\Biodata;
 use App\Models\DataAkademik;
+use App\Models\DataOrangTua;
 use App\Models\Prodi;
 use App\Models\RefFakultas;
 use App\Models\RefSubpertanyaan2021;
@@ -12,6 +13,7 @@ use App\Models\Tracer;
 use App\Models\User;
 use App\Services\Kuesioner\KuesionerSyncService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Hash;
 use Tests\TestCase;
 
@@ -110,6 +112,39 @@ class AlumniProfileEnhancementTest extends TestCase
         // NIK harus tetap bernilai asli
         $this->assertEquals('3404100000000001', $this->biodata->nik);
         $this->assertEquals('081292090002', $this->biodata->nomor_telepon);
+    }
+
+    public function test_profile_rejects_non_image_uploads(): void
+    {
+        $response = $this->actingAs($this->alumniUser)->post('/alumni/profile', [
+            'foto' => UploadedFile::fake()->create('payload.php', 10, 'application/x-php'),
+        ]);
+
+        $response->assertSessionHasErrors('foto');
+        $this->assertNull($this->biodata->fresh()->foto);
+    }
+
+    public function test_profile_updates_biodata_without_changing_reference_data(): void
+    {
+        $parent = DataOrangTua::create([
+            'nim' => $this->biodata->nim,
+            'nama_orang_tua' => 'Nama Referensi',
+            'pekerjaan' => 'Pekerjaan Referensi',
+        ]);
+        $this->biodata->update(['orang_tua_id' => $parent->id]);
+        $academicEmail = DataAkademik::where('nim', $this->biodata->nim)->value('email_pribadi');
+
+        $response = $this->actingAs($this->alumniUser)->post('/alumni/profile', [
+            'email_pribadi' => 'email.biodata.baru@example.com',
+            'nama_orang_tua' => 'Nama Yang Tidak Boleh Tersimpan',
+            'pekerjaan_orang_tua' => 'Pekerjaan Yang Tidak Boleh Tersimpan',
+        ]);
+
+        $response->assertRedirect();
+        $this->assertSame('email.biodata.baru@example.com', $this->biodata->fresh()->email_pribadi);
+        $this->assertSame($academicEmail, DataAkademik::where('nim', $this->biodata->nim)->value('email_pribadi'));
+        $this->assertSame('Nama Referensi', $parent->fresh()->nama_orang_tua);
+        $this->assertSame('Pekerjaan Referensi', $parent->fresh()->pekerjaan);
     }
 
     /**

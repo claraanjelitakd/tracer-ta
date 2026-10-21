@@ -1,10 +1,10 @@
 <!--
   Komponen Anak (Child Component): Form Data Orang Tua
   File: resources/js/Pages/Alumni/Profil/Components/FormOrangTua.vue
-  
+
   DIPANGGIL OLEH (Parent Component):
   - resources/js/Pages/Alumni/Profil/Index.vue
-  
+
   SUMBER DATA DARI BACKEND:
   - Controller: App\Http\Controllers\Alumni\Profil\ProfilController.php
 -->
@@ -20,22 +20,11 @@ const props = defineProps({
     kabupatens: Array
 });
 
-// Helper validasi telepon
-const isValidPhone = (val) => {
-    if (!val) return false;
-    const clean = String(val).replace(/[^0-9+]/g, '');
-    return clean.length >= 10 && clean.length <= 15;
-};
-
-// Handler input telepon hanya angka & tanda +
-const handlePhoneInput = (e) => {
-    props.form.nomor_telepon_orang_tua = e.target.value.replace(/[^0-9+]/g, '').slice(0, 15);
-};
 </script>
 
 <template>
     <div class="space-y-8">
-        
+
         <!-- Bagian: Identitas Orang Tua / Wali -->
         <div class="bg-white rounded-2xl p-6 sm:p-8 shadow-xs border border-gray-100">
             <div class="flex items-center justify-between mb-6 pb-3 border-b border-gray-100">
@@ -43,47 +32,49 @@ const handlePhoneInput = (e) => {
                     <span class="w-1.5 h-5 bg-[#0D542B] rounded-full inline-block"></span>
                     Identitas Orang Tua / Wali
                 </h2>
-                <span class="text-xs text-gray-400 font-medium">Kolom bertanda <span class="text-rose-500 font-bold">*</span> wajib diisi</span>
+                <span class="text-xs text-gray-500 font-medium">Data referensi, tidak dapat diubah dari tracer study</span>
             </div>
-            
+
             <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
                 <!-- Nama Lengkap Orang Tua -->
                 <div>
                     <label class="block text-xs sm:text-sm font-bold text-gray-700 mb-1.5">
-                        Nama Lengkap Orang Tua / Wali <span class="text-rose-500 font-bold">*</span>
+                        Nama Lengkap Orang Tua / Wali
                     </label>
-                    <input 
-                        type="text" 
-                        v-model="form.nama_orang_tua" 
-                        class="block w-full border border-gray-300 bg-white text-gray-900 rounded-xl shadow-xs px-4 py-3 text-sm font-medium transition-colors focus:border-[#0D542B] focus:ring-1 focus:ring-[#0D542B] outline-none"
-                        placeholder="Nama Lengkap Orang Tua / Wali" 
+                    <input
+                        type="text"
+                        :value="form.nama_orang_tua"
+                        disabled
+                        class="block w-full border border-gray-200 bg-gray-100 text-gray-700 rounded-xl px-4 py-3 text-sm font-medium cursor-not-allowed"
+                        placeholder="Nama Lengkap Orang Tua / Wali"
                     />
                 </div>
 
                 <!-- Pekerjaan Orang Tua -->
                 <div>
                     <label class="block text-xs sm:text-sm font-bold text-gray-700 mb-1.5">
-                        Pekerjaan Orang Tua / Wali <span class="text-rose-500 font-bold">*</span>
+                        Pekerjaan Orang Tua / Wali
                     </label>
-                    <input 
-                        type="text" 
-                        v-model="form.pekerjaan_orang_tua" 
-                        class="block w-full border border-gray-300 bg-white text-gray-900 rounded-xl shadow-xs px-4 py-3 text-sm font-medium transition-colors focus:border-[#0D542B] focus:ring-1 focus:ring-[#0D542B] outline-none"
-                        placeholder="Contoh: PNS, Wiraswasta, Karyawan Swasta, Petani..." 
+                    <input
+                        type="text"
+                        :value="form.pekerjaan_orang_tua"
+                        disabled
+                        class="block w-full border border-gray-200 bg-gray-100 text-gray-700 rounded-xl px-4 py-3 text-sm font-medium cursor-not-allowed"
+                        placeholder="Contoh: PNS, Wiraswasta, Karyawan Swasta, Petani..."
                     />
                 </div>
 
                 <!-- Nomor Telepon Orang Tua -->
                 <div class="md:col-span-2">
                     <label class="block text-xs sm:text-sm font-bold text-gray-700 mb-1.5">
-                        Nomor Telepon / WhatsApp Orang Tua <span class="text-rose-500 font-bold">*</span>
+                        Nomor Telepon / WhatsApp Orang Tua
                     </label>
-                    <input 
-                        type="tel" 
-                        :value="form.nomor_telepon_orang_tua" 
-                        @input="handlePhoneInput"
-                        class="block w-full border border-gray-300 bg-white text-gray-900 rounded-xl shadow-xs px-4 py-3 text-sm font-mono font-medium transition-colors focus:border-[#0D542B] focus:ring-1 focus:ring-[#0D542B] outline-none"
-                        placeholder="Contoh: 081234567890" 
+                    <input
+                        type="tel"
+                        :value="form.nomor_telepon_orang_tua"
+                        disabled
+                        class="block w-full border border-gray-200 bg-gray-100 text-gray-700 rounded-xl px-4 py-3 text-sm font-mono font-medium cursor-not-allowed"
+                        placeholder="Contoh: 081234567890"
                     />
                 </div>
             </div>
@@ -96,19 +87,20 @@ const handlePhoneInput = (e) => {
                     <span class="w-1.5 h-5 bg-[#0D542B] rounded-full inline-block"></span>
                     Alamat Domisili Orang Tua / Wali
                 </h2>
-                <span class="text-xs text-gray-400 font-medium">Kolom bertanda <span class="text-rose-500 font-bold">*</span> wajib diisi</span>
+                <span class="text-xs text-gray-500 font-medium">Bersumber dari data referensi lokal</span>
             </div>
-            
+
             <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
                 <!-- Alamat Lengkap -->
                 <div class="md:col-span-2">
                     <label class="block text-xs sm:text-sm font-bold text-gray-700 mb-1.5">
-                        Alamat Lengkap <span class="text-rose-500 font-bold">*</span>
+                        Alamat Lengkap
                     </label>
-                    <textarea 
-                        v-model="form.alamat_orang_tua" 
-                        rows="3" 
-                        class="block w-full border border-gray-300 bg-white text-gray-900 rounded-xl shadow-xs px-4 py-3 text-sm font-medium transition-colors focus:border-[#0D542B] focus:ring-1 focus:ring-[#0D542B] outline-none"
+                    <textarea
+                        :value="form.alamat_orang_tua"
+                        disabled
+                        rows="3"
+                        class="block w-full border border-gray-200 bg-gray-100 text-gray-700 rounded-xl px-4 py-3 text-sm font-medium cursor-not-allowed"
                         placeholder="Nama Jalan, RT/RW, Dusun/Kompleks, Kelurahan..."
                     ></textarea>
                 </div>
@@ -116,11 +108,12 @@ const handlePhoneInput = (e) => {
                 <!-- Provinsi -->
                 <div>
                     <label class="block text-xs sm:text-sm font-bold text-gray-700 mb-1.5">
-                        Provinsi <span class="text-rose-500 font-bold">*</span>
+                        Provinsi
                     </label>
-                    <select 
-                        v-model="form.provinsi_id_orang_tua" 
-                        class="block w-full border border-gray-300 bg-white text-gray-900 rounded-xl shadow-xs px-4 py-3 text-sm font-medium transition-colors focus:border-[#0D542B] focus:ring-1 focus:ring-[#0D542B] outline-none"
+                    <select
+                        v-model="form.provinsi_id_orang_tua"
+                        disabled
+                        class="block w-full border border-gray-200 bg-gray-100 text-gray-700 rounded-xl px-4 py-3 text-sm font-medium cursor-not-allowed"
                     >
                         <option value="">-- Pilih Provinsi --</option>
                         <option v-for="prov in provinces" :key="prov.id" :value="prov.id">{{ prov.nama_provinsi }}</option>
@@ -130,11 +123,12 @@ const handlePhoneInput = (e) => {
                 <!-- Kabupaten / Kota -->
                 <div>
                     <label class="block text-xs sm:text-sm font-bold text-gray-700 mb-1.5">
-                        Kabupaten / Kota <span class="text-rose-500 font-bold">*</span>
+                        Kabupaten / Kota
                     </label>
-                    <select 
-                        v-model="form.kabupaten_id_orang_tua" 
-                        class="block w-full border border-gray-300 bg-white text-gray-900 rounded-xl shadow-xs px-4 py-3 text-sm font-medium transition-colors focus:border-[#0D542B] focus:ring-1 focus:ring-[#0D542B] outline-none"
+                    <select
+                        v-model="form.kabupaten_id_orang_tua"
+                        disabled
+                        class="block w-full border border-gray-200 bg-gray-100 text-gray-700 rounded-xl px-4 py-3 text-sm font-medium cursor-not-allowed"
                     >
                         <option value="">-- Pilih Kabupaten/Kota --</option>
                         <option v-for="kab in kabupatens" :key="kab.id" :value="kab.id" v-show="!form.provinsi_id_orang_tua || kab.province_id == form.provinsi_id_orang_tua">
@@ -146,32 +140,34 @@ const handlePhoneInput = (e) => {
                 <!-- Kota / Keterangan Wilayah -->
                 <div>
                     <label class="block text-xs sm:text-sm font-bold text-gray-700 mb-1.5">
-                        Kota / Keterangan Wilayah <span class="text-rose-500 font-bold">*</span>
+                        Kota / Keterangan Wilayah
                     </label>
-                    <input 
-                        type="text" 
-                        v-model="form.kota_orang_tua" 
+                    <input
+                        type="text"
+                        :value="form.kota_orang_tua"
+                        disabled
                         autocomplete="off"
-                        class="block w-full border border-gray-300 bg-white text-gray-900 rounded-xl shadow-xs px-4 py-3 text-sm font-medium transition-colors focus:border-[#0D542B] focus:ring-1 focus:ring-[#0D542B] outline-none" 
-                        placeholder="Contoh: Sleman, Yogyakarta" 
+                        class="block w-full border border-gray-200 bg-gray-100 text-gray-700 rounded-xl px-4 py-3 text-sm font-medium cursor-not-allowed"
+                        placeholder="Contoh: Sleman, Yogyakarta"
                     />
                 </div>
 
                 <!-- Kode Pos -->
                 <div>
                     <label class="block text-xs sm:text-sm font-bold text-gray-700 mb-1.5">
-                        Kode Pos <span class="text-rose-500 font-bold">*</span>
+                        Kode Pos
                     </label>
-                    <input 
-                        type="text" 
-                        v-model="form.kode_pos_orang_tua" 
+                    <input
+                        type="text"
+                        :value="form.kode_pos_orang_tua"
+                        disabled
                         autocomplete="off"
-                        class="block w-full border border-gray-300 bg-white text-gray-900 rounded-xl shadow-xs px-4 py-3 text-sm font-medium transition-colors focus:border-[#0D542B] focus:ring-1 focus:ring-[#0D542B] outline-none" 
-                        placeholder="Kode Pos (5 digit)" 
+                        class="block w-full border border-gray-200 bg-gray-100 text-gray-700 rounded-xl px-4 py-3 text-sm font-medium cursor-not-allowed"
+                        placeholder="Kode Pos (5 digit)"
                     />
                 </div>
             </div>
         </div>
-        
+
     </div>
 </template>

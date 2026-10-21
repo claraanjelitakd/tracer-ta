@@ -204,14 +204,6 @@ const tabCompleteness = computed(() => {
 
     // 4. Tab Orang Tua
     const missingOrangTua = [];
-    if (!form.nama_orang_tua || !String(form.nama_orang_tua).trim()) missingOrangTua.push('Nama Orang Tua / Wali');
-    if (!form.pekerjaan_orang_tua || !String(form.pekerjaan_orang_tua).trim()) missingOrangTua.push('Pekerjaan Orang Tua');
-    if (!form.nomor_telepon_orang_tua || !isValidPhone(form.nomor_telepon_orang_tua)) missingOrangTua.push('Nomor Telepon Orang Tua');
-    if (!form.alamat_orang_tua || !String(form.alamat_orang_tua).trim()) missingOrangTua.push('Alamat Orang Tua');
-    if (!form.provinsi_id_orang_tua) missingOrangTua.push('Provinsi Orang Tua');
-    if (!form.kabupaten_id_orang_tua) missingOrangTua.push('Kabupaten Orang Tua');
-    if (!form.kota_orang_tua || !String(form.kota_orang_tua).trim()) missingOrangTua.push('Kota Orang Tua');
-    if (!form.kode_pos_orang_tua || !String(form.kode_pos_orang_tua).trim()) missingOrangTua.push('Kode Pos Orang Tua');
 
     return {
         pribadi: {

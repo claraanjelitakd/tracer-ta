@@ -18,7 +18,7 @@ class CheckMustChangePassword
     public function handle(Request $request, Closure $next): Response
     {
         // Jika user sedang login DAN status must_change_password bernilai true
-        if (Auth::check() && Auth::user()->must_change_password) {
+        if (Auth::check() && Auth::user()->role === 'alumni' && Auth::user()->must_change_password) {
 
             // Abaikan pencegatan jika route saat ini sudah di form '/change-password'
             // atau jika user sedang mencoba melakukan proses '/logout'

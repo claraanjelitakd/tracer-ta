@@ -10,10 +10,8 @@ use Illuminate\Database\Eloquent\Model;
  *
  * Mengelola data kelulusan yudisium, tugas akhir/skripsi, dan publikasi ilmiah.
  *
- * Aturan Keterkaitan Otomatis:
- * Setiap kali `status_lulus` berubah menjadi 'Lulus', model ini secara otomatis
- * menyinkronkan status kelulusan ke tabel `data_akademik` (status_mahasiswa = 'L',
- * tanggal_lulus, tahun_lulus, dan tahun_akademik_lulus).
+ * Saat referensi menyatakan lulus, aplikasi menyiapkan profil tracer tanpa mengubah
+ * data akademik atau data yudisium yang menjadi sumber referensi.
  */
 class Yudisium extends Model
 {
@@ -25,41 +23,13 @@ class Yudisium extends Model
 
     /**
      * Bootstrap model events.
-     * Keterkaitan otomatis antara status yudisium dengan riwayat kelulusan data akademik.
+     * Siapkan biodata tracer untuk alumni yang dinyatakan lulus.
      */
     protected static function booted()
     {
         static::saved(function (Yudisium $yudisium) {
-            // Ketika status kelulusan disetujui menjadi 'Lulus'
+            // Ketika referensi yudisium menyatakan lulus, siapkan profil tracer tanpa mengubah sumber akademik.
             if ($yudisium->status_lulus === 'Lulus') {
-                $dataAkademik = DataAkademik::where('nim', $yudisium->nim)->first();
-                if ($dataAkademik) {
-                    $updates = [
-                        'status_mahasiswa' => 'Lulus',
-                    ];
-
-                    // Tetapkan tahun lulus jika belum terisi
-                    if (empty($dataAkademik->tahun_lulus)) {
-                        $updates['tahun_lulus'] = (int) date('Y');
-                    }
-
-                    // Tetapkan tanggal kelulusan resmi
-                    if (empty($dataAkademik->tanggal_lulus)) {
-                        $updates['tanggal_lulus'] = now()->toDateString();
-                    }
-
-                    // Tetapkan periode tahun akademik lulus jika belum terisi
-                    if (empty($dataAkademik->tahun_akademik_lulus)) {
-                        $bulan = (int) date('n');
-                        $tahun = (int) date('Y');
-                        $semester = ($bulan >= 8 || $bulan <= 1) ? 'Gasal' : 'Genap';
-                        $periodeTahun = ($bulan <= 1) ? ($tahun - 1).'/'.$tahun : $tahun.'/'.($tahun + 1);
-                        $updates['tahun_akademik_lulus'] = "{$semester} {$periodeTahun}";
-                    }
-
-                    $dataAkademik->update($updates);
-                }
-
                 // Jika lulus di Yudisium, otomatis masukkan ke Biodata alumni!
                 // Seluruh relasi yudisium_id, orang_tua_id, prodi_id, dan akun user
                 // otomatis dirakit langsung oleh Model Biodata::booted (creating hook).

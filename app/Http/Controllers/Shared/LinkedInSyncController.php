@@ -1000,6 +1000,10 @@ class LinkedInSyncController extends Controller
      */
     public function syncBatch(Request $request, LinkedInProfileService $service): JsonResponse
     {
+        $validated = $request->validate([
+            'tahun' => ['required', 'string', 'regex:/^\d{4}$/'],
+        ]);
+        $scope = $this->getUserScope($request);
         $provider = config('services.linkedin.provider', 'official');
 
         // Untuk provider Apify, bulk scraping dinonaktifkan demi Cost Safety
@@ -1010,13 +1014,20 @@ class LinkedInSyncController extends Controller
             ], 400);
         }
 
-        $tahun = (string) $request->input('tahun');
+        $tahun = $validated['tahun'];
 
         // Cari alumni pada tahun terpilih
         $alumniQuery = Biodata::where(function ($q) use ($tahun) {
             $q->whereHas('dataAkademik', fn ($sub) => $sub->where('tahun_lulus', $tahun))
                 ->orWhereHas('yudisium.dataAkademik', fn ($sub) => $sub->where('tahun_lulus', $tahun));
         });
+
+        if ($scope['role'] === 'admin_prodi') {
+            $alumniQuery->where('prodi_id', $scope['prodiId']);
+        } elseif ($scope['role'] === 'admin_fakultas') {
+            $prodiIds = Prodi::where('fakultas_id', $scope['fakultasId'])->pluck('id');
+            $alumniQuery->whereIn('prodi_id', $prodiIds);
+        }
 
         $biodataIds = $alumniQuery->pluck('id')->all();
 

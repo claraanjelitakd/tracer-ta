@@ -7,7 +7,6 @@ use App\Models\Kabupaten;
 use App\Models\Perusahaan;
 use App\Models\Prodi;
 use App\Models\Propinsi;
-use App\Models\RefFakultas;
 use App\Services\Perusahaan\PerusahaanVerificationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -25,6 +24,18 @@ class VerifikasiPerusahaanFakultasController extends Controller
         protected PerusahaanVerificationService $verificationService
     ) {}
 
+    private function findCompanyInScope(int $id): Perusahaan
+    {
+        $fakultasId = Auth::user()?->fakultas_id;
+        if (! $fakultasId) {
+            abort(403, 'Akun Anda belum terhubung dengan fakultas.');
+        }
+
+        $prodiIds = Prodi::where('fakultas_id', $fakultasId)->pluck('id');
+
+        return Perusahaan::whereKey($id)->whereIn('created_by_prodi_id', $prodiIds)->firstOrFail();
+    }
+
     /**
      * Menampilkan daftar perusahaan tempat alumni bekerja yang menunggu verifikasi di lingkup Fakultas.
      */
@@ -33,12 +44,7 @@ class VerifikasiPerusahaanFakultasController extends Controller
         $user = Auth::user()->load('fakultas');
         $fakultasId = $user->fakultas_id;
 
-        if (! $fakultasId) {
-            $fakultas = RefFakultas::first();
-            $fakultasId = $fakultas?->id;
-        } else {
-            $fakultas = $user->fakultas;
-        }
+        $fakultas = $user->fakultas;
 
         if (! $fakultasId) {
             abort(403, 'Akun Anda belum terhubung dengan fakultas.');
@@ -86,7 +92,7 @@ class VerifikasiPerusahaanFakultasController extends Controller
      */
     public function verify(int $id): RedirectResponse
     {
-        $company = Perusahaan::findOrFail($id);
+        $company = $this->findCompanyInScope($id);
 
         $this->verificationService->verifyDirectly($company);
 
@@ -98,7 +104,7 @@ class VerifikasiPerusahaanFakultasController extends Controller
      */
     public function replace(Request $request, int $id): RedirectResponse
     {
-        $pendingCompany = Perusahaan::findOrFail($id);
+        $pendingCompany = $this->findCompanyInScope($id);
 
         $validated = $request->validate([
             'target_company_id' => 'required|exists:perusahaan,id',
@@ -118,7 +124,7 @@ class VerifikasiPerusahaanFakultasController extends Controller
      */
     public function updateAndVerify(Request $request, int $id): RedirectResponse
     {
-        $company = Perusahaan::findOrFail($id);
+        $company = $this->findCompanyInScope($id);
 
         $validated = $request->validate([
             'nama_perusahaan' => 'required|string|max:255',
@@ -144,7 +150,7 @@ class VerifikasiPerusahaanFakultasController extends Controller
      */
     public function reject(Request $request, int $id): RedirectResponse
     {
-        $company = Perusahaan::findOrFail($id);
+        $company = $this->findCompanyInScope($id);
 
         $this->verificationService->rejectCompany($company);
 

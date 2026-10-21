@@ -6,7 +6,7 @@ Dokumen ini menjelaskan arsitektur resmi, konfigurasi provider, alur kerja stagi
 
 ## 1. Arsitektur Multi-Provider
 
-Aplikasi mendukung dua kategori provider sinkronisasi LinkedIn melalui satu kontrak antarmuka yang terpadu: [`LinkedInProfileProvider`](file:///c:/study/tracerstudy/app/Services/LinkedIn/Contracts/LinkedInProfileProvider.php).
+Aplikasi mendukung dua kategori provider sinkronisasi LinkedIn melalui satu kontrak antarmuka yang terpadu: [`LinkedInProfileProvider`](../app/Services/LinkedIn/Contracts/LinkedInProfileProvider.php).
 
 ```text
                   LinkedInProfileProvider (Interface)
@@ -33,7 +33,7 @@ Pemilihan provider ditentukan secara dinamis melalui file `.env`:
 ### Karakteristik & Filosofi
 - **Status**: Implementasi resmi server-to-server.
 - **Driver Bawaan**: Dikelola oleh `LINKEDIN_DRIVER` di `.env` (`mock` untuk pengujian lokal, `api` untuk API resmi LinkedIn v2).
-- **Alur Kerja**: Langsung memperbarui data jabatan/karier dan entitas perusahaan (dengan status *Menunggu Verifikasi*) melalui [`LinkedInProfileService.php`](file:///c:/study/tracerstudy/app/Services/LinkedIn/LinkedInProfileService.php).
+- **Alur Kerja**: Langsung memperbarui data jabatan/karier dan entitas perusahaan (dengan status *Menunggu Verifikasi*) melalui [`LinkedInProfileService.php`](../app/Services/LinkedIn/LinkedInProfileService.php).
 - **Mendukung**: Single Sync dan Bulk Batch Sync per angkatan.
 
 ### Konfigurasi `.env`
@@ -89,7 +89,7 @@ Request sinkron dikirim dengan parameter minimal yang berfokus hanya pada data p
 
 ---
 
-## 4. Alur Kerja Staging & Review SuperAdmin (Prinsip Zero Direct Mutation)
+## 4. Alur Kerja Staging & Review Admin Berwenang (Prinsip Zero Direct Mutation)
 
 Ketika tombol **Sinkronisasi LinkedIn** ditekan untuk satu alumni pada provider Apify:
 
@@ -142,7 +142,7 @@ Jika alumni yang sama disinkronkan kembali di lain waktu:
 
 ## 5. Pemetaan Data (*Data Mapping*) Saat Disetujui (Approve)
 
-Pemetaan hanya dijalankan setelah SuperAdmin menekan tombol **Setujui (Approve)** pada hasil staging yang berstatus `pending`:
+Pemetaan hanya dijalankan setelah admin berwenang menekan tombol **Setujui (Approve)** pada hasil staging yang berstatus `pending`:
 1. **Posisi / Jabatan**:
    - Jika tersedia entri pada array `experience`: entri posisi aktif terbaru diambil sebagai jabatan.
    - Jika tidak tersedia array pengalaman, gunakan `headline`.
@@ -154,7 +154,7 @@ Pemetaan hanya dijalankan setelah SuperAdmin menekan tombol **Setujui (Approve)*
 3. **Data Otoritatif Tetap Terlindungi**:
    - Kolom `NIM`, `NIK`, `NPWP`, `email_pribadi`, `nomor_telepon`, `tanggal_lulus`, dan IPK **TIDAK PERNAH DIUBAH** oleh sinkronisasi LinkedIn.
 4. **Data Tanpa Mapping Jelas**:
-   - Field seperti daftar `skills` atau `about` tetap aman tersimpan di dalam `scraped_data` (JSON) pada `linkedin_sync_results` untuk referensi tanpa memaksakan modifikasi skema tabel utama.
+   - Payload lengkap tetap tersimpan pada `scraped_data`; pemetaan approve juga dapat menerapkan `skills` dan `experience` ke kolom biodata. Field lain tanpa pemetaan tetap menjadi referensi payload.
 
 ---
 
@@ -224,3 +224,11 @@ php artisan test --filter=LinkedIn
 6. Amati status berubah menjadi badge kuning **Pending Review**.
 7. Klik tombol review untuk memeriksa perbandingan data mentah hasil scraping dengan data utama saat ini.
 8. Klik **Setujui Data (Approve)** atau **Tolak (Reject)** untuk menguji pembaruan data utama.
+
+## 9. Lingkup akses terkini (21 Oktober 2026)
+
+Controller bersama: `app/Http/Controllers/Shared/LinkedInSyncController.php`. Modul tersedia bagi Superadmin (`/superadmin/linkedin-sync`), Admin Prodi (`/prodi/linkedin-sync`) dan Admin Fakultas (`/fakultas/linkedin-sync`). Pembatasan alumni mengikuti prodi/fakultas. Biro III membaca riwayat hasil melalui detail alumni dan tidak memiliki endpoint sinkronisasi/review sendiri.
+
+Nama berkas ini dipertahankan untuk kompatibilitas tautan lama. Implementasi memakai kontrak provider PHP dan HTTP API; nama berkas tidak membuktikan adanya server MCP LinkedIn. Driver bernama `official`/`api` adalah pilihan adapter aplikasi, bukan bukti akses produksi atau kemitraan resmi telah disediakan. Batch bukan antrean asinkron hanya karena disebut massal; provider Apify menolaknya dengan HTTP 400.
+
+Lihat [DFD](dfd.md), proses 2 dan entitas E8, untuk hubungan data dengan sistem.

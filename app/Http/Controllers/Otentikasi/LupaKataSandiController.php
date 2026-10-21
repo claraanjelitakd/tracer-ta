@@ -38,18 +38,16 @@ class LupaKataSandiController extends Controller
             })
             ->first();
 
+        $genericStatus = 'Jika akun dan email terdaftar valid, tautan reset kata sandi akan dikirim.';
+
         if (! $user) {
-            return back()->withErrors([
-                'username_atau_email' => 'NIM, Username, atau Email yang Anda masukkan tidak ditemukan.',
-            ])->withInput();
+            return back()->with('status', $genericStatus);
         }
 
         $email = $user->email;
 
         if (! $email || ! filter_var($email, FILTER_VALIDATE_EMAIL)) {
-            return back()->withErrors([
-                'username_atau_email' => 'Akun ini tidak memiliki alamat email valid yang terdaftar. Silakan hubungi admin Biro 3.',
-            ])->withInput();
+            return back()->with('status', $genericStatus);
         }
 
         // Buat token reset password acak
@@ -75,21 +73,12 @@ class LupaKataSandiController extends Controller
             // Kirim email reset password
             Mail::to($email)->send(new ResetPasswordMail($user, $resetUrl));
 
-            // Format email tersamarkan (contoh: c***a@gmail.com)
-            $parts = explode('@', $email);
-            $namePart = $parts[0];
-            $domainPart = $parts[1] ?? '';
-            $maskedName = strlen($namePart) > 2
-                ? substr($namePart, 0, 1).str_repeat('*', max(1, strlen($namePart) - 2)).substr($namePart, -1)
-                : $namePart.'***';
-            $maskedEmail = $maskedName.'@'.$domainPart;
+            return back()->with('status', $genericStatus);
 
-            return back()->with('status', "Tautan reset kata sandi telah berhasil dikirim ke email ({$maskedEmail}). Silakan cek kotak masuk atau folder spam Anda.");
+        } catch (\Throwable $exception) {
+            report($exception);
 
-        } catch (\Exception $e) {
-            return back()->withErrors([
-                'username_atau_email' => 'Gagal mengirim email: '.$e->getMessage(),
-            ])->withInput();
+            return back()->with('status', $genericStatus);
         }
     }
 
@@ -112,12 +101,12 @@ class LupaKataSandiController extends Controller
         $request->validate([
             'token' => ['required', 'string'],
             'email' => ['required', 'email'],
-            'password' => ['required', 'string', 'min:6', 'confirmed'],
+            'password' => ['required', 'string', 'min:12', 'confirmed'],
         ], [
             'email.required' => 'Email tidak boleh kosong.',
             'email.email' => 'Format email tidak valid.',
             'password.required' => 'Kata sandi baru wajib diisi.',
-            'password.min' => 'Kata sandi minimal terdiri dari 6 karakter.',
+            'password.min' => 'Kata sandi minimal terdiri dari 12 karakter.',
             'password.confirmed' => 'Konfirmasi kata sandi tidak cocok.',
         ]);
 

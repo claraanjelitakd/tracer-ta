@@ -69,7 +69,7 @@ const submit = () => {
                         <ul class="space-y-2 text-white/85 pl-2 leading-relaxed">
                             <li class="flex items-start gap-2">
                                 <span class="text-[#FFC700] font-bold">✓</span>
-                                <span>Panjang minimal <strong>8 karakter</strong>.</span>
+                                <span>Panjang minimal <strong>12 karakter</strong>.</span>
                             </li>
                             <li class="flex items-start gap-2">
                                 <span class="text-[#FFC700] font-bold">✓</span>
@@ -150,7 +150,7 @@ const submit = () => {
                                 v-model="form.password"
                                 required
                                 autofocus
-                                placeholder="Minimal 8 karakter"
+                                placeholder="Minimal 12 karakter"
                                 class="block w-full pl-11 pr-11 py-3 bg-black/30 border border-white/20 rounded-lg text-sm text-white placeholder-white/40 focus:outline-none focus:border-[#FFC700] focus:ring-1 focus:ring-[#FFC700] transition-all font-medium"
                             />
                             <button

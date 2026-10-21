@@ -48,24 +48,24 @@ Route::get('/', [BerandaController::class, 'tampilkanBeranda']);
 
 // Public Route: Kuesioner Evaluasi Pengguna Lulusan / Atasan UKDW (Tanpa Login)
 Route::get('/evaluasi-atasan', [EvaluasiAtasanController::class, 'index'])->name('evaluasi-atasan.index');
-Route::get('/evaluasi-atasan/{token}', [EvaluasiAtasanController::class, 'show'])->name('evaluasi-atasan.show');
-Route::post('/evaluasi-atasan/{token}', [EvaluasiAtasanController::class, 'store'])->name('evaluasi-atasan.store');
+Route::get('/evaluasi-atasan/{token}', [EvaluasiAtasanController::class, 'show'])->middleware('throttle:30,1')->name('evaluasi-atasan.show');
+Route::post('/evaluasi-atasan/{token}', [EvaluasiAtasanController::class, 'store'])->middleware('throttle:10,1')->name('evaluasi-atasan.store');
 
 Route::middleware('guest')->group(function () {
     Route::get('/login', [LoginController::class, 'tampilkanHalamanLogin'])->name('login');
-    Route::post('/login', [LoginController::class, 'prosesLogin']);
+    Route::post('/login', [LoginController::class, 'prosesLogin'])->middleware('throttle:5,1');
 
     // Lupa & Reset Kata Sandi via Email
-    Route::post('/forgot-password', [LupaKataSandiController::class, 'prosesKirimLinkReset'])->name('password.email');
+    Route::post('/forgot-password', [LupaKataSandiController::class, 'prosesKirimLinkReset'])->middleware('throttle:3,1')->name('password.email');
     Route::get('/reset-password/{token}', [LupaKataSandiController::class, 'tampilkanHalamanResetKataSandi'])->name('password.reset');
-    Route::post('/reset-password', [LupaKataSandiController::class, 'prosesResetKataSandi'])->name('password.update');
+    Route::post('/reset-password', [LupaKataSandiController::class, 'prosesResetKataSandi'])->middleware('throttle:5,1')->name('password.update');
 });
 
 // =========================================================================
 // Rute Otentikasi Sesi (Logout)
 // =========================================================================
 // Rute logout mendukung method POST & GET agar selalu berhasil mengarahkan pengguna kembali ke Beranda (Home)
-Route::match(['get', 'post'], '/logout', [LoginController::class, 'prosesLogout'])->name('logout');
+Route::post('/logout', [LoginController::class, 'prosesLogout'])->middleware('auth')->name('logout');
 
 // =========================================================================
 // Rute Terotentikasi (Authenticated)

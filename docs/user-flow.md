@@ -232,58 +232,19 @@ flowchart TD
 
 ## 4. User Flow: Admin Biro III / Kemahasiswaan & Alumni
 
-Admin Biro 3 (Biro Kemahasiswaan, Alumni, dan Pengembangan Karir) memantau metrik pelacakan alumni di tingkat universitas, mengelola direktori alumni seluruh program studi, mengekspor laporan ke Excel, dan menjalankan sinkronisasi data karier alumni dari LinkedIn.
-
-### Diagram Mermaid: Admin Biro III Flow
+Biro III memantau data universitas, membaca detail alumni, mengekspor hasil dan mengirim komunikasi pengingat. Halaman detail profil serta LinkedIn bersifat baca. Rute POST pembaruan profil masih ada tetapi handler mengembalikan peringatan tanpa menyimpan; tidak ada rute sinkronisasi LinkedIn Biro III.
 
 ```mermaid
 flowchart TD
-    A[Mulai: Login Admin Biro 3] --> B[Dashboard Biro 3: /biro3/dashboard]
-    B --> C{Pilih Menu Operasional}
-
-    C --> D[1. Dashboard KPI Universitas]
-    D --> D1[Pantau Total Alumni Universitas & Total Responden]
-    D --> D2[Pantau Rasio Response Rate Universitas %]
-    D --> D3[Pantau Jumlah Butir Instrumen Pertanyaan & Total Prodi]
-    D --> D4[Pantau Jumlah Alumni Terhubung Akun LinkedIn]
-
-    C --> E[2. Direktori Alumni Universitas: /biro3/alumni]
-    E --> E1[Pencarian & Filter Alumni Seluruh Fakultas & Prodi]
-    E --> E2[Lihat Profil Lengkap & Rekap Kuesioner: /biro3/alumni/id]
-    E2 --> E3[Perbarui Data Profil Alumni: POST /profile]
-    E1 --> E4[Ekspor Rekapitulasi Alumni ke Excel: /export-excel]
-
-    C --> F[3. Sinkronisasi Profil LinkedIn Alumni]
-    F --> F1[Akses Detail Alumni: /biro3/alumni/id]
-    F1 --> F2[Klik Tombol: Sinkronisasi LinkedIn]
-    F2 --> F3[Sistem Mengambil Riwayat Pekerjaan dari LinkedIn API / MCP: POST /sync-linkedin]
-    F3 --> F4[Tinjau Hasil Ekstraksi Profil Karier & Perusahaan]
-    F4 --> F5[Simpan Data LinkedIn ke Riwayat Profil Alumni: POST /save-linkedin]
-
-    D4 --> Z[Selesai / Logout: /logout]
-    E4 --> Z
-    F5 --> Z
+    A[Login Biro III] --> B[Dashboard universitas]
+    B --> C[Filter direktori alumni]
+    C --> D[Baca profil, jawaban, evaluasi dan riwayat LinkedIn]
+    C --> E[Unduh Excel atau ZIP]
+    C --> F[Kirim pengingat individual atau massal]
 ```
 
-### Rincian Alur Admin Biro III Sebenarnya:
-1. **Dashboard Eksekutif Biro 3 (`/biro3/dashboard`)**:
-   - Menyajikan Indikator Kinerja Utama (KPI) Tracer Study tingkat kampus:
-     - Total keseluruhan alumni di database universitas.
-     - Total responden unik yang telah berpartisipasi mengisi kuesioner.
-     - Persentase rasio partisipasi (*Response Rate*) universitas.
-     - Total instrumen pertanyaan aktif dan total program studi.
-     - Total alumni yang profilnya telah tertaut dengan akun LinkedIn.
-2. **Kelola Direktori Alumni Universitas (`/biro3/alumni`)**:
-   - Memantau basis data alumni dari seluruh angkatan, fakultas, dan program studi.
-   - Meninjau lembar jawaban kuesioner dan data riwayat pekerjaan alumni (`/biro3/alumni/{id}`).
-   - Memperbarui data profil alumni secara langsung.
-   - Mengunduh rekapitulasi data profil dan tracer alumni ke format Excel (`/export-excel`).
-3. **Integrasi & Sinkronisasi LinkedIn Alumni (`/biro3/alumni/{id}/sync-linkedin`)**:
-   - Menjalankan sinkronisasi profil LinkedIn alumni untuk melacak posisi kerja, jabatan, dan instansi terkini secara otomatis via LinkedIn Profile Provider / MCP.
-   - Meninjau data riwayat pengalaman kerja hasil sinkronisasi.
-   - Menyimpan data riwayat pekerjaan hasil sinkronisasi ke tabel biodata/pekerjaan alumni (`POST /save-linkedin`).
+Rute utama: `/biro3/dashboard`, `/biro3/alumni`, `/biro3/alumni/{id}`, `/biro3/alumni/{id}/export-excel`, `/biro3/alumni/export-zip`, `/biro3/alumni/blast-email` dan `/biro3/alumni/{id}/send-email`. Hak akses rute bersama juga mencakup pencatatan perusahaan serta permintaan undangan evaluasi; istilah baca saja dibatasi pada mutasi profil dan LinkedIn.
 
----
 
 ## 5. User Flow: Superadmin
 
@@ -427,11 +388,13 @@ Pimpinan/atasan langsung di perusahaan tempat alumni bekerja dapat memberikan ev
 
 ```mermaid
 flowchart TD
-    A[Alumni Mengisi Data Atasan di Profil Karier] --> B[Sistem Kirim Email Undangan Resmi ke Atasan]
+    A[Alumni Menyimpan Profil dan Data Atasan] --> S[Sistem Menyiapkan Record Evaluasi]
+    S --> T[Alumni atau Admin Memilih Kirim Email ke Atasan]
+    T --> B[Sistem Memvalidasi dan Mengirim Undangan]
     B --> C[Atasan Menerima Email dengan Tautan Unik Token]
     C --> D[Atasan Klik Tautan: /evaluasi-atasan/token]
     D --> E{Validasi Token Sistem}
-    E -->|Token Tidak Valid / Kedaluwarsa| F[Halaman 404 / Tautan Tidak Ditemukan]
+    E -->|Token Tidak Ditemukan| F[Halaman Tautan Tidak Ditemukan]
     E -->|Token Valid| G[Buka Formulir Evaluasi Full Page]
     
     G --> H[Periksa Data Identitas Alumni Yang Dinilai]
@@ -454,7 +417,7 @@ flowchart TD
 ```
 
 ### Rincian Alur Atasan:
-1. **Pemicu Undangan**: Setiap kali alumni menyimpan data riwayat pekerjaan yang mencakup nama dan email atasan langsung di halaman profil (`/alumni/profile`), sistem secara otomatis menerbitkan record `evaluasi_atasan` dengan token 64 karakter unik dan mengirimkan surat undangan evaluasi resmi via email.
+1. **Pemicu Undangan**: penyimpanan profil menyiapkan record `evaluasi_atasan` bila data atasan tersedia. Pengiriman email dilakukan melalui aksi terpisah `POST /alumni/kirim-email-atasan` oleh alumni atau admin yang diizinkan. Token dihasilkan sepanjang 40 karakter; kapasitas kolom database 64 karakter.
 2. **Akses Formulir Tanpa Hambatan**: Atasan membuka tautan langsung dari email (`/evaluasi-atasan/{token}`). Tidak dibutuhkan proses registrasi atau login akun.
 3. **Penyempurnaan Profil Instansi (Bagian I)**: Atasan dapat memverifikasi atau melengkapi nama instansi, alamat, no telp/fax, website, bentuk perusahaan, skala usaha, jumlah pegawai, jumlah alumni UKDW, dan standar gaji pertama. Data perusahaan dan atasan disinkronkan ke tabel master `perusahaan` dan `atasan`.
 4. **Penilaian Kesiapan & Kinerja (Bagian II)**:
@@ -484,10 +447,18 @@ Matriks berikut mencerminkan hak akses aktual berdasarkan middleware peran (`rol
 | **Kelola Kuesioner Universitas & Section** | ❌ | ❌ | ❌ | ❌ | ✅ | ❌ | ❌ |
 | **Kelola Soal Evaluasi Atasan** | ❌ | ❌ | ❌ | ❌ | ✅ | ❌ | ❌ |
 | **Verifikasi Pengajuan Perusahaan Alumni** | ❌ | Khusus Prodi | Khusus Fakultas | ❌ | Seluruh Kampus | ❌ | ❌ |
-| **Sinkronisasi Profil LinkedIn Alumni** | ❌ | ❌ | ❌ | ✅ (Satuan) | ✅ (Satuan & Batch) | ❌ | ❌ |
+| **Sinkronisasi Profil LinkedIn Alumni** | Tidak | Prodi sendiri | Fakultas sendiri | Baca hasil saja | Semua lingkup | Tidak | Tidak |
 | **Manajemen Akun Alumni (Reset Sandi Default)** | ❌ | Khusus Prodi | Khusus Fakultas | ❌ | Seluruh Pengguna | ❌ | ❌ |
 | **Audit Trail & Log Aktivitas Sistem** | ❌ | ❌ | ❌ | ❌ | ✅ | ❌ | ❌ |
 
 ---
 *Dokumen ini diperbarui sesuai dengan konfigurasi rute, controller, dan hak akses riil pada basis kode Sistem Tracer Study.*
 
+
+## Catatan implementasi dan sumber
+
+Revisi 21 Oktober 2026 mengikuti `routes/web.php`, middleware role, controller tiap peran dan service bersama. Admin Prodi/Fakultas juga memiliki modul LinkedIn pada `/prodi/linkedin-sync` dan `/fakultas/linkedin-sync`, termasuk review hasil sesuai lingkup. Apify hanya mendukung sinkronisasi satuan; batch ditolak. Master akademik ditampilkan sebagai referensi, bukan field bebas edit.
+
+Token evaluasi tidak mempunyai aturan kedaluwarsa otomatis pada controller yang dibaca. `is_submitted` dicatat dan dikirim ke antarmuka, tetapi handler POST belum menolak pengiriman ulang berdasarkan flag tersebut. Dokumen tidak mengklaim penguncian server yang belum ada.
+
+Lihat [DFD dan berkas draw.io](dfd.md) untuk perpindahan data; urutan klik di dokumen ini bukan DFD.

@@ -34,7 +34,7 @@ Sistem Tracer Study UKDW membagi pengisian data menjadi 4 pintu utama:
 > 2. `profile`: Butir pertanyaan dikelola khusus pada formulir profil alumni (`/alumni/profile`) dan disinkronkan otomatis tanpa muncul ganda di kuesioner.
 > 3. `both`: Butir pertanyaan dapat diakses dan diisi baik melalui formulir kuesioner maupun profil biodata.
 
-> **Catatan untuk Admin**: Seluruh pembaruan profil melalui halaman admin (Super Admin, Biro 3, Admin Fakultas, Admin Prodi) dilayani oleh satu service terpusat: [`AdminAlumniProfileService`](app/Services/Alumni/AdminAlumniProfileService.php). Lihat [Bagian 6](#6-adminalumniprofileservice--persistensi-terpusat-oleh-admin) untuk detail.
+> **Catatan untuk Admin**: Seluruh pembaruan profil melalui halaman admin (Super Admin, Admin Fakultas, Admin Prodi) dilayani oleh satu service terpusat: [`AdminAlumniProfileService`](app/Services/Alumni/AdminAlumniProfileService.php). Lihat [Bagian 6](#6-adminalumniprofileservice--persistensi-terpusat-oleh-admin) untuk detail.
 
 ---
 
@@ -59,8 +59,8 @@ Berikut adalah rincian setiap butir pertanyaan standar Dikti, peletakan komponen
 | **F505A**| Kesesuaian Gaji dengan UMR | `radio` | `KartuPertanyaan.vue` | `tracer.answer` (F505A) | Pilihan: Sesuai / Tidak Sesuai. `jump_to: 'F6'`. |
 | **F506** | Dalam berapa bulan mendapatkan pekerjaan (pencarian > 6 bulan) | `number` | `KartuPertanyaan.vue` | `tracer.answer` (F506) | Satuan unit: Bulan. Dilengkapi stepper angka `+` / `-`. |
 | **F5C** | Posisi/jabatan wiraswasta | `select`, `text` | `FormKarier.vue`<br>`KartuPertanyaan.vue` | `biodata.posisi_wiraswasta`<br>`tracer.answer` (F5C) | **Eksklusif**: Hanya diisi jika `biodata.kategori_pekerjaan = 'Wiraswasta'`. Jika alumni bukan wiraswasta, field ini di-`null`-kan otomatis oleh `AdminAlumniProfileService::updateProfile()`. |
-| **F5a1** | Provinsi tempat bekerja | `text` | `KartuPertanyaan.vue` | `perusahaan.propinsi_id` → `propinsis.nama_provinsi`<br>`tracer.answer` (F5a1) | Dipetakan otomatis dari relasi `perusahaan.propinsi` melalui view `v_alumni_kuesioner_autofill`. |
-| **F5a2** | Kabupaten/Kota tempat bekerja | `text` | `KartuPertanyaan.vue` | `perusahaan.kabupaten_id` → `kabupatens.nama_kabupaten`<br>`tracer.answer` (F5a2) | Dipetakan otomatis dari relasi `perusahaan.kabupaten` melalui view `v_alumni_kuesioner_autofill`. |
+| **F5a1** | Provinsi tempat bekerja | `text` | `KartuPertanyaan.vue` | `perusahaan.propinsi_id` → `propinsi.nama_propinsi`<br>`tracer.answer` (F5a1) | Dipetakan otomatis dari relasi `perusahaan.propinsi` melalui view `v_alumni_kuesioner_autofill`. |
+| **F5a2** | Kabupaten/Kota tempat bekerja | `text` | `KartuPertanyaan.vue` | `perusahaan.kabupaten_id` → `kabupaten.nama_kabupaten`<br>`tracer.answer` (F5a2) | Dipetakan otomatis dari relasi `perusahaan.kabupaten` melalui view `v_alumni_kuesioner_autofill`. |
 | **F6** | Berapa perusahaan/instansi yang sudah dilamar | `number` | `KartuPertanyaan.vue` | `tracer.answer` (F6) | Satuan unit: Perusahaan / Instansi. Grid 2 kolom berpasangan dengan F7. |
 | **F7** | Berapa perusahaan/instansi yang merespons lamaran | `number` | `KartuPertanyaan.vue` | `tracer.answer` (F7) | Satuan unit: Perusahaan / Instansi. Grid 2 kolom berpasangan dengan F6. |
 | **F7A** | Berapa perusahaan/instansi yang mengundang wawancara | `number` | `KartuPertanyaan.vue` | `tracer.answer` (F7A) | Satuan unit: Undangan Wawancara. |
@@ -94,7 +94,7 @@ Selain pertanyaan kuesioner Dikti, alumni mengisi data identitas terpadu di hala
 Kuesioner program studi dirancang modular dan independen untuk menunjang akreditasi masing-masing jurusan:
 
 - **Halaman Form**: `resources/js/Pages/Alumni/KuesionerProdi.vue`
-- **Controller**: `app/Http/Controllers/Alumni/KuesionerProdi/KuesionerProdiController.php`
+- **Controller**: `app/Http/Controllers/Alumni/Kuesioner/KuesionerProdiController.php`
 - **Tabel Basis Data**:
   - `prodi_questionnaire_sections`: Pengelompokan bagian soal per prodi.
   - `prodi_questionnaire_questions`: Daftar pertanyaan per prodi (kode misal: `PSI-1-01`, `PSI-1-02`, dll.).
@@ -111,7 +111,7 @@ Sistem Tracer Study UKDW dilengkapi dengan **`KuesionerSyncService.php`** yang m
 graph LR
     A[Form Profil Alumni] <-->|KuesionerSyncService| B[Database Relasional<br/>biodata, perusahaan, atasan]
     B <-->|KuesionerSyncService| C[Instrumen Kuesioner Tracer Dikti<br/>tabel tracer]
-    D[Admin Form<br/>SuperAdmin / Biro3 / Fakultas / Prodi] -->|AdminAlumniProfileService| B
+    D[Admin Form<br/>SuperAdmin / Fakultas / Prodi] -->|AdminAlumniProfileService| B
     B -->|KuesionerSyncService dipanggil otomatis setelah save admin| C
 ```
 
@@ -123,14 +123,14 @@ graph LR
 3. **Penyelarasan Posisi Wiraswasta (F5C)**:
    Dropdown `F5C` di form karier langsung dipetakan ke kode instrumen `F5C` di tabel kuesioner. Jika `kategori_pekerjaan` bukan `Wiraswasta`, field `posisi_wiraswasta` di-null-kan secara otomatis oleh `AdminAlumniProfileService` sebelum sinkronisasi dijalankan.
 4. **Autofill F5a1 & F5a2 dari View**:
-   View database `v_alumni_kuesioner_autofill` menyediakan kolom `F5a1` (nama provinsi perusahaan) dan `F5a2` (nama kabupaten perusahaan) yang di-join dari tabel `propinsis` dan `kabupatens` melalui relasi `perusahaan.propinsi_id` / `perusahaan.kabupaten_id`. `KuesionerSyncService` kemudian memetakan nilai ini ke baris `tracer` dengan kode pertanyaan yang sesuai.
+   View database `v_alumni_kuesioner_autofill` menyediakan kolom `F5a1` (nama provinsi perusahaan) dan `F5a2` (nama kabupaten perusahaan) yang di-join dari tabel `propinsi` dan `kabupaten` melalui relasi `perusahaan.propinsi_id` / `perusahaan.kabupaten_id`. `KuesionerSyncService` kemudian memetakan nilai ini ke baris `tracer` dengan kode pertanyaan yang sesuai.
 
 ### Source of Truth per Kode Pertanyaan:
 | Kode | Sumber Autofill (v_alumni_kuesioner_autofill) | Kolom Tujuan (tracer) |
 | :---: | :--- | :--- |
 | F1 | `biodata.nim` | `tracer.answer` |
-| F5a1 | `propinsis.nama_provinsi` (via `perusahaan.propinsi_id`) | `tracer.answer` |
-| F5a2 | `kabupatens.nama_kabupaten` (via `perusahaan.kabupaten_id`) | `tracer.answer` |
+| F5a1 | `propinsi.nama_propinsi` (via `perusahaan.propinsi_id`) | `tracer.answer` |
+| F5a2 | `kabupaten.nama_kabupaten` (via `perusahaan.kabupaten_id`) | `tracer.answer` |
 | F5C | `biodata.posisi_wiraswasta` (hanya jika kategori = Wiraswasta) | `tracer.answer` |
 | F505 | `biodata.gaji` (dibulatkan ke integer) | `tracer.answer` + `answer_json` |
 | F8 | `biodata.kategori_pekerjaan` | `tracer.answer` |
@@ -146,7 +146,7 @@ graph LR
 
 **File**: [`app/Services/Alumni/AdminAlumniProfileService.php`](app/Services/Alumni/AdminAlumniProfileService.php)
 
-Service ini adalah **Single Source of Truth** untuk seluruh operasi baca dan tulis data profil alumni oleh administrator (Super Admin, Biro 3, Admin Fakultas, Admin Prodi). Sebelumnya, logika ini tersebar di 4 controller yang berbeda dengan implementasi berbeda-beda.
+Service ini adalah **Single Source of Truth** untuk seluruh operasi baca dan tulis data profil alumni oleh administrator (Super Admin, Admin Fakultas, Admin Prodi). Sebelumnya, logika ini tersebar di 4 controller yang berbeda dengan implementasi berbeda-beda.
 
 ### Method Publik
 
@@ -190,7 +190,7 @@ Menyimpan seluruh pembaruan profil secara atomik dalam 7 langkah berurutan:
 | Controller | Role | Aksi |
 | :--- | :--- | :--- |
 | [`DetailAlumniSuperAdminController`](app/Http/Controllers/SuperAdmin/KelolaAlumni/DetailAlumniSuperAdminController.php) | Super Admin | `show()`, `updateProfile()` |
-| [`DetailAlumniController`](app/Http/Controllers/AdminBiroTiga/KelolaAlumni/DetailAlumniController.php) | Biro 3 | `tampilkanDetailAlumni()`, `updateProfile()` |
+| [`DetailAlumniController`](app/Http/Controllers/AdminBiroTiga/KelolaAlumni/DetailAlumniController.php) | Biro 3 | `tampilkanDetailAlumni()`; `updateProfile()` menolak perubahan |
 | [`DetailAlumniFakultasController`](app/Http/Controllers/AdminFakultas/KelolaAlumni/DetailAlumniFakultasController.php) | Admin Fakultas | `show()`, `updateProfile()` |
 | [`DaftarAlumniProdiController`](app/Http/Controllers/AdminProdi/KelolaAlumni/DaftarAlumniProdiController.php) | Admin Prodi | `show()`, `updateProfile()` |
 
@@ -265,3 +265,5 @@ Instrumen kuesioner dinamis tersimpan pada tabel `pertanyaan_evaluasi_atasan` da
 | **13** | `ASP_12` | **Inisiatif dan Kreativitas Kerja**: Daya cipta alternatif solusi inovatif terhadap permasalahan kerja | `likert_5` (1 s/d 5) | `respon_evaluasi_atasan.nilai` |
 | **14** | `CAT_01` | **Saran Khusus / Catatan Tambahan**: Masukan konstruktif untuk pengembangan kurikulum dan peningkatan mutu lulusan UKDW | `textarea` (Teks Bebas) | `respon_evaluasi_atasan.catatan` |
 
+
+Revisi 21 Oktober 2026: komponen formulir bersama berada di `resources/js/components/AlumniProfil`, komponen audit berada di `resources/js/components/AlumniAudit`. Biro III memakai pembacaan profil bersama tetapi tidak menyimpan pembaruan profil. Pengiriman undangan evaluasi terpisah dari simpan profil; token yang dihasilkan 40 karakter. Pemetaan aliran data tersedia pada [DFD](docs/dfd.md).

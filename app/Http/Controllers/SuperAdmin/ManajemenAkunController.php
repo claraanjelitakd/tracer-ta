@@ -57,24 +57,6 @@ class ManajemenAkunController extends Controller
 
         $users = $query->orderBy('name', 'asc')->paginate(15)->withQueryString();
 
-        // Map data pengguna untuk menyematkan tanggal lahir default jika alumni
-        $users->getCollection()->transform(function ($u) {
-            $dobFormatted = null;
-            if ($u->biodata && $u->biodata->tanggal_lahir) {
-                $dobFormatted = Carbon::parse($u->biodata->tanggal_lahir)->format('dmY');
-            } elseif ($u->biodata && $u->biodata->dataAkademik && $u->biodata->dataAkademik->tanggal_lahir) {
-                $dobFormatted = Carbon::parse($u->biodata->dataAkademik->tanggal_lahir)->format('dmY');
-            } else {
-                $dataAkad = DataAkademik::where('nim', $u->username)->first();
-                if ($dataAkad && $dataAkad->tanggal_lahir) {
-                    $dobFormatted = Carbon::parse($dataAkad->tanggal_lahir)->format('dmY');
-                }
-            }
-            $u->default_dob_password = $dobFormatted;
-
-            return $u;
-        });
-
         $stats = [
             'total_users' => User::count(),
             'total_admin_fakultas' => User::where('role', 'admin_fakultas')->count(),
@@ -125,12 +107,6 @@ class ManajemenAkunController extends Controller
 
         if ($user->biodata) {
             $user->biodata->update([
-                'email_pribadi' => $request->email,
-            ]);
-        }
-
-        if ($user->biodata?->dataAkademik) {
-            $user->biodata->dataAkademik->update([
                 'nama' => $request->name,
                 'email_pribadi' => $request->email,
             ]);
@@ -156,6 +132,12 @@ class ManajemenAkunController extends Controller
     {
         $user = User::findOrFail($id);
 
+        if ($user->role !== 'alumni') {
+            return back()->withErrors([
+                'reset' => 'Reset kredensial tanggal lahir hanya tersedia untuk akun alumni.',
+            ]);
+        }
+
         // 1. Cari tanggal lahir (ddmmyyyy) jika alumni
         $newPasswordPlain = null;
         if ($user->biodata && $user->biodata->tanggal_lahir) {
@@ -169,9 +151,10 @@ class ManajemenAkunController extends Controller
             }
         }
 
-        // Jika bukan alumni atau tanggal lahir tidak ditemukan, gunakan default password standar
         if (! $newPasswordPlain) {
-            $newPasswordPlain = 'Ukdw123456';
+            return back()->withErrors([
+                'reset' => 'Tanggal lahir alumni belum tersedia. Gunakan alur lupa password melalui email.',
+            ]);
         }
 
         // 2. Reset password & set wajib ganti password awal (must_change_password = true)
@@ -179,16 +162,13 @@ class ManajemenAkunController extends Controller
         $user->must_change_password = true;
         $user->save();
 
-        // 3. Notifikasi konfirmasi pemulihan dikirim ke email terdaftar (pribadi)
-        $targetEmail = $user->email;
-
         // Catat Audit Trail ke tabel log_activities
         LogActivity::record(
             'RESET_PASSWORD_DOB',
-            "Super Admin mereset password akun {$user->name} (@{$user->username}) ke format tanggal lahir ({$newPasswordPlain}). Notifikasi dikirim ke {$targetEmail}.",
+            "Super Admin mereset kredensial awal akun {$user->name} (@{$user->username}).",
             $user
         );
 
-        return back()->with('success', "Password untuk {$user->name} berhasil direset ke (Format Tanggal Lahir: {$newPasswordPlain}) dan instruksi pemulihan telah dikirim ke email terdaftar ({$targetEmail}).");
+        return back()->with('success', "Kredensial awal untuk {$user->name} berhasil direset. Pengguna wajib mengganti password setelah login.");
     }
 }

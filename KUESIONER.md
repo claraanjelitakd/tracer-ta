@@ -49,7 +49,7 @@ Tabel berikut merangkum setiap pertanyaan penentu, opsi yang dipilih, lompat ke 
 | **F3** | Kapan mulai mencari pekerjaan? | **Opsi 1 / Opsi 2 (Sebelum / Setelah lulus)** | Lanjut ke F4 | `F4, F504, ...` | - |
 | **F3** | Kapan mulai mencari pekerjaan? | **Opsi 3: Tidak mencari kerja** | Lompat langsung ke F504 | `F504, ...` | Dilewati pengisian rincian cara mencari |
 | **F504** | Apakah telah mendapatkan pekerjaan ≤ 6 bulan? | **1. Ya** | Lompat ke F502 | `F502` (Bulan dapat kerja ≤ 6 bln) | `F506` (Bulan dapat kerja > 6 bln disembunyikan) |
-| **F504** | Apakah telah mendapatkan pekerjaan ≤ 6 bulan? | **2. Tidak** | Lompat ke F506 | `F506` (Bulan dapat kerja > 6 bln) | `F502` disembunyikan |
+| **F504** | Apakah telah mendapatkan pekerjaan ≤ 6 bulan? | **2. Tidak** | Lompat ke F506 | `F506` (Bulan dapat kerja > 6 bln) | `F502` dan `F505` disembunyikan |
 
 ---
 
@@ -92,7 +92,7 @@ UPDATE ref_subpertanyaan_detil SET jump_to = 'F506' WHERE kode_pertanyaan = 'F50
 
 ---
 
-### B. Di Frontend Vue ([`resources/js/Pages/Alumni/Kuesioner.vue`](file:///c:/study/tracerstudy/resources/js/Pages/Alumni/Kuesioner.vue))
+### B. Di Frontend Vue ([`resources/js/Pages/Alumni/Kuesioner.vue`](resources/js/Pages/Alumni/Kuesioner.vue))
 Logika diimplementasikan pada `computed` property `hiddenQuestionIds`:
 
 ```javascript
@@ -136,7 +136,9 @@ const hiddenQuestionIds = computed(() => {
         if (val === 'ya' || val === '1') {
             if (codeToQuestion['F506']) hidden.add(codeToQuestion['F506'].id);
         } else if (val === 'tidak' || val === '2') {
-            if (codeToQuestion['F502']) hidden.add(codeToQuestion['F502'].id);
+            ['F502', 'F505'].forEach(code => {
+                if (codeToQuestion[code]) hidden.add(codeToQuestion[code].id);
+            });
         }
     }
 
@@ -157,7 +159,7 @@ const activeSections = computed(() => {
 
 ---
 
-### C. Di Backend Laravel ([`app/Services/Kuesioner/KelengkapanTracerService.php`](file:///c:/study/tracerstudy/app/Services/Kuesioner/KelengkapanTracerService.php))
+### C. Di Backend Laravel ([`app/Services/Kuesioner/KelengkapanTracerService.php`](app/Services/Kuesioner/KelengkapanTracerService.php))
 Logika di sisi server disinkronkan 1:1 melalui method `getSkippedQuestionCodes`:
 
 ```php
@@ -214,9 +216,19 @@ public static function getSkippedQuestionCodes($allQuestions, $responses): array
                 $skipped['F502'] = true;
                 $skipped[$codeToQuestion['F502']->id] = true;
             }
+            if (isset($codeToQuestion['F505'])) {
+                $skipped['F505'] = true;
+                $skipped[$codeToQuestion['F505']->id] = true;
+            }
         }
     }
 
     return $skipped;
 }
 ```
+
+## Catatan revisi 21 Oktober 2026
+
+Contoh kode di dokumen adalah penjelasan, bukan salinan lengkap implementasi. Rujukan aktif: `Kuesioner.vue`, `KelengkapanTracerService`, `KuesionerSyncService`, dan konfigurasi butir/opsi di database. Aturan F504 = Tidak melewati **F502 dan F505**, bukan hanya F502. Butir yang dikelola pada profil dapat disembunyikan dari formulir melalui `tampil_di`; karena itu daftar bagian konseptual tidak selalu sama dengan tampilan setiap alumni.
+
+Data pekerjaan/profil digunakan bersama kuesioner melalui pemetaan, bukan diketik ulang sebagai sumber data independen. Lihat [DFD](docs/dfd.md), proses 2 dan 4, untuk antarmukanya.

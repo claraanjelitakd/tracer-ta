@@ -145,6 +145,7 @@ class VerifikasiPerusahaanTest extends TestCase
         $pendingCompany = Perusahaan::create([
             'nama_perusahaan' => 'gojek',
             'status_verifikasi' => 'Menunggu Verifikasi',
+            'created_by_prodi_id' => $this->prodi->id,
         ]);
 
         $alumniUser = User::create([
@@ -191,6 +192,7 @@ class VerifikasiPerusahaanTest extends TestCase
         $pendingCompany = Perusahaan::create([
             'nama_perusahaan' => 'Studio Kreatif Mandiri',
             'status_verifikasi' => 'Menunggu Verifikasi',
+            'created_by_prodi_id' => $this->prodi->id,
         ]);
 
         $response = $this->actingAs($this->adminProdi)->post("/prodi/perusahaan/{$pendingCompany->id}/verify");
@@ -202,11 +204,32 @@ class VerifikasiPerusahaanTest extends TestCase
         $this->assertEquals('Terverifikasi', $pendingCompany->status_verifikasi);
     }
 
+    public function test_admin_prodi_cannot_verify_company_from_another_program(): void
+    {
+        $otherProgram = Prodi::create([
+            'kode_prodi' => '99',
+            'nama_prodi' => 'Program Studi Lain',
+            'fakultas_id' => $this->fakultas->id,
+        ]);
+        $company = Perusahaan::create([
+            'nama_perusahaan' => 'Perusahaan Program Lain',
+            'status_verifikasi' => 'Menunggu Verifikasi',
+            'created_by_prodi_id' => $otherProgram->id,
+        ]);
+
+        $this->actingAs($this->adminProdi)
+            ->post("/prodi/perusahaan/{$company->id}/verify")
+            ->assertNotFound();
+
+        $this->assertSame('Menunggu Verifikasi', $company->fresh()->status_verifikasi);
+    }
+
     public function test_admin_dapat_edit_dan_verifikasi_perusahaan(): void
     {
         $pendingCompany = Perusahaan::create([
             'nama_perusahaan' => 'pt tokopedia lama',
             'status_verifikasi' => 'Menunggu Verifikasi',
+            'created_by_prodi_id' => $this->prodi->id,
         ]);
 
         $response = $this->actingAs($this->adminFakultas)->put("/fakultas/perusahaan/{$pendingCompany->id}", [

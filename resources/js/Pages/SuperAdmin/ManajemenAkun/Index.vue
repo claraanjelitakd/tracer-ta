@@ -143,16 +143,14 @@ const openEditUserModal = (u) => {
     });
 };
 
-// Reset 1-Tombol: Reset ke Tanggal Lahir (ddmmyyyy) + Kirim Notifikasi Pemulihan ke Email Terdaftar
+// Reset kredensial awal alumni tanpa menampilkan nilai password
 const handleResetToDefaultAndNotify = (userData) => {
-    const passwordHint = userData.default_dob_password ? `Format Tanggal Lahir (${userData.default_dob_password})` : 'Ukdw123456';
-
     Swal.fire({
-        title: 'Reset Password & Kirim Konfirmasi Email?',
+        title: 'Reset Kredensial Awal?',
         html: `
             <div class="text-xs text-left space-y-2">
-                <p>Password akun <strong>${userData.name}</strong> akan otomatis direset ke <strong>${passwordHint}</strong> dan status akun diwajibkan ganti password awal (default change password).</p>
-                <p class="pt-1">Notifikasi konfirmasi hasil reset akan otomatis dikirimkan ke email terdaftar pengguna:</p>
+                <p>Kredensial awal akun <strong>${userData.name}</strong> akan direset. Nilai password tidak ditampilkan demi keamanan.</p>
+                <p class="pt-1">Alumni wajib mengganti password setelah berhasil login.</p>
                 <div class="font-mono font-bold text-[#0D542B] bg-emerald-50 p-2 rounded border border-emerald-200">${userData.email}</div>
             </div>
         `,
@@ -166,7 +164,7 @@ const handleResetToDefaultAndNotify = (userData) => {
         if (res.isConfirmed) {
             router.post(`/superadmin/manajemen-akun/${userData.id}/reset-default-notify`, {}, {
                 onSuccess: () => {
-                    Swal.fire('Berhasil Di-reset!', `Password ${userData.name} telah direset ke tanggal lahir dan konfirmasi berhasil dikirim ke ${userData.email}.`, 'success');
+                    Swal.fire('Berhasil Di-reset!', `Kredensial awal ${userData.name} telah direset.`, 'success');
                 }
             });
         }
@@ -194,7 +192,7 @@ const handleResetToDefaultAndNotify = (userData) => {
                             Manajemen Akun Pengguna
                         </h1>
                         <p class="text-xs text-emerald-100/90 mt-1 max-w-2xl leading-relaxed">
-                            Pengelolaan akun terpadu, pembaruan email/identitas, dan reset password 1-klik dengan notifikasi email resmi.
+                            Pengelolaan akun terpadu, pembaruan identitas, dan reset kredensial awal alumni.
                         </p>
                     </div>
 
@@ -307,10 +305,11 @@ const handleResetToDefaultAndNotify = (userData) => {
                                         </button>
                                         <!-- Tombol Reset Password (Key) -->
                                         <button
+                                            v-if="u.role === 'alumni'"
                                             type="button"
                                             @click="handleResetToDefaultAndNotify(u)"
                                             class="p-1.5 text-gray-600 hover:text-[#0D542B] hover:bg-emerald-50 rounded-lg transition-colors cursor-pointer"
-                                            title="Reset Password ke Tanggal Lahir &amp; Kirim Email"
+                                            title="Reset kredensial awal alumni"
                                         >
                                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />

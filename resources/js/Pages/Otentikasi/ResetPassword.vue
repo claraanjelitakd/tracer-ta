@@ -92,7 +92,7 @@ const submit = () => {
                             :type="showPassword ? 'text' : 'password'"
                             v-model="form.password"
                             required
-                            placeholder="Minimal 6 karakter"
+                            placeholder="Minimal 12 karakter"
                             class="block w-full pl-4 pr-11 py-3 bg-black/30 border border-white/20 rounded-lg text-sm text-white placeholder-white/40 focus:outline-none focus:border-[#FFC700] focus:ring-1 focus:ring-[#FFC700] transition-all font-medium"
                         />
                         <button

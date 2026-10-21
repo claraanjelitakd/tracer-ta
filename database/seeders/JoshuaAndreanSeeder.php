@@ -45,10 +45,10 @@ class JoshuaAndreanSeeder extends Seeder
             [
                 'name' => $nama,
                 'email' => $personalEmail,
-                'password' => Hash::make('password123'),
+                'password' => Hash::make('15082004'),
                 'role' => 'alumni',
                 'prodi_id' => $prodi?->id,
-                'must_change_password' => false,
+                'must_change_password' => true,
             ]
         );
 

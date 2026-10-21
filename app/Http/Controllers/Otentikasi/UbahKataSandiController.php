@@ -21,7 +21,7 @@ class UbahKataSandiController extends Controller
      */
     public function tampilkanUbahKataSandi()
     {
-        if (! Auth::user()->must_change_password) {
+        if (Auth::user()->role !== 'alumni' || ! Auth::user()->must_change_password) {
             return LoginController::arahkanBerdasarkanPeran(Auth::user()->role);
         }
 
@@ -35,12 +35,12 @@ class UbahKataSandiController extends Controller
     {
         $pengguna = Auth::user();
 
-        if (! $pengguna->must_change_password) {
+        if ($pengguna->role !== 'alumni' || ! $pengguna->must_change_password) {
             return LoginController::arahkanBerdasarkanPeran($pengguna->role);
         }
 
         $request->validate([
-            'password' => ['required', 'string', 'min:8', 'confirmed'],
+            'password' => ['required', 'string', 'min:12', 'confirmed'],
         ]);
 
         $pengguna->update([

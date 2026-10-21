@@ -5,8 +5,6 @@ namespace App\Services\Alumni;
 use App\Models\AlumniProfileSummary;
 use App\Models\Atasan;
 use App\Models\Biodata;
-use App\Models\DataAkademik;
-use App\Models\DataOrangTua;
 use App\Models\LogActivity;
 use App\Models\Perusahaan;
 use App\Models\RefSubpertanyaanDetil;
@@ -204,14 +202,9 @@ class AdminAlumniProfileService
     /**
      * Simpan seluruh pembaruan profil alumni oleh Admin secara atomik.
      *
-     * Proses terdiri dari 7 langkah berurutan:
-     * 1. DataOrangTua  — updateOrCreate by NIM
-     * 2. Yudisium      — updateOrCreate by NIM
-     * 3. Perusahaan    — firstOrCreate by nama_perusahaan, lalu update atribut
-     * 4. Atasan        — update jika sudah ada (by atasan_id), atau create baru
-     * 5. Sanitasi Gaji — strip separator ribuan + desimal, round ke integer
-     * 6. Biodata       — update() dengan eksklusivitas posisi by kategori_pekerjaan
-     * 7. Sinkronisasi  — KuesionerSyncService::syncProfileResponses()
+     * Data akademik, orang tua, dan yudisium hanya digunakan sebagai referensi.
+     * Perubahan disimpan pada data transaksi tracer study seperti perusahaan,
+     * atasan, biodata, dan jawaban kuesioner.
      *
      * Aturan eksklusivitas posisi (mencegah bug F5C terisi saat bukan wiraswasta):
      * - kategori_pekerjaan = 'Pekerja'              → posisi_wiraswasta = null
@@ -223,39 +216,7 @@ class AdminAlumniProfileService
      */
     public static function updateProfile(Biodata $biodata, array $data): void
     {
-        // 1. Tangani Data Orang Tua
-        $orangTuaData = [
-            'nama_orang_tua' => ! empty($data['nama_orang_tua']) ? $data['nama_orang_tua'] : null,
-            'pekerjaan' => ! empty($data['pekerjaan_orang_tua']) ? $data['pekerjaan_orang_tua'] : null,
-            'alamat' => ! empty($data['alamat_orang_tua']) ? $data['alamat_orang_tua'] : null,
-            'kota' => ! empty($data['kota_orang_tua']) ? $data['kota_orang_tua'] : null,
-            'kabupaten_id' => ! empty($data['kabupaten_id_orang_tua']) ? $data['kabupaten_id_orang_tua'] : null,
-            'propinsi_id' => ! empty($data['propinsi_id_orang_tua']) ? $data['propinsi_id_orang_tua'] : (! empty($data['provinsi_id_orang_tua']) ? $data['provinsi_id_orang_tua'] : null),
-            'kode_pos' => ! empty($data['kode_pos_orang_tua']) ? $data['kode_pos_orang_tua'] : null,
-            'nomor_telepon' => ! empty($data['nomor_telepon_orang_tua']) ? $data['nomor_telepon_orang_tua'] : null,
-        ];
-        $orangTua = DataOrangTua::updateOrCreate(['nim' => $biodata->nim], $orangTuaData);
-
-        // 2. Tangani Data Yudisium
-        $yudisiumData = [
-            'judul_ta' => ! empty($data['judul_ta']) ? $data['judul_ta'] : null,
-            'judul_ta_inggris' => ! empty($data['judul_ta_inggris']) ? $data['judul_ta_inggris'] : null,
-            'dosen_pembimbing_1' => ! empty($data['dosen_pembimbing_1']) ? $data['dosen_pembimbing_1'] : null,
-            'dosen_pembimbing_2' => ! empty($data['dosen_pembimbing_2']) ? $data['dosen_pembimbing_2'] : null,
-            'dosen_penguji_1' => ! empty($data['dosen_penguji_1']) ? $data['dosen_penguji_1'] : null,
-            'dosen_penguji_2' => ! empty($data['dosen_penguji_2']) ? $data['dosen_penguji_2'] : null,
-            'url_publikasi' => ! empty($data['url_publikasi']) ? $data['url_publikasi'] : null,
-            'jenis_publikasi' => ! empty($data['jenis_publikasi']) ? $data['jenis_publikasi'] : null,
-            'status_publikasi' => ! empty($data['status_publikasi']) ? $data['status_publikasi'] : null,
-            'tahun_lulus' => ! empty($data['tahun_lulus']) ? $data['tahun_lulus'] : null,
-            'tahun_akademik_lulus' => ! empty($data['tahun_akademik_lulus']) ? $data['tahun_akademik_lulus'] : null,
-            'status_yudisium' => ! empty($data['status_yudisium']) ? $data['status_yudisium'] : 'Lulus',
-            'proses_yudisium' => ! empty($data['proses_yudisium']) ? $data['proses_yudisium'] : 'Lulus',
-            'keterangan_hasil_yudisium' => ! empty($data['keterangan_hasil_yudisium']) ? $data['keterangan_hasil_yudisium'] : null,
-        ];
-        $yudisium = Yudisium::updateOrCreate(['nim' => $biodata->nim], $yudisiumData);
-
-        // 3. Tangani Data Perusahaan
+        // Tangani data perusahaan tracer.
         $perusahaanId = $biodata->perusahaan_id;
         $namaPerusahaan = ! empty($data['nama_perusahaan']) ? trim($data['nama_perusahaan']) : null;
         if ($namaPerusahaan) {
@@ -362,21 +323,7 @@ class AdminAlumniProfileService
             $gajiNominal = $gajiInt > 0 ? $gajiInt : null;
         }
 
-        // 6. Update Master Data Akademik (Hanya email_pribadi yang dapat diperbarui)
-        // Master akademik (nama, tempat/tgl lahir, jk, agama, gol darah, no_kk, nisn, no_bpjs, dll.)
-        // dikunci permanen sesuai pangkalan data akademik dan tidak boleh diubah dari form profil admin.
-        $dataAkademik = $biodata->dataAkademik;
-        if (! $dataAkademik && ! empty($biodata->nim)) {
-            $dataAkademik = DataAkademik::where('nim', $biodata->nim)->first();
-        }
-
-        if ($dataAkademik && ! empty($data['email_pribadi'])) {
-            $dataAkademik->update([
-                'email_pribadi' => $data['email_pribadi'],
-            ]);
-        }
-
-        // 7. Update Model Biodata (Hanya menyimpan kontak pribadi, domisili saat ini, karir & tracer study)
+        // Update biodata dengan kontak, domisili, dan data tracer yang bersifat transaksional.
         $biodataUpdates = [
             'nomor_telepon' => ! empty($data['nomor_telepon']) ? $data['nomor_telepon'] : null,
             'email_pribadi' => ! empty($data['email_pribadi']) ? $data['email_pribadi'] : (! empty($data['email']) ? $data['email'] : $biodata->email_pribadi),
@@ -402,8 +349,6 @@ class AdminAlumniProfileService
             'jenis_pekerjaan' => ! empty($data['jenis_pekerjaan']) ? $data['jenis_pekerjaan'] : (! empty($data['company_jenis_perusahaan']) ? $data['company_jenis_perusahaan'] : (! empty($data['perusahaan_jenis_perusahaan']) ? $data['perusahaan_jenis_perusahaan'] : null)),
             'perusahaan_id' => $perusahaanId,
             'atasan_id' => $atasanId,
-            'orang_tua_id' => $orangTua->id ?? $biodata->orang_tua_id,
-            'yudisium_id' => $yudisium->id ?? $biodata->yudisium_id,
         ];
 
         if (! empty($data['foto'])) {

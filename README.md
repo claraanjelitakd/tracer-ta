@@ -1,6 +1,8 @@
 # Tracer Study UKDW (SERU - Sistem Ekosistem Rekam Jejak Alumni)
 
-Sistem Informasi Tracer Study Alumni Universitas Kristen Duta Wacana (UKDW). Dibangun menggunakan **Laravel 11** (Backend), **Vue 3** & **Inertia.js** (Frontend SPA), serta **Tailwind CSS**.
+Sistem Informasi Tracer Study Alumni Universitas Kristen Duta Wacana (UKDW). Dibangun menggunakan **Laravel 13** (Backend), **Vue 3** & **Inertia.js 3** (Frontend SPA), serta **Tailwind CSS**.
+
+> **Revisi dokumentasi 21 Oktober 2026.** Rujukan alur dan batas sistem: [DFD](docs/dfd.md), [user flow](docs/user-flow.md), dan [use case](USE_CASE.md). Lima role akun dibedakan dari publik serta atasan bertoken. Data akademik tersedia pada tabel lokal; integrasi langsung SIAKAD belum diasumsikan.
 
 ---
 
@@ -217,7 +219,7 @@ tracerstudy/
 ## Entity Relationship Diagram (ERD) & Skema Database
 
 Dokumentasi lengkap diagram relasi antar tabel (ERD Mermaid), kamus data (*data dictionary*), dan spesifikasi kolom tersedia secara terdedikasi di:
-👉 **[`ERD.md`](file:///c:/study/tracerstudy/ERD.md)**
+👉 **[`ERD.md`](ERD.md)**
 
 Ringkasan relasi utama & prinsip anti-duplikasi data:
 - **`ref_fakultas` (1:N) $\rightarrow$ `prodi`**: Master data 7 fakultas UKDW terhubung ke program studi.
@@ -284,7 +286,7 @@ Ringkasan relasi utama & prinsip anti-duplikasi data:
   - **`PSI-1-01` (Nama)** $\rightarrow$ Diambil otomatis dari `biodata.nama` (fallback `data_akademik.nama` / `users.name`).
   - **`PSI-1-02` (NIM)** $\rightarrow$ Diambil otomatis dari `biodata.nim` (atau `data_akademik.nim`).
   - **`PSI-1-03` (Tahun Kelulusan)** $\rightarrow$ Diambil otomatis dari `biodata.tahun_lulus` / `yudisium.tahun_lulus` / `data_akademik.tahun_akademik_lulus`.
-- Ditangani secara terpusat oleh [`KuesionerSyncService::syncProdiResponses($biodata)`](file:///c:/study/tracerstudy/app/Services/Kuesioner/KuesionerSyncService.php).
+- Ditangani secara terpusat oleh [`KuesionerSyncService::syncProdiResponses($biodata)`](app/Services/Kuesioner/KuesionerSyncService.php).
 
 ---
 
@@ -294,42 +296,22 @@ Fitur ini memungkinkan Superadmin menyinkronkan data profil profesional alumni (
 
 ### A. Alur Arsitektur Multi-Provider
 ```text
-Controller (LinkedInSyncController)
-    │
-    ▼
-LinkedInProfileService
-    │
-    ▼
-LinkedInProfileProvider (Interface)
-    │
-    ▼
-Driver Resolver (AppServiceProvider match statement)
-    │
-    ├── LINKEDIN_DRIVER=mock     ──▶ MockLinkedInProvider   ──▶ Baca JSON (storage/app/mock/linkedin) / Fallback Dinamis
-    │
-    ├── LINKEDIN_PROVIDER=apify  ──▶ ApifyLinkedInProvider  ──▶ Actor Apify (Bearer Token APIFY_API_TOKEN)
-    │                                                            + Download Foto Fisik (public/uploads/profile/)
-    │
-    └── LINKEDIN_PROVIDER=official ──▶ ApiLinkedInProvider  ──▶ Official Server-to-Server API (Bearer Token)
-                                         │
-                                         ▼ (Normalisasi Respons ke DTO yang sama)
-                                LinkedInProfile & LinkedInPosition
-                                         │
-                                         ▼
-                            Tabel Staging: linkedin_sync_results (Status: 'pending')
-                                         │
-                         [SuperAdmin Review & Approval]
-                                ┌────────┴────────┐
-                             Approve            Reject
-                                │                 │
-                                ▼                 ▼
-                      LinkedInProfileMapper    Hanya ubah status staging
-                      ├── Update biodata       (Master alumni tidak berubah)
-                      │   (posisi_jabatan,
-                      │    kategori_pekerjaan: 'Pekerja',
-                      │    foto)
-                      └── Match/Create perusahaan (status_verifikasi: 'Menunggu Verifikasi')
+Shared/LinkedInSyncController
+  |
+  +-- LINKEDIN_PROVIDER=apify
+  |     URL biodata.linkedin_url -> ApifyLinkedInProvider
+  |     -> linkedin_sync_results (pending)
+  |     -> review admin berwenang -> approve / reject
+  |     -> mapping biodata/perusahaan hanya saat approve
+  |     Batch ditolak (HTTP 400).
+  |
+  +-- LINKEDIN_PROVIDER=official
+        LINKEDIN_DRIVER=mock -> MockLinkedInProvider
+        LINKEDIN_DRIVER=api  -> ApiLinkedInProvider
+        -> LinkedInProfileService -> pemetaan profil
 ```
+
+Nama driver `official`/`api` adalah konfigurasi adapter aplikasi; bukan bukti kemitraan atau akses API produksi sudah tersedia. Lihat [panduan integrasi](docs/linkedin-mcp-integration.md).
 
 ### B. Konfigurasi Environment (`.env`)
 ```env
@@ -340,7 +322,7 @@ LINKEDIN_MOCK_PATH=storage/app/mock/linkedin
 # 2. Mode Apify Scraper (Scraping Profil LinkedIn Live via Actor Apify)
 # LINKEDIN_PROVIDER=apify
 # APIFY_API_TOKEN=apify_api_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-# APIFY_ACTOR_ID=data_forge_org~linkedin-scraper
+# APIFY_LINKEDIN_ACTOR_ID=data_forge_org~linkedin-scraper
 
 # 3. Mode Official LinkedIn API (Server-to-Server Kemitraan Resmi)
 # LINKEDIN_PROVIDER=official
@@ -349,6 +331,8 @@ LINKEDIN_MOCK_PATH=storage/app/mock/linkedin
 ```
 
 ### C. Alur Staging & Review Persetujuan (Approval Workflow)
+Alur berikut khusus provider **Apify**. Driver mock/API diproses melalui `LinkedInProfileService` dan tidak boleh diasumsikan selalu melewati review yang sama. Peninjauan dilakukan Superadmin, Admin Prodi, atau Admin Fakultas sesuai lingkup.
+
 1. **Isolasi Staging (`linkedin_sync_results`)**: Data hasil scraping pihak ketiga tidak langsung mengubah master data alumni. Hasil scraping disimpan ke tabel staging dengan status `pending` beserta payload mentah JSON.
 2. **Review Perbandingan**: SuperAdmin dapat meninjau perbandingan data scraping vs data existing di halaman `/superadmin/linkedin-sync` sebelum memutuskan untuk menyetujui (*Approve*) atau menolak (*Reject*).
 3. **Persetujuan (*Approve*)**:
@@ -362,8 +346,8 @@ LINKEDIN_MOCK_PATH=storage/app/mock/linkedin
 - Sistem mengunduh file foto secara fisik dan menyimpannya secara permanen ke direktori `public/uploads/profile/profile_{nim}_{timestamp}.jpg`.
 - Alumni juga dapat mengunggah file foto mandiri (JPG/PNG max 2MB) melalui halaman Biodata Pribadi.
 
-### E. Tab 4 Detail Alumni: Tabel Audit & Trace Pemetaan
-- Pada halaman Detail Alumni SuperAdmin (`/superadmin/alumni/{id}`), tersedia **Tab 4: Hasil Scraping & Trace LinkedIn**.
+### E. Tab LinkedIn Detail Alumni: Tabel Audit & Trace Pemetaan
+- Pada halaman Detail Alumni SuperAdmin (`/superadmin/alumni/{id}`), tersedia **Tab LinkedIn: Hasil Scraping & Trace LinkedIn**.
 - Menampilkan tabel komparasi detail per atribut: *Key Atribut Scraping*, *Deskripsi Field*, *Nilai Mentah Apify*, *Target Kolom Database*, *Nilai Aktual di Database*, dan *Status Audit*.
 - Dilengkapi pencarian teks real-time dan JSON Viewer interaktif dengan tombol *Copy Raw JSON*.
 
@@ -441,12 +425,12 @@ Komponen pengisian kuesioner dipecah secara modular untuk memudahkan pemeliharaa
 2. **`admin_biro3`**:
    - Dashboard analitik responden kelulusan per periode.
    - Kelola Direktori Alumni tersaring yudisium 'Lulus' berbasis Database View cepat (`/biro3/alumni`).
-   - Audit Profil Alumni & Sinkronisasi Scraping Profil LinkedIn (`/biro3/alumni/{id}`).
+   - Audit baca Profil Alumni & riwayat hasil LinkedIn; tanpa aksi sinkronisasi (`/biro3/alumni/{id}`).
 3. **`admin_fakultas`**:
    - Terikat pada `users.fakultas_id`.
    - Dashboard KPI khusus seluruh prodi dalam fakultas (`/fakultas/dashboard`).
    - Direktori Alumni Fakultas dengan dropdown filter prodi internal (`/fakultas/alumni`).
-   - Audit Detail Jawaban 3-Tab & Profil Alumni Fakultas (`/fakultas/alumni/{id}`).
+   - Audit profil, jawaban universitas/prodi, evaluasi atasan, dan riwayat LinkedIn alumni fakultas (`/fakultas/alumni/{id}`).
 4. **`admin_prodi`**:
    - Terikat pada `users.prodi_id`.
    - Dashboard KPI khusus program studi (`/prodi/dashboard`).
@@ -458,25 +442,45 @@ Komponen pengisian kuesioner dipecah secara modular untuk memudahkan pemeliharaa
    - Dashboard kelengkapan data & progres kuesioner (`/alumni/dashboard`).
    - Pengisian Kuesioner Tracer Study Universitas (`/alumni/kuesioner`).
    - Pengisian Kuesioner Khusus Program Studi (`/alumni/kuesioner-prodi`).
-   - Pembaruan Biodata, Data Akademik, Data Orang Tua, dan Karier/Perusahaan (`/alumni/profile`).
+   - Pembaruan kontak/biodata dinamis, data orang tua yang diizinkan, dan karier/perusahaan; master akademik ditampilkan sebagai referensi (`/alumni/profile`).
 
 ---
 
 ## Dokumen Pemetaan Pertanyaan & Arsitektur Form
 Untuk referensi lengkap seluruh butir pertanyaan Tracer Study Dikti (`F1` s/d `F18`, `F24A`, `F24B`), letak komponen Vue, kolom basis data, dan aturan sinkronisasi:
-👉 **[DAFTAR_PERTANYAAN_MAPPING.md](file:///c:/study/tracerstudy/DAFTAR_PERTANYAAN_MAPPING.md)**
+👉 **[DAFTAR_PERTANYAAN_MAPPING.md](DAFTAR_PERTANYAAN_MAPPING.md)**
 
 ---
 
 ## Panduan Pencarian Cepat Kode (Quick Navigation)
 
-- Ingin mengubah tampilan navigasi utama alumni (Dashboard, Profil, Kuesioner Univ & Prodi)? Buka [`resources/js/Pages/Alumni/Components/Navbar.vue`](file:///c:/study/tracerstudy/resources/js/Pages/Alumni/Components/Navbar.vue).
-- Ingin melihat peta lengkap kode pertanyaan Dikti & letak Vue formnya? Buka [`DAFTAR_PERTANYAAN_MAPPING.md`](file:///c:/study/tracerstudy/DAFTAR_PERTANYAAN_MAPPING.md).
-- Ingin mengubah form profil dan karier alumni? Buka [`resources/js/Pages/Alumni/Profil/Components/FormKarier.vue`](file:///c:/study/tracerstudy/resources/js/Pages/Alumni/Profil/Components/FormKarier.vue).
-- Ingin mengubah tampilan/input kuesioner tracer alumni? Buka [`resources/js/Pages/Alumni/Components/Kuesioner/KartuPertanyaan.vue`](file:///c:/study/tracerstudy/resources/js/Pages/Alumni/Components/Kuesioner/KartuPertanyaan.vue).
-- Ingin mengubah tabel perbandingan F17? Buka [`resources/js/Pages/Alumni/Components/Kuesioner/TabelF17.vue`](file:///c:/study/tracerstudy/resources/js/Pages/Alumni/Components/Kuesioner/TabelF17.vue).
-- Ingin melihat logika sinkronisasi data profil vs kuesioner? Buka [`app/Services/Kuesioner/KuesionerSyncService.php`](file:///c:/study/tracerstudy/app/Services/Kuesioner/KuesionerSyncService.php).
-- Ingin melihat controller kuesioner prodi alumni? Buka [`app/Http/Controllers/Alumni/KuesionerProdi/KuesionerProdiController.php`](file:///c:/study/tracerstudy/app/Http/Controllers/Alumni/KuesionerProdi/KuesionerProdiController.php).
-- Ingin mengedit tampilan Admin Prodi? Buka folder [`resources/js/Pages/AdminProdi/`](file:///c:/study/tracerstudy/resources/js/Pages/AdminProdi/).
-- Ingin mengedit seeder kuesioner program studi? Buka [`database/seeders/ProdiQuestionnaireSeeder.php`](file:///c:/study/tracerstudy/database/seeders/ProdiQuestionnaireSeeder.php).
+- Ingin mengubah tampilan navigasi utama alumni (Dashboard, Profil, Kuesioner Univ & Prodi)? Buka [`resources/js/Pages/Alumni/Components/Navbar.vue`](resources/js/Pages/Alumni/Components/Navbar.vue).
+- Ingin melihat peta lengkap kode pertanyaan Dikti & letak Vue formnya? Buka [`DAFTAR_PERTANYAAN_MAPPING.md`](DAFTAR_PERTANYAAN_MAPPING.md).
+- Ingin mengubah form profil dan karier alumni? Buka [`resources/js/Components/AlumniProfil/FormKarier.vue`](resources/js/Components/AlumniProfil/FormKarier.vue).
+- Ingin mengubah tampilan/input kuesioner tracer alumni? Buka [`resources/js/Pages/Alumni/Components/Kuesioner/KartuPertanyaan.vue`](resources/js/Pages/Alumni/Components/Kuesioner/KartuPertanyaan.vue).
+- Ingin mengubah tabel perbandingan F17? Buka [`resources/js/Pages/Alumni/Components/Kuesioner/TabelF17.vue`](resources/js/Pages/Alumni/Components/Kuesioner/TabelF17.vue).
+- Ingin melihat logika sinkronisasi data profil vs kuesioner? Buka [`app/Services/Kuesioner/KuesionerSyncService.php`](app/Services/Kuesioner/KuesionerSyncService.php).
+- Ingin melihat controller kuesioner prodi alumni? Buka [`app/Http/Controllers/Alumni/Kuesioner/KuesionerProdiController.php`](app/Http/Controllers/Alumni/Kuesioner/KuesionerProdiController.php).
+- Ingin mengedit tampilan Admin Prodi? Buka folder [`resources/js/Pages/AdminProdi/`](resources/js/Pages/AdminProdi).
+- Ingin mengedit seeder kuesioner program studi? Buka [`database/seeders/ProdiQuestionnaireSeeder.php`](database/seeders/ProdiQuestionnaireSeeder.php).
 
+
+## Panduan dokumentasi dan diagram
+
+| Dokumen | Kegunaan |
+| --- | --- |
+| [DFD](docs/dfd.md) | Batas sistem, teori Kendall, diagram konteks, Diagram 0, kamus dan registri aliran. |
+| [File draw.io](docs/tracer-study-dfd.drawio) | Dua sheet diagram yang dapat diedit dan diimpor ke diagrams.net. |
+| [Use case](USE_CASE.md) | Aktor, kebutuhan fungsional dan lingkup akses. |
+| [User flow](docs/user-flow.md) | Langkah penggunaan tiap role. |
+| [ERD](ERD.md) | Entitas, relasi dan kamus data. |
+| [Database views](docs/database-views.md) | Query view dan pemetaan konsumsinya. |
+| [Kuesioner](KUESIONER.md) | Struktur bagian dan aturan percabangan. |
+| [Pemetaan pertanyaan](DAFTAR_PERTANYAAN_MAPPING.md) | Hubungan kode pertanyaan, profil dan komponen. |
+| [Activity diagram](docs/activitydiagram.md) | Alur aktivitas pengguna dan sistem; berbeda dari DFD. |
+| [Integrasi LinkedIn](docs/linkedin-mcp-integration.md) | Provider, staging dan peninjauan. |
+| [Verifikasi perusahaan](docs/verifikasi-perusahaan-similarity.md) | Normalisasi nama, pencocokan dan konsolidasi. |
+
+Versi PHP package yang diperiksa: Laravel **13.30.0**, adapter Inertia **3.3.1**, PHPUnit **12.5.34**. Persyaratan versi di `composer.json`/`package.json` bukan daftar versi terpasang; gunakan lockfile atau `composer show --direct` untuk memastikannya.
+
+Email evaluasi atasan dikirim dengan aksi terpisah melalui `POST /alumni/kirim-email-atasan`, bukan otomatis setiap profil disimpan. Token dibuat sepanjang 40 karakter dan disimpan pada kolom berkapasitas 64 karakter. Biro III berfokus pada analisis/komunikasi; rute bersama masih mendukung pencatatan perusahaan dan permintaan email evaluasi. Catatan perubahan adalah rekaman historis, bukan spesifikasi perilaku terkini.

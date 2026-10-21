@@ -6,12 +6,9 @@ use App\Http\Controllers\Controller;
 use App\Mail\UndanganEvaluasiAtasanMail;
 use App\Models\Atasan;
 use App\Models\Biodata;
-use App\Models\DataAkademik;
-use App\Models\DataOrangTua;
 use App\Models\EvaluasiAtasan;
 use App\Models\LogActivity;
 use App\Models\Perusahaan;
-use App\Models\Yudisium;
 use App\Services\Kuesioner\KuesionerSyncService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -22,8 +19,7 @@ use Illuminate\Support\Str;
 /**
  * SimpanProfilController
  *
- * Fungsi: Menangani logika penyimpanan (update) profil alumni ke berbagai tabel database
- * (DataAkademik, Yudisium, DataOrangTua, Biodata, dan Perusahaan).
+ * Fungsi: Menangani penyimpanan profil tracer alumni tanpa mengubah data referensi akademik.
  * Tujuan: Memisahkan logika penyimpanan dari logika penampilan data (Single Responsibility).
  */
 class SimpanProfilController extends Controller
@@ -33,29 +29,14 @@ class SimpanProfilController extends Controller
      */
     public function simpanPerubahanProfil(Request $request)
     {
+        $request->validate([
+            'foto' => ['nullable', 'file', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
+        ]);
+
         $pengguna = $request->user();
         $biodata = $pengguna->biodata;
 
         $dataTervalidasi = $request->all();
-
-        // 1. Simpan Data Orang Tua (Simpan null jika field dikosongkan)
-        $dataOrangTua = [
-            'nama_orang_tua' => ! empty($dataTervalidasi['nama_orang_tua']) ? $dataTervalidasi['nama_orang_tua'] : null,
-            'pekerjaan' => ! empty($dataTervalidasi['pekerjaan_orang_tua']) ? $dataTervalidasi['pekerjaan_orang_tua'] : null,
-            'alamat' => ! empty($dataTervalidasi['alamat_orang_tua']) ? $dataTervalidasi['alamat_orang_tua'] : null,
-            'kota' => ! empty($dataTervalidasi['kota_orang_tua']) ? $dataTervalidasi['kota_orang_tua'] : null,
-            'kabupaten_id' => ! empty($dataTervalidasi['kabupaten_id_orang_tua']) ? $dataTervalidasi['kabupaten_id_orang_tua'] : null,
-            'propinsi_id' => ! empty($dataTervalidasi['propinsi_id_orang_tua']) ? $dataTervalidasi['propinsi_id_orang_tua'] : (! empty($dataTervalidasi['provinsi_id_orang_tua']) ? $dataTervalidasi['provinsi_id_orang_tua'] : null),
-            'kode_pos' => ! empty($dataTervalidasi['kode_pos_orang_tua']) ? $dataTervalidasi['kode_pos_orang_tua'] : null,
-            'nomor_telepon' => ! empty($dataTervalidasi['nomor_telepon_orang_tua']) ? $dataTervalidasi['nomor_telepon_orang_tua'] : null,
-        ];
-        $orangTuaModel = DataOrangTua::updateOrCreate(
-            ['nim' => $biodata->nim],
-            $dataOrangTua
-        );
-
-        // Cari relasi Yudisium berdasarkan NIM jika belum terhubung
-        $yudisiumModel = Yudisium::where('nim', $biodata->nim)->first();
 
         // =========================================================================================
         // 2. TANGANI PERUSAHAAN (DALAM NEGERI VS LUAR NEGERI)
@@ -218,18 +199,6 @@ class SimpanProfilController extends Controller
             $gajiNominal = $gajiInt > 0 ? $gajiInt : null;
         }
 
-        // =========================================================================================
-        // 5. UPDATE DATA AKADEMIK MASTER (HANYA EMAIL PRIBADI YANG DAPAT DIPERBARUI)
-        // Master akademik (nama, tempat_lahir, tanggal_lahir, jenis_kelamin, agama, gol_darah, dll.)
-        // dikunci permanen sesuai pangkalan data akademik dan tidak boleh diubah dari form profil.
-        // =========================================================================================
-        $dataAkademik = DataAkademik::where('nim', $biodata->nim)->first();
-        if ($dataAkademik && ! empty($dataTervalidasi['email_pribadi'])) {
-            $dataAkademik->update([
-                'email_pribadi' => $dataTervalidasi['email_pribadi'],
-            ]);
-        }
-
         // Sinkronkan email pengguna pada tabel users jika email pribadi diisi
         if (! empty($dataTervalidasi['email_pribadi'])) {
             $pengguna->update([
@@ -265,8 +234,6 @@ class SimpanProfilController extends Controller
             'jenis_pekerjaan' => ! empty($dataTervalidasi['jenis_pekerjaan']) ? $dataTervalidasi['jenis_pekerjaan'] : (! empty($dataTervalidasi['company_jenis_perusahaan']) ? $dataTervalidasi['company_jenis_perusahaan'] : (! empty($dataTervalidasi['perusahaan_jenis_perusahaan']) ? $dataTervalidasi['perusahaan_jenis_perusahaan'] : null)),
             'perusahaan_id' => $idPerusahaan,
             'atasan_id' => $idAtasan,
-            'orang_tua_id' => $orangTuaModel?->id ?? $biodata->orang_tua_id,
-            'yudisium_id' => $yudisiumModel?->id ?? $biodata->yudisium_id,
         ]);
 
         // Tangani unggah foto profil mandiri (jika ada file diunggah)
@@ -278,12 +245,10 @@ class SimpanProfilController extends Controller
                     mkdir($dir, 0755, true);
                 }
                 $safeNim = preg_replace('/[^a-zA-Z0-9_-]/', '', $biodata->nim ?: 'alumni');
-                $filename = "profile_{$safeNim}_".time().'.'.$fotoFile->getClientOriginalExtension();
+                $filename = "profile_{$safeNim}_".Str::uuid().'.'.$fotoFile->extension();
                 $fotoFile->move($dir, $filename);
                 $biodata->update(['foto' => "/uploads/profile/{$filename}"]);
             }
-        } elseif (! empty($dataTervalidasi['foto']) && is_string($dataTervalidasi['foto'])) {
-            $biodata->update(['foto' => $dataTervalidasi['foto']]);
         }
 
         $biodata->refresh();

@@ -6,6 +6,7 @@ use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 
 /**
  * Model Biodata (tabel: biodata)
@@ -62,7 +63,7 @@ class Biodata extends Model
                             'name' => $dataAkad?->nama ?? 'Alumni UKDW',
                             'email' => $dataAkad?->email_pribadi ?? ($biodata->nim.'@alumni.ukdw.ac.id'),
                             'password' => Hash::make(
-                                $dataAkad?->tanggal_lahir ? Carbon::parse($dataAkad->tanggal_lahir)->format('dmY') : '15082001'
+                                $dataAkad?->tanggal_lahir ? Carbon::parse($dataAkad->tanggal_lahir)->format('dmY') : Str::password(32)
                             ),
                             'role' => 'alumni',
                             'must_change_password' => true,

@@ -49,7 +49,7 @@ Alur ini mengadopsi struktur baku *Case Study* dari buku Dr. Suriya Sundaramoort
 5. Kedua cabang transisi diarahkan masuk (*join bar*) menyeberang ke kolom **System**.
 6. Sistem memeriksa keabsahan masukan dengan *guard condition* `[ check validity of details ]`:
    - Jika **`[invalid]`** (format data salah atau password lama tidak cocok): aliran diarahkan ke **Flow Final (`⨂`)**.
-   - Jika **`[valid]`**: sistem menjalankan aksi **`Update Database`** ke tabel `users` / `biodatas`.
+   - Jika **`[valid]`**: sistem menjalankan aksi **`Update Database`** ke tabel `users` / `biodata`.
 7. Sistem memberikan notifikasi konfirmasi sukses dan mencapai **Final State (`◉`)**.
 
 ---
@@ -87,7 +87,7 @@ flowchart TD
     subgraph System_Lane["SWIMLANE: System (Sistem Tracer Study UKDW)"]
         Join1[\"━━━━ JOIN ━━━━"\]
         DecVal{"Validasi Detail"}
-        Act_UpdateDB["Update Database (users / biodatas)"]
+        Act_UpdateDB["Update Database (users / biodata)"]
         Act_Success["Tampilkan Konfirmasi Sukses"]
         EndSuccess(((◉)))
         FlowInvalid((⨂))
@@ -113,7 +113,7 @@ Fitur sinkronisasi LinkedIn memanfaatkan pihak ketiga **Apify Cloud Actor (`data
 #### Prinsip Arsitektur & Keamanan:
 - **Cost Safety**: Setiap eksekusi hanya menargetkan tepat 1 alumni terpilih (1 alumni = 1 HTTP request ke Apify), mencegah pembengkakan biaya scraping tak terkendali.
 - **Kerahasiaan Kredensial**: API Token Apify disimpan secara eksklusif di environment server dan ditransmisikan hanya via header HTTP `Authorization: Bearer {token}` (dilarang pada query string).
-- **Staging Review Pattern**: Data profil mentah dari scraping disimpan terlebih dahulu di tabel `linkedin_sync_results` dengan status **`pending`**. Data primer alumni di tabel `biodatas` **tidak langsung ditimpa**. Super Admin / Admin Program Studi meninjau hasil scraping terlebih dahulu pada modal antarmuka (*diff review*) sebelum memutuskan untuk **Menyetujui (Approve)** atau **Menolak (Reject)**.
+- **Staging Review Pattern**: Data profil mentah dari scraping disimpan terlebih dahulu di tabel `linkedin_sync_results` dengan status **`pending`**. Data primer alumni di tabel `biodata` **tidak langsung ditimpa**. Super Admin / Admin Program Studi / Admin Fakultas meninjau hasil scraping terlebih dahulu pada modal antarmuka (*diff review*) sebelum memutuskan untuk **Menyetujui (Approve)** atau **Menolak (Reject)**.
 
 ---
 
@@ -265,7 +265,7 @@ Content-Type: application/json
 ### F. Pseudocode Implementasi Backend
 ```text
 FUNCTION SyncLinkedInProfile(biodataId, currentUser):
-    biodata = Query("SELECT * FROM biodatas WHERE id = :id", biodataId)
+    biodata = Query("SELECT * FROM biodata WHERE id = :id", biodataId)
     
     // 1. Validasi URL profil LinkedIn
     IF biodata.linkedin_url IS NULL OR NOT IsValidLinkedInUrl(biodata.linkedin_url) THEN
@@ -321,230 +321,57 @@ END FUNCTION
 
 ---
 
-## 4. PROSES 2: Token ke Email Pengguna Atasan untuk Isi Evaluasi Kinerja (Employer Survey)
+## 4. PROSES 2: Undangan dan Evaluasi Pengguna Lulusan
 
-### A. Deskripsi Alur & Logika Bisnis
-Evaluasi pengguna lulusan (*Employer Survey*) dirancang untuk memverifikasi kesesuaian dan kompetensi lulusan langsung oleh atasan tempat kerja alumni tanpa mewajibkan atasan membuat akun atau memasukkan kata sandi (*passwordless token-based authentication*).
+### A. Pemisahan aktivitas
 
-#### Alur Kerja:
-1. Alumni login dan memperbarui data profil pekerjaan pada menu **Profil & Karir**.
-2. Alumni mengisi nama atasan, nomor kontak, serta email resmi atasan.
-3. Saat alumni menekan tombol simpan, `SimpanProfilController` memvalidasi input.
-4. Sistem memeriksa apakah format email atasan valid.
-5. Sistem men-generate token keamanan unik 40 karakter menggunakan fungsi `Str::random(40)` dan menyimpannya di tabel `evaluasi_atasans`.
-6. Sistem menyusun surat elektronik `UndanganEvaluasiAtasanMail` dengan tautan publik khusus: `https://tracerstudy.ukdw.ac.id/evaluasi-atasan/{token}`.
-7. Email terkirim ke atasan via gateway SMTP.
-8. Atasan membuka email dan mengklik tautan tanpa proses login akun.
-9. Controller `EvaluasiAtasanController@show` memverifikasi token:
-   - Jika token salah / tidak ada: menampilkan halaman `EvaluasiAtasanNotFound`.
-   - Jika valid: memuat identitas alumni, perusahaan, dan 12 butir instrumen evaluasi kepuasan pengguna.
-10. Atasan mengisi kuesioner evaluasi dan klik tombol **"Kirim Evaluasi"**.
-11. Respon tersimpan di tabel `respons_evaluasi_atasan`, data perusahaan diperbarui, kuesioner dikunci (`is_submitted = true`), dan layar menampilkan pesan terima kasih.
-
----
-
-### B. Gambar Visual UML Activity Diagram (Standar Sundaramoorthy 2022)
-
-![UML Activity Diagram: Token Evaluasi Atasan](images/activity_evaluasi_atasan.png)
-
-> **File Resolusi Tinggi**:  
-> Format Vektor SVG: [`docs/images/activity_evaluasi_atasan.svg`](images/activity_evaluasi_atasan.svg)  
-> Format Raster Retina PNG: [`docs/images/activity_evaluasi_atasan.png`](images/activity_evaluasi_atasan.png)
-
----
-
-### C. Representasi Kode Diagram (Mermaid 2-Swimlane)
+Menyimpan profil menyiapkan data evaluasi jika data atasan tersedia. Pengiriman email merupakan aksi terpisah. Controller membuat token 40 karakter dengan `Str::random(40)`; kolom `evaluasi_atasan.token` berkapasitas 64 karakter. Tidak ada asumsi masa berlaku otomatis.
 
 ```mermaid
 flowchart TD
-    %% SWIMLANE 1: USER (ALUMNI & ATASAN)
-    subgraph User_Lane["SWIMLANE: Pengguna (Alumni UKDW / Atasan Kerja)"]
-        U_Start((●)) --> Al_InputKarier["Alumni Input Profil Pekerjaan & Email Atasan"]
-        Al_InputKarier --> Al_Submit["Klik Tombol 'Simpan Profil'"]
-        
-        At_OpenEmail["Atasan Buka Email & Klik Tautan Bertoken"]
-        At_FillSurvey["Atasan Isi 12 Butir Penilaian & Masukan Kinerja"]
-        At_SubmitEval["Klik 'Kirim Evaluasi'"]
-        At_ShowThankYou["Lihat Konfirmasi Selesai & Ucapan Terima Kasih"]
-        EndEvalSuccess(((◉)))
+    subgraph Pengguna
+        A[Alumni melengkapi data pekerjaan dan atasan]
+        B[Alumni menyimpan profil]
+        D[Alumni atau admin memilih Kirim Email ke Atasan]
+        H[Atasan membuka tautan evaluasi]
+        K[Atasan mengisi data instansi dan penilaian]
+        L[Atasan mengirim jawaban]
+        O[Atasan melihat konfirmasi]
     end
-
-    %% SWIMLANE 2: SYSTEM
-    subgraph System_Lane["SWIMLANE: System (Sistem Tracer Study UKDW & SMTP Engine)"]
-        S_ValEmail{"Validasi Email Atasan"}
-        FlowEmailInvalid((⨂))
-        S_SaveBio["Simpan Data Biodata Alumni ke 'biodatas'"]
-        S_GenToken["Generate Token Kriptografis 40 Karakter Str::random(40)"]
-        S_SendMail["Kirim Email Undangan via SMTP ke Inbox Atasan"]
-        
-        S_ValToken{"Cek Integritas Token"}
-        FlowTokenInvalid((⨂))
-        S_LoadSurvey["Muat Data Profil Alumni & 12 Butir Instrumen Evaluasi"]
-        
-        S_UpdateDB["Update Database Respon ke 'respons_evaluasi_atasan'"]
-        S_LockForm["Kunci Formulir (is_submitted = true, submitted_at = now())"]
+    subgraph Sistem
+        C[Simpan profil dan siapkan record evaluasi]
+        E{Data alumni dan email valid?}
+        F[Tampilkan hasil validasi]
+        G[Siapkan token dan kirim undangan email]
+        I{Token ditemukan?}
+        J[Tampilkan formulir atau halaman tidak ditemukan]
+        M[Validasi data dan simpan jawaban]
+        N[Perbarui is_submitted dan submitted_at]
     end
-
-    %% TRANSISI LINTAS SWIMLANE
-    Al_Submit --> S_ValEmail
-    S_ValEmail -- "[email invalid/kosong]" --> FlowEmailInvalid
-    S_ValEmail -- "[email valid]" --> S_SaveBio
-    S_SaveBio --> S_GenToken
-    S_GenToken --> S_SendMail
-    S_SendMail --> At_OpenEmail
-    
-    At_OpenEmail --> S_ValToken
-    S_ValToken -- "[token invalid/not found]" --> FlowTokenInvalid
-    S_ValToken -- "[token valid]" --> S_LoadSurvey
-    S_LoadSurvey --> At_FillSurvey
-    At_FillSurvey --> At_SubmitEval
-    At_SubmitEval --> S_UpdateDB
-    S_UpdateDB --> S_LockForm
-    S_LockForm --> At_ShowThankYou
-    At_ShowThankYou --> EndEvalSuccess
+    A --> B --> C --> D --> E
+    E -->|Tidak| F
+    E -->|Ya| G --> H --> I
+    I -->|Tidak| J
+    I -->|Ya| K --> L --> M --> N --> O
 ```
 
----
+### B. Pemetaan implementasi
 
-### D. Perintah & Routing Backend
+| Aktivitas | Implementasi |
+| --- | --- |
+| Simpan profil dan persiapkan evaluasi | `SimpanProfilController::simpanPerubahanProfil`, `POST /alumni/profile` |
+| Kirim undangan terpisah | `SimpanProfilController::kirimEmailAtasan`, `POST /alumni/kirim-email-atasan` |
+| Email undangan | `UndanganEvaluasiAtasanMail` |
+| Buka formulir | `EvaluasiAtasanController::show`, `GET /evaluasi-atasan/{token}` |
+| Simpan jawaban | `EvaluasiAtasanController::store`, `POST /evaluasi-atasan/{token}` |
+| Data sesi evaluasi | `evaluasi_atasan` |
+| Instrumen dinamis | `pertanyaan_evaluasi_atasan` |
+| Jawaban | `respon_evaluasi_atasan` |
 
-#### 1. Pemicu Pembuatan Token & Pengiriman Email
-- **Method**: `POST`
-- **Route URL**: `/alumni/profil`
-- **Controller Action**: `App\Http\Controllers\Alumni\Profil\SimpanProfilController@simpanProfil`
+GET dengan token tidak ditemukan menampilkan `Public/EvaluasiAtasanNotFound`. POST mencari token dengan `firstOrFail`, lalu memvalidasi data, memperbarui perusahaan/atasan, menyimpan jawaban dan status pengisian. `is_submitted` bukan bukti bahwa submit ulang ditolak server; guard tersebut belum ada pada handler yang diperiksa. Jumlah pertanyaan mengikuti instrumen aktif.
 
-#### 2. Akses Publik Formulir Evaluasi via Token
-- **Method**: `GET`
-- **Route URL**: `/evaluasi-atasan/{token}`
-- **Controller Action**: `App\Http\Controllers\EvaluasiAtasanController@show`
+Gambar raster/SVG `activity_evaluasi_atasan` versi lama tidak dipakai sebagai rujukan revisi ini. Mermaid di atas menyatakan alur terkini. Diagram konteks dan DFD yang bisa diedit tersedia pada [dfd.md](dfd.md).
 
-#### 3. Simpan Respon Evaluasi dari Atasan
-- **Method**: `POST`
-- **Route URL**: `/evaluasi-atasan/{token}`
-- **Controller Action**: `App\Http\Controllers\EvaluasiAtasanController@store`
-
----
-
-### E. Struktur Data & Payload JSON
-
-#### Record Token di Database (`evaluasi_atasans`):
-```json
-{
-  "id": 85,
-  "biodata_id": 104,
-  "atasan_id": 52,
-  "perusahaan_id": 12,
-  "token": "4a7b9c1d8e2f0a1b2c3d4e5f6a7b8c9d0e1f2a3b",
-  "is_submitted": false,
-  "submitted_at": null,
-  "created_at": "2026-10-13T10:00:00Z"
-}
-```
-
-#### URL Tautan Token dalam Email Atasan:
-```text
-https://tracerstudy.ukdw.ac.id/evaluasi-atasan/4a7b9c1d8e2f0a1b2c3d4e5f6a7b8c9d0e1f2a3b
-```
-
-#### Payload Respon Kuesioner Evaluasi:
-```json
-{
-  "nama_perusahaan": "PT Bank Central Asia Tbk",
-  "alamat_lengkap": "Jl. Jenderal Sudirman No. 45, Jakarta Pusat",
-  "no_telp_fax": "021-2358800",
-  "bentuk_perusahaan": "Perseroan Terbatas (PT)",
-  "skala_perusahaan": "Nasional",
-  "jumlah_pegawai": "> 500 orang",
-  "nama_atasan": "Budi Hartono",
-  "email_atasan": "budi.hartono@bca.co.id",
-  "telepon_atasan": "081122334455",
-  "jumlah_alumni_ukdw": "3 orang",
-  "standar_gaji_pertama": "Rp 8.000.000 - Rp 12.000.000",
-  "jawaban": {
-    "integritas": 5,
-    "keahlian_bidang": 4,
-    "kemampuan_inggris": 4,
-    "penggunaan_ti": 5,
-    "komunikasi": 4,
-    "kerjasama_tim": 5,
-    "pengembangan_diri": 4,
-    "kepemimpinan": 4,
-    "etos_kerja": 5,
-    "kesiapan_kerja": 5
-  },
-  "catatan_lainnya": "Lulusan memiliki integritas tinggi dan cepat beradaptasi dengan stack teknologi modern."
-}
-```
-
----
-
-### F. Pseudocode Implementasi Backend
-```text
-FUNCTION HandleSimpanProfil(request, alumniUser):
-    validated = Validate(request.all())
-    biodata = alumniUser.biodata
-    biodata.Update(validated)
-
-    // Deteksi kebutuhan pembuatan token & pengiriman email evaluasi
-    IF validated.email_atasan IS NOT NULL AND IsEmailValid(validated.email_atasan) THEN
-        evaluasi = Database.FindOrCreate("evaluasi_atasans", 
-            Where: {"biodata_id": biodata.id},
-            Defaults: {
-                "atasan_id": validated.atasan_id,
-                "perusahaan_id": biodata.perusahaan_id,
-                "token": GenerateSecureRandomString(40),
-                "is_submitted": false
-            }
-        )
-
-        // Kirimkan email bertoken via Queue/SMTP
-        mailInstance = new UndanganEvaluasiAtasanMail(biodata, evaluasi)
-        Mail.To(validated.email_atasan).Send(mailInstance)
-    ENDIF
-
-    RETURN RedirectBack()
-END FUNCTION
-
-FUNCTION HandleStoreEvaluasiPublic(token, request):
-    evaluasi = Database.FindOneOrFail("evaluasi_atasans", {"token": token})
-    validated = Validate(request.all())
-
-    // 1. Update informasi master perusahaan
-    perusahaan = evaluasi.perusahaan
-    IF perusahaan IS NOT NULL THEN
-        perusahaan.Update({
-            "nama_perusahaan": validated.nama_perusahaan,
-            "alamat": validated.alamat_lengkap,
-            "no_telp_fax": validated.no_telp_fax
-        })
-    ENDIF
-
-    // 2. Simpan setiap jawaban instrumen penilaian ke respons_evaluasi_atasan
-    FOR EACH kode, nilai IN validated.jawaban:
-        pertanyaan = Database.FindOne("pertanyaan_evaluasi_atasan", {"kode": kode})
-        Database.UpdateOrCreate("respons_evaluasi_atasan",
-            Where: {
-                "evaluasi_atasan_id": evaluasi.id,
-                "pertanyaan_id": pertanyaan.id
-            },
-            Values: {
-                "nilai": nilai,
-                "catatan": validated.catatan_lainnya
-            }
-        )
-    END FOR
-
-    // 3. Kunci formulir evaluasi
-    evaluasi.Update({
-        "is_submitted": true,
-        "submitted_at": CurrentTimestamp()
-    })
-
-    RETURN Redirect("/evaluasi-atasan/" + token).With("success", "Terima kasih atas partisipasi Anda.")
-END FUNCTION
-```
-
----
 
 ## 5. PROSES 3: Rekomendasi Kecocokan Perusahaan (Similarity Matching & Auto-Replace)
 
@@ -909,6 +736,8 @@ flowchart TD
 | **Sistem Eksekusi (Lane 2)** | System (Tracer Study) | Backend App & Apify Provider | System & SMTP Mail Server | Service Matching & Database | Backend App & Options Service |
 | **Penerapan Fork / Join** | Fork cabang Pwd/Profil & Join ke System | Sequential Request & Review | Multi-part Event Flow | Fork Tokenize/Cleaning & Join Matching | Percabangan Tipe Opsi Default & Join |
 | **Penanganan Invalid (`⨂`)** | Flow Final saat password lama salah | Flow Final saat URL/Dataset invalid | Flow Final saat Token/Email invalid | Flow Final saat Pengajuan Ditolak | Flow Final saat Kode Duplikat / Form Kosong |
-| **Aksi Basis Data** | Update tabel `users` & `biodatas` | Update staging & `biodatas` | Insert token & `respons_evaluasi` | Transactional Auto-Replace / Direct Verify | Insert pertanyaan & opsi relasional |
+| **Aksi Basis Data** | Update tabel `users` & `biodata` | Update staging & `biodata` | Insert token & `respon_evaluasi_atasan` | Transactional Auto-Replace / Direct Verify | Insert pertanyaan & opsi relasional |
 | **Status Sukses (`◉`)** | Final State konfirmasi profil/sandi | Final State status `APPROVED` | Final State konfirmasi terima kasih | Final State status `Terverifikasi` | Final State soal & opsi aktif tersimpan |
 
+
+Revisi 21 Oktober 2026: diagram aktivitas menggambarkan urutan dan keputusan, sedangkan [DFD](dfd.md) menggambarkan perpindahan data. Hak mutasi LinkedIn dimiliki Superadmin, Admin Prodi dan Admin Fakultas sesuai lingkup; Biro III hanya membaca hasil.

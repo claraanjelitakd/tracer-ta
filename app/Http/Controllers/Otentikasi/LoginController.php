@@ -42,7 +42,7 @@ class LoginController extends Controller
             $request->session()->regenerate();
             $pengguna = Auth::user();
 
-            if ($pengguna->must_change_password && $pengguna->role !== 'admin_biro3') {
+            if ($pengguna->role === 'alumni' && $pengguna->must_change_password) {
                 return redirect()->intended('/change-password');
             }
 
@@ -54,7 +54,12 @@ class LoginController extends Controller
             ->where('role', 'alumni')
             ->first();
 
-        if ($alumniUser) {
+        $usesLegacyDefaultPassword = $alumniUser && (
+            Hash::check('15082001', $alumniUser->password)
+            || Hash::check('password123', $alumniUser->password)
+        );
+
+        if ($alumniUser && ($alumniUser->must_change_password || $usesLegacyDefaultPassword)) {
             $tglLahir = $alumniUser->biodata?->tanggal_lahir
                 ?? DataAkademik::where('nim', $alumniUser->username)->value('tanggal_lahir');
 
@@ -64,8 +69,9 @@ class LoginController extends Controller
                 $cleanInput = preg_replace('/[^0-9]/', '', $kredensial['password']);
 
                 if ($cleanInput === $expectedFormat || $kredensial['password'] === $expectedFormat) {
-                    // Update kata sandi ke hash baru dan wajibkan ganti kata sandi
-                    $alumniUser->password = Hash::make($kredensial['password']);
+                    // Normalisasi akun lama yang memakai password default bersama,
+                    // lalu wajibkan alumni menetapkan password pribadi.
+                    $alumniUser->password = Hash::make($expectedFormat);
                     $alumniUser->must_change_password = true;
                     $alumniUser->save();
 

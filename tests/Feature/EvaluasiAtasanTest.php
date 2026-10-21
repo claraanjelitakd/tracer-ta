@@ -19,6 +19,14 @@ class EvaluasiAtasanTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_public_index_does_not_redirect_to_latest_token(): void
+    {
+        $response = $this->get('/evaluasi-atasan');
+
+        $response->assertOk();
+        $response->assertInertia(fn ($page) => $page->component('Public/EvaluasiAtasanNotFound'));
+    }
+
     public function test_public_can_view_evaluasi_atasan_form_with_valid_token(): void
     {
         $prodi = Prodi::create(['kode_prodi' => '72', 'nama_prodi' => 'Sistem Informasi']);
@@ -122,7 +130,6 @@ class EvaluasiAtasanTest extends TestCase
             'tingkat_kesiapan_kerja' => 'Sangat siap',
             'jawaban' => [
                 'integritas' => 'Sangat Tinggi',
-                'keahlian_ilmu' => 'Tinggi',
             ],
             'catatan_lainnya' => 'Kinerja alumni sangat memuaskan.',
         ];
@@ -140,17 +147,19 @@ class EvaluasiAtasanTest extends TestCase
             'id' => $perusahaan->id,
             'nama_perusahaan' => 'PT Makmur Sentosa',
             'alamat' => 'Jl. Magelang KM 5, Yogyakarta',
-            'skala' => 'Nasional',
-            'bentuk_perusahaan' => 'Perusahaan Terbatas',
-            'jumlah_pegawai' => '51 - 100 Orang',
-            'homepage' => 'https://makmursentosa.com',
-            'no_telp_fax' => '0274-123456',
+            'bentuk_perusahaan' => null,
+            'jumlah_pegawai' => null,
+            'homepage' => null,
+            'no_telp_fax' => null,
         ]);
 
         $this->assertDatabaseHas('respon_evaluasi_atasan', [
             'evaluasi_atasan_id' => $evaluasi->id,
             'nilai' => 'Sangat Tinggi',
         ]);
+
+        $this->post("/evaluasi-atasan/{$evaluasi->token}", $postData)
+            ->assertSessionHasErrors('jawaban');
     }
 
     public function test_superadmin_can_send_email_undangan_atasan(): void

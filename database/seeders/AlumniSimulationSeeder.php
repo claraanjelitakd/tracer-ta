@@ -16,6 +16,7 @@ use App\Models\RefSubpertanyaan2021;
 use App\Models\Tracer;
 use App\Models\User;
 use App\Models\Yudisium;
+use Carbon\Carbon;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 
@@ -286,6 +287,9 @@ class AlumniSimulationSeeder extends Seeder
                 $nama = $alumniBio['nama'];
                 $isLaki = ($alumniBio['jk'] === 'Laki-laki');
                 $agama = $alumniBio['agama'];
+                $birthYear = (int) $angkatan - 18;
+                $birthDate = $birthYear.'-08-15';
+                $defaultPassword = Carbon::parse($birthDate)->format('dmY');
 
                 $personalEmail = strtolower(str_replace(' ', '', explode(' ', $nama)[0])).$kodeProdiStr.($i + 1).'@gmail.com';
 
@@ -295,17 +299,16 @@ class AlumniSimulationSeeder extends Seeder
                     [
                         'name' => $nama,
                         'email' => $personalEmail,
-                        'password' => Hash::make('15082001'), // Format default tanggal lahir DDMMYYYY
+                        'password' => Hash::make($defaultPassword),
                         'role' => 'alumni',
                         'prodi_id' => $prodi->id,
-                        'must_change_password' => ($i >= 7), // Belum mengisi wajib ganti password awal
+                        'must_change_password' => true,
                     ]
                 );
 
                 // B. Buat Data Induk Akademik Mahasiswa (Single Source of Truth)
                 $ipk = round(3.40 + (($i * 6) % 55) / 100, 2);
                 $totalSks = ($kodeProdiStr === '61') ? 160 : 144;
-                $birthYear = (int) $angkatan - 18;
                 $dataAkademik = DataAkademik::updateOrCreate(
                     ['nim' => $nim],
                     [
@@ -319,7 +322,7 @@ class AlumniSimulationSeeder extends Seeder
                         'total_sks' => $totalSks,
                         'total_angka_kualitas' => round($ipk * $totalSks, 2),
                         'tempat_lahir' => ($i % 2 === 0 ? 'Yogyakarta' : 'Jakarta'),
-                        'tanggal_lahir' => $birthYear.'-08-15',
+                        'tanggal_lahir' => $birthDate,
                         'agama' => $agama,
                         'jenis_kelamin' => $alumniBio['jk'],
                         'golongan_darah' => ['O', 'A', 'B', 'AB'][$i % 4],

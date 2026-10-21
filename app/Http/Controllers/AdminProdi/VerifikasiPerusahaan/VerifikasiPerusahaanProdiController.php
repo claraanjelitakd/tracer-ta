@@ -23,6 +23,16 @@ class VerifikasiPerusahaanProdiController extends Controller
         protected PerusahaanVerificationService $verificationService
     ) {}
 
+    private function findCompanyInScope(int $id): Perusahaan
+    {
+        $prodiId = Auth::user()?->prodi_id;
+        if (! $prodiId) {
+            abort(403, 'Akun Anda belum terhubung dengan program studi.');
+        }
+
+        return Perusahaan::whereKey($id)->where('created_by_prodi_id', $prodiId)->firstOrFail();
+    }
+
     /**
      * Menampilkan daftar perusahaan tempat alumni bekerja yang menunggu verifikasi.
      */
@@ -75,7 +85,7 @@ class VerifikasiPerusahaanProdiController extends Controller
      */
     public function verify(int $id): RedirectResponse
     {
-        $company = Perusahaan::findOrFail($id);
+        $company = $this->findCompanyInScope($id);
 
         $this->verificationService->verifyDirectly($company);
 
@@ -87,7 +97,7 @@ class VerifikasiPerusahaanProdiController extends Controller
      */
     public function replace(Request $request, int $id): RedirectResponse
     {
-        $pendingCompany = Perusahaan::findOrFail($id);
+        $pendingCompany = $this->findCompanyInScope($id);
 
         $validated = $request->validate([
             'target_company_id' => 'required|exists:perusahaan,id',
@@ -107,7 +117,7 @@ class VerifikasiPerusahaanProdiController extends Controller
      */
     public function updateAndVerify(Request $request, int $id): RedirectResponse
     {
-        $company = Perusahaan::findOrFail($id);
+        $company = $this->findCompanyInScope($id);
 
         $validated = $request->validate([
             'nama_perusahaan' => 'required|string|max:255',
@@ -133,7 +143,7 @@ class VerifikasiPerusahaanProdiController extends Controller
      */
     public function reject(Request $request, int $id): RedirectResponse
     {
-        $company = Perusahaan::findOrFail($id);
+        $company = $this->findCompanyInScope($id);
 
         $this->verificationService->rejectCompany($company);
 

@@ -73,14 +73,12 @@ const openEditUserModal = (u) => {
 };
 
 const handleResetToDefaultAndNotify = (userData) => {
-    const passwordHint = userData.default_dob_password ? `Format Tanggal Lahir (${userData.default_dob_password})` : 'Ukdw123456';
-
     Swal.fire({
-        title: 'Reset Password & Kirim Konfirmasi Email?',
+        title: 'Reset Kredensial Awal?',
         html: `
             <div class="text-xs text-left space-y-2">
-                <p>Password akun <strong>${userData.name}</strong> akan otomatis direset ke <strong>${passwordHint}</strong> dan diwajibkan ganti password awal.</p>
-                <p class="pt-1">Notifikasi konfirmasi hasil reset akan otomatis dikirimkan ke email terdaftar pengguna:</p>
+                <p>Kredensial awal akun <strong>${userData.name}</strong> akan direset. Nilai password tidak ditampilkan demi keamanan.</p>
+                <p class="pt-1">Alumni wajib mengganti password setelah berhasil login:</p>
                 <div class="font-mono font-bold text-[#0D542B] bg-emerald-50 p-2 rounded border border-emerald-200">${userData.email}</div>
             </div>
         `,
@@ -94,7 +92,7 @@ const handleResetToDefaultAndNotify = (userData) => {
         if (res.isConfirmed) {
             router.post(`/prodi/manajemen-akun/${userData.id}/reset-default-notify`, {}, {
                 onSuccess: () => {
-                    Swal.fire('Berhasil Di-reset!', `Password ${userData.name} telah direset ke tanggal lahir dan konfirmasi dikirim ke ${userData.email}.`, 'success');
+                    Swal.fire('Berhasil Di-reset!', `Kredensial awal ${userData.name} telah direset.`, 'success');
                 }
             });
         }
@@ -183,7 +181,7 @@ const handleResetToDefaultAndNotify = (userData) => {
                                         <button
                                             @click="handleResetToDefaultAndNotify(u)"
                                             class="px-2.5 py-1 bg-[#0D542B] text-white font-semibold rounded text-[11px] hover:bg-[#08381c] cursor-pointer"
-                                            title="Reset password otomatis ke tanggal lahir & kirim konfirmasi email"
+                                            title="Reset kredensial awal alumni"
                                         >
                                             Reset Password
                                         </button>

@@ -23,11 +23,11 @@ Dokumen ini menjelaskan secara teknis dan konseptual bagaimana sistem pencocokan
 
 | Komponen | Path File | Keterangan |
 | :--- | :--- | :--- |
-| **Domain Service** | [`app/Services/Perusahaan/PerusahaanVerificationService.php`](file:///c:/study/tracerstudy/app/Services/Perusahaan/PerusahaanVerificationService.php) | Berisi inti logika perhitungan kemiripan (`getSimilarRecommendations`), pembersihan teks (`cleanCompanyName`), tokenisasi (`getTokens`), dan pembuatan akronim (`makeAcronym`). |
-| **Controller SuperAdmin** | [`app/Http/Controllers/SuperAdmin/Perusahaan/VerifikasiPerusahaanSuperAdminController.php`](file:///c:/study/tracerstudy/app/Http/Controllers/SuperAdmin/Perusahaan/VerifikasiPerusahaanSuperAdminController.php) | Memanggil service untuk melampirkan 5 data rekomendasi per perusahaan pending. |
-| **Controller Fakultas** | [`app/Http/Controllers/AdminFakultas/VerifikasiPerusahaan/VerifikasiPerusahaanFakultasController.php`](file:///c:/study/tracerstudy/app/Http/Controllers/AdminFakultas/VerifikasiPerusahaan/VerifikasiPerusahaanFakultasController.php) | Verifikasi lingkup prodi di bawah fakultas terkait. |
-| **Controller Prodi** | [`app/Http/Controllers/AdminProdi/VerifikasiPerusahaan/VerifikasiPerusahaanProdiController.php`](file:///c:/study/tracerstudy/app/Http/Controllers/AdminProdi/VerifikasiPerusahaan/VerifikasiPerusahaanProdiController.php) | Verifikasi lingkup prodi pengguna. |
-| **Feature Test** | [`tests/Feature/VerifikasiPerusahaanTest.php`](file:///c:/study/tracerstudy/tests/Feature/VerifikasiPerusahaanTest.php) | Unit & Feature testing untuk akurasi rekomendasi dan auto-replace. |
+| **Domain Service** | [`app/Services/Perusahaan/PerusahaanVerificationService.php`](../app/Services/Perusahaan/PerusahaanVerificationService.php) | Berisi inti logika perhitungan kemiripan (`getSimilarRecommendations`), pembersihan teks (`cleanCompanyName`), tokenisasi (`getTokens`), dan pembuatan akronim (`makeAcronym`). |
+| **Controller SuperAdmin** | [`app/Http/Controllers/SuperAdmin/Perusahaan/VerifikasiPerusahaanSuperAdminController.php`](../app/Http/Controllers/SuperAdmin/Perusahaan/VerifikasiPerusahaanSuperAdminController.php) | Memanggil service untuk melampirkan 5 data rekomendasi per perusahaan pending. |
+| **Controller Fakultas** | [`app/Http/Controllers/AdminFakultas/VerifikasiPerusahaan/VerifikasiPerusahaanFakultasController.php`](../app/Http/Controllers/AdminFakultas/VerifikasiPerusahaan/VerifikasiPerusahaanFakultasController.php) | Verifikasi lingkup prodi di bawah fakultas terkait. |
+| **Controller Prodi** | [`app/Http/Controllers/AdminProdi/VerifikasiPerusahaan/VerifikasiPerusahaanProdiController.php`](../app/Http/Controllers/AdminProdi/VerifikasiPerusahaan/VerifikasiPerusahaanProdiController.php) | Verifikasi lingkup prodi pengguna. |
+| **Feature Test** | [`tests/Feature/VerifikasiPerusahaanTest.php`](../tests/Feature/VerifikasiPerusahaanTest.php) | Unit & Feature testing untuk akurasi rekomendasi dan auto-replace. |
 
 ---
 
@@ -355,7 +355,7 @@ Ketika SuperAdmin, Admin Fakultas, atau Admin Prodi melihat rekomendasi ini di t
 
 ## 6. Penjelasan Lengkap Service (`PerusahaanVerificationService.php`)
 
-Service ini beralamat di [`app/Services/Perusahaan/PerusahaanVerificationService.php`](file:///c:/study/tracerstudy/app/Services/Perusahaan/PerusahaanVerificationService.php) dan didaftarkan via *Dependency Injection* ke Controller:
+Service ini beralamat di [`app/Services/Perusahaan/PerusahaanVerificationService.php`](../app/Services/Perusahaan/PerusahaanVerificationService.php) dan didaftarkan via *Dependency Injection* ke Controller:
 
 ```php
 public function __construct(
@@ -400,7 +400,7 @@ public function __construct(
 Terdapat 3 Controller dengan tingkatan hak akses berbeda yang mengonsumsi service ini:
 
 ### A. SuperAdmin: `VerifikasiPerusahaanSuperAdminController`
-* **File:** [`app/Http/Controllers/SuperAdmin/Perusahaan/VerifikasiPerusahaanSuperAdminController.php`](file:///c:/study/tracerstudy/app/Http/Controllers/SuperAdmin/Perusahaan/VerifikasiPerusahaanSuperAdminController.php)
+* **File:** [`app/Http/Controllers/SuperAdmin/Perusahaan/VerifikasiPerusahaanSuperAdminController.php`](../app/Http/Controllers/SuperAdmin/Perusahaan/VerifikasiPerusahaanSuperAdminController.php)
 * **Hak Akses:** Otoritas tertinggi universitas (`role: superadmin`).
 * **Fitur:**
   * Dapat melihat pengajuan seluruh prodi (`scope: all`) atau menyaring per prodi tertentu.
@@ -419,16 +419,22 @@ Terdapat 3 Controller dengan tingkatan hak akses berbeda yang mengonsumsi servic
   * `POST /superadmin/perusahaan/{company}/reject` $\rightarrow$ Tolak pengajuan.
 
 ### B. Admin Fakultas: `VerifikasiPerusahaanFakultasController`
-* **File:** [`app/Http/Controllers/AdminFakultas/VerifikasiPerusahaan/VerifikasiPerusahaanFakultasController.php`](file:///c:/study/tracerstudy/app/Http/Controllers/AdminFakultas/VerifikasiPerusahaan/VerifikasiPerusahaanFakultasController.php)
+* **File:** [`app/Http/Controllers/AdminFakultas/VerifikasiPerusahaan/VerifikasiPerusahaanFakultasController.php`](../app/Http/Controllers/AdminFakultas/VerifikasiPerusahaan/VerifikasiPerusahaanFakultasController.php)
 * **Hak Akses:** Admin di tingkat fakultas (`role: admin_fakultas`).
 * **Fitur:**
   * Otomatis terfilter hanya untuk pengajuan perusahaan dari prodi-prodi dalam fakultas yang bersangkutan.
   * Menyajikan data rekomendasi kemiripan yang sama agar data di tingkat fakultas tetap terstandardisasi.
 
 ### C. Admin Program Studi: `VerifikasiPerusahaanProdiController`
-* **File:** [`app/Http/Controllers/AdminProdi/VerifikasiPerusahaan/VerifikasiPerusahaanProdiController.php`](file:///c:/study/tracerstudy/app/Http/Controllers/AdminProdi/VerifikasiPerusahaan/VerifikasiPerusahaanProdiController.php)
+* **File:** [`app/Http/Controllers/AdminProdi/VerifikasiPerusahaan/VerifikasiPerusahaanProdiController.php`](../app/Http/Controllers/AdminProdi/VerifikasiPerusahaan/VerifikasiPerusahaanProdiController.php)
 * **Hak Akses:** Admin program studi masing-masing (`role: admin_prodi`).
 * **Fitur:**
   * Memverifikasi pengajuan tempat kerja dari alumni lulusan prodinya sendiri.
   * Memanfaatkan rekomendasi sistem untuk menyatukan input alumni dengan master data perusahaan nasional.
 
+
+## 8. Hubungan dengan batas sistem (21 Oktober 2026)
+
+Pencatatan perusahaan baru berbeda dari verifikasi. Endpoint bersama `POST /alumni/company` menerima lima role akun, sedangkan modul keputusan verifikasi dimiliki Superadmin, Admin Fakultas dan Admin Prodi sesuai lingkup. Kemiripan menghasilkan rekomendasi, bukan keputusan otomatis bahwa dua perusahaan identik. Konsolidasi memerlukan aksi admin dan mengalihkan relasi terkait melalui service.
+
+Paket data perusahaan serta hasil verifikasi ditunjukkan pada proses 3 [DFD](dfd.md). Perusahaan adalah data yang disimpan; atasan adalah aktor evaluasi. Perusahaan tidak ditambahkan sebagai aktor tanpa interaksi mandiri yang didefinisikan.

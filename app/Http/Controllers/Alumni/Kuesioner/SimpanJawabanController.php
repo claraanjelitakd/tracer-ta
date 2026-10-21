@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Alumni\Kuesioner;
 
 use App\Http\Controllers\Controller;
 use App\Models\Atasan;
-use App\Models\DataAkademik;
 use App\Models\Perusahaan;
 use App\Models\QuestionMapping;
 use App\Models\RefSubpertanyaan2021;
@@ -22,8 +21,8 @@ use Illuminate\Http\Request;
  * Fitur:
  * 1. Menerima payload jawaban dari Frontend (single choice, multiple choice, matriks, text, number).
  * 2. Menyimpan jawaban ke tabel `tracer`.
- * 3. Memperbarui otomatis tabel `biodata`, `data_akademik`, `perusahaan`, dan `atasan` jika butir pertanyaan
- *    terhubung ke mapping profil.
+ * 3. Memperbarui tabel transaksional `biodata`, `perusahaan`, dan `atasan` jika butir pertanyaan
+ *    terhubung ke mapping profil. Mapping akademik hanya diarahkan ke kolom biodata yang setara.
  * 4. Menjalankan sinkronisasi terpadu melalui `KuesionerSyncService`.
  */
 class SimpanJawabanController extends Controller
@@ -115,12 +114,10 @@ class SimpanJawabanController extends Controller
 
         // 5. Penampung data update tabel profil terkait
         $dataUpdateBiodata = [];
-        $dataUpdateAkademik = [];
         $dataUpdatePerusahaan = [];
         $dataUpdateAtasan = [];
 
         $kolomBiodata = $biodata->getFillable();
-        $kolomAkademik = $biodata->dataAkademik ? $biodata->dataAkademik->getFillable() : (new DataAkademik)->getFillable();
         $kolomPerusahaan = (new Perusahaan)->getFillable();
         $kolomAtasan = (new Atasan)->getFillable();
 
@@ -341,8 +338,8 @@ class SimpanJawabanController extends Controller
                 $kolom = $pemetaan[$idPertanyaan]->column_name;
                 $tabel = $pemetaan[$idPertanyaan]->table_name;
 
-                if (in_array($tabel, ['data_akademik', 'data_akademiks']) && in_array($kolom, $kolomAkademik)) {
-                    $dataUpdateAkademik[$kolom] = $answerText;
+                if (in_array($tabel, ['data_akademik', 'data_akademiks']) && in_array($kolom, $kolomBiodata)) {
+                    $dataUpdateBiodata[$kolom] = $answerText;
                 } elseif (in_array($tabel, ['biodata', 'biodatas', 'alumnis']) && in_array($kolom, $kolomBiodata)) {
                     $dataUpdateBiodata[$kolom] = $answerText;
                 } elseif (in_array($tabel, ['perusahaan', 'companies']) && in_array($kolom, $kolomPerusahaan)) {
@@ -355,13 +352,6 @@ class SimpanJawabanController extends Controller
 
         if (! empty($dataUpdateBiodata)) {
             $biodata->update($dataUpdateBiodata);
-        }
-
-        if (! empty($dataUpdateAkademik)) {
-            DataAkademik::updateOrCreate(
-                ['nim' => $biodata->nim],
-                $dataUpdateAkademik
-            );
         }
 
         if (! empty($dataUpdatePerusahaan)) {

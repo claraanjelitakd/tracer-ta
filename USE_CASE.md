@@ -6,6 +6,8 @@ Sesuai prinsip pemodelan UML standar, proses bisnis yang identik antar-peran (se
 
 ---
 
+> Revisi 21 Oktober 2026: dicocokkan dengan rute dan handler. Publik/atasan bukan role akun. Penyimpanan profil dan pengiriman undangan adalah dua aksi berbeda. Biro III tidak menjalankan sinkronisasi LinkedIn. Diagram konteks dan DFD tersedia di [docs/dfd.md](docs/dfd.md).
+
 ## 1. Landasan Teori & Komponen UML Use Case
 
 Berdasarkan standar Unified Modeling Language (UML), use case digunakan untuk memodelkan interaksi antara pengguna eksternal (*actor*) dengan fungsionalitas di dalam batas sistem (*system boundary*).
@@ -14,7 +16,7 @@ Berdasarkan standar Unified Modeling Language (UML), use case digunakan untuk me
 | No | Diagram UML | Tujuan (*Purpose of the UML Diagram*) |
 | :---: | :--- | :--- |
 | 1 | **UML Use Case Diagram** | Memvisualisasikan fungsionalitas bisnis diskret sistem dari perspektif aktor eksternal serta menggambarkan batasan sistem (*system boundary*). |
-| 2 | **UML Component Diagram** | Menunjukkan hubungan, ketergantungan (*dependencies*), dan organisasi antarkomponen perangkat lunak dalam sistem (seperti Controller, Service, Middleware, Provider LinkedIn API/MCP, dan Database). |
+| 2 | **UML Component Diagram** | Menunjukkan hubungan, ketergantungan (*dependencies*), dan organisasi antarkomponen perangkat lunak dalam sistem (seperti Controller, Service, Middleware, Provider LinkedIn/API, dan Database). |
 | 3 | **UML Deployment Diagram** | Menggambarkan topologi perangkat keras dan lingkungan *runtime* tempat komponen perangkat lunak dijalankan (Web Server Nginx/Apache, PHP 8.3 Runtime, MariaDB Database Server, dan Layanan Cloud). |
 
 ### Tabel 1.2 Komponen UML Use Case Diagram
@@ -40,36 +42,28 @@ Berdasarkan standar Unified Modeling Language (UML), use case digunakan untuk me
 
 Sistem Tracer Study UKDW melibatkan 7 (tujuh) kategori aktor riil:
 
-1. **Publik / Tamu (Guest)**  
+1. **Publik / Tamu (Guest)**
    Pengunjung umum tanpa autentikasi yang dapat mengakses halaman utama (*Landing Page*), membaca informasi tracer study, dan mengakses halaman login.
-2. **Alumni / Lulusan**  
+2. **Alumni / Lulusan**
    Mahasiswa UKDW yang telah lulus yudisium dan terdaftar di sistem. Bertugas memutakhirkan biodata, riwayat karir, mendaftarkan data instansi/atasan, serta mengisi kuesioner tracer study universitas dan program studi.
-3. **Pengguna Lulusan / Atasan Langsung (Employer/Supervisor)**  
-   Pimpinan atau atasan langsung di tempat alumni bekerja. Mengisi instrumen survei evaluasi kinerja lulusan secara aman melalui tautan khusus ber-token 64-karakter unik tanpa perlu proses pendaftaran akun.
-4. **Admin Program Studi (Admin Prodi)**  
+3. **Pengguna Lulusan / Atasan Langsung (Employer/Supervisor)**
+   Pimpinan atau atasan langsung di tempat alumni bekerja. Mengisi instrumen survei evaluasi kinerja lulusan secara aman melalui tautan khusus ber-token 40-karakter unik tanpa perlu proses pendaftaran akun.
+4. **Admin Program Studi (Admin Prodi)**
    Pengelola akademik pada masing-masing Program Studi. Bertugas mengelola instrumen kuesioner khusus prodi, memantau capaian alumni prodi, memverifikasi usulan perusahaan dari alumni prodi, mengelola akun mahasiswa se-prodi, dan menjalankan sinkronisasi profil LinkedIn untuk alumni prodinya.
-5. **Admin Fakultas**  
+5. **Admin Fakultas**
    Pengelola tingkat Dekanat / Gugus Kendali Mutu Fakultas. Bertugas memantau statistik kelengkapan tracer study lintas program studi dalam fakultas, mengaudit direktori alumni fakultas, memverifikasi perusahaan se-fakultas, mengelola akun mahasiswa tingkat fakultas, dan menjalankan sinkronisasi profil LinkedIn untuk alumni se-fakultas.
-6. **Admin Biro III (Kemahasiswaan, Alumni & Pengembangan Karir)**  
-   Pengelola eksekutif universitas. Memantau KPI partisipasi dan *response rate* kampus, mengaudit data alumni se-universitas, mengekspor laporan, serta menjalankan integrasi sinkronisasi data karir alumni dari LinkedIn pada detail profil alumni.
-7. **Superadmin**  
+6. **Admin Biro III (Kemahasiswaan, Alumni & Pengembangan Karir)**
+   Pengelola eksekutif universitas. Memantau KPI partisipasi dan *response rate* kampus, mengaudit data alumni se-universitas, mengekspor laporan, serta meninjau riwayat LinkedIn pada detail profil alumni tanpa menjalankan sinkronisasi.
+7. **Superadmin**
    Administrator sistem teknis tertinggi. Mengendalikan instrumen kuesioner universitas (Kemdikbudristek), kuesioner prodi, kuesioner evaluasi atasan, verifikasi perusahaan seluruh universitas, sinkronisasi massal (*batch*) LinkedIn se-kampus, manajemen akun seluruh peran, dan audit *log activities*.
 
 ---
 
 ## 3. Diagram UML Use Case Sistem
 
-### 3.1 Visual Diagram UML Use Case Tunggal (Single Process Diagram)
+### 3.1 Rujukan diagram
 
-Berikut adalah gambar visual UML Use Case Diagram sistem Tracer Study UKDW (SERU) dalam **1 gambar proses utuh**, yang memuat batas sistem (*system boundary*), aktor (*stick figure*), use case (*ellipse*), relasi (*association, include, extend, dependency*), dan catatan callout (*notes*) sesuai standar referensi:
-
-![UML Use Case Diagram Tracer Study UKDW](docs/images/use_case_diagram.png)
-
-> **File Asset Gambar Diagram**:
-> - Format Gambar PNG (Resolusi Tinggi / Retina 2x): [docs/images/use_case_diagram.png](file:///c:/study/tracerstudy/docs/images/use_case_diagram.png)
-> - Format Vektor SVG (Scalable Vector Graphics): [docs/images/use_case_diagram.svg](file:///c:/study/tracerstudy/docs/images/use_case_diagram.svg)
-
----
+Representasi Mermaid di bawah adalah peta fungsi untuk pembacaan. Render gambar use case lama belum mencerminkan koreksi akses Biro III dan tidak dipakai sebagai spesifikasi. Untuk diagram konteks dan aliran data yang bisa diedit gunakan [berkas draw.io](docs/tracer-study-dfd.drawio). Diagram use case dan DFD memiliki tujuan serta simbol berbeda.
 
 ### 3.2 Diagram Use Case Interaktif (Mermaid Code Representation)
 
@@ -159,7 +153,7 @@ flowchart LR
     %% Relationships - Admin Biro III
     A_Biro3 --> UC12
     A_Biro3 --> UC13
-    A_Biro3 --> UC17
+    A_Biro3 --> UC14
 
     %% Relationships - Superadmin
     A_Super --> UC12
@@ -205,7 +199,7 @@ Sistem Tracer Study UKDW merangkum **22 Use Case diskret** yang mencakup seluruh
 | **UC-14** | Mengekspor Rekapitulasi Data Alumni ke Excel | Admin Prodi, Fak, Biro III, Superadmin | `<<extend>>` ke UC-13 |
 | **UC-15** | Memverifikasi Pengajuan Perusahaan Baru | **Admin Prodi, Admin Fakultas, Superadmin** | Association (**1 Proses untuk 3 Role**) |
 | **UC-16** | Mengelola Akun Alumni & Reset Sandi Default | **Admin Prodi, Admin Fakultas, Superadmin** | Association (**1 Proses untuk 3 Role**) |
-| **UC-17** | Melakukan Sinkronisasi Profil LinkedIn Alumni | **Admin Prodi, Admin Fakultas, Superadmin**, Biro III | Association (**1 Proses untuk 3 Role Utama**) |
+| **UC-17** | Melakukan Sinkronisasi Profil LinkedIn Alumni | **Admin Prodi, Admin Fakultas, Superadmin** | Association (**1 Proses untuk 3 Role Utama**) |
 | **UC-18** | Mengelola Bagian (*Section*) Kuesioner Prodi | Admin Program Studi, Superadmin | Association |
 | **UC-19** | Mengelola Butir Pertanyaan & Opsi Kuesioner Prodi | Admin Program Studi, Superadmin | `<<include>>` ke UC-18 |
 | **UC-20** | Mengelola Kuesioner Universitas, Section & Branching | Superadmin | Association |
@@ -348,7 +342,7 @@ Sistem Tracer Study UKDW merangkum **22 Use Case diskret** yang mencakup seluruh
   3. Alumni menekan tombol "Simpan Perubahan" (`POST /alumni/profile`).
   4. Sistem memvalidasi kelengkapan data.
   5. Sistem memperbarui tabel `biodata` dan riwayat pekerjaan.
-  6. **Pemicu Evaluasi Atasan**: Jika email atasan diisi dan instansi terdaftar, sistem membuat token evaluasi unik 64-karakter pada tabel `evaluasi_atasan` dan mengirimkan email undangan survei evaluasi kinerja ke atasan langsung [Memicu UC-11].
+  6. **Pemicu Evaluasi Atasan**: Jika email atasan diisi dan instansi terdaftar, sistem menyiapkan record evaluasi dan token 40 karakter pada tabel `evaluasi_atasan`. Email baru dikirim melalui aksi terpisah `POST /alumni/kirim-email-atasan`; atasan kemudian mengakses UC-11.
   7. Sistem menampilkan notifikasi sukses pembaruan profil.
 - **Alternate Flow (Alternative Flow)**:
   - **A1. Perusahaan Belum Ada di Master**: Alumni memilih opsi "Tambah Perusahaan Baru" [Menuju UC-08].
@@ -357,6 +351,8 @@ Sistem Tracer Study UKDW merangkum **22 Use Case diskret** yang mencakup seluruh
 ---
 
 ### UC-08. Mendaftarkan Instansi Perusahaan Baru
+
+Endpoint bersama `POST /alumni/company` menerima Alumni, Admin Prodi, Admin Fakultas, Admin Biro III dan Superadmin. Alur berikut menjelaskan kasus alumni; pencatatan perusahaan oleh admin tidak otomatis menghubungkan biodata admin. Verifikasi tetap mengikuti UC-15.
 - **Usecase ID**: UC-08
 - **Usecase Name**: Mendaftarkan Instansi Perusahaan Baru
 - **Actors Involved**: Alumni / Lulusan
@@ -417,21 +413,21 @@ Sistem Tracer Study UKDW merangkum **22 Use Case diskret** yang mencakup seluruh
 - **Usecase ID**: UC-11
 - **Usecase Name**: Mengisi Evaluasi Kinerja Lulusan (*Token-Based*)
 - **Actors Involved**: Pengguna Lulusan / Atasan Langsung (Employer/Supervisor)
-- **Description**: Pengisian instrumen survei evaluasi kepuasan pengguna lulusan oleh pimpinan/atasan tempat alumni bekerja melalui tautan token acak 64-karakter tanpa perlu melakukan registrasi akun atau login ke sistem.
+- **Description**: Pengisian instrumen survei evaluasi kepuasan pengguna lulusan oleh pimpinan/atasan tempat alumni bekerja melalui tautan token acak 40-karakter tanpa perlu melakukan registrasi akun atau login ke sistem.
 - **Preconditions**: Atasan menerima email resmi berisi URL ber-token unik (`/evaluasi-atasan/{token}`).
 - **Main Flow (Basic Flow)**:
   1. Atasan mengklik tautan evaluasi dari email.
   2. Sistem memvalidasi token terhadap tabel `evaluasi_atasan`:
-     - Token valid, belum kedaluwarsa, dan belum pernah disubmit (`status_pengisian = false`).
+     - Token ditemukan pada `evaluasi_atasan`; status `is_submitted` dikirim ke halaman. Controller tidak menerapkan pemeriksaan masa berlaku token maupun penolakan submit ulang berdasarkan flag ini.
   3. Sistem menampilkan formulir evaluasi yang menyajikan nama alumni, instansi, serta butir penilaian kinerja (etika, keahlian bidang ilmu, komunikasi, kerjasama tim, kepemimpinan, dan pengembangan diri).
   4. Atasan mengisi penilaian skala likert serta masukan kualitatif.
   5. Atasan menekan tombol "Kirim Evaluasi" (`POST /evaluasi-atasan/{token}`).
-  6. Sistem menyimpan jawaban ke tabel `jawaban_evaluasi_atasan`, mengubah status token menjadi `true` (*closed*), dan mencatat stempel waktu pengisian.
+  6. Sistem menyimpan jawaban ke tabel `respon_evaluasi_atasan`, mengubah `is_submitted` menjadi `true`, dan mencatat stempel waktu pengisian.
   7. Sistem menampilkan ucapan terima kasih resmi dari Rektorat UKDW.
 - **Alternate Flow (Alternative Flow)**:
-  - **A1. Token Tidak Ditemukan**: Sistem menampilkan halaman error 404 (Token Tidak Valid).
-  - **A2. Formulir Sudah Pernah Diisi**: Sistem menampilkan halaman informasi bahwa survei untuk alumni tersebut telah selesai diisi sebelumnya.
-- **Post Conditions**: Hasil evaluasi atasan tersimpan aman dan token dinonaktifkan sehingga tidak dapat disubmit ulang.
+  - **A1. Token Tidak Ditemukan**: GET menampilkan `Public/EvaluasiAtasanNotFound`; POST menggunakan pencarian `firstOrFail`.
+  - **A2. Formulir Sudah Pernah Diisi**: Sistem mengirim status `is_submitted` dan jawaban yang tersimpan ke halaman. Status tampilan tidak sama dengan penolakan submit ulang oleh server.
+- **Post Conditions**: Hasil evaluasi tersimpan dan `is_submitted` serta `submitted_at` diperbarui. Penguncian submit ulang di server tidak diklaim oleh dokumen ini.
 
 ---
 
@@ -492,7 +488,7 @@ Sistem Tracer Study UKDW merangkum **22 Use Case diskret** yang mencakup seluruh
      - **Aksi Terpadu**: Tombol Detail Profil, WhatsApp pengingat, kirim email kuesioner, dan tautan langsung ke tab audit LinkedIn (`?tab=linkedin`).
   5. Aktor mengklik salah satu nama alumni atau tombol detail untuk membuka halaman detail audit (`{base_route}/alumni/{id}`).
   6. Sistem menampilkan 5 Tab Utama: Profil Biodata, Riwayat Karir (`skills` & `experience`), Lembar Jawaban Kuesioner Universitas, Jawaban Kuesioner Prodi, dan **Tab Hasil LinkedIn & Audit Trace Scraping**.
-  7. Aktor dapat mengoreksi data profil jika ditemukan ketidaksesuaian (`POST {base_route}/alumni/{id}/profile`).
+  7. Superadmin, Admin Fakultas, dan Admin Prodi dapat mengoreksi field profil yang diizinkan; Biro III hanya membaca. Aksi pembaruan menggunakan (`POST {base_route}/alumni/{id}/profile`).
   8. **Deep Link ke LinkedIn Tab**: Tombol LinkedIn di direktori alumni mengarahkan langsung ke Tab ke-5 (`/superadmin/alumni/{id}?tab=linkedin`) yang memuat tabel penelusuran audit trace mapping 10-27 baris dan form usulan data LinkedIn.
 - **Alternate Flow (Alternative Flow)**:
   - Aktor dapat mengunduh berkas laporan dalam format Excel [UC-14] atau mengunduh arsip ZIP Excel per Program Studi untuk tahun aktif.
@@ -513,7 +509,7 @@ Sistem Tracer Study UKDW merangkum **22 Use Case diskret** yang mencakup seluruh
      - Admin Fakultas $\rightarrow$ Rekap seluruh prodi se-fakultas.
      - Admin Biro III / Superadmin $\rightarrow$ Rekap universitas menyeluruh.
   3. Sistem mengompilasi baris data (data diri, pekerjaan, instansi, detail jawaban kuesioner) ke lembar kerja Excel berformat standar Dikti.
-  4. Browser mengunduh berkas file spreadsheet biner secara otomatis.
+  4. Browser mengunduh berkas `.xls` yang disusun exporter dari HTML, atau ZIP berisi berkas ekspor pada endpoint yang mendukungnya.
 - **Alternate Flow (Alternative Flow)**:
   - Jika data kosong berdasarkan filter yang dipilih, berkas Excel yang diunduh hanya memuat baris header kolom.
 - **Post Conditions**: File rekapitulasi data Excel tersimpan di komputer lokal pengguna.
@@ -575,13 +571,13 @@ Sistem Tracer Study UKDW merangkum **22 Use Case diskret** yang mencakup seluruh
 ### UC-17. Melakukan Sinkronisasi Profil LinkedIn Alumni (1 Proses untuk 3 Role Utama)
 - **Usecase ID**: UC-17
 - **Usecase Name**: Melakukan Sinkronisasi Profil LinkedIn Alumni (Single & Batch Sync)
-- **Actors Involved**: **Admin Program Studi, Admin Fakultas, Superadmin** *(Didukung oleh Admin Biro III)*
+- **Actors Involved**: **Admin Program Studi, Admin Fakultas, Superadmin**
 - **Description**: Mengambil data posisi jabatan terkini, nama instansi tempat bekerja, riwayat pengalaman kerja (*experience*), daftar keahlian (*skills*), dan foto profil fisik alumni dari LinkedIn secara otomatis menggunakan layanan scraper/provider terintegrasi (LinkedIn Profile Provider / Apify) secara satuan (*single sync*) maupun massal (*batch sync*), meninjau hasil ekstraksi pada modal peninjauan (*staging review*), menyetujui (*approve*) atau menolak (*reject*) hasil sinkronisasi, serta meninjau riwayat riil sinkronisasi (*history*).
-- **Scope & Role Authorization (3 Role Utama & Biro III)**:
+- **Scope & Role Authorization (3 Role)**:
   1. **Admin Program Studi** (`/prodi/linkedin-sync`): Mengelola sinkronisasi direktori alumni khusus program studinya sendiri.
   2. **Admin Fakultas** (`/fakultas/linkedin-sync`): Mengelola sinkronisasi alumni dari seluruh program studi dalam naungan fakultasnya.
   3. **Superadmin** (`/superadmin/linkedin-sync`): Mengelola sinkronisasi alumni menyeluruh se-universitas lintas fakultas dan angkatan, lengkap dengan integrasi tombol aksi cepat buka audit alumni (`/superadmin/alumni/{id}`).
-  4. **Admin Biro III** (`/biro3/alumni/{id}/sync-linkedin`): Menjalankan sinkronisasi satuan pada saat memeriksa detail profil alumni universitas.
+  4. **Admin Biro III**: hanya meninjau hasil/riwayat LinkedIn pada detail alumni; tidak memiliki rute sinkronisasi, approve atau reject.
 - **Preconditions**: Alumni memiliki profil/username LinkedIn yang tersimpan di sistem, dan aktor membuka modul sinkronisasi LinkedIn pada rutenya masing-masing.
 - **Main Flow (Basic Flow)**:
   1. Sistem menampilkan direktori alumni lengkap dengan filter Tahun Kelulusan, Target Periode, Semester, Prodi, dan Status Sinkronisasi (*Belum Sinkron, Menunggu Review, Disetujui, Ditolak, Gagal*).
@@ -589,9 +585,9 @@ Sistem Tracer Study UKDW merangkum **22 Use Case diskret** yang mencakup seluruh
   2. **Aksi Tombol Cepat Detail Alumni (Ikon Mata)**: Pada kolom Aksi di baris tabel, admin dapat mengklik tombol ikon mata untuk langsung membuka halaman detail profil lengkap alumni.
   3. **Eksekusi Sinkronisasi**:
      - **Alur Satuan (Single Sync)**: Aktor menekan tombol "Sinkronkan" pada salah satu baris alumni (`POST {base_route}/linkedin-sync/{id}`).
-     - **Alur Massal (Batch Sync)**: Aktor menekan tombol "Sinkronisasi Massal" untuk memproses seluruh antrean alumni pada filter aktif secara simultan (`POST {base_route}/linkedin-sync/batch`).
+     - **Alur Massal (Batch Sync)**: Aktor menekan tombol "Sinkronisasi Massal" untuk memproses alumni pada tahun yang dipilih melalui driver yang mendukung batch; Apify menolak batch dengan HTTP 400 (`POST {base_route}/linkedin-sync/batch`).
   4. Sistem menghubungi penyedia penarikan data LinkedIn (Official API / Apify Third-Party Provider) untuk mengambil JSON profil karir publik alumni.
-  5. Sistem menyimpan hasil ekstraksi ke tabel perantara peninjauan (`linkedin_sync_results`) dengan status `pending_review`.
+  5. Pada provider Apify, sistem menyimpan hasil ekstraksi ke `linkedin_sync_results` dengan status `pending`. Driver mock/API mengikuti alur `LinkedInProfileService`.
   6. **Peninjauan Staging (Review Modal)**: Aktor mengklik tombol "Tinjau Hasil" (`GET {base_route}/linkedin-sync/results/{id}`). Sistem membuka modal pop-up yang menyajikan komparasi data saat ini vs data hasil LinkedIn: posisi jabatan, nama instansi kantor, periode bekerja, keahlian (*skills*), dan foto profil fisik alumni.
   7. **Keputusan Persetujuan**:
      - **Jika Disetujui**: Aktor menekan tombol "Setujui & Terapkan" (`POST {base_route}/linkedin-sync/results/{id}/approve`). Sistem otomatis memperbarui data jabatan, nama instansi, `skills`, `experience`, serta foto profil fisik pada tabel `biodata`, dan menandai status sinkronisasi sebagai `approved`.
@@ -711,7 +707,7 @@ Matriks berikut mengonfirmasi pemetaan antara use case yang dimodelkan dengan ha
 | **UC-05** | Mengakhiri Sesi (Logout) | - | **X** | - | **X** | **X** | **X** | **X** |
 | **UC-06** | Dashboard Alumni | - | **X** | - | - | - | - | - |
 | **UC-07** | Kelola Profil & Pekerjaan Alumni | - | **X** | - | - | - | - | - |
-| **UC-08** | Tambah Perusahaan Baru | - | **X** | - | - | - | - | - |
+| **UC-08** | Tambah Perusahaan Baru | - | **X** | - | **X** | **X** | **X** | **X** |
 | **UC-09** | Isi Kuesioner Universitas | - | **X** | - | - | - | - | - |
 | **UC-10** | Isi Kuesioner Prodi | - | **X** | - | - | - | - | - |
 | **UC-11** | Evaluasi Kinerja Lulusan (Atasan) | - | - | **X** | - | - | - | - |
@@ -720,7 +716,7 @@ Matriks berikut mengonfirmasi pemetaan antara use case yang dimodelkan dengan ha
 | **UC-14** | Ekspor Rekap Alumni ke Excel | - | - | - | **X** | **X** | **X** | **X** |
 | **UC-15** | Verifikasi Perusahaan Baru (3 Role) | - | - | - | **X** | **X** | - | **X** |
 | **UC-16** | Manajemen Akun & Reset Sandi (3 Role) | - | - | - | **X** | **X** | - | **X** |
-| **UC-17** | Sinkronisasi Profil LinkedIn Alumni | - | - | - | **X** | **X** | **X** | **X** |
+| **UC-17** | Sinkronisasi Profil LinkedIn Alumni | - | - | - | **X** | **X** | - | **X** |
 | **UC-18** | Kelola Section Kuesioner Prodi | - | - | - | **X** | - | - | **X** |
 | **UC-19** | Kelola Soal & Opsi Prodi | - | - | - | **X** | - | - | **X** |
 | **UC-20** | Kelola Kuesioner Universitas & Branching | - | - | - | - | - | - | **X** |

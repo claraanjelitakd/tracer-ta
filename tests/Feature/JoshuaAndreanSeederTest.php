@@ -11,6 +11,7 @@ use App\Models\User;
 use App\Models\Yudisium;
 use Database\Seeders\DatabaseSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Hash;
 use Tests\TestCase;
 
 class JoshuaAndreanSeederTest extends TestCase
@@ -25,7 +26,8 @@ class JoshuaAndreanSeederTest extends TestCase
         $this->assertNotNull($user, 'User Joshua Andrean harus ditemukan.');
         $this->assertEquals('Joshua Andrean', $user->name);
         $this->assertEquals('alumni', $user->role);
-        $this->assertFalse($user->must_change_password);
+        $this->assertTrue($user->must_change_password);
+        $this->assertTrue(Hash::check('15082004', $user->password));
 
         $dataAkademik = DataAkademik::where('nim', '72220001')->first();
         $this->assertNotNull($dataAkademik, 'Data akademik harus terisi.');
@@ -64,11 +66,11 @@ class JoshuaAndreanSeederTest extends TestCase
         $this->assertEquals(0, Tracer::where('biodata_id', $biodata->id)->count());
         $this->assertEquals(0, ProdiResponse::where('biodata_id', $biodata->id)->count());
 
-        // Pastikan halaman profil dan dashboard dapat diakses
+        // Alumni baru wajib diarahkan untuk mengganti password awal.
         $response = $this->actingAs($user)->get(route('alumni.profile'));
-        $response->assertOk();
+        $response->assertRedirect('/change-password');
 
         $responseDashboard = $this->actingAs($user)->get('/alumni/dashboard');
-        $responseDashboard->assertOk();
+        $responseDashboard->assertRedirect('/change-password');
     }
 }

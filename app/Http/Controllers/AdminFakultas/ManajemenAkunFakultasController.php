@@ -48,23 +48,6 @@ class ManajemenAkunFakultasController extends Controller
 
         $users = $query->orderBy('name', 'asc')->paginate(15)->withQueryString();
 
-        $users->getCollection()->transform(function ($u) {
-            $dobFormatted = null;
-            if ($u->biodata && $u->biodata->tanggal_lahir) {
-                $dobFormatted = Carbon::parse($u->biodata->tanggal_lahir)->format('dmY');
-            } elseif ($u->biodata && $u->biodata->dataAkademik && $u->biodata->dataAkademik->tanggal_lahir) {
-                $dobFormatted = Carbon::parse($u->biodata->dataAkademik->tanggal_lahir)->format('dmY');
-            } else {
-                $dataAkad = DataAkademik::where('nim', $u->username)->first();
-                if ($dataAkad && $dataAkad->tanggal_lahir) {
-                    $dobFormatted = Carbon::parse($dataAkad->tanggal_lahir)->format('dmY');
-                }
-            }
-            $u->default_dob_password = $dobFormatted;
-
-            return $u;
-        });
-
         $currentFakultas = RefFakultas::find($fakultasId);
         $prodisInFakultas = Prodi::where('fakultas_id', $fakultasId)->orderBy('nama_prodi', 'asc')->get();
 
@@ -103,12 +86,6 @@ class ManajemenAkunFakultasController extends Controller
 
         if ($user->biodata) {
             $user->biodata->update([
-                'email_pribadi' => $request->email,
-            ]);
-        }
-
-        if ($user->biodata?->dataAkademik) {
-            $user->biodata->dataAkademik->update([
                 'nama' => $request->name,
                 'email_pribadi' => $request->email,
             ]);
@@ -148,7 +125,9 @@ class ManajemenAkunFakultasController extends Controller
         }
 
         if (! $newPasswordPlain) {
-            $newPasswordPlain = 'Ukdw123456';
+            return back()->withErrors([
+                'reset' => 'Tanggal lahir alumni belum tersedia. Gunakan alur lupa password melalui email.',
+            ]);
         }
 
         $user->password = Hash::make($newPasswordPlain);
@@ -158,10 +137,10 @@ class ManajemenAkunFakultasController extends Controller
         // Catat Audit Trail ke tabel log_activities
         LogActivity::record(
             'RESET_PASSWORD_DOB',
-            "Admin Fakultas mereset password mahasiswa {$user->name} (@{$user->username}) ke format tanggal lahir ({$newPasswordPlain}). Notifikasi dikirim ke {$user->email}.",
+            "Admin Fakultas mereset kredensial awal mahasiswa {$user->name} (@{$user->username}).",
             $user
         );
 
-        return back()->with('success', "Password untuk {$user->name} berhasil direset ke (Format Tanggal Lahir: {$newPasswordPlain}) dan instruksi telah dikirim ke email terdaftar ({$user->email}).");
+        return back()->with('success', "Kredensial awal untuk {$user->name} berhasil direset. Alumni wajib mengganti password setelah login.");
     }
 }
