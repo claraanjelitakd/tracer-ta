@@ -9,6 +9,7 @@ use App\Models\Prodi;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 /**
  * Service untuk menangani verifikasi, rekomendasi kesamaan, dan penggantian otomatis
@@ -513,20 +514,46 @@ class PerusahaanVerificationService
     public function replaceCompany(Perusahaan $pendingCompany, Perusahaan $verifiedCompany): array
     {
         return DB::transaction(function () use ($pendingCompany, $verifiedCompany) {
-            $alumnis = Biodata::where('perusahaan_id', $pendingCompany->id)->get();
-            $affectedCount = $alumnis->count();
-            $pendingName = $pendingCompany->nama_perusahaan;
-            $verifiedName = $verifiedCompany->nama_perusahaan;
+            $biodatas = Biodata::where('perusahaan_id', $pendingCompany->id)->get();
+            $affectedCount = $biodatas->count();
+            $affectedBiodataIds = $biodatas->pluck('id')->toArray();
+            $pendingName = trim($pendingCompany->nama_perusahaan);
+            $verifiedName = trim($verifiedCompany->nama_perusahaan);
 
-            // Alihkan relasi biodata alumni ke perusahaan terverifikasi
+            // 1. Alihkan relasi biodata profil alumni ke perusahaan terverifikasi
             Biodata::where('perusahaan_id', $pendingCompany->id)->update([
                 'perusahaan_id' => $verifiedCompany->id,
             ]);
 
-            // Hapus record duplicate / pending yang sudah digantikan
+            // 2. Alihkan relasi transaksi Evaluasi Atasan ke master terverifikasi
+            if (Schema::hasTable('evaluasi_atasan')) {
+                DB::table('evaluasi_atasan')
+                    ->where('perusahaan_id', $pendingCompany->id)
+                    ->update(['perusahaan_id' => $verifiedCompany->id]);
+            }
+
+            // 3. Alihkan jawaban kuesioner Tracer Study (tabel tracer) yang terhubung dengan perusahaan usulan
+            if (Schema::hasTable('tracer') && ! empty($affectedBiodataIds)) {
+                // Alihkan jawaban eksplisit bernilai nama usulan alumni
+                DB::table('tracer')
+                    ->whereIn('biodata_id', $affectedBiodataIds)
+                    ->where('answer', $pendingName)
+                    ->update(['answer' => $verifiedName]);
+
+                // Alihkan butir kuesioner penanda instansi/perusahaan tempat kerja (F5B / F2E)
+                DB::table('tracer')
+                    ->whereIn('biodata_id', $affectedBiodataIds)
+                    ->where(function ($q) {
+                        $q->where('kode_pertanyaan', 'LIKE', 'F5B%')
+                            ->orWhere('kode_pertanyaan', 'LIKE', 'F2E%');
+                    })
+                    ->update(['answer' => $verifiedName]);
+            }
+
+            // 4. Hapus record usulan perusahaan yang sudah berhasil digantikan dan dikonsolidasikan
             $pendingCompany->delete();
 
-            // Catat ke Audit Trail log_activities
+            // 5. Catat audit trail ke log_activities
             LogActivity::record(
                 'GANTI_PERUSAHAAN_MASTER',
                 "Mengganti perusahaan pengajuan '{$pendingName}' ke master terverifikasi '{$verifiedName}' untuk {$affectedCount} alumni.",

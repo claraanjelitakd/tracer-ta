@@ -12,15 +12,15 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('users', function (Blueprint $table) {
-            $table->id();
-            $table->string('name')->nullable();
-            $table->string('username')->unique();
-            $table->string('email')->nullable();
-            $table->string('role')->default('alumni');
-            $table->foreignId('prodi_id')->nullable()->index();
-            $table->foreignId('fakultas_id')->nullable()->index();
-            $table->boolean('must_change_password')->default(false);
-            $table->string('password');
+            $table->id()->comment('ID unik akun pengguna');
+            $table->string('name', 100)->nullable()->comment('Nama pengguna / alumni');
+            $table->string('username', 50)->unique()->comment('Username akun login (NIM untuk alumni, identitas untuk staf)');
+            $table->string('email', 100)->nullable()->comment('Alamat email akun login');
+            $table->string('role', 30)->default('alumni')->comment('Peran pengguna: superadmin, admin_biro3, admin_fakultas, admin_prodi, alumni');
+            $table->foreignId('prodi_id')->nullable()->index()->comment('Relasi ke prodi jika admin prodi atau alumni');
+            $table->foreignId('fakultas_id')->nullable()->index()->comment('Relasi ke fakultas jika admin fakultas');
+            $table->boolean('must_change_password')->default(false)->comment('Penanda kewajiban ganti sandi saat pertama login');
+            $table->string('password')->comment('Hash kata sandi akun');
             $table->rememberToken();
             $table->timestamps();
         });

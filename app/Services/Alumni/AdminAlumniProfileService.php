@@ -166,6 +166,8 @@ class AdminAlumniProfileService
             'company_negara' => $perusahaan?->negara ?? 'Indonesia',
             'company_province_id' => $perusahaan?->propinsi_id ?? '',
             'company_kabupaten_id' => $perusahaan?->kabupaten_id ?? '',
+            'company_kode_pos' => $perusahaan?->kode_pos ?? '',
+            'perusahaan_kode_pos' => $perusahaan?->kode_pos ?? '',
             'company_status_verifikasi' => $perusahaan?->status_verifikasi ?? '',
 
             // Atasan
@@ -265,6 +267,7 @@ class AdminAlumniProfileService
             $skala = ! empty($data['company_skala']) ? $data['company_skala'] : (! empty($data['perusahaan_skala']) ? $data['perusahaan_skala'] : null);
             $jenisPerusahaan = ! empty($data['company_jenis_perusahaan']) ? $data['company_jenis_perusahaan'] : (! empty($data['perusahaan_jenis_perusahaan']) ? $data['perusahaan_jenis_perusahaan'] : null);
             $jenisPerusahaanLainnya = ! empty($data['company_jenis_perusahaan_lainnya']) ? $data['company_jenis_perusahaan_lainnya'] : (! empty($data['perusahaan_jenis_perusahaan_lainnya']) ? $data['perusahaan_jenis_perusahaan_lainnya'] : null);
+            $kodePosKantor = ! empty($data['company_kode_pos']) ? $data['company_kode_pos'] : (! empty($data['perusahaan_kode_pos']) ? $data['perusahaan_kode_pos'] : (! empty($data['zipcode']) ? $data['zipcode'] : null));
 
             $perusahaan = Perusahaan::firstOrCreate(
                 ['nama_perusahaan' => $namaPerusahaan],
@@ -274,6 +277,7 @@ class AdminAlumniProfileService
                     'propinsi_id' => $provId,
                     'kabupaten_id' => $kabId,
                     'alamat' => $alamat,
+                    'kode_pos' => $kodePosKantor,
                     'skala' => $skala,
                     'jenis_perusahaan' => $jenisPerusahaan,
                     'jenis_perusahaan_lainnya' => $jenisPerusahaanLainnya,
@@ -287,6 +291,7 @@ class AdminAlumniProfileService
                 'propinsi_id' => $provId,
                 'kabupaten_id' => $kabId,
                 'alamat' => $alamat ?: $perusahaan->alamat,
+                'kode_pos' => $kodePosKantor ?: $perusahaan->kode_pos,
                 'skala' => $skala ?: $perusahaan->skala,
                 'jenis_perusahaan' => $jenisPerusahaan ?: $perusahaan->jenis_perusahaan,
                 'jenis_perusahaan_lainnya' => $jenisPerusahaanLainnya ?: $perusahaan->jenis_perusahaan_lainnya,
@@ -371,16 +376,16 @@ class AdminAlumniProfileService
             ]);
         }
 
-        // 7. Update Model Biodata (Hanya menyimpan kontak pribadi, alamat saat ini, karir & tracer study)
+        // 7. Update Model Biodata (Hanya menyimpan kontak pribadi, domisili saat ini, karir & tracer study)
         $biodataUpdates = [
             'nomor_telepon' => ! empty($data['nomor_telepon']) ? $data['nomor_telepon'] : null,
             'email_pribadi' => ! empty($data['email_pribadi']) ? $data['email_pribadi'] : (! empty($data['email']) ? $data['email'] : $biodata->email_pribadi),
-            'alamat' => ! empty($data['alamat_saat_ini']) ? $data['alamat_saat_ini'] : (! empty($data['alamat']) ? $data['alamat'] : null),
-            'kelurahan' => ! empty($data['kelurahan']) ? $data['kelurahan'] : null,
-            'kecamatan' => ! empty($data['kecamatan']) ? $data['kecamatan'] : null,
+            'alamat_saat_ini' => ! empty($data['alamat_saat_ini']) ? $data['alamat_saat_ini'] : (! empty($data['alamat']) ? $data['alamat'] : null),
             'kabupaten_id' => ! empty($data['kabupaten_id']) ? $data['kabupaten_id'] : null,
             'propinsi_id' => ! empty($data['propinsi_id']) ? $data['propinsi_id'] : (! empty($data['provinsi_id']) ? $data['provinsi_id'] : null),
             'kode_pos' => ! empty($data['kode_pos']) ? $data['kode_pos'] : null,
+            'nik' => ! empty($data['nik']) ? $data['nik'] : null,
+            'npwp' => ! empty($data['npwp']) ? $data['npwp'] : null,
             'instagram_url' => ! empty($data['instagram_url']) ? $data['instagram_url'] : null,
             'facebook_url' => ! empty($data['facebook_url']) ? $data['facebook_url'] : null,
             'linkedin_url' => ! empty($data['linkedin_url']) ? $data['linkedin_url'] : null,
@@ -395,7 +400,6 @@ class AdminAlumniProfileService
             'pendidikan_prodi' => ! empty($data['pendidikan_prodi']) ? $data['pendidikan_prodi'] : null,
             'gaji' => $gajiNominal !== null ? $gajiNominal : null,
             'jenis_pekerjaan' => ! empty($data['jenis_pekerjaan']) ? $data['jenis_pekerjaan'] : (! empty($data['company_jenis_perusahaan']) ? $data['company_jenis_perusahaan'] : (! empty($data['perusahaan_jenis_perusahaan']) ? $data['perusahaan_jenis_perusahaan'] : null)),
-            'zipcode' => ! empty($data['zipcode']) ? $data['zipcode'] : null,
             'perusahaan_id' => $perusahaanId,
             'atasan_id' => $atasanId,
             'orang_tua_id' => $orangTua->id ?? $biodata->orang_tua_id,

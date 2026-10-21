@@ -12,11 +12,11 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('ump', function (Blueprint $table) {
-            $table->id();
-            $table->string('kode_provinsi');
-            $table->integer('tahun')->default(2026);
-            $table->decimal('besaran', 15, 2)->nullable();
-            $table->string('catatan')->nullable();
+            $table->id()->comment('ID unik referensi Upah Minimum Provinsi (UMP)');
+            $table->string('kode_provinsi', 10)->comment('Kode provinsi BPS referensi');
+            $table->year('tahun')->default(2026)->comment('Tahun penetapan UMP (YYYY)');
+            $table->decimal('besaran', 15, 2)->nullable()->comment('Nominal besaran rupiah UMP');
+            $table->string('catatan', 150)->nullable()->comment('Catatan atau dasar hukum SK Gubernur penetapan UMP');
             $table->timestamps();
 
             $table->foreign('kode_provinsi')

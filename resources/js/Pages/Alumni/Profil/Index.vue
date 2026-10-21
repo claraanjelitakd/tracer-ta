@@ -170,7 +170,8 @@ const tabCompleteness = computed(() => {
         if ((!form.perusahaan_alamat || !String(form.perusahaan_alamat).trim()) && (!form.company_alamat || !String(form.company_alamat).trim())) missingKarier.push('Alamat Perusahaan');
         if (!form.perusahaan_skala && !form.company_skala) missingKarier.push('Skala Perusahaan');
         if (!form.perusahaan_jenis_perusahaan && !form.company_jenis_perusahaan) missingKarier.push('Jenis Perusahaan');
-        if (!form.zipcode || !String(form.zipcode).trim()) missingKarier.push('Kode Pos Perusahaan');
+        const hasKodePosKantor = (form.company_kode_pos && String(form.company_kode_pos).trim()) || (form.perusahaan_kode_pos && String(form.perusahaan_kode_pos).trim()) || (form.zipcode && String(form.zipcode).trim());
+        if (!hasKodePosKantor) missingKarier.push('Kode Pos Perusahaan');
         if (!form.gaji || Number(form.gaji) < 1000) missingKarier.push('Rata-rata Pendapatan / Gaji (Min Rp 1.000)');
         if (!form.posisi_jabatan || !String(form.posisi_jabatan).trim()) missingKarier.push('Posisi Jabatan');
         if (!form.nama_atasan || !String(form.nama_atasan).trim()) missingKarier.push('Nama Atasan Langsung');
@@ -182,7 +183,8 @@ const tabCompleteness = computed(() => {
         if ((!form.perusahaan_alamat || !String(form.perusahaan_alamat).trim()) && (!form.company_alamat || !String(form.company_alamat).trim())) missingKarier.push('Alamat Usaha');
         if (!form.perusahaan_skala && !form.company_skala) missingKarier.push('Skala Usaha');
         if (!form.perusahaan_jenis_perusahaan && !form.company_jenis_perusahaan) missingKarier.push('Jenis Usaha');
-        if (!form.zipcode || !String(form.zipcode).trim()) missingKarier.push('Kode Pos Lokasi Usaha');
+        const hasKodePosUsaha = (form.company_kode_pos && String(form.company_kode_pos).trim()) || (form.perusahaan_kode_pos && String(form.perusahaan_kode_pos).trim()) || (form.zipcode && String(form.zipcode).trim());
+        if (!hasKodePosUsaha) missingKarier.push('Kode Pos Lokasi Usaha');
         if (!form.gaji || Number(form.gaji) < 1000) missingKarier.push('Rata-rata Pendapatan / Gaji (Min Rp 1.000)');
         if (!form.nama_atasan || !String(form.nama_atasan).trim()) missingKarier.push('Nama Atasan / Pemilik Usaha');
         if (!form.email_atasan || !isValidEmail(form.email_atasan)) missingKarier.push('Email Atasan / Pemilik Usaha');

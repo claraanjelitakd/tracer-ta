@@ -62,33 +62,179 @@ class AlumniSimulationSeeder extends Seeder
 
         $perusahaans = Perusahaan::all();
 
-        // 3. Matriks Target Kelulusan (Semester & Tahun Lulus Sinkron)
+        // 3. Matriks Target Kelulusan Sinkron (Representasi Lengkap 2021 s/d 2026)
         // Format: [angkatan_masuk, tahun_akademik_lulus, tahun_lulus]
         $targetKelulusanList = [
-            ['angkatan' => '2022', 'semester' => 'Genap 2025/2026', 'tahun' => 2026], // Index 0: Selesai (Kategori 1)
-            ['angkatan' => '2021', 'semester' => 'Gasal 2025/2026', 'tahun' => 2025], // Index 1: Selesai (Kategori 2)
-            ['angkatan' => '2021', 'semester' => 'Genap 2024/2025', 'tahun' => 2025], // Index 2: Selesai (Kategori 3)
-            ['angkatan' => '2020', 'semester' => 'Gasal 2024/2025', 'tahun' => 2024], // Index 3: Selesai (Kategori 4)
-            ['angkatan' => '2022', 'semester' => 'Genap 2025/2026', 'tahun' => 2026], // Index 4: Sedang Mengisi
-            ['angkatan' => '2021', 'semester' => 'Gasal 2025/2026', 'tahun' => 2025], // Index 5: Sedang Mengisi
-            ['angkatan' => '2021', 'semester' => 'Genap 2024/2025', 'tahun' => 2025], // Index 6: Sedang Mengisi
-            ['angkatan' => '2020', 'semester' => 'Gasal 2024/2025', 'tahun' => 2024], // Index 7: Belum Mengisi
-            ['angkatan' => '2020', 'semester' => 'Genap 2023/2024', 'tahun' => 2024], // Index 8: Belum Mengisi
-            ['angkatan' => '2019', 'semester' => 'Gasal 2023/2024', 'tahun' => 2023], // Index 9: Belum Mengisi
+            ['angkatan' => '2017', 'semester' => 'Gasal 2020/2021', 'tahun' => 2021], // Index 0: Selesai (Kategori 1: Swasta/BUMN)
+            ['angkatan' => '2017', 'semester' => 'Genap 2020/2021', 'tahun' => 2021], // Index 1: Selesai (Kategori 2: Wiraswasta)
+            ['angkatan' => '2018', 'semester' => 'Gasal 2021/2022', 'tahun' => 2022], // Index 2: Selesai (Kategori 3: Studi Lanjut S2)
+            ['angkatan' => '2018', 'semester' => 'Genap 2021/2022', 'tahun' => 2022], // Index 3: Selesai (Kategori 4: Startup/Industri Kreatif)
+            ['angkatan' => '2019', 'semester' => 'Gasal 2022/2023', 'tahun' => 2023], // Index 4: Sedang Mengisi (Progress ~60%)
+            ['angkatan' => '2019', 'semester' => 'Genap 2022/2023', 'tahun' => 2023], // Index 5: Sedang Mengisi (Progress ~50%)
+            ['angkatan' => '2020', 'semester' => 'Gasal 2023/2024', 'tahun' => 2024], // Index 6: Sedang Mengisi (Progress ~40%)
+            ['angkatan' => '2020', 'semester' => 'Genap 2023/2024', 'tahun' => 2024], // Index 7: Belum Mengisi (0%)
+            ['angkatan' => '2021', 'semester' => 'Gasal 2024/2025', 'tahun' => 2025], // Index 8: Belum Mengisi (0%)
+            ['angkatan' => '2022', 'semester' => 'Genap 2025/2026', 'tahun' => 2026], // Index 9: Belum Mengisi (0%)
         ];
 
-        // 4. Koleksi Bank Nama Mahasiswa Riil per Urutan
-        $namaKoleksi = [
-            0 => ['L' => 'Benedictus Daniel Setiawan', 'P' => 'Clara Anjelita Kusumadewi'],
-            1 => ['L' => 'Christian Aditya Pratama', 'P' => 'Theresia Cindy Paramitha'],
-            2 => ['L' => 'Jonathan Edward Wibowo', 'P' => 'Gabriella Maria Santoso'],
-            3 => ['L' => 'Timothy Kevin Kurniawan', 'P' => 'Angelina Fiona Putri'],
-            4 => ['L' => 'Samuel Evan Prasetya', 'P' => 'Jessica Laurencia Tan'],
-            5 => ['L' => 'Michael Steven Nugroho', 'P' => 'Stephanie Amanda Sihombing'],
-            6 => ['L' => 'David Alexander Haryanto', 'P' => 'Nathania Grace Gunawan'],
-            7 => ['L' => 'Andreas Timothy Wijaya', 'P' => 'Felicia Michelle Chandra'],
-            8 => ['L' => 'Reynaldi Bagus Prakoso', 'P' => 'Patricia Clarissa Dewanti'],
-            9 => ['L' => 'Vincentius Bagas Baskoro', 'P' => 'Vanessa Stephanie Hartono'],
+        // 4. Bank 120 Nama Mahasiswa Riil Unik Tanpa Duplikasi Lintas Seluruh 12 Prodi UKDW
+        $bankNamaPerProdi = [
+            // FTI - Informatika (71)
+            '71' => [
+                0 => ['nama' => 'Benedictus Daniel Setiawan', 'jk' => 'Laki-laki', 'agama' => 'Katolik'],
+                1 => ['nama' => 'Clara Anjelita Kusumadewi', 'jk' => 'Perempuan', 'agama' => 'Kristen Protestan'],
+                2 => ['nama' => 'Christian Aditya Pratama', 'jk' => 'Laki-laki', 'agama' => 'Kristen Protestan'],
+                3 => ['nama' => 'Theresia Cindy Paramitha', 'jk' => 'Perempuan', 'agama' => 'Katolik'],
+                4 => ['nama' => 'Jonathan Edward Wibowo', 'jk' => 'Laki-laki', 'agama' => 'Kristen Protestan'],
+                5 => ['nama' => 'Gabriella Maria Santoso', 'jk' => 'Perempuan', 'agama' => 'Katolik'],
+                6 => ['nama' => 'Timothy Kevin Kurniawan', 'jk' => 'Laki-laki', 'agama' => 'Kristen Protestan'],
+                7 => ['nama' => 'Angelina Fiona Putri', 'jk' => 'Perempuan', 'agama' => 'Islam'],
+                8 => ['nama' => 'Samuel Evan Prasetya', 'jk' => 'Laki-laki', 'agama' => 'Kristen Protestan'],
+                9 => ['nama' => 'Jessica Laurencia Tan', 'jk' => 'Perempuan', 'agama' => 'Buddha'],
+            ],
+            // FTI - Sistem Informasi (72)
+            '72' => [
+                0 => ['nama' => 'David Alexander Haryanto', 'jk' => 'Laki-laki', 'agama' => 'Kristen Protestan'],
+                1 => ['nama' => 'Stephanie Amanda Sihombing', 'jk' => 'Perempuan', 'agama' => 'Kristen Protestan'],
+                2 => ['nama' => 'Michael Steven Nugroho', 'jk' => 'Laki-laki', 'agama' => 'Katolik'],
+                3 => ['nama' => 'Nathania Grace Gunawan', 'jk' => 'Perempuan', 'agama' => 'Kristen Protestan'],
+                4 => ['nama' => 'Andreas Timothy Wijaya', 'jk' => 'Laki-laki', 'agama' => 'Kristen Protestan'],
+                5 => ['nama' => 'Felicia Michelle Chandra', 'jk' => 'Perempuan', 'agama' => 'Katolik'],
+                6 => ['nama' => 'Reynaldi Bagus Prakoso', 'jk' => 'Laki-laki', 'agama' => 'Islam'],
+                7 => ['nama' => 'Patricia Clarissa Dewanti', 'jk' => 'Perempuan', 'agama' => 'Katolik'],
+                8 => ['nama' => 'Vincentius Bagas Baskoro', 'jk' => 'Laki-laki', 'agama' => 'Katolik'],
+                9 => ['nama' => 'Vanessa Stephanie Hartono', 'jk' => 'Perempuan', 'agama' => 'Kristen Protestan'],
+            ],
+            // FB - Manajemen (11)
+            '11' => [
+                0 => ['nama' => 'Adrian Pratama Yudha', 'jk' => 'Laki-laki', 'agama' => 'Islam'],
+                1 => ['nama' => 'Beatrice Natasha Widjaja', 'jk' => 'Perempuan', 'agama' => 'Kristen Protestan'],
+                2 => ['nama' => 'Calvin Christopher Susanto', 'jk' => 'Laki-laki', 'agama' => 'Katolik'],
+                3 => ['nama' => 'Danielle Felicia Surya', 'jk' => 'Perempuan', 'agama' => 'Kristen Protestan'],
+                4 => ['nama' => 'Edward Jonathan Halim', 'jk' => 'Laki-laki', 'agama' => 'Kristen Protestan'],
+                5 => ['nama' => 'Fiona Clarissa Salim', 'jk' => 'Perempuan', 'agama' => 'Buddha'],
+                6 => ['nama' => 'Gilbert Natanael Tedja', 'jk' => 'Laki-laki', 'agama' => 'Kristen Protestan'],
+                7 => ['nama' => 'Helena Patricia Winata', 'jk' => 'Perempuan', 'agama' => 'Katolik'],
+                8 => ['nama' => 'Ivan Sebastian Wardhana', 'jk' => 'Laki-laki', 'agama' => 'Kristen Protestan'],
+                9 => ['nama' => 'Jennifer Olivia Gunawan', 'jk' => 'Perempuan', 'agama' => 'Kristen Protestan'],
+            ],
+            // FB - Akuntansi (12)
+            '12' => [
+                0 => ['nama' => 'Kenneth Alexander Hartanto', 'jk' => 'Laki-laki', 'agama' => 'Kristen Protestan'],
+                1 => ['nama' => 'Laurencia Cindy Kusuma', 'jk' => 'Perempuan', 'agama' => 'Katolik'],
+                2 => ['nama' => 'Matthew Nicholas Tanudjaya', 'jk' => 'Laki-laki', 'agama' => 'Kristen Protestan'],
+                3 => ['nama' => 'Nicole Valerie Pangestu', 'jk' => 'Perempuan', 'agama' => 'Buddha'],
+                4 => ['nama' => 'Oliver Gabriel Sugiarto', 'jk' => 'Laki-laki', 'agama' => 'Katolik'],
+                5 => ['nama' => 'Pamela Aurelia Santoso', 'jk' => 'Perempuan', 'agama' => 'Kristen Protestan'],
+                6 => ['nama' => 'Quincy Brian Wijaya', 'jk' => 'Laki-laki', 'agama' => 'Kristen Protestan'],
+                7 => ['nama' => 'Rebecca Devina Chandra', 'jk' => 'Perempuan', 'agama' => 'Katolik'],
+                8 => ['nama' => 'Stefanus Reynard Salim', 'jk' => 'Laki-laki', 'agama' => 'Katolik'],
+                9 => ['nama' => 'Tiffany Amanda Kristianto', 'jk' => 'Perempuan', 'agama' => 'Kristen Protestan'],
+            ],
+            // FAD - Arsitektur (21)
+            '21' => [
+                0 => ['nama' => 'Albertus Rio Pramono', 'jk' => 'Laki-laki', 'agama' => 'Katolik'],
+                1 => ['nama' => 'Bianca Michelle Nugraha', 'jk' => 'Perempuan', 'agama' => 'Kristen Protestan'],
+                2 => ['nama' => 'Christopher Evan Saputra', 'jk' => 'Laki-laki', 'agama' => 'Kristen Protestan'],
+                3 => ['nama' => 'Deborah Astrid Soetanto', 'jk' => 'Perempuan', 'agama' => 'Katolik'],
+                4 => ['nama' => 'Emmanuel Kevin Surya', 'jk' => 'Laki-laki', 'agama' => 'Katolik'],
+                5 => ['nama' => 'Florentina Citra Lestari', 'jk' => 'Perempuan', 'agama' => 'Katolik'],
+                6 => ['nama' => 'Geraldus Dimas Wicaksono', 'jk' => 'Laki-laki', 'agama' => 'Islam'],
+                7 => ['nama' => 'Hannah Kimberly Anggoro', 'jk' => 'Perempuan', 'agama' => 'Kristen Protestan'],
+                8 => ['nama' => 'Ignatius Bayu Rahardjo', 'jk' => 'Laki-laki', 'agama' => 'Katolik'],
+                9 => ['nama' => 'Janice Michelle Wibisono', 'jk' => 'Perempuan', 'agama' => 'Kristen Protestan'],
+            ],
+            // FAD - Desain Produk (22)
+            '22' => [
+                0 => ['nama' => 'Julian Bagus Adiputra', 'jk' => 'Laki-laki', 'agama' => 'Islam'],
+                1 => ['nama' => 'Karen Stephanie Tandiono', 'jk' => 'Perempuan', 'agama' => 'Kristen Protestan'],
+                2 => ['nama' => 'Leonardus Rio Setiadi', 'jk' => 'Laki-laki', 'agama' => 'Katolik'],
+                3 => ['nama' => 'Michelle Andrea Prabowo', 'jk' => 'Perempuan', 'agama' => 'Kristen Protestan'],
+                4 => ['nama' => 'Nathanael Dennis Suwandi', 'jk' => 'Laki-laki', 'agama' => 'Kristen Protestan'],
+                5 => ['nama' => 'Olivia Nathania Gunardi', 'jk' => 'Perempuan', 'agama' => 'Katolik'],
+                6 => ['nama' => 'Philipus Kevin Hermawan', 'jk' => 'Laki-laki', 'agama' => 'Katolik'],
+                7 => ['nama' => 'Queeny Felita Sasongko', 'jk' => 'Perempuan', 'agama' => 'Kristen Protestan'],
+                8 => ['nama' => 'Raymond Christian Kusumo', 'jk' => 'Laki-laki', 'agama' => 'Kristen Protestan'],
+                9 => ['nama' => 'Sherly Vania Anggraeni', 'jk' => 'Perempuan', 'agama' => 'Islam'],
+            ],
+            // Biotek - Biologi (41)
+            '41' => [
+                0 => ['nama' => 'Antonius Bagas Prakoso', 'jk' => 'Laki-laki', 'agama' => 'Katolik'],
+                1 => ['nama' => 'Brigitta Ayu Maharani', 'jk' => 'Perempuan', 'agama' => 'Katolik'],
+                2 => ['nama' => 'Cornelius Arya Danendra', 'jk' => 'Laki-laki', 'agama' => 'Katolik'],
+                3 => ['nama' => 'Dominique Vania Pradita', 'jk' => 'Perempuan', 'agama' => 'Kristen Protestan'],
+                4 => ['nama' => 'Fabianus Ryan Hendrawan', 'jk' => 'Laki-laki', 'agama' => 'Katolik'],
+                5 => ['nama' => 'Gabriella Sekar Kinanthi', 'jk' => 'Perempuan', 'agama' => 'Kristen Protestan'],
+                6 => ['nama' => 'Hendricus Galih Permana', 'jk' => 'Laki-laki', 'agama' => 'Katolik'],
+                7 => ['nama' => 'Irene Larasati Wulandari', 'jk' => 'Perempuan', 'agama' => 'Islam'],
+                8 => ['nama' => 'Justinus Ilham Cahyono', 'jk' => 'Laki-laki', 'agama' => 'Katolik'],
+                9 => ['nama' => 'Karolina Dwi Rahmawati', 'jk' => 'Perempuan', 'agama' => 'Islam'],
+            ],
+            // Biotek - Teknologi Pangan (42)
+            '42' => [
+                0 => ['nama' => 'Lambertus Agung Wicaksono', 'jk' => 'Laki-laki', 'agama' => 'Katolik'],
+                1 => ['nama' => 'Marcella Prameswari Dewi', 'jk' => 'Perempuan', 'agama' => 'Kristen Protestan'],
+                2 => ['nama' => 'Nicolaus Yudha Pratama', 'jk' => 'Laki-laki', 'agama' => 'Katolik'],
+                3 => ['nama' => 'Odilia Citra Puspitasari', 'jk' => 'Perempuan', 'agama' => 'Katolik'],
+                4 => ['nama' => 'Paulus Rian Kurniasandi', 'jk' => 'Laki-laki', 'agama' => 'Katolik'],
+                5 => ['nama' => 'Regina Shafa Azzahra', 'jk' => 'Perempuan', 'agama' => 'Islam'],
+                6 => ['nama' => 'Stefanus Dimas Anggoro', 'jk' => 'Laki-laki', 'agama' => 'Katolik'],
+                7 => ['nama' => 'Theodora Nindya Kirana', 'jk' => 'Perempuan', 'agama' => 'Kristen Protestan'],
+                8 => ['nama' => 'Urbanus Rio Pambudi', 'jk' => 'Laki-laki', 'agama' => 'Katolik'],
+                9 => ['nama' => 'Veronica Salsabila Putri', 'jk' => 'Perempuan', 'agama' => 'Islam'],
+            ],
+            // Kedokteran (61)
+            '61' => [
+                0 => ['nama' => 'Alexander William Hartono', 'jk' => 'Laki-laki', 'agama' => 'Kristen Protestan'],
+                1 => ['nama' => 'Belinda Christine Wijaya', 'jk' => 'Perempuan', 'agama' => 'Kristen Protestan'],
+                2 => ['nama' => 'Christian Jeremy Tedjokusumo', 'jk' => 'Laki-laki', 'agama' => 'Katolik'],
+                3 => ['nama' => 'Dian Natalia Soedirgo', 'jk' => 'Perempuan', 'agama' => 'Katolik'],
+                4 => ['nama' => 'Eric Fernando Santoso', 'jk' => 'Laki-laki', 'agama' => 'Kristen Protestan'],
+                5 => ['nama' => 'Felisitas Maya Sukamto', 'jk' => 'Perempuan', 'agama' => 'Katolik'],
+                6 => ['nama' => 'Gregory Hans Tanuwidjaja', 'jk' => 'Laki-laki', 'agama' => 'Kristen Protestan'],
+                7 => ['nama' => 'Hilda Carissa Suhanda', 'jk' => 'Perempuan', 'agama' => 'Kristen Protestan'],
+                8 => ['nama' => 'Ivan Darryl Kusumah', 'jk' => 'Laki-laki', 'agama' => 'Buddha'],
+                9 => ['nama' => 'Jovita Evelyn Susilo', 'jk' => 'Perempuan', 'agama' => 'Katolik'],
+            ],
+            // Theologi - Filsafat Keilahian (31)
+            '31' => [
+                0 => ['nama' => 'Abraham Yehezkiel Nababan', 'jk' => 'Laki-laki', 'agama' => 'Kristen Protestan'],
+                1 => ['nama' => 'Abigail Damaris Situmorang', 'jk' => 'Perempuan', 'agama' => 'Kristen Protestan'],
+                2 => ['nama' => 'Benyamin Kornelius Simanjuntak', 'jk' => 'Laki-laki', 'agama' => 'Kristen Protestan'],
+                3 => ['nama' => 'Deborah Ruth Hutabarat', 'jk' => 'Perempuan', 'agama' => 'Kristen Protestan'],
+                4 => ['nama' => 'Ezra Nathanael Pasaribu', 'jk' => 'Laki-laki', 'agama' => 'Kristen Protestan'],
+                5 => ['nama' => 'Filadelfia Ester Manurung', 'jk' => 'Perempuan', 'agama' => 'Kristen Protestan'],
+                6 => ['nama' => 'Gideon Samuel Marpaung', 'jk' => 'Laki-laki', 'agama' => 'Kristen Protestan'],
+                7 => ['nama' => 'Hanna Maria Silalahi', 'jk' => 'Perempuan', 'agama' => 'Kristen Protestan'],
+                8 => ['nama' => 'Immanuel Yohanes Nainggolan', 'jk' => 'Laki-laki', 'agama' => 'Kristen Protestan'],
+                9 => ['nama' => 'Junita Kristina Siregar', 'jk' => 'Perempuan', 'agama' => 'Kristen Protestan'],
+            ],
+            // FKH - Pendidikan Bahasa Inggris (81)
+            '81' => [
+                0 => ['nama' => 'Anthony Kevin Widiantoro', 'jk' => 'Laki-laki', 'agama' => 'Kristen Protestan'],
+                1 => ['nama' => 'Brenda Callista Wardhani', 'jk' => 'Perempuan', 'agama' => 'Islam'],
+                2 => ['nama' => 'Clifford Bryan Soeharto', 'jk' => 'Laki-laki', 'agama' => 'Katolik'],
+                3 => ['nama' => 'Daphne Maureen Susanto', 'jk' => 'Perempuan', 'agama' => 'Kristen Protestan'],
+                4 => ['nama' => 'Edwin Richard Natasasmita', 'jk' => 'Laki-laki', 'agama' => 'Kristen Protestan'],
+                5 => ['nama' => 'Fiona Clarice Handayani', 'jk' => 'Perempuan', 'agama' => 'Katolik'],
+                6 => ['nama' => 'Glenn Patrick Wiryawan', 'jk' => 'Laki-laki', 'agama' => 'Kristen Protestan'],
+                7 => ['nama' => 'Hazel Audrey Permatasari', 'jk' => 'Perempuan', 'agama' => 'Islam'],
+                8 => ['nama' => 'Ian Gregory Sudarmono', 'jk' => 'Laki-laki', 'agama' => 'Katolik'],
+                9 => ['nama' => 'Jessica Audrey Wibowo', 'jk' => 'Perempuan', 'agama' => 'Kristen Protestan'],
+            ],
+            // FKH - Studi Humanitas (82)
+            '82' => [
+                0 => ['nama' => 'Aloysius Raditya Dananjaya', 'jk' => 'Laki-laki', 'agama' => 'Katolik'],
+                1 => ['nama' => 'Bernadette Sekar Ayu', 'jk' => 'Perempuan', 'agama' => 'Katolik'],
+                2 => ['nama' => 'Claudius Bima Senopati', 'jk' => 'Laki-laki', 'agama' => 'Katolik'],
+                3 => ['nama' => 'Dorothea Sekar Langit', 'jk' => 'Perempuan', 'agama' => 'Katolik'],
+                4 => ['nama' => 'Eusebius Bagas Priyambodo', 'jk' => 'Laki-laki', 'agama' => 'Katolik'],
+                5 => ['nama' => 'Francisca Ratna Juwita', 'jk' => 'Perempuan', 'agama' => 'Katolik'],
+                6 => ['nama' => 'Gregorius Bayu Samudra', 'jk' => 'Laki-laki', 'agama' => 'Katolik'],
+                7 => ['nama' => 'Helena Putri Kinasih', 'jk' => 'Perempuan', 'agama' => 'Islam'],
+                8 => ['nama' => 'Irenaeus Wisnu Wardana', 'jk' => 'Laki-laki', 'agama' => 'Katolik'],
+                9 => ['nama' => 'Jacinda Tiara Kusuma', 'jk' => 'Perempuan', 'agama' => 'Kristen Protestan'],
+            ],
         ];
 
         // 5. Bank Judul Tugas Akhir / Skripsi Representatif per Program Studi
@@ -112,10 +258,14 @@ class AlumniSimulationSeeder extends Seeder
 
         // Iterasi ke seluruh 12 Program Studi
         foreach ($prodis as $kodeProdi => $prodi) {
+            $kodeProdiStr = (string) $kodeProdi;
             // Butir pertanyaan spesifik prodi (jika ada)
             $prodiQuestions = ProdiQuestion::where('prodi_id', $prodi->id)
                 ->where('type', '!=', 'header')
                 ->get();
+
+            // Ambil daftar nama khusus program studi ini
+            $prodiNamaList = $bankNamaPerProdi[$kodeProdiStr] ?? $bankNamaPerProdi['71'];
 
             // Iterasi 10 Alumni untuk Program Studi Ini
             for ($i = 0; $i < 10; $i++) {
@@ -125,18 +275,19 @@ class AlumniSimulationSeeder extends Seeder
 
                 // NIM format standar 8 digit UKDW: [kode_prodi (2 digit)][angkatan (2 digit)][nomor_urut (4 digit)]
                 $nomorUrut = str_pad((string) ($i + 1), 4, '0', STR_PAD_LEFT);
-                $nim = (string) $kodeProdi.$duaDigitAngkatan.$nomorUrut;
+                $nim = $kodeProdiStr.$duaDigitAngkatan.$nomorUrut;
 
-                // Khusus Sistem Informasi (72): Lewati 72220001 agar akun pengujian Joshua Andrean tetap murni
-                if ((string) $kodeProdi === '72' && $nim === '72220001') {
-                    $nomorUrut = str_pad((string) ($i + 2), 4, '0', STR_PAD_LEFT);
-                    $nim = (string) $kodeProdi.$duaDigitAngkatan.$nomorUrut;
+                // Khusus Sistem Informasi (72): Jangan bentrok dengan akun pengujian Joshua Andrean (72220001)
+                if ($kodeProdiStr === '72' && $nim === '72220001') {
+                    $nim = '72220099';
                 }
 
-                $isLaki = ($i % 2 === 0);
-                $nama = $isLaki ? $namaKoleksi[$i]['L'] : $namaKoleksi[$i]['P'];
+                $alumniBio = $prodiNamaList[$i] ?? ['nama' => 'Alumni '.$kodeProdiStr.' '.$i, 'jk' => 'Laki-laki', 'agama' => 'Kristen Protestan'];
+                $nama = $alumniBio['nama'];
+                $isLaki = ($alumniBio['jk'] === 'Laki-laki');
+                $agama = $alumniBio['agama'];
 
-                $personalEmail = strtolower(str_replace(' ', '', explode(' ', $nama)[0])).($i + 1).'@gmail.com';
+                $personalEmail = strtolower(str_replace(' ', '', explode(' ', $nama)[0])).$kodeProdiStr.($i + 1).'@gmail.com';
 
                 // A. Buat / Perbarui Akun User Alumni
                 $user = User::updateOrCreate(
@@ -151,33 +302,36 @@ class AlumniSimulationSeeder extends Seeder
                     ]
                 );
 
-                // B. Buat Data Induk Akademik Mahasiswa
+                // B. Buat Data Induk Akademik Mahasiswa (Single Source of Truth)
                 $ipk = round(3.40 + (($i * 6) % 55) / 100, 2);
-                $totalSks = ($kodeProdi === '61') ? 160 : 144;
+                $totalSks = ($kodeProdiStr === '61') ? 160 : 144;
+                $birthYear = (int) $angkatan - 18;
                 $dataAkademik = DataAkademik::updateOrCreate(
                     ['nim' => $nim],
                     [
                         'nama' => $nama,
-                        'angkatan_masuk' => $angkatan,
-                        'status_mahasiswa' => 'AR',
+                        'angkatan_masuk' => (int) $angkatan,
+                        'status_mahasiswa' => 'Lulus',
                         'tahun_akademik_lulus' => $cfg['semester'],
                         'tahun_lulus' => $cfg['tahun'],
+                        'tanggal_lulus' => $cfg['tahun'].'-'.($i % 2 === 0 ? '02-15' : '08-20'),
                         'ip_kumulatif' => $ipk,
                         'total_sks' => $totalSks,
                         'total_angka_kualitas' => round($ipk * $totalSks, 2),
                         'tempat_lahir' => ($i % 2 === 0 ? 'Yogyakarta' : 'Jakarta'),
-                        'tanggal_lahir' => '2001-08-15',
-                        'agama' => ($kodeProdi === '31' ? 'Kristen Protestan' : (($i % 3 === 0) ? 'Kristen Protestan' : 'Katolik')),
-                        'jenis_kelamin' => $isLaki ? 'Laki-laki' : 'Perempuan',
+                        'tanggal_lahir' => $birthYear.'-08-15',
+                        'agama' => $agama,
+                        'jenis_kelamin' => $alumniBio['jk'],
                         'golongan_darah' => ['O', 'A', 'B', 'AB'][$i % 4],
                         'warga_negara' => 'WNI',
-                        'nik' => '3404'.str_pad((string) (100000000000 + (int) $kodeProdi * 10000 + $i), 12, '0', STR_PAD_LEFT),
-                        'no_kk' => '340411'.str_pad((string) (2000000000 + (int) $kodeProdi * 10000 + $i), 10, '0', STR_PAD_LEFT),
-                        'nisn' => '003'.str_pad((string) (1234500 + $i), 7, '0', STR_PAD_LEFT),
-                        'no_bpjs' => '000189'.str_pad((string) (7654000 + $i), 7, '0', STR_PAD_LEFT),
-                        'nomor_telepon' => '0812'.rand(1000, 9999).str_pad((string) $i, 4, '0', STR_PAD_LEFT),
-                        'email_pribadi' => strtolower(str_replace(' ', '', explode(' ', $nama)[0])).($i + 1).'@gmail.com',
-                        'email_students' => $user->email,
+                        'nik' => '3404'.str_pad((string) (100000000000 + (int) $kodeProdiStr * 10000 + $i), 12, '0', STR_PAD_LEFT),
+                        'no_kk' => '340411'.str_pad((string) (2000000000 + (int) $kodeProdiStr * 10000 + $i), 10, '0', STR_PAD_LEFT),
+                        'nisn' => '003'.str_pad((string) (1234500 + (int) $kodeProdiStr * 10 + $i), 7, '0', STR_PAD_LEFT),
+                        'no_bpjs' => '000189'.str_pad((string) (7654000 + (int) $kodeProdiStr * 10 + $i), 7, '0', STR_PAD_LEFT),
+                        'npwp' => '09.'.rand(100, 999).'.'.rand(100, 999).'.'.rand(1, 9).'-541.000',
+                        'nomor_telepon' => '0812'.rand(1000, 9999).str_pad((string) ((int) $kodeProdiStr * 10 + $i), 4, '0', STR_PAD_LEFT),
+                        'email_pribadi' => $personalEmail,
+                        'email_students' => $nim.'@students.ukdw.ac.id',
                         'alamat_saat_ini' => 'Jl. Solo Km. '.($i + 4).' No. '.($i * 7 + 10).', Caturtunggal',
                         'kelurahan' => 'Caturtunggal',
                         'kecamatan' => 'Depok',
@@ -188,7 +342,7 @@ class AlumniSimulationSeeder extends Seeder
                         'alamat_asal_sekolah' => 'Jl. Kebangsaan No. 10',
                         'kota_kabupaten_asal_sekolah' => 'Kota Yogyakarta',
                         'provinsi_asal_sekolah' => 'DI Yogyakarta',
-                        'jurusan_asal_sekolah' => ($kodeProdi === '11' || $kodeProdi === '12' ? 'IPS' : 'IPA'),
+                        'jurusan_asal_sekolah' => ($kodeProdiStr === '11' || $kodeProdiStr === '12' ? 'IPS' : 'IPA'),
                     ]
                 );
 
@@ -470,14 +624,12 @@ class AlumniSimulationSeeder extends Seeder
                 'prodi_id' => $prodi->id,
                 'email_pribadi' => $dataAkademik->email_pribadi,
                 'nomor_telepon' => $dataAkademik->nomor_telepon,
-                'nik' => $dataAkademik->nik,
-                'npwp' => '09.'.rand(100, 999).'.'.rand(100, 999).'.'.rand(1, 9).'-541.000',
-                'alamat' => $dataAkademik->alamat_saat_ini,
-                'kelurahan' => $dataAkademik->kelurahan,
-                'kecamatan' => $dataAkademik->kecamatan,
+                'alamat_saat_ini' => $dataAkademik->alamat_saat_ini,
                 'kabupaten_id' => $dataAkademik->kabupaten_id,
                 'propinsi_id' => $dataAkademik->propinsi_id,
                 'kode_pos' => $dataAkademik->kode_pos,
+                'nik' => $dataAkademik->nik,
+                'npwp' => $dataAkademik->npwp,
                 'instagram_url' => 'https://instagram.com/'.$cleanUsername,
                 'facebook_url' => 'https://facebook.com/'.$cleanUsername,
                 'linkedin_url' => 'https://linkedin.com/in/'.$cleanUsername,
@@ -494,7 +646,6 @@ class AlumniSimulationSeeder extends Seeder
                 'pendidikan_prodi' => $pendidikanProdi,
                 'gaji' => $gaji,
                 'jenis_pekerjaan' => ($prodi->kode_prodi === '31' ? 'Gerejawi' : null),
-                'zipcode' => '55281',
             ]
         );
 
@@ -653,14 +804,12 @@ class AlumniSimulationSeeder extends Seeder
                 'prodi_id' => $prodi->id,
                 'email_pribadi' => $dataAkademik->email_pribadi,
                 'nomor_telepon' => $dataAkademik->nomor_telepon,
-                'nik' => $dataAkademik->nik,
-                'npwp' => '09.'.rand(100, 999).'.'.rand(100, 999).'.'.rand(1, 9).'-541.000',
-                'alamat' => $dataAkademik->alamat_saat_ini,
-                'kelurahan' => $dataAkademik->kelurahan,
-                'kecamatan' => $dataAkademik->kecamatan,
+                'alamat_saat_ini' => $dataAkademik->alamat_saat_ini,
                 'kabupaten_id' => $kabSleman?->id,
                 'propinsi_id' => $propinsiDiy?->id,
                 'kode_pos' => '55281',
+                'nik' => $dataAkademik->nik,
+                'npwp' => $dataAkademik->npwp,
                 'instagram_url' => 'https://instagram.com/'.$cleanUsername,
                 'facebook_url' => null,
                 'linkedin_url' => 'https://linkedin.com/in/'.$cleanUsername,
@@ -722,7 +871,7 @@ class AlumniSimulationSeeder extends Seeder
         Yudisium $yudisium,
         array $cfg
     ): void {
-        // Record Biodata dasar (tanpa data mandiri / NPWP / karier)
+        // Record Biodata dasar (tanpa data mandiri / karier)
         $biodata = Biodata::updateOrCreate(
             ['user_id' => $user->id],
             [
@@ -732,14 +881,12 @@ class AlumniSimulationSeeder extends Seeder
                 'prodi_id' => $prodi->id,
                 'nomor_telepon' => null,
                 'email_pribadi' => null,
-                'alamat' => null,
+                'alamat_saat_ini' => null,
                 'kabupaten_id' => null,
                 'propinsi_id' => null,
-                'kelurahan' => null,
-                'kecamatan' => null,
                 'kode_pos' => null,
                 'nik' => null,
-                'npwp' => null, // NPWP NULL menandakan profil mandiri belum lengkap
+                'npwp' => null,
                 'instagram_url' => null,
                 'facebook_url' => null,
                 'linkedin_url' => null,
@@ -756,7 +903,6 @@ class AlumniSimulationSeeder extends Seeder
                 'pendidikan_prodi' => null,
                 'gaji' => null,
                 'jenis_pekerjaan' => null,
-                'zipcode' => null,
             ]
         );
 

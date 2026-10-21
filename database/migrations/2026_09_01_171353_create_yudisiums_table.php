@@ -19,29 +19,29 @@ return new class extends Migration
     {
         if (! Schema::hasTable('yudisium')) {
             Schema::create('yudisium', function (Blueprint $table) {
-                $table->id();
+                $table->id()->comment('ID unik rekam kelulusan yudisium');
 
-                // Relasi ke tabel data_akademik (NIM)
-                $table->string('nim')->unique();
+                // Relasi ke tabel data_akademik (NIM CHAR 8)
+                $table->char('nim', 8)->unique()->comment('NIM mahasiswa (8 karakter, FK ke data_akademik)');
                 $table->foreign('nim')->references('nim')->on('data_akademik')->cascadeOnDelete();
 
                 // Dosen Pembimbing & Penguji
-                $table->string('dosen_pembimbing_1')->nullable();
-                $table->string('dosen_pembimbing_2')->nullable();
-                $table->string('dosen_penguji_1')->nullable();
-                $table->string('dosen_penguji_2')->nullable();
+                $table->string('dosen_pembimbing_1', 100)->nullable()->comment('Nama dosen pembimbing tugas akhir utama');
+                $table->string('dosen_pembimbing_2', 100)->nullable()->comment('Nama dosen pembimbing tugas akhir pendamping');
+                $table->string('dosen_penguji_1', 100)->nullable()->comment('Nama dosen penguji tugas akhir 1');
+                $table->string('dosen_penguji_2', 100)->nullable()->comment('Nama dosen penguji tugas akhir 2');
 
                 // Tugas Akhir / Skripsi / Tesis
                 $table->text('judul_ta')->nullable()->comment('Judul Skripsi/Thesis/Disertasi/Perancangan');
-                $table->text('judul_ta_inggris')->nullable();
+                $table->text('judul_ta_inggris')->nullable()->comment('Judul Skripsi/Thesis dalam Bahasa Inggris');
 
                 // Publikasi Ilmiah
-                $table->text('url_publikasi')->nullable();
-                $table->string('jenis_publikasi')->nullable();
-                $table->string('status_publikasi')->nullable();
+                $table->string('url_publikasi', 200)->nullable()->comment('Tautan repositori / jurnal publikasi karya ilmiah');
+                $table->string('jenis_publikasi', 100)->nullable()->comment('Kategori media publikasi ilmiah');
+                $table->string('status_publikasi', 50)->nullable()->comment('Status publikasi (Published, Submitted, In Review)');
 
                 // Status Hasil Yudisium (Tanpa duplikasi tahun lulus / tahun akademik)
-                $table->string('keterangan_hasil_yudisium')->nullable()->comment('Misal: Lulus dengan Pujian, Sangat Memuaskan');
+                $table->string('keterangan_hasil_yudisium', 60)->nullable()->comment('Predikat yudisium: Lulus dengan Pujian, Sangat Memuaskan');
                 $table->enum('status_lulus', ['Belum', 'Proses', 'Lulus', 'Tidak Lulus'])->default('Belum')->comment('Status kelulusan yudisium mahasiswa');
 
                 $table->timestamps();

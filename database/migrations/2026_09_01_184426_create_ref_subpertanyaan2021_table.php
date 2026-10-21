@@ -12,16 +12,16 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('ref_subpertanyaan2021', function (Blueprint $table) {
-            $table->id();
-            $table->char('kelompok', 3); // Merujuk ke kode kelompok kuesioner (Kelompok 1..9)
-            $table->foreignId('kelompok_pertanyaan_id')->nullable()->constrained('kelompok_pertanyaan')->cascadeOnDelete();
-            $table->string('kode_pertanyaan', 20)->unique();
-            $table->text('subpertanyaan');
-            $table->string('type', 50); // text, radio, radio_input, multiple_choice, number, matrix, matrix_dual, multiple_textbox, header
-            $table->string('keterangan', 100)->nullable(); // Keterangan tambahan / sub-detail pertanyaan
-            $table->tinyInteger('wajib')->default(1); // 1 = wajib, 0 = opsional
-            $table->string('tampil_di', 100)->nullable()->comment('Kondisi penampil pertanyaan');
-            $table->integer('order')->default(0);
+            $table->id()->comment('ID unik butir pertanyaan kuesioner');
+            $table->char('kelompok', 5)->comment('Kode kelompok pertanyaan (misal: K1, K2)');
+            $table->foreignId('kelompok_pertanyaan_id')->nullable()->constrained('kelompok_pertanyaan')->cascadeOnDelete()->comment('Relasi ke bagian kelompok pertanyaan');
+            $table->string('kode_pertanyaan', 20)->unique()->comment('Kode butir pertanyaan (misal: F5B, F11, F2A)');
+            $table->text('subpertanyaan')->comment('Teks redaksi pertanyaan');
+            $table->string('type', 50)->comment('Tipe input pertanyaan: text, radio, multiple_choice, number, matrix, dll');
+            $table->string('keterangan', 100)->nullable()->comment('Keterangan operasional sub-pertanyaan');
+            $table->tinyInteger('wajib')->default(1)->comment('Indikator kewajiban: 1 = Wajib, 0 = Opsional');
+            $table->string('tampil_di', 100)->nullable()->comment('Logika percabangan / kondisi penampil pertanyaan');
+            $table->smallInteger('order')->default(0)->comment('Nomor urut penampilan pertanyaan');
             $table->timestamps();
         });
     }

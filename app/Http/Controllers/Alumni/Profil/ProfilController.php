@@ -148,6 +148,8 @@ class ProfilController extends Controller
             'company_negara' => $biodata?->perusahaan?->negara ?? 'Indonesia',
             'company_province_id' => $biodata?->perusahaan?->propinsi_id ?? '',
             'company_kabupaten_id' => $biodata?->perusahaan?->kabupaten_id ?? '',
+            'company_kode_pos' => $biodata?->perusahaan?->kode_pos ?? '',
+            'perusahaan_kode_pos' => $biodata?->perusahaan?->kode_pos ?? '',
             'company_status_verifikasi' => $biodata?->perusahaan?->status_verifikasi ?? '',
 
             // Data Atasan

@@ -62,8 +62,8 @@ class JoshuaAndreanSeeder extends Seeder
             [
                 'nama' => $nama,
                 // Data Universitas
-                'angkatan_masuk' => (string) $angkatan,
-                'status_mahasiswa' => 'L',
+                'angkatan_masuk' => $angkatan,
+                'status_mahasiswa' => 'Lulus',
                 'tahun_akademik_lulus' => $tahunAkademikLulus,
                 'tahun_lulus' => $tahunLulus,
                 'tanggal_lulus' => '2026-07-25',
@@ -148,11 +148,9 @@ class JoshuaAndreanSeeder extends Seeder
                 'prodi_id' => $prodi?->id,
                 'email_pribadi' => $personalEmail,
                 'nomor_telepon' => '081234567890',
-                'alamat' => 'Jl. Timoho No. 45, RT 02/RW 08',
+                'alamat_saat_ini' => 'Jl. Timoho No. 45, RT 02/RW 08',
                 'kabupaten_id' => $sleman?->id,
                 'propinsi_id' => $diy?->id,
-                'kelurahan' => 'Caturtunggal',
-                'kecamatan' => 'Depok',
                 'kode_pos' => '55281',
                 'nik' => '3404011508040001',
                 'npwp' => null,
@@ -172,7 +170,6 @@ class JoshuaAndreanSeeder extends Seeder
                 'pendidikan_prodi' => null,
                 'gaji' => null,
                 'jenis_pekerjaan' => null,
-                'zipcode' => null,
             ]
         );
 

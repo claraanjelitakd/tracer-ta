@@ -40,7 +40,7 @@ return new class extends Migration
                 da.no_kk,
                 da.no_bpjs,
                 da.nisn,
-                b.npwp,
+                COALESCE(b.npwp, da.npwp) AS npwp,
                 COALESCE(b.email_pribadi, da.email_pribadi, u.email) AS email,
                 COALESCE(b.email_pribadi, da.email_pribadi, u.email) AS email_pribadi,
                 da.email_students AS email_students,
@@ -51,10 +51,10 @@ return new class extends Migration
                 da.agama,
                 da.golongan_darah,
                 da.warga_negara,
-                COALESCE(b.alamat, da.alamat_saat_ini) AS alamat,
-                COALESCE(b.kelurahan, da.kelurahan) AS kelurahan,
-                COALESCE(b.kecamatan, da.kecamatan) AS kecamatan,
-                COALESCE(b.kode_pos, da.kode_pos, b.zipcode) AS kode_pos,
+                COALESCE(b.alamat_saat_ini, da.alamat_saat_ini) AS alamat,
+                da.kelurahan,
+                da.kecamatan,
+                COALESCE(b.kode_pos, da.kode_pos) AS kode_pos,
                 COALESCE(b.propinsi_id, da.propinsi_id) AS propinsi_id,
                 prov.nama_provinsi,
                 COALESCE(b.kabupaten_id, da.kabupaten_id) AS kabupaten_id,
@@ -87,7 +87,7 @@ return new class extends Migration
                 ot.nama_orang_tua,
                 ot.pekerjaan AS pekerjaan_orang_tua,
                 ot.alamat AS alamat_orang_tua,
-                ot.kota AS kode_orang_tua,
+                ot.kota AS kota_orang_tua,
                 ot.nomor_telepon AS nomor_telepon_orang_tua,
                 ot.kode_pos AS kode_pos_orang_tua,
                 b.kategori_pekerjaan,
@@ -113,7 +113,7 @@ return new class extends Migration
                     WHEN COALESCE(da.nama, u.name) IS NOT NULL 
                          AND b.nim IS NOT NULL 
                          AND COALESCE(b.nik, da.nik) IS NOT NULL
-                         AND b.npwp IS NOT NULL
+                         AND COALESCE(b.npwp, da.npwp) IS NOT NULL
                          AND COALESCE(b.nomor_telepon, da.nomor_telepon) IS NOT NULL
                          AND COALESCE(b.email_pribadi, da.email_pribadi, u.email) IS NOT NULL
                     THEN 1 

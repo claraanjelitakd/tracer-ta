@@ -531,7 +531,11 @@ const selectCompany = (company) => {
         props.form.company_skala = company.skala;
         props.form.perusahaan_skala = company.skala;
     }
-    if (company.kode_pos) props.form.zipcode = company.kode_pos;
+    if (company.kode_pos) {
+        props.form.zipcode = company.kode_pos;
+        props.form.company_kode_pos = company.kode_pos;
+        props.form.perusahaan_kode_pos = company.kode_pos;
+    }
     if (company.jenis_perusahaan) {
         props.form.company_jenis_perusahaan = company.jenis_perusahaan;
         props.form.perusahaan_jenis_perusahaan = company.jenis_perusahaan;
@@ -557,6 +561,8 @@ const clearCompany = () => {
     props.form.company_skala = '';
     props.form.perusahaan_skala = '';
     props.form.zipcode = '';
+    props.form.company_kode_pos = '';
+    props.form.perusahaan_kode_pos = '';
     props.form.company_jenis_perusahaan = '';
     props.form.perusahaan_jenis_perusahaan = '';
     props.form.company_jenis_perusahaan_lainnya = '';
@@ -851,6 +857,8 @@ const openAddCompanyModal = () => {
             props.form.company_alamat = newCompany.alamat || '';
             props.form.company_skala = newCompany.skala || 'Regional/Lokal';
             props.form.zipcode = newCompany.kode_pos || '';
+            props.form.company_kode_pos = newCompany.kode_pos || '';
+            props.form.perusahaan_kode_pos = newCompany.kode_pos || '';
             props.form.company_jenis_perusahaan = newCompany.jenis_perusahaan || '';
             props.form.perusahaan_jenis_perusahaan = props.form.company_jenis_perusahaan;
             props.form.company_jenis_perusahaan_lainnya = newCompany.jenis_perusahaan_lainnya || '';
@@ -1702,11 +1710,12 @@ onUnmounted(() => {
                     <!-- Kode Pos Perusahaan -->
                     <div class="md:col-span-2">
                         <label class="block text-xs sm:text-sm font-bold text-gray-700 mb-1.5">
-                            Kode Pos Perusahaan (Zipcode) <span class="text-rose-500 font-bold">*</span>
+                            Kode Pos Kantor / Perusahaan <span class="text-rose-500 font-bold">*</span>
                         </label>
                         <input 
                             type="text" 
                             v-model="form.zipcode" 
+                            @input="form.company_kode_pos = form.zipcode; form.perusahaan_kode_pos = form.zipcode"
                             autocomplete="off"
                             :disabled="!canEditCompanyDetails"
                             class="block w-full border rounded-xl shadow-xs px-4 py-3 text-sm font-medium transition-colors"
@@ -1714,7 +1723,7 @@ onUnmounted(() => {
                                 !canEditCompanyDetails ? 'bg-gray-100/90 text-gray-500 cursor-not-allowed border-gray-200' : 
                                 'border-gray-300 bg-white text-gray-900 focus:border-[#0D542B] focus:ring-1 focus:ring-[#0D542B] outline-none'
                             ]" 
-                            placeholder="Kode Pos (Cth: 55281)" 
+                            placeholder="Kode Pos Kantor (Cth: 55281)" 
                         />
                     </div>
                 </div>

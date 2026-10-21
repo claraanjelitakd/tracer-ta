@@ -13,24 +13,24 @@ return new class extends Migration
     {
         // 1. Tabel Section Khusus Kuesioner Program Studi
         Schema::create('prodi_question_section', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('prodi_id')->constrained('prodi')->cascadeOnDelete();
-            $table->string('title');
-            $table->text('description')->nullable();
-            $table->integer('order')->default(1);
+            $table->id()->comment('ID unik bagian kuesioner prodi');
+            $table->foreignId('prodi_id')->constrained('prodi')->cascadeOnDelete()->comment('Relasi ke program studi');
+            $table->string('title', 150)->comment('Nama bagian / section kuesioner prodi');
+            $table->text('description')->nullable()->comment('Deskripsi penjelasan bagian kuesioner prodi');
+            $table->smallInteger('order')->default(1)->comment('Nomor urut penampilan bagian');
             $table->timestamps();
         });
 
         // 2. Tabel Butir Pertanyaan Khusus Kuesioner Program Studi
         Schema::create('prodi_question', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('prodi_id')->constrained('prodi')->cascadeOnDelete();
-            $table->foreignId('prodi_question_section_id')->constrained('prodi_question_section')->cascadeOnDelete();
-            $table->string('code')->comment('Contoh: PSI-01, PTI-01');
-            $table->text('question_text');
-            $table->string('type')->default('single_choice')->comment('single_choice, multiple_choice, text, number, rating_5, radio_input');
-            $table->boolean('is_required')->default(true);
-            $table->integer('order')->default(1);
+            $table->id()->comment('ID unik butir pertanyaan kuesioner prodi');
+            $table->foreignId('prodi_id')->constrained('prodi')->cascadeOnDelete()->comment('Relasi ke program studi');
+            $table->foreignId('prodi_question_section_id')->constrained('prodi_question_section')->cascadeOnDelete()->comment('Relasi ke bagian section kuesioner prodi');
+            $table->string('code', 30)->comment('Kode pertanyaan (contoh: PSI-01, PTI-01)');
+            $table->text('question_text')->comment('Teks redaksi pertanyaan');
+            $table->string('type', 40)->default('single_choice')->comment('Tipe input: single_choice, multiple_choice, text, number, rating_5, radio_input');
+            $table->boolean('is_required')->default(true)->comment('Indikator kewajiban pengisian');
+            $table->smallInteger('order')->default(1)->comment('Nomor urut penampilan pertanyaan');
             $table->timestamps();
 
             $table->unique(['prodi_id', 'code']);
@@ -38,22 +38,22 @@ return new class extends Migration
 
         // 3. Tabel Pilihan Opsi Jawaban Khusus Pertanyaan Program Studi
         Schema::create('prodi_question_option', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('prodi_question_id')->constrained('prodi_question')->cascadeOnDelete();
-            $table->string('code')->nullable();
-            $table->string('option_text');
-            $table->string('jump_to')->nullable();
-            $table->integer('order')->default(1);
+            $table->id()->comment('ID unik pilihan opsi jawaban kuesioner prodi');
+            $table->foreignId('prodi_question_id')->constrained('prodi_question')->cascadeOnDelete()->comment('Relasi ke butir pertanyaan prodi');
+            $table->string('code', 30)->nullable()->comment('Kode opsi jawaban');
+            $table->text('option_text')->comment('Label teks pilihan jawaban');
+            $table->string('jump_to', 30)->nullable()->comment('Kode percabangan lompat pertanyaan');
+            $table->smallInteger('order')->default(1)->comment('Nomor urut penampilan opsi');
             $table->timestamps();
         });
 
         // 4. Tabel Respon / Jawaban Alumni Khusus Kuesioner Program Studi
         Schema::create('prodi_response', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('biodata_id')->constrained('biodata')->cascadeOnDelete();
-            $table->foreignId('prodi_question_id')->constrained('prodi_question')->cascadeOnDelete();
-            $table->text('answer_text')->nullable();
-            $table->json('answer_json')->nullable();
+            $table->id()->comment('ID unik respon kuesioner prodi');
+            $table->foreignId('biodata_id')->constrained('biodata')->cascadeOnDelete()->comment('Relasi ke profil biodata alumni');
+            $table->foreignId('prodi_question_id')->constrained('prodi_question')->cascadeOnDelete()->comment('Relasi ke pertanyaan kuesioner prodi');
+            $table->text('answer_text')->nullable()->comment('Nilai jawaban teks atau opsi yang dipilih');
+            $table->json('answer_json')->nullable()->comment('Nilai jawaban berupa array/JSON bila bernilai jamak');
             $table->timestamps();
 
             $table->unique(['biodata_id', 'prodi_question_id']);

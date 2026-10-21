@@ -144,11 +144,9 @@ class BiodataSeeder extends Seeder
                     'prodi_id' => $prodiId,
                     'nomor_telepon' => '0812'.rand(1000, 9999).str_pad((string) $index, 4, '0', STR_PAD_LEFT),
                     'email_pribadi' => $personalEmail,
-                    'alamat' => 'Jl. Kenanga No. '.($index + 12).', RT 03/RW 05',
+                    'alamat_saat_ini' => 'Jl. Kenanga No. '.($index + 12).', RT 03/RW 05',
                     'kabupaten_id' => $lokasi['kab'],
                     'propinsi_id' => $lokasi['prov'],
-                    'kelurahan' => $lokasi['kel'],
-                    'kecamatan' => $lokasi['kec'],
                     'kode_pos' => $lokasi['kodepos'],
                     'nik' => '3404'.str_pad((string) (100000000000 + $index * 1234), 12, '0', STR_PAD_LEFT),
                     'npwp' => '09.'.rand(100, 999).'.'.rand(100, 999).'.'.rand(1, 9).'-541.000',
@@ -164,7 +162,6 @@ class BiodataSeeder extends Seeder
                     'posisi_jabatan' => $jabatanList[$index % count($jabatanList)],
                     'gaji' => $gajiList[$index % count($gajiList)],
                     'jenis_pekerjaan' => ($parsedInfo && $parsedInfo['kode_prodi'] === '31') ? 'Gerejawi' : null,
-                    'zipcode' => ($index % 3 == 0) ? '55281' : (($index % 3 == 1) ? '10120' : '23715'),
                 ]
             );
         }

@@ -13,22 +13,22 @@ return new class extends Migration
     {
         if (! Schema::hasTable('data_orang_tua')) {
             Schema::create('data_orang_tua', function (Blueprint $table) {
-                $table->id();
+                $table->id()->comment('ID unik data orang tua/wali');
 
-                // Relasi ke DataAkademik berdasarkan NIM
-                $table->string('nim')->unique();
+                // Relasi ke DataAkademik berdasarkan NIM (CHAR 8)
+                $table->char('nim', 8)->unique()->comment('NIM mahasiswa (8 karakter, FK ke data_akademik)');
                 $table->foreign('nim')->references('nim')->on('data_akademik')->cascadeOnDelete();
 
-                $table->string('nama_orang_tua')->nullable();
-                $table->string('pekerjaan')->nullable();
+                $table->string('nama_orang_tua', 100)->nullable()->comment('Nama lengkap orang tua / wali');
+                $table->string('pekerjaan', 100)->nullable()->comment('Pekerjaan orang tua / wali');
 
-                // Alamat & Kontak
-                $table->text('alamat')->nullable();
-                $table->string('kota')->nullable();
-                $table->foreignId('kabupaten_id')->nullable()->constrained('kabupaten')->nullOnDelete();
-                $table->foreignId('propinsi_id')->nullable()->constrained('propinsi')->nullOnDelete();
-                $table->string('kode_pos')->nullable();
-                $table->string('nomor_telepon')->nullable();
+                // Alamat & Kontak Orang Tua
+                $table->text('alamat')->nullable()->comment('Alamat lengkap tempat tinggal orang tua / wali');
+                $table->string('kota', 60)->nullable()->comment('Kota tempat tinggal orang tua / wali');
+                $table->foreignId('kabupaten_id')->nullable()->constrained('kabupaten')->nullOnDelete()->comment('Relasi ke kabupaten/kota domisili orang tua');
+                $table->foreignId('propinsi_id')->nullable()->constrained('propinsi')->nullOnDelete()->comment('Relasi ke provinsi domisili orang tua');
+                $table->char('kode_pos', 5)->nullable()->comment('Kode pos domisili orang tua (5 digit)');
+                $table->string('nomor_telepon', 20)->nullable()->comment('Nomor telepon/HP orang tua / wali');
 
                 $table->timestamps();
             });

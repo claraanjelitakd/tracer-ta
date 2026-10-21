@@ -35,7 +35,7 @@ class Yudisium extends Model
                 $dataAkademik = DataAkademik::where('nim', $yudisium->nim)->first();
                 if ($dataAkademik) {
                     $updates = [
-                        'status_mahasiswa' => 'L', // 'L' = Lulus
+                        'status_mahasiswa' => 'Lulus',
                     ];
 
                     // Tetapkan tahun lulus jika belum terisi

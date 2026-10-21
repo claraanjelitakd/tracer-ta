@@ -12,9 +12,9 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('propinsi', function (Blueprint $table) {
-            $table->id();
-            $table->string('kode_provinsi')->unique()->nullable();
-            $table->string('nama_provinsi');
+            $table->id()->comment('ID unik referensi provinsi');
+            $table->string('kode_provinsi', 10)->unique()->nullable()->comment('Kode BPS/Kemendagri provinsi (misal: 34)');
+            $table->string('nama_provinsi', 60)->comment('Nama resmi provinsi (misal: DI Yogyakarta)');
             $table->timestamps();
         });
     }

@@ -1,5 +1,31 @@
 # UPDATE LOG - SERU (Sistem Ekosistem Rekam Jejak Alumni)
 
+## [2026-10-21] Pembersihan Arsitektur Database (Standarisasi NIM CHAR(8), Tahun Masuk YEAR, Enum Agama & Status, Single Postal Code) dan Pembaruan Total Dokumen ERD (Mermaid & Data Dictionary)
+
+### Ringkasan Pembaruan
+1. **Pembersihan Arsitektur & Standarisasi Skema Basis Data**:
+   - **Pemberantasan Redudansi Kode Pos (*Zero Duplication*)**:
+     - Menghapus kolom fisik `zipcode` dan accessor `kode_pos_saat_ini` dari tabel dan model `biodata`.
+     - Kode pos domisili alumni terpusat tunggal pada `biodata.kode_pos` (`CHAR(5)`).
+     - Kode pos kantor/perusahaan terpusat tunggal pada tabel master `perusahaan.kode_pos` (`VARCHAR(10)`).
+     - Mempertahankan `nik` (`CHAR(16)`) dan `npwp` (`VARCHAR(25)`) pada `biodata` untuk kebutuhan kependudukan dan perpajakan alumni.
+   - **Standarisasi Tipe Data & Constraints**:
+     - Format NIM distandarisasi secara ketat menjadi `CHAR(8)` pada semua tabel terkait (`data_akademik`, `biodata`, `data_orang_tua`, `yudisium`).
+     - Kolom `angkatan_masuk` distandarisasi menjadi tipe data `YEAR(4)`.
+     - Kolom `agama` distandarisasi menggunakan `ENUM('Islam', 'Kristen Protestan', 'Katolik', 'Hindu', 'Buddha', 'Konghucu', 'Lainnya')`.
+     - Kolom `status_mahasiswa` distandarisasi menggunakan `ENUM('Lulus', 'Aktif', 'Cuti', 'Drop Out', 'Lainnya')` dengan default `'Lulus'`.
+     - Kolom `skala` pada master perusahaan dilengkapi opsi `Regional/Lokal`.
+     - Menambahkan komentar deskriptif (*database column comments*) pada seluruh kolom di semua migrasi.
+2. **Penyempurnaan Layanan & Komponen Frontend**:
+   - `SimpanProfilController` dan `AdminAlumniProfileService` memisahkan secara tegas kode pos domisili pribadi dan kode pos kantor perusahaan.
+   - `PerusahaanVerificationService::replaceCompany()` secara transaksional mengalihkan relasi profil, evaluasi atasan, dan butir kuesioner tracer alumni saat pengajuan usulan disinkronkan ke institusi resmi.
+   - Komponen formulir karier (`FormKarier.vue`) dan validasi profil (`Index.vue`) menyelaraskan label formal "Kode Pos Kantor / Perusahaan" dengan penanganan field terpadu.
+3. **Pembaruan Menyeluruh Dokumen ERD (`ERD.md`)**:
+   - Diagram Mermaid disinkronkan 100% dengan skema fisik database aktif.
+   - Kamus data (*data dictionary*) dan matriks relasi antar-tabel diperbarui mencerminkan relasi bebas duplikasi.
+
+---
+
 ## [2026-10-20] Penyatuan Tampilan Kuesioner Universitas ala Master Data UMP dan Form Evaluasi Atasan Enterprise (Full-Width, Mobile Responsive, Palet Hijau & Emas UKDW)
 
 ### Ringkasan Pembaruan

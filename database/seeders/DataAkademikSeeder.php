@@ -92,8 +92,8 @@ class DataAkademikSeeder extends Seeder
                 [
                     'nama' => $nama,
                     // Data Paten Universitas
-                    'angkatan_masuk' => (string) $angkatan,
-                    'status_mahasiswa' => 'AR',
+                    'angkatan_masuk' => $angkatan,
+                    'status_mahasiswa' => 'Lulus',
                     'tahun_akademik_lulus' => $periodeLulusList[$index % count($periodeLulusList)],
                     'tahun_lulus' => $angkatan + 4,
                     'ip_kumulatif' => $ipk,

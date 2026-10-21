@@ -22,59 +22,56 @@ return new class extends Migration
     {
         if (! Schema::hasTable('biodata')) {
             Schema::create('biodata', function (Blueprint $table) {
-                $table->id();
-                $table->foreignId('user_id')->constrained()->cascadeOnDelete();
+                $table->id()->comment('ID unik profil biodata alumni');
+                $table->foreignId('user_id')->constrained('users')->cascadeOnDelete()->comment('Relasi ke akun login pengguna');
 
-                // Relasi tunggal ke data_akademik melalui NIM (tidak perlu duplikasi data_akademik_id)
-                $table->string('nim')->unique()->comment('NIM - referensi langsung ke data_akademik');
+                // Relasi tunggal ke data_akademik melalui NIM (CHAR 8)
+                $table->char('nim', 8)->unique()->comment('NIM mahasiswa/alumni (8 karakter, FK ke data_akademik)');
                 $table->foreign('nim')->references('nim')->on('data_akademik')->cascadeOnDelete();
 
-                // Relasi ke entitas pendukung
-                $table->foreignId('orang_tua_id')->nullable()->constrained('data_orang_tua')->nullOnDelete();
-                $table->foreignId('yudisium_id')->nullable()->constrained('yudisium')->nullOnDelete();
-                $table->foreignId('prodi_id')->nullable()->constrained('prodi')->nullOnDelete();
+                // Relasi ke entitas pendukung akademik & keluarga
+                $table->foreignId('orang_tua_id')->nullable()->constrained('data_orang_tua')->nullOnDelete()->comment('Relasi ke data orang tua/wali');
+                $table->foreignId('yudisium_id')->nullable()->constrained('yudisium')->nullOnDelete()->comment('Relasi ke rekam kelulusan yudisium');
+                $table->foreignId('prodi_id')->nullable()->constrained('prodi')->nullOnDelete()->comment('Relasi ke program studi alumni');
 
-                // Foto Profil Alumni (langsung terintegrasi tanpa migrasi add_foto terpisah)
-                $table->string('foto')->nullable()->comment('Path file foto profil alumni di /uploads/profile');
+                // Foto Profil Alumni
+                $table->string('foto', 200)->nullable()->comment('Path berkas foto profil alumni');
 
-                // Kontak Aktif Alumni (Hanya email_pribadi, tanpa duplikasi email / email_students)
-                $table->string('nomor_telepon')->nullable();
-                $table->string('email_pribadi')->nullable()->comment('Email pribadi aktif alumni');
+                // Kontak Aktif Alumni
+                $table->string('nomor_telepon', 20)->nullable()->comment('Nomor telepon/WhatsApp aktif alumni saat ini');
+                $table->string('email_pribadi', 100)->nullable()->comment('Alamat email aktif korespondensi alumni');
 
-                // Domisili Saat Ini
-                $table->text('alamat')->nullable();
-                $table->foreignId('kabupaten_id')->nullable()->constrained('kabupaten')->nullOnDelete();
-                $table->foreignId('propinsi_id')->nullable()->constrained('propinsi')->nullOnDelete();
-                $table->string('kelurahan')->nullable();
-                $table->string('kecamatan')->nullable();
-                $table->string('kode_pos')->nullable();
+                // Domisili Tempat Tinggal Saat Ini
+                $table->text('alamat_saat_ini')->nullable()->comment('Alamat domisili tempat tinggal alumni saat ini');
+                $table->foreignId('kabupaten_id')->nullable()->constrained('kabupaten')->nullOnDelete()->comment('Kabupaten/kota domisili tempat tinggal saat ini');
+                $table->foreignId('propinsi_id')->nullable()->constrained('propinsi')->nullOnDelete()->comment('Provinsi domisili tempat tinggal saat ini');
+                $table->char('kode_pos', 5)->nullable()->comment('Kode pos tempat tinggal alumni saat ini (5 digit)');
 
-                // Dokumen Kependudukan & Pajak Aktif
-                $table->string('nik', 20)->nullable()->comment('NIK KTP');
-                $table->string('npwp', 30)->nullable()->comment('Nomor Pokok Wajib Pajak');
+                // Identitas Kependudukan & Pajak Alumni
+                $table->char('nik', 16)->nullable()->comment('Nomor Induk Kependudukan KTP alumni (16 digit)');
+                $table->string('npwp', 25)->nullable()->comment('Nomor Pokok Wajib Pajak alumni');
 
                 // Media Sosial & Portofolio Profesional
-                $table->text('instagram_url')->nullable();
-                $table->text('facebook_url')->nullable();
-                $table->text('linkedin_url')->nullable();
-                $table->text('linkedin_username')->nullable();
+                $table->string('instagram_url', 150)->nullable()->comment('Tautan profil Instagram');
+                $table->string('facebook_url', 150)->nullable()->comment('Tautan profil Facebook');
+                $table->string('linkedin_url', 150)->nullable()->comment('Tautan profil LinkedIn');
+                $table->string('linkedin_username', 100)->nullable()->comment('Username akun LinkedIn alumni');
 
                 // Keahlian & Pengalaman Kerja (LinkedIn Compatible)
-                $table->text('skills')->nullable()->comment('Keahlian / Skills spesifik');
-                $table->text('experience')->nullable()->comment('Pengalaman kerja / Experience');
+                $table->text('skills')->nullable()->comment('Daftar keahlian / skills spesifik alumni');
+                $table->text('experience')->nullable()->comment('Pengalaman kerja / riwayat karier alumni');
 
                 // Data Karier & Tracer Pekerjaan
-                $table->foreignId('perusahaan_id')->nullable()->constrained('perusahaan')->nullOnDelete()->comment('Perusahaan tempat bekerja');
-                $table->foreignId('atasan_id')->nullable()->constrained('atasan')->nullOnDelete()->comment('Atasan langsung alumni');
-                $table->string('kategori_pekerjaan')->nullable()->comment('Pekerja, Wiraswasta, Melanjutkan Pendidikan, dsb');
-                $table->string('posisi_jabatan', 500)->nullable();
-                $table->string('posisi_wiraswasta', 500)->nullable();
-                $table->string('pendidikan_tingkat', 500)->nullable();
-                $table->string('perguruan_tinggi', 500)->nullable();
-                $table->string('pendidikan_prodi', 500)->nullable();
-                $table->decimal('gaji', 15, 2)->nullable();
-                $table->string('jenis_pekerjaan', 500)->nullable();
-                $table->string('zipcode')->nullable()->comment('Kode pos lokasi kerja');
+                $table->foreignId('perusahaan_id')->nullable()->constrained('perusahaan')->nullOnDelete()->comment('Relasi ke master perusahaan tempat alumni bekerja');
+                $table->foreignId('atasan_id')->nullable()->constrained('atasan')->nullOnDelete()->comment('Relasi ke data atasan langsung penilai');
+                $table->string('kategori_pekerjaan', 50)->nullable()->comment('Kategori aktivitas karier: Bekerja, Wiraswasta, Melanjutkan Pendidikan, dll');
+                $table->string('posisi_jabatan', 100)->nullable()->comment('Jabatan atau posisi pekerjaan alumni');
+                $table->string('posisi_wiraswasta', 100)->nullable()->comment('Jenis usaha atau posisi wirausaha alumni');
+                $table->string('pendidikan_tingkat', 30)->nullable()->comment('Jenjang studi lanjut: S2, S3, Profesi, Spesialis');
+                $table->string('perguruan_tinggi', 100)->nullable()->comment('Nama perguruan tinggi studi lanjut');
+                $table->string('pendidikan_prodi', 100)->nullable()->comment('Program studi pada jenjang studi lanjut');
+                $table->decimal('gaji', 15, 2)->nullable()->comment('Nominal gaji / penghasilan pertama per bulan');
+                $table->string('jenis_pekerjaan', 100)->nullable()->comment('Jenis atau klasifikasi bidang pekerjaan');
 
                 $table->timestamps();
             });

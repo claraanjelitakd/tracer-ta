@@ -18,15 +18,15 @@ return new class extends Migration
     {
         if (! Schema::hasTable('linkedin_sync_results')) {
             Schema::create('linkedin_sync_results', function (Blueprint $table) {
-                $table->id();
-                $table->foreignId('biodata_id')->constrained('biodata')->cascadeOnDelete();
-                $table->text('linkedin_url');
-                $table->string('linkedin_username')->nullable();
-                $table->json('scraped_data');
-                $table->enum('status', ['pending', 'approved', 'rejected'])->default('pending');
-                $table->foreignId('reviewed_by')->nullable()->constrained('users')->nullOnDelete();
-                $table->timestamp('reviewed_at')->nullable();
-                $table->timestamp('scraped_at')->nullable();
+                $table->id()->comment('ID unik hasil sinkronisasi LinkedIn');
+                $table->foreignId('biodata_id')->constrained('biodata')->cascadeOnDelete()->comment('Relasi ke biodata alumni target');
+                $table->string('linkedin_url', 150)->comment('URL profil LinkedIn yang disinkronkan');
+                $table->string('linkedin_username', 100)->nullable()->comment('Username akun LinkedIn');
+                $table->json('scraped_data')->comment('Payload data mentah hasil scraping LinkedIn (JSON)');
+                $table->enum('status', ['pending', 'approved', 'rejected'])->default('pending')->comment('Status persetujuan hasil sinkronisasi');
+                $table->foreignId('reviewed_by')->nullable()->constrained('users')->nullOnDelete()->comment('Admin yang menyetujui/menolak hasil sinkron');
+                $table->timestamp('reviewed_at')->nullable()->comment('Waktu persetujuan peninjauan');
+                $table->timestamp('scraped_at')->nullable()->comment('Waktu pengambilan data scraping');
                 $table->timestamps();
 
                 $table->index(['biodata_id', 'status']);

@@ -135,39 +135,40 @@ erDiagram
 
     data_akademik {
         bigint id PK
-        string nim UK "Primary Identifier Akademik"
-        string nama "Master Nama Lengkap Mahasiswa"
-        string angkatan_masuk "nullable"
-        string tempat_lahir "nullable"
+        char nim UK "8, Primary Identifier Akademik UKDW"
+        string nama "100, Master Nama Lengkap Mahasiswa"
+        year angkatan_masuk "4, nullable (Tahun Masuk)"
+        string tempat_lahir "60, nullable"
         date tanggal_lahir "nullable"
-        string agama "nullable"
-        string jenis_kelamin "enum: Laki-laki, Perempuan"
+        enum agama "Islam, Kristen Protestan, Katolik, Hindu, Buddha, Konghucu, Lainnya"
+        enum jenis_kelamin "Laki-laki, Perempuan"
         string golongan_darah "5, nullable"
-        string warga_negara "default WNI"
-        string nomor_telepon "nullable"
-        string email_pribadi "nullable"
-        string email_students "nullable (Email resmi kampus UKDW)"
-        text alamat_saat_ini "nullable"
-        string kelurahan "nullable"
-        string kecamatan "nullable"
-        bigint kabupaten_id FK "nullable"
-        bigint propinsi_id FK "nullable"
-        string kode_pos "nullable"
-        string nik "20, nullable"
-        string no_kk "20, nullable"
-        string nisn "20, nullable"
-        string no_bpjs "30, nullable"
-        string asal_sekolah "nullable"
+        string warga_negara "10, default WNI"
+        string nomor_telepon "20, nullable"
+        string email_pribadi "100, nullable"
+        string email_students "100, nullable (Email resmi kampus UKDW)"
+        text alamat_saat_ini "nullable (Alamat domisili saat kuliah / KTP)"
+        string kelurahan "50, nullable"
+        string kecamatan "50, nullable"
+        bigint kabupaten_id FK "nullable, references kabupaten.id"
+        bigint propinsi_id FK "nullable, references propinsi.id"
+        char kode_pos "5, nullable (Kode pos asal KTP 5 digit)"
+        char nik "16, nullable (16 digit NIK KTP)"
+        char no_kk "16, nullable (16 digit No KK)"
+        string nisn "15, nullable"
+        string no_bpjs "20, nullable"
+        string npwp "25, nullable"
+        string asal_sekolah "100, nullable"
         text alamat_asal_sekolah "nullable"
-        string kota_kabupaten_asal_sekolah "nullable"
-        string provinsi_asal_sekolah "nullable"
-        string jurusan_asal_sekolah "nullable"
-        char status_mahasiswa "2, default AR, L jika lulus"
-        string tahun_akademik_lulus "nullable, misal: Gasal 2026/2027"
-        year tahun_lulus "nullable, e.g. 2026"
+        string kota_kabupaten_asal_sekolah "60, nullable"
+        string provinsi_asal_sekolah "60, nullable"
+        string jurusan_asal_sekolah "50, nullable"
+        enum status_mahasiswa "Lulus, Aktif, Cuti, Drop Out, Lainnya (default Lulus)"
+        string tahun_akademik_lulus "30, nullable, misal: Gasal 2024/2025"
+        year tahun_lulus "nullable, e.g. 2021-2026"
         date tanggal_lulus "nullable, tanggal SK yudisium"
         decimal ip_kumulatif "3,2, nullable"
-        int total_sks "nullable"
+        smallint total_sks "nullable"
         decimal total_angka_kualitas "8,2, nullable"
         timestamp created_at
         timestamp updated_at
@@ -175,17 +176,17 @@ erDiagram
 
     yudisium {
         bigint id PK
-        string nim UK "FK references data_akademik.nim"
-        string dosen_pembimbing_1 "nullable"
-        string dosen_pembimbing_2 "nullable"
-        string dosen_penguji_1 "nullable"
-        string dosen_penguji_2 "nullable"
+        char nim UK "8, FK references data_akademik.nim"
+        string dosen_pembimbing_1 "100, nullable"
+        string dosen_pembimbing_2 "100, nullable"
+        string dosen_penguji_1 "100, nullable"
+        string dosen_penguji_2 "100, nullable"
         text judul_ta "nullable (Skripsi/Tesis/TA)"
         text judul_ta_inggris "nullable"
-        text url_publikasi "nullable (Link repositori/jurnal ilmiah)"
-        string jenis_publikasi "nullable"
-        string status_publikasi "nullable"
-        string keterangan_hasil_yudisium "nullable"
+        string url_publikasi "200, nullable (Link repositori/jurnal ilmiah)"
+        string jenis_publikasi "100, nullable"
+        string status_publikasi "50, nullable"
+        string keterangan_hasil_yudisium "60, nullable"
         enum status_lulus "Belum, Proses, Lulus, Tidak Lulus"
         timestamp created_at
         timestamp updated_at
@@ -194,38 +195,35 @@ erDiagram
     biodata {
         bigint id PK
         bigint user_id FK "references users.id"
-        string nim UK "references data_akademik.nim"
+        char nim UK "8, FK references data_akademik.nim"
         bigint orang_tua_id FK "nullable, references data_orang_tua.id"
         bigint yudisium_id FK "nullable, references yudisium.id"
         bigint prodi_id FK "nullable, references prodi.id"
-        string foto "nullable (Path file di /uploads/profile)"
-        string nomor_telepon "nullable"
-        string email_pribadi "nullable (Korespondensi aktif alumni)"
-        text alamat "nullable (Alamat domisili saat ini)"
+        string foto "200, nullable (Path file di /uploads/profile)"
+        string nomor_telepon "20, nullable"
+        string email_pribadi "100, nullable (Korespondensi aktif alumni)"
+        text alamat_saat_ini "nullable (Alamat domisili tempat tinggal saat ini)"
         bigint kabupaten_id FK "nullable, references kabupaten.id"
         bigint propinsi_id FK "nullable, references propinsi.id"
-        string kelurahan "nullable"
-        string kecamatan "nullable"
-        string kode_pos "nullable"
-        string nik "20, nullable"
-        string npwp "30, nullable"
-        text instagram_url "nullable"
-        text facebook_url "nullable"
-        text linkedin_url "nullable"
-        text linkedin_username "nullable"
-        text skills "nullable (Keahlian spesifik / LinkedIn Skills)"
-        text experience "nullable (Pengalaman kerja / LinkedIn Experiences)"
+        char kode_pos "5, nullable (Kode pos tempat tinggal alumni saat ini)"
+        char nik "16, nullable (16 digit NIK KTP alumni)"
+        string npwp "25, nullable (Nomor Pokok Wajib Pajak alumni)"
+        string instagram_url "150, nullable"
+        string facebook_url "150, nullable"
+        string linkedin_url "150, nullable"
+        string linkedin_username "100, nullable"
+        text skills "nullable (Daftar keahlian spesifik alumni)"
+        text experience "nullable (Pengalaman kerja / riwayat karier)"
         bigint perusahaan_id FK "nullable, references perusahaan.id"
         bigint atasan_id FK "nullable, references atasan.id"
-        string kategori_pekerjaan "Pekerja, Wiraswasta, Melanjutkan Pendidikan"
-        string posisi_jabatan "500, nullable"
-        string posisi_wiraswasta "500, nullable"
-        string pendidikan_tingkat "500, nullable (Profesi, S2, S3)"
-        string perguruan_tinggi "500, nullable"
-        string pendidikan_prodi "500, nullable"
+        string kategori_pekerjaan "50, nullable (Bekerja, Wiraswasta, Melanjutkan Pendidikan)"
+        string posisi_jabatan "100, nullable"
+        string posisi_wiraswasta "100, nullable"
+        string pendidikan_tingkat "30, nullable (Profesi, S2, S3)"
+        string perguruan_tinggi "100, nullable"
+        string pendidikan_prodi "100, nullable"
         decimal gaji "15,2, nullable (Take Home Pay)"
-        string jenis_pekerjaan "500, nullable"
-        string zipcode "nullable (Kode pos lokasi kerja)"
+        string jenis_pekerjaan "100, nullable"
         timestamp created_at
         timestamp updated_at
     }
@@ -247,36 +245,36 @@ erDiagram
 
     data_orang_tua {
         bigint id PK
-        string nim FK "references biodata.nim"
-        string nama_orang_tua "nullable"
-        string pekerjaan "nullable"
-        string nomor_telepon "nullable"
-        string alamat "nullable"
-        string kota "nullable"
-        bigint kabupaten_id FK "nullable"
-        bigint propinsi_id FK "nullable"
-        string kode_pos "nullable"
+        char nim UK "8, FK references data_akademik.nim"
+        string nama_orang_tua "100, nullable"
+        string pekerjaan "100, nullable"
+        text alamat "nullable"
+        string kota "60, nullable"
+        bigint kabupaten_id FK "nullable, references kabupaten.id"
+        bigint propinsi_id FK "nullable, references propinsi.id"
+        char kode_pos "5, nullable (Kode pos domisili orang tua 5 digit)"
+        string nomor_telepon "20, nullable"
         timestamp created_at
         timestamp updated_at
     }
 
     perusahaan {
         bigint id PK
-        string nama_perusahaan "500"
-        foreignId propinsi_id FK "nullable, references propinsi.id"
-        foreignId kabupaten_id FK "nullable, references kabupaten.id"
+        string nama_perusahaan "150, Nama resmi instansi / perusahaan"
+        bigint propinsi_id FK "nullable, references propinsi.id"
+        bigint kabupaten_id FK "nullable, references kabupaten.id"
         text alamat "nullable"
-        string kode_pos "15, nullable"
-        string homepage "nullable"
-        string no_telp_fax "nullable"
-        string sektor "nullable"
-        string skala "default Nasional (Lokal, Nasional, Internasional)"
-        string bentuk_perusahaan "nullable (BUMN, Perusahaan Terbatas, Koperasi, CV, Firma)"
-        string jumlah_pegawai "nullable (< 50, 51-100, 101-150, 151-300, 301-500, > 500 Orang)"
+        string homepage "150, nullable"
+        string no_telp_fax "30, nullable"
+        string kode_pos "10, nullable (Kode pos kantor domestik/internasional)"
+        string sektor "100, nullable"
+        enum skala "Lokal, Regional/Lokal, Nasional, Internasional (default Nasional)"
+        string bentuk_perusahaan "60, nullable (BUMN, Perusahaan Terbatas, Koperasi, CV, Firma)"
+        string jumlah_pegawai "60, nullable (< 50, 51-100, 101-150, 151-300, 301-500, > 500 Orang)"
         enum status_verifikasi "Menunggu Verifikasi, Terverifikasi, Ditolak"
         enum jenis_lokasi "Dalam Negeri, Luar Negeri"
-        string negara "default Indonesia"
-        string jenis_perusahaan "nullable"
+        string negara "100, default Indonesia"
+        string jenis_perusahaan "100, nullable (Instansi pemerintah, BUMN, Swasta, Wiraswasta, dll)"
         text jenis_perusahaan_lainnya "nullable"
         bigint created_by_user_id FK "nullable, references users.id"
         bigint created_by_prodi_id FK "nullable, index prodi pengaju"
@@ -492,38 +490,40 @@ erDiagram
 ### C. Modul Data Akademik, Kelulusan & Profil Biodata Alumni
 1. **`data_akademik`** (*Single Source of Truth* Master Identitas & Akademik):
    - Menyimpan seluruh data resmi mahasiswa/alumni yang bersumber dari Pangkalan Data Akademik universitas:
-     - Kunci Utama: `id`, `nim` (Unique).
-     - Identitas Kependudukan & Pribadi: `nama`, `angkatan_masuk`, `tempat_lahir`, `tanggal_lahir`, `agama`, `jenis_kelamin`, `golongan_darah`, `warga_negara`, `nik`, `no_kk`, `nisn`, `no_bpjs`.
+     - Kunci Utama: `id`, `nim` (`CHAR(8)` Unique, format resmi UKDW).
+     - Identitas Kependudukan & Pribadi: `nama`, `angkatan_masuk` (`YEAR(4)`), `tempat_lahir`, `tanggal_lahir`, `agama` (`ENUM('Islam', 'Kristen Protestan', 'Katolik', 'Hindu', 'Buddha', 'Konghucu', 'Lainnya')`), `jenis_kelamin` (`ENUM('Laki-laki', 'Perempuan')`), `golongan_darah` (`VARCHAR(5)`), `warga_negara` (`VARCHAR(10)`, default 'WNI'), `nik` (`CHAR(16)`), `no_kk` (`CHAR(16)`), `nisn` (`VARCHAR(15)`), `no_bpjs` (`VARCHAR(20)`), `npwp` (`VARCHAR(25)`).
      - Riwayat Pendidikan Menengah: `asal_sekolah`, `alamat_asal_sekolah`, `kota_kabupaten_asal_sekolah`, `provinsi_asal_sekolah`, `jurusan_asal_sekolah`.
-     - Kontak & Alamat Resmi: `nomor_telepon`, `email_students` (email kampus `@students.ukdw.ac.id`), `email_pribadi`, `alamat_saat_ini`, `kelurahan`, `kecamatan`, `kabupaten_id`, `propinsi_id`, `kode_pos`.
-     - Parameter Kelulusan: `status_mahasiswa` (`AR`, `L`, dll.), `tahun_akademik_lulus`, `tahun_lulus`, `tanggal_lulus`, `ip_kumulatif`, `total_sks`, `total_angka_kualitas`.
+     - Kontak & Alamat Asal KTP: `nomor_telepon`, `email_students` (email kampus `@students.ukdw.ac.id`), `email_pribadi`, `alamat_saat_ini`, `kelurahan`, `kecamatan`, `kabupaten_id`, `propinsi_id`, `kode_pos` (`CHAR(5)`).
+     - Parameter Kelulusan: `status_mahasiswa` (`ENUM('Lulus', 'Aktif', 'Cuti', 'Drop Out', 'Lainnya')`, default 'Lulus'), `tahun_akademik_lulus`, `tahun_lulus` (`YEAR(4)`), `tanggal_lulus`, `ip_kumulatif`, `total_sks`, `total_angka_kualitas`.
    - **Karakteristik**: Seluruh field identitas kependudukan & akademik dikunci permanen (*read-only/disabled*) di halaman profil untuk semua role (Alumni, SuperAdmin, Fakultas, Prodi, Biro 3).
 2. **`yudisium`**:
    - Menyimpan data penyelesaian tugas akhir dan kelulusan yudisium:
-     - `nim` (Unique FK ke `data_akademik.nim`).
+     - `nim` (`CHAR(8)` Unique FK ke `data_akademik.nim`).
      - Dosen Pembimbing (`dosen_pembimbing_1`, `dosen_pembimbing_2`) & Dosen Penguji (`dosen_penguji_1`, `dosen_penguji_2`).
      - Judul Tugas Akhir (`judul_ta`, `judul_ta_inggris`).
      - Publikasi Ilmiah (`url_publikasi`, `jenis_publikasi`, `status_publikasi`).
      - Hasil & Status Yudisium: `keterangan_hasil_yudisium`, `status_lulus` (`Belum`, `Proses`, `Lulus`, `Tidak Lulus`).
    - **Otomasi Siklus Kelulusan**: Ketika `status_lulus` bernilai `'Lulus'`, sistem (via Model Event `Yudisium::saved`) otomatis:
-     - Mengubah status mahasiswa di `data_akademik` menjadi `'L'` (Lulus).
+     - Mengubah status mahasiswa di `data_akademik` menjadi `'Lulus'`.
      - Mengisi tanggal, tahun, dan periode kelulusan di `data_akademik`.
      - Membuatkan akun `users` baru (username: NIM, role: alumni, password awal: tgl lahir `DDMMYYYY`) jika belum ada.
      - Menginisialisasi kerangka record `biodata` (skeleton profile) dengan data identitas, prodi, dan ortu terisi otomatis dari data akademik, sementara kolom karier (`perusahaan_id`, `posisi_jabatan`, `gaji`, dll.) dibiarkan kosong/null untuk diisi alumni atau disinkronkan melalui LinkedIn.
 3. **`biodata`** (Profil Dinamis & Pelacak Tracer Karier):
    - Menyimpan profil aktif alumni, kontak pribadi, domisili terkini, media sosial, dan data karier tanpa duplikasi data master akademik:
-     - Relasi: `user_id` (1:1 ke `users`), `nim` (1:1 ke `data_akademik`), `prodi_id`, `orang_tua_id`, `yudisium_id`, `perusahaan_id`, `atasan_id`.
+     - Relasi: `user_id` (1:1 ke `users`), `nim` (`CHAR(8)` 1:1 ke `data_akademik`), `prodi_id`, `orang_tua_id`, `yudisium_id`, `perusahaan_id`, `atasan_id`.
      - Foto: `foto` (Path foto di `/uploads/profile`).
-     - Kontak Pribadi: `email_pribadi` (digunakan untuk login dan notifikasi reset password), `nomor_telepon`.
-     - Domisili Terkini: `alamat`, `kelurahan`, `kecamatan`, `kabupaten_id`, `propinsi_id`, `kode_pos`.
-     - Perpajakan & Medsos: `nik`, `npwp`, `instagram_url`, `facebook_url`, `linkedin_url`, `linkedin_username`.
-     - Portofolio & Karier: `skills`, `experience`, `kategori_pekerjaan` (`Pekerja`, `Wiraswasta`, `Melanjutkan Pendidikan`), `posisi_jabatan`, `posisi_wiraswasta`, `pendidikan_tingkat`, `perguruan_tinggi`, `pendidikan_prodi`, `gaji`, `jenis_pekerjaan`, `zipcode`.
-4. **`data_orang_tua`**: Kontak dan domisili orang tua/wali alumni (`nama_orang_tua`, `pekerjaan`, `nomor_telepon`, `alamat`, `kota`, `kabupaten_id`, `propinsi_id`, `kode_pos`).
+     - Kontak Pribadi: `email_pribadi` (digunakan untuk login dan korespondensi aktif), `nomor_telepon`.
+     - Domisili Tempat Tinggal Terkini: `alamat_saat_ini`, `kabupaten_id`, `propinsi_id`, `kode_pos` (`CHAR(5)` satu-satunya kode pos domisili alumni).
+     - Identitas Kependudukan & Pajak Alumni: `nik` (`CHAR(16)`), `npwp` (`VARCHAR(25)`).
+     - Media Sosial & Portofolio Profesional: `instagram_url`, `facebook_url`, `linkedin_url`, `linkedin_username`, `skills`, `experience`.
+     - Data Karier & Pelacak Tracer: `perusahaan_id`, `atasan_id`, `kategori_pekerjaan` (`Bekerja (Full Time)`, `Wiraswasta`, `Melanjutkan Pendidikan`, dll.), `posisi_jabatan`, `posisi_wiraswasta`, `pendidikan_tingkat`, `perguruan_tinggi`, `pendidikan_prodi`, `gaji`, `jenis_pekerjaan`.
+     - **Prinsip Bebas Duplikasi Kode Pos**: Kolom fisik `zipcode` dan `kode_pos_saat_ini` tidak ada di tabel `biodata`. Kode pos lokasi kerja alumni diperoleh langsung secara relasional dari master `perusahaan.kode_pos`.
+4. **`data_orang_tua`**: Kontak dan domisili orang tua/wali alumni (`nim` `CHAR(8)` FK ke `data_akademik.nim`, `nama_orang_tua`, `pekerjaan`, `nomor_telepon`, `alamat`, `kota`, `kabupaten_id`, `propinsi_id`, `kode_pos` `CHAR(5)`).
 5. **`perusahaan`** & **`atasan`**:
    - Master data entitas institusi/perusahaan dan atasan alumni.
-   - Kolom perusahaan: `nama_perusahaan`, `alamat`, `kode_pos`, `homepage`, `no_telp_fax`, `sektor`, `skala` (`Lokal`, `Nasional`, `Internasional`), `bentuk_perusahaan` (`BUMN`, `Perusahaan Terbatas`, `Koperasi`, `CV`, `Firma`), `jumlah_pegawai` (`< 50 Orang`, `51 - 100 Orang`, `101 – 150 Orang`, `151 – 300 Orang`, `301 – 500 Orang`, `> 500 Orang`), `status_verifikasi` (`Menunggu Verifikasi`, `Terverifikasi`, `Ditolak`), `jenis_lokasi`, `negara`, `created_by_user_id`, `created_by_prodi_id`.
+   - Kolom perusahaan: `nama_perusahaan`, `alamat`, `kode_pos` (`VARCHAR(10)` mendukung kode pos domestik 5 digit maupun internasional), `homepage`, `no_telp_fax`, `sektor`, `skala` (`Lokal`, `Regional/Lokal`, `Nasional`, `Internasional`), `bentuk_perusahaan` (`BUMN`, `Perusahaan Terbatas`, `Koperasi`, `CV`, `Firma`), `jumlah_pegawai` (`< 50 Orang`, `51 - 100 Orang`, `101 – 150 Orang`, `151 – 300 Orang`, `301 – 500 Orang`, `> 500 Orang`), `status_verifikasi` (`Menunggu Verifikasi`, `Terverifikasi`, `Ditolak`), `jenis_lokasi` (`Dalam Negeri`, `Luar Negeri`), `negara` (default 'Indonesia'), `jenis_perusahaan`, `jenis_perusahaan_lainnya`, `created_by_user_id`, `created_by_prodi_id`.
    - Kolom atasan: `nama`, `email`, `telepon`.
-   - Menjadi *Single Source of Truth* informasi profil institusi tempat alumni berkarier sehingga tidak terjadi redundansi kolom pada instrumen evaluasi.
+   - Menjadi *Single Source of Truth* informasi profil institusi tempat alumni berkarier sehingga tidak terjadi redundansi kolom pada instrumen evaluasi maupun profil alumni.
 
 ---
 
@@ -596,9 +596,10 @@ erDiagram
 | `ref_fakultas` | 1 : N | `users` | `users.fakultas_id` | Admin Fakultas terikat pada 1 fakultas. |
 | `prodi` | 1 : N | `biodata` | `biodata.prodi_id` | Alumni terafiliasi dengan program studi kelulusannya. |
 | `data_akademik` | 1 : 1 | `biodata` | `biodata.nim = data_akademik.nim` | Relasi identitas akademik master bebas duplikasi data. |
-| `data_akademik` | 1 : 1 | `yudisium` | `yudisium.nim = data_akademik.nim` | Relasi data kelulusan, skripsi/TA, dan repositori publikasi. |
-| `biodata` | 1 : 1 | `yudisium` | `biodata.yudisium_id` | Referensi langsung hasil yudisium pada profil alumni. |
-| `biodata` | 1 : 1 | `data_orang_tua` | `data_orang_tua.nim = biodata.nim` | Kontak wali dan data orang tua alumni. |
+| `data_akademik` | 1 : 1 | `yudisium` | `yudisium.nim = data_akademik.nim` | Relasi data kelulusan, skripsi/TA, dan repositori publikasi (NIM CHAR(8)). |
+| `data_akademik` | 1 : 1 | `data_orang_tua` | `data_orang_tua.nim = data_akademik.nim` | Kontak wali dan data orang tua alumni (NIM CHAR(8)). |
+| `biodata` | N : 1 | `yudisium` | `biodata.yudisium_id = yudisium.id` | Referensi langsung hasil yudisium pada profil alumni. |
+| `biodata` | N : 1 | `data_orang_tua` | `biodata.orang_tua_id = data_orang_tua.id` | Referensi langsung data orang tua/wali pada profil alumni. |
 | `users` | 1 : N | `perusahaan` | `perusahaan.created_by_user_id` | Pengguna pengaju pendaftaran institusi/perusahaan baru. |
 | `prodi` | 1 : N | `perusahaan` | `perusahaan.created_by_prodi_id` | Program studi pengaju untuk pembatasan verifikasi prodi & fakultas. |
 | `propinsi` | 1 : N | `perusahaan` | `perusahaan.propinsi_id` | Provinsi kantor perusahaan di Indonesia. |

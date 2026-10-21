@@ -44,6 +44,7 @@ class DataAkademik extends Model
         'no_kk',
         'nisn',
         'no_bpjs',
+        'npwp',
         'asal_sekolah',
         'alamat_asal_sekolah',
         'kota_kabupaten_asal_sekolah',
@@ -61,6 +62,7 @@ class DataAkademik extends Model
     protected $casts = [
         'tanggal_lahir' => 'date',
         'tanggal_lulus' => 'date',
+        'angkatan_masuk' => 'integer',
         'tahun_lulus' => 'integer',
         'ip_kumulatif' => 'float',
     ];

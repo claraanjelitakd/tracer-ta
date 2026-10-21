@@ -13,10 +13,10 @@ return new class extends Migration
     {
         if (! Schema::hasTable('ref_fakultas')) {
             Schema::create('ref_fakultas', function (Blueprint $table) {
-                $table->id();
-                $table->string('kode_fakultas', 10)->unique();
-                $table->string('nama_fakultas');
-                $table->string('singkatan', 20)->nullable();
+                $table->id()->comment('ID unik master fakultas');
+                $table->string('kode_fakultas', 10)->unique()->comment('Kode resmi fakultas (misal: 7, 1)');
+                $table->string('nama_fakultas', 100)->comment('Nama resmi fakultas (misal: Fakultas Teknologi Informasi)');
+                $table->string('singkatan', 20)->nullable()->comment('Singkatan nama fakultas (misal: FTI, FB)');
                 $table->timestamps();
             });
         }

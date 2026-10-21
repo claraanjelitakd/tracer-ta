@@ -12,10 +12,10 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('prodi', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('fakultas_id')->nullable()->constrained('ref_fakultas')->nullOnDelete();
-            $table->string('kode_prodi', 10)->unique()->comment('Contoh: 71, 72, 11');
-            $table->string('nama_prodi')->comment('Contoh: Informatika, Sistem Informasi');
+            $table->id()->comment('ID unik master program studi');
+            $table->foreignId('fakultas_id')->nullable()->constrained('ref_fakultas')->nullOnDelete()->comment('Relasi ke fakultas pengampu');
+            $table->string('kode_prodi', 10)->unique()->comment('Kode resmi program studi (misal: 71, 72)');
+            $table->string('nama_prodi', 100)->comment('Nama resmi program studi (misal: Informatika)');
             $table->timestamps();
         });
     }

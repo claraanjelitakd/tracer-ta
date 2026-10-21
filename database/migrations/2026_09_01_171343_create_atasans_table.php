@@ -13,14 +13,14 @@ return new class extends Migration
     {
         if (! Schema::hasTable('atasan')) {
             Schema::create('atasan', function (Blueprint $table) {
-                $table->id();
+                $table->id()->comment('ID unik data atasan langsung');
 
                 // Relasi ke User Login (bisa null jika belum dibuatkan akun)
-                $table->foreignId('user_id')->nullable()->constrained()->nullOnDelete();
+                $table->foreignId('user_id')->nullable()->constrained('users')->nullOnDelete()->comment('Relasi ke akun pengguna login atasan penilai');
 
-                $table->string('nama')->comment('Nama Atasan');
-                $table->string('email')->nullable()->comment('Email Atasan');
-                $table->string('telepon')->nullable()->comment('Nomor Telepon Atasan');
+                $table->string('nama', 100)->comment('Nama lengkap atasan penilai');
+                $table->string('email', 100)->nullable()->comment('Alamat email resmi atasan');
+                $table->string('telepon', 20)->nullable()->comment('Nomor telepon/WhatsApp atasan penilai');
 
                 $table->timestamps();
             });

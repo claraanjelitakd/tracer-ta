@@ -17,28 +17,28 @@ return new class extends Migration
     {
         if (! Schema::hasTable('log_activities')) {
             Schema::create('log_activities', function (Blueprint $table) {
-                $table->id();
+                $table->id()->comment('ID unik rekam jejak aktivitas audit');
 
                 // Pengguna yang melakukan aksi (bisa null jika dilakukan sistem / tamu)
-                $table->foreignId('user_id')->nullable()->constrained('users')->nullOnDelete();
+                $table->foreignId('user_id')->nullable()->constrained('users')->nullOnDelete()->comment('Relasi ke user pelaku aktivitas');
 
                 // Jenis aksi audit (e.g. ACC_VERIFIKASI_PERUSAHAAN, GANTI_PERUSAHAAN, REJECT_PERUSAHAAN, RESET_PASSWORD_DOB, UPDATE_USER)
-                $table->string('action', 100);
+                $table->string('action', 100)->comment('Kode jenis aktivitas (e.g. GANTI_PERUSAHAAN_MASTER)');
 
                 // Entitas target (Polymorphic-friendly)
-                $table->string('model_type')->nullable();
-                $table->unsignedBigInteger('model_id')->nullable();
+                $table->string('model_type', 100)->nullable()->comment('Nama kelas model target aktivitas');
+                $table->unsignedBigInteger('model_id')->nullable()->comment('ID record model target aktivitas');
 
                 // Deskripsi detail aktivitas
-                $table->text('description');
+                $table->text('description')->comment('Uraian naratif lengkap aktivitas sistem');
 
                 // Payload perubahan (data lama vs data baru dalam JSON)
-                $table->json('old_values')->nullable();
-                $table->json('new_values')->nullable();
+                $table->json('old_values')->nullable()->comment('Nilai atribut sebelum perubahan (JSON)');
+                $table->json('new_values')->nullable()->comment('Nilai atribut sesudah perubahan (JSON)');
 
                 // Informasi jaringan & perangkat klien
-                $table->string('ip_address', 45)->nullable();
-                $table->text('user_agent')->nullable();
+                $table->string('ip_address', 45)->nullable()->comment('Alamat IP perangkat pengakses');
+                $table->text('user_agent')->nullable()->comment('User agent browser atau aplikasi pengakses');
 
                 $table->timestamps();
 

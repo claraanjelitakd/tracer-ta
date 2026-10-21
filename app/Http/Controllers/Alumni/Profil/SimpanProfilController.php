@@ -82,7 +82,7 @@ class SimpanProfilController extends Controller
             $jenisPerusahaanLainnya = ! empty($dataTervalidasi['company_jenis_perusahaan_lainnya']) ? $dataTervalidasi['company_jenis_perusahaan_lainnya'] : (! empty($dataTervalidasi['perusahaan_jenis_perusahaan_lainnya']) ? $dataTervalidasi['perusahaan_jenis_perusahaan_lainnya'] : null);
             $skala = ! empty($dataTervalidasi['company_skala']) ? $dataTervalidasi['company_skala'] : (! empty($dataTervalidasi['perusahaan_skala']) ? $dataTervalidasi['perusahaan_skala'] : null);
             $alamat = ! empty($dataTervalidasi['company_alamat']) ? $dataTervalidasi['company_alamat'] : (! empty($dataTervalidasi['perusahaan_alamat']) ? $dataTervalidasi['perusahaan_alamat'] : null);
-            $kodePos = ! empty($dataTervalidasi['zipcode']) ? $dataTervalidasi['zipcode'] : (! empty($dataTervalidasi['kode_pos']) ? $dataTervalidasi['kode_pos'] : null);
+            $kodePos = ! empty($dataTervalidasi['company_kode_pos']) ? $dataTervalidasi['company_kode_pos'] : (! empty($dataTervalidasi['perusahaan_kode_pos']) ? $dataTervalidasi['perusahaan_kode_pos'] : (! empty($dataTervalidasi['zipcode']) ? $dataTervalidasi['zipcode'] : null));
 
             $prodiIdPengaju = $pengguna?->prodi_id ?? $biodata?->prodi_id;
             $perusahaan = Perusahaan::firstOrCreate(
@@ -242,9 +242,7 @@ class SimpanProfilController extends Controller
         $biodata->update([
             'nomor_telepon' => ! empty($dataTervalidasi['nomor_telepon']) ? $dataTervalidasi['nomor_telepon'] : null,
             'email_pribadi' => ! empty($dataTervalidasi['email_pribadi']) ? $dataTervalidasi['email_pribadi'] : null,
-            'alamat' => ! empty($dataTervalidasi['alamat_saat_ini']) ? $dataTervalidasi['alamat_saat_ini'] : (! empty($dataTervalidasi['alamat']) ? $dataTervalidasi['alamat'] : null),
-            'kelurahan' => ! empty($dataTervalidasi['kelurahan']) ? $dataTervalidasi['kelurahan'] : null,
-            'kecamatan' => ! empty($dataTervalidasi['kecamatan']) ? $dataTervalidasi['kecamatan'] : null,
+            'alamat_saat_ini' => ! empty($dataTervalidasi['alamat_saat_ini']) ? $dataTervalidasi['alamat_saat_ini'] : (! empty($dataTervalidasi['alamat']) ? $dataTervalidasi['alamat'] : null),
             'kabupaten_id' => ! empty($dataTervalidasi['kabupaten_id']) ? $dataTervalidasi['kabupaten_id'] : null,
             'propinsi_id' => ! empty($dataTervalidasi['propinsi_id']) ? $dataTervalidasi['propinsi_id'] : (! empty($dataTervalidasi['provinsi_id']) ? $dataTervalidasi['provinsi_id'] : null),
             'kode_pos' => ! empty($dataTervalidasi['kode_pos']) ? $dataTervalidasi['kode_pos'] : null,
@@ -264,7 +262,6 @@ class SimpanProfilController extends Controller
             'pendidikan_prodi' => ! empty($dataTervalidasi['pendidikan_prodi']) ? $dataTervalidasi['pendidikan_prodi'] : null,
             'gaji' => $gajiNominal !== null ? $gajiNominal : null,
             'jenis_pekerjaan' => ! empty($dataTervalidasi['jenis_pekerjaan']) ? $dataTervalidasi['jenis_pekerjaan'] : (! empty($dataTervalidasi['company_jenis_perusahaan']) ? $dataTervalidasi['company_jenis_perusahaan'] : (! empty($dataTervalidasi['perusahaan_jenis_perusahaan']) ? $dataTervalidasi['perusahaan_jenis_perusahaan'] : null)),
-            'zipcode' => ! empty($dataTervalidasi['zipcode']) ? $dataTervalidasi['zipcode'] : null,
             'perusahaan_id' => $idPerusahaan,
             'atasan_id' => $idAtasan,
             'orang_tua_id' => $orangTuaModel?->id ?? $biodata->orang_tua_id,

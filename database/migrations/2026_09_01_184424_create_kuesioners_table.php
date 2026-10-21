@@ -12,11 +12,11 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('kuesioner', function (Blueprint $table) {
-            $table->id();
-            $table->string('title');
-            $table->text('description')->nullable();
-            $table->integer('year');
-            $table->boolean('is_active')->default(true);
+            $table->id()->comment('ID unik instrumen kuesioner induk');
+            $table->string('title', 150)->comment('Judul instrumen kuesioner (misal: Tracer Study 2026)');
+            $table->text('description')->nullable()->comment('Deskripsi penjelasan instrumen kuesioner');
+            $table->year('year')->comment('Tahun periode pelaksanaan tracer study');
+            $table->boolean('is_active')->default(true)->comment('Status keaktifan kuesioner bagi responden');
             $table->timestamps();
         });
     }

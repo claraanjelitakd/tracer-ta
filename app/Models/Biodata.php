@@ -129,11 +129,10 @@ class Biodata extends Model
         'foto',
         'nomor_telepon',
         'email_pribadi',
+        'alamat_saat_ini',
         'alamat',
         'kabupaten_id',
         'propinsi_id',
-        'kelurahan',
-        'kecamatan',
         'kode_pos',
         'nik',
         'npwp',
@@ -154,7 +153,6 @@ class Biodata extends Model
         'perguruan_tinggi',
         'pendidikan_prodi',
         'jenis_pekerjaan',
-        'zipcode',
         'gaji',
     ];
 
@@ -471,6 +469,69 @@ class Biodata extends Model
     public function setMinatAttribute($value): void
     {
         $this->attributes['experience'] = $value;
+    }
+
+    /**
+     * Akses alamat domisili saat ini (dengan fallback ke data_akademik jika belum diisi).
+     */
+    public function getAlamatSaatIniAttribute(): ?string
+    {
+        return $this->attributes['alamat_saat_ini'] ?? $this->attributes['alamat'] ?? $this->dataAkademik?->alamat_saat_ini;
+    }
+
+    /**
+     * Alias backwards-compatible: get alamat -> alamat_saat_ini.
+     */
+    public function getAlamatAttribute(): ?string
+    {
+        return $this->alamat_saat_ini;
+    }
+
+    /**
+     * Alias backwards-compatible: set alamat -> alamat_saat_ini.
+     */
+    public function setAlamatAttribute($value): void
+    {
+        $this->attributes['alamat_saat_ini'] = $value;
+    }
+
+    /**
+     * Akses kode pos domisili saat ini (dengan fallback ke data_akademik).
+     */
+    public function getKodePosAttribute(): ?string
+    {
+        return $this->attributes['kode_pos'] ?? $this->dataAkademik?->kode_pos;
+    }
+
+    /**
+     * Kode pos kantor / perusahaan diperoleh langsung dari relasi master perusahaan (Zero Duplication).
+     */
+    public function getZipcodeAttribute(): ?string
+    {
+        return $this->perusahaan?->kode_pos;
+    }
+
+    /**
+     * Identitas kependudukan & perpajakan (dengan fallback ke master data_akademik jika kosong).
+     */
+    public function getNikAttribute(): ?string
+    {
+        return $this->attributes['nik'] ?? $this->dataAkademik?->nik;
+    }
+
+    public function getNpwpAttribute(): ?string
+    {
+        return $this->attributes['npwp'] ?? $this->dataAkademik?->npwp;
+    }
+
+    public function getKelurahanAttribute(): ?string
+    {
+        return $this->dataAkademik?->kelurahan;
+    }
+
+    public function getKecamatanAttribute(): ?string
+    {
+        return $this->dataAkademik?->kecamatan;
     }
 
     // =========================================================================

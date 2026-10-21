@@ -14,13 +14,13 @@ return new class extends Migration
 
         $driver = DB::getDriverName();
         $concatLuarNegeri = match ($driver) {
-            'sqlite' => "TRIM(COALESCE(p.alamat || ', ', '') || COALESCE(p.negara || ', ', '') || COALESCE(b.zipcode, ''), ', ')",
-            default => "CONCAT_WS(', ', p.alamat, p.negara, b.zipcode)"
+            'sqlite' => "TRIM(COALESCE(p.alamat || ', ', '') || COALESCE(p.negara || ', ', '') || COALESCE(p.kode_pos, ''), ', ')",
+            default => "CONCAT_WS(', ', p.alamat, p.negara, p.kode_pos)"
         };
 
         $concatDomestik = match ($driver) {
-            'sqlite' => "TRIM(COALESCE(p.alamat || ', ', '') || COALESCE(kab.nama_kabupaten || ', ', '') || COALESCE(prov.nama_provinsi || ', ', '') || COALESCE(b.zipcode, ''), ', ')",
-            default => "CONCAT_WS(', ', p.alamat, kab.nama_kabupaten, prov.nama_provinsi, b.zipcode)"
+            'sqlite' => "TRIM(COALESCE(p.alamat || ', ', '') || COALESCE(kab.nama_kabupaten || ', ', '') || COALESCE(prov.nama_provinsi || ', ', '') || COALESCE(p.kode_pos, ''), ', ')",
+            default => "CONCAT_WS(', ', p.alamat, kab.nama_kabupaten, prov.nama_provinsi, p.kode_pos)"
         };
 
         DB::statement("
@@ -32,7 +32,7 @@ return new class extends Migration
                 COALESCE(da.nama, u.name) AS `F2A`,
                 COALESCE(da.nomor_telepon, b.nomor_telepon) AS `F2B`,
                 COALESCE(b.email_pribadi, da.email_pribadi, u.email) AS `F2C`,
-                COALESCE(b.alamat, da.alamat_saat_ini) AS `F2D`,
+                COALESCE(b.alamat_saat_ini, da.alamat_saat_ini) AS `F2D`,
                 p.nama_perusahaan AS `F2E`,
                 a.nama AS `F2E1`,
                 a.telepon AS `F2E2`,
@@ -67,8 +67,8 @@ return new class extends Migration
                 b.pendidikan_tingkat AS `BIO_PENDIDIKAN_TINGKAT`,
                 b.perguruan_tinggi AS `F18B`,
                 b.pendidikan_prodi AS `F18C`,
-                COALESCE(b.nik, da.nik) AS `BIO_NIK`,
-                b.npwp AS `BIO_NPWP`,
+                da.nik AS `BIO_NIK`,
+                da.npwp AS `BIO_NPWP`,
                 da.tempat_lahir AS `BIO_TEMPAT_LAHIR`,
                 da.tanggal_lahir AS `BIO_TANGGAL_LAHIR`,
                 da.jenis_kelamin AS `BIO_JK`,
