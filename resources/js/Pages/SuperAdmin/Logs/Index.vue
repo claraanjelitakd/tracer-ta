@@ -111,44 +111,42 @@ const openDetailModal = (log) => {
         <Sidebar :user="user" />
 
         <div class="flex-1 flex flex-col min-w-0 lg:pl-72">
-            <!-- Header Halaman -->
-            <div class="bg-white border-b border-gray-200 px-6 py-5">
-                <div class="w-full flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <!-- Header Solid UKDW Green Konsisten -->
+            <div class="bg-[#0D542B] text-white pt-8 pb-16 px-4 sm:px-6 lg:px-8 border-b border-emerald-900/40">
+                <div class="w-full max-w-[1440px] mx-auto flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div>
-                        <div class="flex items-center gap-2 text-xs text-gray-500 font-medium mb-1">
-                            <Link href="/superadmin/dashboard" class="hover:underline hover:text-[#0D542B]">Dashboard</Link>
+                        <div class="flex items-center gap-2 text-xs text-white/70 font-medium mb-1.5">
+                            <Link href="/superadmin/dashboard" class="hover:text-white transition-colors">Dashboard</Link>
                             <span>/</span>
-                            <span class="text-gray-800 font-semibold">Super Admin</span>
-                            <span>/</span>
-                            <span class="text-[#0D542B] font-bold">Log Aktivitas</span>
+                            <span class="text-white font-semibold">Log Aktivitas</span>
                         </div>
-                        <h1 class="text-xl font-bold text-gray-900">
+                        <h1 class="text-2xl font-bold tracking-tight text-white">
                             Log Aktivitas & Audit Trail Sistem
                         </h1>
-                        <p class="text-xs text-gray-500 mt-0.5">
+                        <p class="text-xs text-emerald-100/90 mt-1 max-w-2xl leading-relaxed">
                             Rekam jejak seluruh aktivitas pengguna, verifikasi perusahaan, perubahan data, dan histori login/reset password.
                         </p>
                     </div>
 
-                    <!-- Stat Cards -->
-                    <div class="bg-slate-50/80 border border-slate-200/80 rounded-2xl px-6 py-3 flex items-center gap-6 text-center shadow-2xs">
+                    <!-- Stat Counters 2-Tone Bersih -->
+                    <div class="bg-white/10 border border-white/20 rounded-xl px-6 py-3 flex items-center gap-6 text-center shadow-xs">
                         <div>
-                            <div class="text-2xl font-black text-[#0D542B] leading-none mb-1">{{ stats.total_logs }}</div>
-                            <div class="text-[10px] font-bold text-slate-600 tracking-wide uppercase">TOTAL AKTIVITAS</div>
+                            <div class="text-2xl font-black text-white leading-none mb-1">{{ stats.total_logs }}</div>
+                            <div class="text-[10px] font-bold text-emerald-100/80 tracking-wide uppercase">TOTAL AKTIVITAS</div>
                         </div>
-                        <div class="w-px h-8 bg-slate-300"></div>
+                        <div class="w-px h-8 bg-white/20"></div>
                         <div>
-                            <div class="text-2xl font-black text-[#D97706] leading-none mb-1">{{ stats.total_today }}</div>
-                            <div class="text-[10px] font-bold text-slate-600 tracking-wide uppercase">AKTIVITAS HARI INI</div>
+                            <div class="text-2xl font-black text-[#FDC700] leading-none mb-1">{{ stats.total_today }}</div>
+                            <div class="text-[10px] font-bold text-emerald-100/80 tracking-wide uppercase">AKTIVITAS HARI INI</div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Main Content -->
-            <main class="w-full p-6 space-y-4">
-                <!-- DataTables Top Filter Bar -->
-                <div class="bg-white p-3.5 rounded-lg border border-gray-200 flex flex-col md:flex-row md:items-center justify-between gap-3 text-xs shadow-2xs">
+            <!-- Kontainer Konten Utama -->
+            <main class="w-full max-w-[1440px] mx-auto -mt-10 px-4 sm:px-6 lg:px-8 space-y-6 pb-12">
+                <!-- Filter Bar -->
+                <div class="bg-white p-3.5 rounded-xl border border-gray-300 flex flex-col md:flex-row md:items-center justify-between gap-3 text-xs shadow-2xs">
                     <div class="flex items-center gap-3 flex-wrap">
                         <!-- Filter Jenis Aksi -->
                         <div class="flex items-center gap-1.5">
@@ -198,13 +196,13 @@ const openDetailModal = (log) => {
                             class="absolute right-2.5 top-1.5 text-gray-400 hover:text-gray-600 text-xs font-bold"
                             title="Reset Filter"
                         >
-                            ✕
+                            &times;
                         </button>
                     </div>
                 </div>
 
                 <!-- Table View -->
-                <div class="bg-white border border-gray-300 shadow-2xs">
+                <div class="bg-white rounded-xl border border-gray-300 shadow-2xs overflow-hidden">
                     <div class="overflow-x-auto">
                         <table class="w-full min-w-full text-left border-collapse border border-gray-300 text-xs bg-white">
                         <thead>
@@ -243,7 +241,7 @@ const openDetailModal = (log) => {
                                     <div v-else class="italic text-gray-400">Sistem / Pengunjung</div>
                                 </td>
                                 <td class="border border-gray-300 px-3 py-2">
-                                    <span class="px-2 py-0.5 rounded font-mono text-[10px] font-bold uppercase tracking-wider bg-slate-100 text-slate-800 border border-slate-300 inline-block">
+                                    <span class="px-2 py-0.5 rounded font-mono text-[10px] font-bold uppercase tracking-wider bg-gray-100 text-gray-700 border border-gray-300 inline-block">
                                         {{ log.action }}
                                     </span>
                                 </td>
@@ -256,7 +254,7 @@ const openDetailModal = (log) => {
                                 <td class="border border-gray-300 px-2.5 py-2 text-center">
                                     <button
                                         @click="openDetailModal(log)"
-                                        class="p-1 text-blue-600 hover:bg-blue-50 rounded cursor-pointer transition-colors"
+                                        class="p-1.5 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
                                         title="Lihat Detail Log"
                                     >
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

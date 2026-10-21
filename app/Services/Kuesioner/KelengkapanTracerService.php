@@ -209,7 +209,7 @@ class KelengkapanTracerService
                 }
                 // Status 2: Belum Memungkinkan Bekerja -> lewati studi lanjut dan pertanyaan pekerjaan (F10 tetap dijawab)
                 elseif (str_contains($ansStr, 'belum memungkinkan') || $ansStr === '2') {
-                    $skipCodes = ['F18', 'F18A', 'F18B', 'F18C', 'F18D', 'F3', 'F4', 'F504', 'F502', 'F505', 'F506', 'F6', 'F7', 'F7A', 'F14', 'F15', 'F16'];
+                    $skipCodes = ['F18', 'F12', 'F18A', 'F18B', 'F18C', 'F18D', 'F3', 'F4', 'F504', 'F502', 'F505', 'F506', 'F6', 'F7', 'F7A', 'F14', 'F15', 'F16'];
                     foreach ($skipCodes as $sc) {
                         if (isset($codeToQuestion[$sc])) {
                             $skipped[$sc] = true;
@@ -219,7 +219,7 @@ class KelengkapanTracerService
                 }
                 // Status 5: Tidak Kerja tetapi sedang mencari kerja -> lewati studi lanjut & pertanyaan sedang bekerja (F10 tetap dijawab)
                 elseif (str_contains($ansStr, 'sedang mencari kerja') || $ansStr === '5' || str_contains($ansStr, 'mencari kerja')) {
-                    $skipCodes = ['F18', 'F18A', 'F18B', 'F18C', 'F18D', 'F504', 'F502', 'F505', 'F506', 'F14', 'F15', 'F16'];
+                    $skipCodes = ['F18', 'F12', 'F18A', 'F18B', 'F18C', 'F18D', 'F504', 'F502', 'F505', 'F506', 'F14', 'F15', 'F16'];
                     foreach ($skipCodes as $sc) {
                         if (isset($codeToQuestion[$sc])) {
                             $skipped[$sc] = true;
@@ -229,7 +229,7 @@ class KelengkapanTracerService
                 }
                 // Status 1 & 3: Bekerja / Wiraswasta -> lewati F10 dan studi lanjut (F18)
                 else {
-                    foreach (['F10', 'F18', 'F18A', 'F18B', 'F18C', 'F18D'] as $sc) {
+                    foreach (['F10', 'F18', 'F12', 'F18A', 'F18B', 'F18C', 'F18D'] as $sc) {
                         if (isset($codeToQuestion[$sc])) {
                             $skipped[$sc] = true;
                             $skipped[$codeToQuestion[$sc]->id] = true;

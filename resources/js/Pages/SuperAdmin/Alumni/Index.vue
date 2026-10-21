@@ -131,7 +131,10 @@ const applyFilters = () => {
 };
 
 const filterByStatus = (statusValue) => {
-    if (status.value === statusValue) {
+    linkedinStatus.value = 'all';
+    if (statusValue === 'all') {
+        status.value = 'all';
+    } else if (status.value === statusValue) {
         status.value = 'all';
     } else {
         status.value = statusValue;
@@ -139,7 +142,8 @@ const filterByStatus = (statusValue) => {
     applyFilters();
 };
 
-const filterByLinkedin = (linkedinVal) => {
+const filterByLinkedin = (linkedinVal = 'sudah_sinkron') => {
+    status.value = 'all';
     if (linkedinStatus.value === linkedinVal) {
         linkedinStatus.value = 'all';
     } else {
@@ -566,14 +570,14 @@ const handleOpenLinkedInHistory = async (alumni) => {
                     <div 
                         @click="filterByLinkedin('sudah_sinkron')"
                         class="bg-white rounded-xl p-4.5 border cursor-pointer transition-all select-none"
-                        :class="linkedinStatus === 'sudah_sinkron' ? 'border-[#0077B5] ring-1 ring-[#0077B5] shadow-xs' : 'border-slate-200 hover:border-slate-300 shadow-2xs'"
+                        :class="linkedinStatus === 'sudah_sinkron' ? 'border-[#0D542B] ring-1 ring-[#0D542B] shadow-xs' : 'border-slate-200 hover:border-slate-300 shadow-2xs'"
                         title="Klik untuk memfilter alumni yang sudah disinkronkan dengan LinkedIn"
                     >
                         <div class="flex items-center justify-between gap-1.5">
-                            <p class="text-[11px] font-bold text-[#0077B5] uppercase tracking-wider">Tersinkron LinkedIn</p>
-                            <span v-if="linkedinStatus === 'sudah_sinkron'" class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-[#0077B5] text-white">Aktif</span>
+                            <p class="text-[11px] font-bold uppercase tracking-wider" :class="linkedinStatus === 'sudah_sinkron' ? 'text-[#0D542B]' : 'text-slate-600'">Tersinkron LinkedIn</p>
+                            <span v-if="linkedinStatus === 'sudah_sinkron'" class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-[#0D542B] text-white">Aktif</span>
                         </div>
-                        <p class="text-2xl sm:text-3xl font-extrabold text-[#0077B5] tracking-tight mt-1.5">{{ stats.total_linkedin_synced || 0 }}</p>
+                        <p class="text-2xl sm:text-3xl font-extrabold tracking-tight mt-1.5" :class="linkedinStatus === 'sudah_sinkron' ? 'text-[#0D542B]' : 'text-slate-900'">{{ stats.total_linkedin_synced || 0 }}</p>
                         <p class="text-xs text-slate-500 mt-1">{{ stats.persentase_linkedin || 0 }}% dari total alumni</p>
                     </div>
                 </div>

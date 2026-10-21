@@ -335,35 +335,19 @@ const submit = (nextTabId = null) => {
         <!-- Navigasi Utama Terpadu Alumni -->
         <Navbar :user="user" />
 
-        <!-- Header Profil Bersih & Formal -->
-        <header class="bg-white border-b border-gray-200 py-6 sm:py-8 shadow-2xs">
-            <div class="w-full max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <div class="flex items-center gap-4 sm:gap-5">
-                    <div class="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-slate-100 text-slate-700 border border-slate-200 flex items-center justify-center text-2xl sm:text-3xl font-extrabold shrink-0 shadow-2xs">
-                        {{ user.name.charAt(0) }}
-                    </div>
-                    <div>
-                        <div class="flex items-center gap-2 text-xs text-gray-400 font-medium mb-1">
-                            <span>Alumni</span>
-                            <span>/</span>
-                            <span>Kelola Profil</span>
-                        </div>
-                        <h1 class="text-xl sm:text-2xl font-extrabold text-gray-900 tracking-tight">{{ user.name }}</h1>
-                        <div class="flex items-center gap-2 mt-1 flex-wrap">
-                            <span class="bg-gray-100 text-gray-700 px-2.5 py-0.5 rounded text-xs font-mono font-bold border border-gray-200">
-                                {{ alumniData?.nim || formData?.nim }}
-                            </span>
-                            <span class="text-xs text-gray-600 font-medium">
-                                {{ alumniData?.prodi?.nama_prodi || formData?.program_studi || 'Program Studi' }}
-                            </span>
-                        </div>
-                    </div>
-                </div>
-
+        <!-- Header Halaman Profil Alumni Bersih & Formal (Selaras Navbar max-w-7xl) -->
+        <header class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 sm:pt-10 pb-6">
+            <div>
+                <h1 class="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
+                    Profil & Riwayat Karier
+                </h1>
+                <p class="text-sm sm:text-base text-slate-500 mt-1.5">
+                    Pemutakhiran data domisili, kontak, serta riwayat pekerjaan alumni.
+                </p>
             </div>
         </header>
 
-        <main id="profile-form-container" class="w-full max-w-[1400px] mx-auto mt-6 px-4 sm:px-6 lg:px-8 relative z-20">
+        <main id="profile-form-container" class="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-20">
             <form @submit.prevent="submit" autocomplete="off" class="bg-white rounded-2xl shadow-xs border border-gray-200 relative transition-all duration-300">
                 
                 <!-- Sticky Stepper Navigation (Bersih, Formal & Konsisten) -->

@@ -97,7 +97,6 @@ Route::middleware('auth')->group(function () {
             // Profil
             Route::get('/alumni/profile', [ProfilController::class, 'tampilkanHalamanProfil'])->name('alumni.profile');
             Route::post('/alumni/profile', [SimpanProfilController::class, 'simpanPerubahanProfil'])->name('alumni.profile.simpan');
-            Route::post('/alumni/kirim-email-atasan', [SimpanProfilController::class, 'kirimEmailAtasan'])->name('alumni.kirim-email-atasan');
 
             // Kuesioner Umum Tracer Study
             Route::get('/alumni/kuesioner', [KuesionerController::class, 'tampilkanKuesioner'])->name('alumni.kuesioner');
@@ -106,6 +105,13 @@ Route::middleware('auth')->group(function () {
             // Kuesioner Khusus Program Studi
             Route::get('/alumni/kuesioner-prodi', [KuesionerProdiController::class, 'tampilkanKuesionerProdi'])->name('alumni.kuesioner-prodi');
             Route::post('/alumni/kuesioner-prodi', [KuesionerProdiController::class, 'simpanJawaban'])->name('alumni.kuesioner-prodi.simpan');
+        });
+
+        // -----------------------------------------------------------------
+        // Rute Undangan Evaluasi Atasan (Alumni & Seluruh Administrator)
+        // -----------------------------------------------------------------
+        Route::middleware('role:alumni,superadmin,admin_fakultas,admin_prodi,admin_biro3')->group(function () {
+            Route::post('/alumni/kirim-email-atasan', [SimpanProfilController::class, 'kirimEmailAtasan'])->name('alumni.kirim-email-atasan');
         });
 
         // -----------------------------------------------------------------

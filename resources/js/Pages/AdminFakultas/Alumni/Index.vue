@@ -127,7 +127,10 @@ const applyFilters = () => {
 };
 
 const filterByStatus = (statusValue) => {
-    if (status.value === statusValue) {
+    linkedinStatus.value = 'all';
+    if (statusValue === 'all') {
+        status.value = 'all';
+    } else if (status.value === statusValue) {
         status.value = 'all';
     } else {
         status.value = statusValue;
@@ -135,7 +138,8 @@ const filterByStatus = (statusValue) => {
     applyFilters();
 };
 
-const filterByLinkedin = (linkedinVal) => {
+const filterByLinkedin = (linkedinVal = 'sudah_sinkron') => {
+    status.value = 'all';
     if (linkedinStatus.value === linkedinVal) {
         linkedinStatus.value = 'all';
     } else {
@@ -407,37 +411,42 @@ const handleOpenLinkedInHistory = async (alumni) => {
 <template>
     <Head title="Direktori & Audit Alumni Fakultas - Tracer Study UKDW" />
 
-    <div class="flex h-screen bg-[#F8FAFC] font-sans antialiased text-slate-800 overflow-hidden">
+    <div class="min-h-screen bg-[#F8FAFC] text-slate-800 font-sans flex">
         <!-- Sidebar Terpadu Admin Fakultas -->
         <Sidebar :user="user" :fakultas="fakultas" />
 
         <!-- Area Konten Utama -->
-        <main class="flex-1 flex flex-col min-w-0 h-screen overflow-hidden bg-[#F8FAFC] lg:pl-72">
-            <div class="flex-1 overflow-y-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+        <div class="flex-1 flex flex-col min-w-0 lg:pl-72">
+            
+            <!-- Header Solid Hijau Resmi UKDW #0D542B -->
+            <header class="bg-[#0D542B] text-white pt-8 pb-16 px-4 sm:px-6 lg:px-8 border-b border-emerald-900/40">
+                <div class="w-full max-w-[1440px] mx-auto flex flex-col md:flex-row md:items-center justify-between gap-6">
+                    <div>
+                        <!-- Breadcrumbs -->
+                        <nav class="flex items-center gap-2 text-xs text-emerald-100 font-medium mb-2.5">
+                            <Link href="/fakultas/dashboard" class="hover:text-white transition-colors flex items-center gap-1">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+                                </svg>
+                                <span>Dashboard</span>
+                            </Link>
+                            <span class="text-emerald-300/60">/</span>
+                            <span class="text-white font-bold bg-white/10 px-2 py-0.5 rounded-md">Data Alumni</span>
+                        </nav>
 
-                <!-- Header Banner Fakultas -->
-                <div class="relative overflow-hidden rounded-2xl bg-gradient-to-r from-[#0D542B] to-[#147a3f] p-6 sm:p-8 text-white shadow-sm border border-emerald-800/40">
-                    <div class="relative z-10 max-w-4xl">
-                        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 backdrop-blur-md text-emerald-100 text-xs font-semibold mb-3 border border-white/15">
-                            <span class="w-2 h-2 rounded-full bg-[#FDC700] animate-pulse"></span>
-                            <span>Tracer Study Fakultas &bull; {{ fakultas?.nama_fakultas || 'Fakultas' }}</span>
-                        </div>
-                        <h1 class="text-2xl sm:text-3xl font-black tracking-tight text-white">
+                        <h1 class="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-white tracking-tight">
                             Direktori Mahasiswa & Rekap Audit Kuesioner
                         </h1>
-                        <p class="text-xs sm:text-sm text-emerald-100/90 mt-2 leading-relaxed">
+                        <p class="text-emerald-100/90 text-xs sm:text-sm font-normal mt-1.5 max-w-2xl leading-relaxed">
                             Pemantauan audit kelengkapan kuesioner tracer study dan profil responden alumni lingkup {{ fakultas?.nama_fakultas || 'Fakultas' }}.
                         </p>
                     </div>
-
-                    <!-- Watermark Logo Background -->
-                    <div class="absolute -right-10 -bottom-10 w-64 h-64 opacity-10 pointer-events-none">
-                        <svg class="w-full h-full text-white" viewBox="0 0 24 24" fill="currentColor">
-                            <path d="M12 3L1 9l11 6 9-4.91V17h2V9L12 3zM3.45 9L12 4.34 20.55 9 12 13.66 3.45 9zM5 13.18v4L12 21l7-3.82v-4L12 17l-7-3.82z"/>
-                        </svg>
-                    </div>
                 </div>
+            </header>
 
+            <!-- Main Content Container -->
+            <main class="w-full max-w-[1440px] mx-auto -mt-10 px-4 sm:px-6 lg:px-8 space-y-6 pb-12">
+                
                 <!-- 5 Kartu Statistik Interaktif & Filter Cepat (Formal, Flat, Bersih) -->
                 <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3.5 sm:gap-4">
                     <!-- 1. Total Alumni (Filter: Semua Status) -->
@@ -481,37 +490,29 @@ const handleOpenLinkedInHistory = async (alumni) => {
                             <p class="text-[11px] font-bold text-slate-600 uppercase tracking-wider">Belum Selesai</p>
                             <span v-if="status === 'belum_selesai'" class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-[#0D542B] text-white">Aktif</span>
                         </div>
-                        <p class="text-2xl sm:text-3xl font-extrabold text-slate-800 tracking-tight mt-1.5">{{ stats.total_belum_selesai }}</p>
+                        <p class="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight mt-1.5">{{ stats.total_belum_selesai }}</p>
                         <p class="text-xs text-slate-500 mt-1">Perlu tindak lanjut</p>
                     </div>
 
-                    <!-- 4. Rasio Penyelesaian -->
-                    <div 
-                        @click="filterByStatus('selesai')"
-                        class="bg-white rounded-xl p-4.5 border cursor-pointer transition-all select-none"
-                        :class="status === 'selesai' ? 'border-[#0D542B] ring-1 ring-[#0D542B] shadow-xs' : 'border-slate-200 hover:border-slate-300 shadow-2xs'"
-                        title="Klik untuk memfilter responden selesai"
-                    >
-                        <div class="flex items-center justify-between gap-1.5">
-                            <p class="text-[11px] font-bold text-slate-600 uppercase tracking-wider">Rasio Selesai</p>
-                            <span v-if="status === 'selesai'" class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-[#0D542B] text-white">Aktif</span>
-                        </div>
-                        <p class="text-2xl sm:text-3xl font-extrabold text-[#0D542B] tracking-tight mt-1.5">{{ stats.persentase_selesai }}%</p>
+                    <!-- 4. Rasio Selesai -->
+                    <div class="bg-white rounded-xl p-4.5 border border-slate-200 shadow-2xs">
+                        <p class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Rasio Selesai</p>
+                        <p class="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight mt-1.5">{{ stats.persentase_selesai }}%</p>
                         <p class="text-xs text-slate-500 mt-1">Kepatuhan responden</p>
                     </div>
 
-                    <!-- 5. Tersinkron LinkedIn (Filter Cepat) -->
+                    <!-- 5. Tersinkron LinkedIn (Filter: LinkedIn Synced) -->
                     <div 
                         @click="filterByLinkedin('sudah_sinkron')"
-                        class="bg-white rounded-xl p-4.5 border cursor-pointer transition-all select-none"
-                        :class="linkedinStatus === 'sudah_sinkron' ? 'border-[#0077B5] ring-1 ring-[#0077B5] shadow-xs' : 'border-slate-200 hover:border-slate-300 shadow-2xs'"
-                        title="Klik untuk memfilter alumni yang sudah disinkronkan dengan LinkedIn"
+                        class="bg-white rounded-xl p-4.5 border cursor-pointer transition-all select-none col-span-2 sm:col-span-1"
+                        :class="linkedinStatus === 'sudah_sinkron' ? 'border-[#0D542B] ring-1 ring-[#0D542B] shadow-xs' : 'border-slate-200 hover:border-slate-300 shadow-2xs'"
+                        title="Klik untuk memfilter alumni yang profil LinkedIn-nya sudah tersinkron"
                     >
                         <div class="flex items-center justify-between gap-1.5">
-                            <p class="text-[11px] font-bold text-[#0077B5] uppercase tracking-wider">Tersinkron LinkedIn</p>
-                            <span v-if="linkedinStatus === 'sudah_sinkron'" class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-[#0077B5] text-white">Aktif</span>
+                            <p class="text-[11px] font-bold text-slate-600 uppercase tracking-wider">Tersinkron LinkedIn</p>
+                            <span v-if="linkedinStatus === 'sudah_sinkron'" class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-[#0D542B] text-white">Aktif</span>
                         </div>
-                        <p class="text-2xl sm:text-3xl font-extrabold text-[#0077B5] tracking-tight mt-1.5">{{ stats.total_linkedin_synced || 0 }}</p>
+                        <p class="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight mt-1.5">{{ stats.total_linkedin_synced || 0 }}</p>
                         <p class="text-xs text-slate-500 mt-1">{{ stats.persentase_linkedin || 0 }}% dari total alumni</p>
                     </div>
                 </div>
@@ -943,8 +944,8 @@ const handleOpenLinkedInHistory = async (alumni) => {
                     </div>
                 </div>
 
-            </div>
-        </main>
+            </main>
+        </div>
         <!-- ================================================================= -->
         <!-- MODAL HUBUNGI VIA WHATSAPP PERSONAL                               -->
         <!-- ================================================================= -->

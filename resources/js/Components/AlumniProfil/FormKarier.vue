@@ -259,7 +259,10 @@ const handleKirimEmailAtasan = () => {
     }).then((result) => {
         if (result.isConfirmed) {
             sendingEmail.value = true;
-            router.post('/alumni/kirim-email-atasan', {}, {
+            router.post('/alumni/kirim-email-atasan', {
+                biodata_id: props.alumniData?.id || props.form?.biodata_id || props.form?.id,
+                email_atasan: email,
+            }, {
                 preserveScroll: true,
                 onFinish: () => {
                     sendingEmail.value = false;

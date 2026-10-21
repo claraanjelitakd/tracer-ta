@@ -18,7 +18,7 @@ return new class extends Migration
             $table->year('angkatan_masuk')->nullable()->comment('Tahun angkatan masuk perkuliahan (YYYY)');
             $table->string('tempat_lahir', 60)->nullable()->comment('Kota/kabupaten tempat lahir');
             $table->date('tanggal_lahir')->nullable()->comment('Tanggal lahir');
-            $table->enum('agama', ['Islam', 'Kristen Protestan', 'Katolik', 'Hindu', 'Buddha', 'Konghucu', 'Lainnya'])->nullable()->comment('Agama yang dianut');
+            $table->enum('agama', ['Islam', 'Kristen', 'Kristen Protestan', 'Katolik', 'Hindu', 'Buddha', 'Konghucu', 'Lainnya'])->nullable()->comment('Agama yang dianut');
             $table->enum('jenis_kelamin', ['Laki-laki', 'Perempuan'])->nullable()->comment('Jenis kelamin');
             $table->string('golongan_darah', 5)->nullable()->comment('Golongan darah (A, B, AB, O)');
             $table->string('warga_negara', 10)->default('WNI')->comment('Kewarganegaraan (WNI/WNA)');
@@ -49,7 +49,7 @@ return new class extends Migration
             $table->string('jurusan_asal_sekolah', 50)->nullable()->comment('Jurusan sekolah asal (IPA, IPS, SMK, dll)');
 
             // Data Kelulusan Akademik
-            $table->enum('status_mahasiswa', ['Lulus', 'Aktif', 'Cuti', 'Drop Out', 'Lainnya'])->default('Lulus')->comment('Status akademik mahasiswa');
+            $table->enum('status_mahasiswa', ['Lulus', 'Aktif', 'Cuti', 'Drop Out', 'Lainnya', 'AR', 'AK', 'AS', 'L'])->default('Lulus')->comment('Status akademik mahasiswa');
             $table->string('tahun_akademik_lulus', 30)->nullable()->comment('Periode lulus akademik, contoh: Gasal 2024/2025');
             $table->year('tahun_lulus')->nullable()->comment('Tahun kelulusan resmi mahasiswa (YYYY)');
             $table->date('tanggal_lulus')->nullable()->comment('Tanggal resmi dinyatakan lulus akademik');

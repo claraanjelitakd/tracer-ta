@@ -374,7 +374,7 @@ const hiddenQuestionIds = computed(() => {
                 }
                 // Status 2: Belum Memungkinkan Bekerja -> lewati studi lanjut dan pertanyaan pekerjaan (F10 tetap muncul)
                 else if (ansStr.includes('belum memungkinkan') || ansStr === '2') {
-                    const skipCodes = ['F18', 'F18A', 'F18B', 'F18C', 'F18D', 'F3', 'F4', 'F504', 'F502', 'F505', 'F506', 'F6', 'F7', 'F7A', 'F14', 'F15', 'F16'];
+                    const skipCodes = ['F18', 'F12', 'F18A', 'F18B', 'F18C', 'F18D', 'F3', 'F4', 'F504', 'F502', 'F505', 'F506', 'F6', 'F7', 'F7A', 'F14', 'F15', 'F16'];
                     skipCodes.forEach(sc => {
                         if (codeToQuestion[sc]) {
                             hidden.add(codeToQuestion[sc].id);
@@ -383,16 +383,16 @@ const hiddenQuestionIds = computed(() => {
                 }
                 // Status 5: Tidak Kerja tetapi sedang mencari kerja -> lewati studi lanjut & pertanyaan sedang bekerja (F10 tetap muncul)
                 else if (ansStr.includes('sedang mencari kerja') || ansStr === '5' || ansStr.includes('mencari kerja')) {
-                    const skipCodes = ['F18', 'F18A', 'F18B', 'F18C', 'F18D', 'F504', 'F502', 'F505', 'F506', 'F14', 'F15', 'F16'];
+                    const skipCodes = ['F18', 'F12', 'F18A', 'F18B', 'F18C', 'F18D', 'F504', 'F502', 'F505', 'F506', 'F14', 'F15', 'F16'];
                     skipCodes.forEach(sc => {
                         if (codeToQuestion[sc]) {
                             hidden.add(codeToQuestion[sc].id);
                         }
                     });
                 }
-                // Status 1 & 3: Bekerja / Wiraswasta -> lewati F10 dan studi lanjut (F18)
+                // Status 1 & 3: Bekerja / Wiraswasta -> lewati F10 dan studi lanjut (F18 & F12)
                 else if (ansStr !== '') {
-                    ['F10', 'F18', 'F18A', 'F18B', 'F18C', 'F18D'].forEach(sc => {
+                    ['F10', 'F18', 'F12', 'F18A', 'F18B', 'F18C', 'F18D'].forEach(sc => {
                         if (codeToQuestion[sc]) {
                             hidden.add(codeToQuestion[sc].id);
                         }

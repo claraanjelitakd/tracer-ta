@@ -331,7 +331,7 @@ class RefSubpertanyaan2021Seeder extends Seeder
             [
                 'section_kode' => '2',
                 'kelompok' => 'F18',
-                'kode_pertanyaan' => 'F18a',
+                'kode_pertanyaan' => 'F12',
                 'subpertanyaan' => 'Sumber biaya studi lanjut',
                 'type' => 'radio',
                 'keterangan' => 'Sumber biaya studi lanjut',
@@ -469,20 +469,6 @@ class RefSubpertanyaan2021Seeder extends Seeder
                 'keterangan' => null,
                 'wajib' => 0,
                 'order' => 43,
-            ],
-
-            // =========================================================
-            // Kelompok 6: Pembiayaan Kuliah (Wajib F12)
-            // =========================================================
-            [
-                'section_kode' => '6',
-                'kelompok' => 'F12',
-                'kode_pertanyaan' => 'F12',
-                'subpertanyaan' => 'Sebutkan sumber dana dalam pembiayaan kuliah',
-                'type' => 'radio_input',
-                'keterangan' => 'Pilihan sumber dana kuliah',
-                'wajib' => 1,
-                'order' => 44,
             ],
 
             // =========================================================
@@ -757,6 +743,8 @@ class RefSubpertanyaan2021Seeder extends Seeder
                 'order' => 70,
             ],
         ];
+
+        RefSubpertanyaan2021::where('kode_pertanyaan', 'F18a')->delete();
 
         foreach ($questionsData as $item) {
             $section = $sections[$item['section_kode']] ?? null;

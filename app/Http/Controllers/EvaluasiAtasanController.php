@@ -45,7 +45,15 @@ class EvaluasiAtasanController extends Controller
     public function show(string $token): Response
     {
         $evaluasi = EvaluasiAtasan::where('token', $token)
-            ->with(['biodata.prodi', 'biodata.perusahaan', 'perusahaan', 'atasan', 'respons.pertanyaan'])
+            ->with([
+                'biodata.prodi.fakultas',
+                'biodata.perusahaan.kabupaten',
+                'biodata.perusahaan.propinsi',
+                'perusahaan.kabupaten',
+                'perusahaan.propinsi',
+                'atasan',
+                'respons.pertanyaan',
+            ])
             ->first();
 
         if (! $evaluasi) {
@@ -60,6 +68,7 @@ class EvaluasiAtasanController extends Controller
 
         $alumniName = $biodata?->nama ?? $biodata?->dataAkademik?->nama ?? 'Alumni UKDW';
         $alumniProdi = $biodata?->prodi?->nama_prodi ?? $biodata?->dataAkademik?->program_studi ?? '-';
+        $alumniFakultas = $biodata?->prodi?->fakultas?->nama_fakultas ?? '-';
         $namaPerusahaan = $perusahaan?->nama_perusahaan ?? '-';
         $alamatPerusahaan = $perusahaan?->alamat ?? '-';
         $homepagePerusahaan = $perusahaan?->homepage ?? '';
@@ -67,6 +76,15 @@ class EvaluasiAtasanController extends Controller
         $bentukPerusahaan = $perusahaan?->bentuk_perusahaan ?? '';
         $skalaPerusahaan = $perusahaan?->skala ?? '';
         $jumlahPegawai = $perusahaan?->jumlah_pegawai ?? '';
+
+        $lokasiPerusahaan = $perusahaan?->kabupaten?->nama_kabupaten
+            ? ($perusahaan?->propinsi?->nama_propinsi ? $perusahaan->kabupaten->nama_kabupaten.', '.$perusahaan->propinsi->nama_propinsi : $perusahaan->kabupaten->nama_kabupaten)
+            : ($perusahaan?->propinsi?->nama_propinsi ?? ($perusahaan?->alamat ?: '-'));
+
+        $kategoriPekerjaan = $biodata?->kategori_pekerjaan
+            ?: ($biodata?->posisi_wiraswasta ? 'Wiraswasta' : 'Bekerja / Karyawan');
+
+        $posisiJabatan = $biodata?->posisi_jabatan ?: '-';
 
         // Ambil daftar butir pertanyaan instrumen evaluasi atasan yang aktif dari master table
         $pertanyaanList = PertanyaanEvaluasiAtasan::where('is_active', true)
@@ -94,7 +112,13 @@ class EvaluasiAtasanController extends Controller
             'alumniInfo' => [
                 'nama' => $alumniName,
                 'prodi' => $alumniProdi,
+                'fakultas' => $alumniFakultas,
                 'nim' => $biodata?->nim ?? '-',
+                'foto' => $biodata?->foto,
+                'posisi_jabatan' => $posisiJabatan,
+                'kategori_pekerjaan' => $kategoriPekerjaan,
+                'perusahaan' => $namaPerusahaan,
+                'lokasi_perusahaan' => $lokasiPerusahaan,
             ],
             'initialCompany' => [
                 'id' => $perusahaan?->id,

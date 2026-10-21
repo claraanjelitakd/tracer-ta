@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Mail\UndanganEvaluasiAtasanMail;
 use App\Models\Biodata;
 use App\Models\DataAkademik;
 use App\Models\EvaluasiAtasan;
@@ -10,6 +11,7 @@ use App\Models\Perusahaan;
 use App\Models\Prodi;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
 use Tests\TestCase;
 
@@ -149,5 +151,98 @@ class EvaluasiAtasanTest extends TestCase
             'evaluasi_atasan_id' => $evaluasi->id,
             'nilai' => 'Sangat Tinggi',
         ]);
+    }
+
+    public function test_superadmin_can_send_email_undangan_atasan(): void
+    {
+        Mail::fake();
+
+        $prodi = Prodi::create(['kode_prodi' => '71', 'nama_prodi' => 'Informatika']);
+        $admin = User::create([
+            'username' => 'admin_super',
+            'name' => 'Super Administrator',
+            'email' => 'superadmin@example.com',
+            'password' => bcrypt('password'),
+            'role' => 'superadmin',
+        ]);
+
+        $alumniUser = User::create([
+            'username' => '71200001',
+            'name' => 'Alumni Informatika',
+            'email' => 'alumni_if@example.com',
+            'password' => bcrypt('password'),
+            'role' => 'alumni',
+        ]);
+
+        DataAkademik::create(['nim' => '71200001', 'nama' => 'Alumni Informatika']);
+        $biodata = Biodata::where('nim', '71200001')->first();
+        if (! $biodata) {
+            $biodata = Biodata::create([
+                'user_id' => $alumniUser->id,
+                'nim' => '71200001',
+                'prodi_id' => $prodi->id,
+            ]);
+        } else {
+            $biodata->update([
+                'prodi_id' => $prodi->id,
+            ]);
+        }
+
+        $response = $this->actingAs($admin)->post('/alumni/kirim-email-atasan', [
+            'biodata_id' => $biodata->id,
+            'email_atasan' => 'boss@company.com',
+        ]);
+
+        $response->assertStatus(302);
+        $response->assertSessionHas('success');
+
+        Mail::assertSent(UndanganEvaluasiAtasanMail::class, function ($mail) {
+            return $mail->hasTo('boss@company.com');
+        });
+    }
+
+    public function test_admin_prodi_can_only_send_email_atasan_within_their_prodi(): void
+    {
+        Mail::fake();
+
+        $prodi1 = Prodi::create(['kode_prodi' => '73', 'nama_prodi' => 'Teknik Elektro']);
+        $prodi2 = Prodi::create(['kode_prodi' => '74', 'nama_prodi' => 'Teknik Arsitektur']);
+
+        $adminProdi = User::create([
+            'username' => 'admin_te',
+            'name' => 'Admin Prodi TE',
+            'email' => 'admin_te@example.com',
+            'password' => bcrypt('password'),
+            'role' => 'admin_prodi',
+            'prodi_id' => $prodi1->id,
+        ]);
+
+        $userAlumni2 = User::create([
+            'username' => '74200001',
+            'name' => 'Alumni Arsitektur',
+            'email' => 'alumni_ars@example.com',
+            'password' => bcrypt('password'),
+            'role' => 'alumni',
+        ]);
+
+        DataAkademik::create(['nim' => '74200001', 'nama' => 'Alumni Arsitektur']);
+        $alumniProdi2 = Biodata::where('nim', '74200001')->first();
+        if (! $alumniProdi2) {
+            $alumniProdi2 = Biodata::create([
+                'user_id' => $userAlumni2->id,
+                'nim' => '74200001',
+                'prodi_id' => $prodi2->id,
+            ]);
+        } else {
+            $alumniProdi2->update(['prodi_id' => $prodi2->id]);
+        }
+
+        // Harus 403 jika prodi tidak cocok
+        $response = $this->actingAs($adminProdi)->post('/alumni/kirim-email-atasan', [
+            'biodata_id' => $alumniProdi2->id,
+            'email_atasan' => 'atasan_ars@studio.com',
+        ]);
+
+        $response->assertStatus(403);
     }
 }

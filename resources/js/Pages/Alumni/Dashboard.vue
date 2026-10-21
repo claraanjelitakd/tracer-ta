@@ -1,12 +1,20 @@
 <script setup>
 import { Head, Link } from '@inertiajs/vue3';
-import { ref } from 'vue';
 import Navbar from './Components/Navbar.vue';
 
-const props = defineProps({
-    user: Object,
-    alumni: Object,
-    biodata: Object,
+defineProps({
+    user: {
+        type: Object,
+        default: () => ({}),
+    },
+    alumni: {
+        type: Object,
+        default: () => ({}),
+    },
+    biodata: {
+        type: Object,
+        default: () => ({}),
+    },
     profilePercentage: {
         type: Number,
         default: 0,
@@ -21,11 +29,7 @@ const props = defineProps({
     },
     profileTotalCount: {
         type: Number,
-        default: 23,
-    },
-    profileMissingFields: {
-        type: Array,
-        default: () => [],
+        default: 30,
     },
     questionnairePercentage: {
         type: Number,
@@ -43,10 +47,6 @@ const props = defineProps({
         type: Number,
         default: 61,
     },
-    questionnaireMissing: {
-        type: Array,
-        default: () => [],
-    },
     prodiQuestionsCount: {
         type: Number,
         default: 0,
@@ -59,319 +59,221 @@ const props = defineProps({
         type: Boolean,
         default: false,
     },
-    hasSupervisor: {
+    prodiPercentage: {
+        type: Number,
+        default: 100,
+    },
+    overallPercentage: {
+        type: Number,
+        default: 0,
+    },
+    isOverallComplete: {
         type: Boolean,
         default: false,
-    },
-    evaluasiSubmitted: {
-        type: Boolean,
-        default: false,
-    },
-    supervisorEmail: {
-        type: String,
-        default: null,
-    },
-    supervisorName: {
-        type: String,
-        default: null,
     },
 });
-
-// State interaktif modal detail field belum lengkap
-const showMissingProfileModal = ref(false);
-const showMissingQuestionnaireModal = ref(false);
-
-// Label ramah untuk nama-nama field yang belum diisi
-const formatFieldName = (fieldName) => {
-    const dictionary = {
-        nik: 'Nomor Induk Kependudukan (NIK)',
-        npwp: 'NPWP',
-        nomor_hp: 'Nomor Handphone / WhatsApp',
-        email_pribadi: 'Alamat Email Aktif',
-        alamat_domisili: 'Alamat Domisili Sekarang',
-        provinsi: 'Provinsi Domisili',
-        kota_kabupaten: 'Kota / Kabupaten Domisili',
-        status_bekerja: 'Status Bekerja Saat Ini',
-        nama_perusahaan: 'Nama Perusahaan / Instansi Bekerja',
-        posisi_jabatan: 'Posisi / Jabatan Pekerjaan',
-        nama_atasan: 'Nama Lengkap Atasan Langsung',
-        email_atasan: 'Email Resmi Atasan Langsung',
-        nomor_hp_atasan: 'Kontak Handphone Atasan',
-        penghasilan_pertama: 'Perkiraan Gaji / Penghasilan Pertama',
-        waktu_tunggu_kerja: 'Waktu Tunggu Mendapatkan Kerja',
-        linkedin_url: 'Tautan Akun LinkedIn',
-    };
-    return dictionary[fieldName] || fieldName.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-};
 </script>
 
 <template>
     <Head title="Dashboard Alumni - Tracer Study UKDW" />
 
-    <div class="min-h-screen bg-slate-50 relative overflow-hidden pb-16 font-sans">
-        <!-- Navbar Terpadu Alumni -->
+    <div class="min-h-screen bg-slate-50 font-sans pb-20">
+        <!-- Navigasi Utama Terpadu Alumni -->
         <Navbar :user="user" />
 
-        <!-- Header Banner Solid Resmi UKDW #0D542B -->
-        <section class="w-full bg-[#0D542B] pt-8 pb-14 px-4 sm:px-6 lg:px-8 text-white relative shadow-sm">
-            <div class="max-w-7xl mx-auto">
-                <h1 class="text-2xl sm:text-3xl md:text-4xl font-extrabold text-white tracking-tight">
-                    Selamat Datang, {{ alumni?.nama || user?.name }}!
-                </h1>
-                <p class="text-green-100 text-xs sm:text-sm max-w-2xl mt-2 leading-relaxed font-normal">
-                    NIM: <strong class="text-white">{{ alumni?.nim || user?.username }}</strong> &bull; 
-                    Program Studi: <strong class="text-white">{{ alumni?.prodi?.nama_prodi || 'UKDW' }}</strong>
-                    <span v-if="alumni?.tahun_lulus"> &bull; Lulus: <strong class="text-white">{{ alumni.tahun_lulus }}</strong></span>
-                </p>
-            </div>
-        </section>
-
-        <!-- Main Body Area -->
-        <main class="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-6 space-y-8">
-
-            <!-- Grid 3 Kartu Menu Utama Dashboard Alumni -->
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 items-stretch">
-                
-                <!-- KARTU 1: STATUS PROFIL & BIODATA -->
-                <div class="bg-white rounded-2xl p-6 border border-slate-200 shadow-xs hover:shadow-md transition-all duration-300 flex flex-col justify-between h-full relative">
-                    <div>
-                        <!-- Header Status Badge -->
-                        <div class="flex items-center justify-between mb-4">
-                            <span class="text-[11px] font-bold uppercase tracking-wider text-slate-600">Tahap 1</span>
-                            <span v-if="profileCompleted" class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-emerald-50 text-[#0D542B] border border-emerald-200">
-                                Sudah Lengkap
-                            </span>
-                            <span v-else class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-amber-50 text-amber-900 border border-amber-200">
-                                Belum Lengkap
-                            </span>
-                        </div>
-                        
-                        <!-- Judul & Deskripsi -->
-                        <h3 class="text-lg font-bold text-slate-900 mb-1.5">Profil & Riwayat Karir</h3>
-                        <p class="text-slate-500 text-xs leading-relaxed mb-5">
-                            Kelola identitas diri, kontak aktif, riwayat jabatan, dan instansi tempat Anda berkarya.
-                        </p>
-                        
-                        <!-- Box Progress Bar -->
-                        <div class="bg-slate-50 rounded-xl p-4 mb-5 border border-slate-200">
-                            <div class="flex items-center justify-between mb-2">
-                                <span class="text-xs font-bold text-slate-700">Keterisian Biodata</span>
-                                <span class="text-xs font-extrabold text-[#0D542B]">{{ profilePercentage }}%</span>
-                            </div>
-                            <div class="w-full bg-slate-200 rounded-full h-2 overflow-hidden">
-                                <div class="bg-[#0D542B] h-2 rounded-full transition-all duration-500" :style="{ width: `${profilePercentage}%` }"></div>
-                            </div>
-                            <div class="mt-2.5 flex items-center justify-between text-xs text-slate-600">
-                                <span>{{ profileFilledCount }} dari {{ profileTotalCount }} atribut terisi</span>
-                                <button 
-                                    v-if="!profileCompleted && profileMissingFields.length > 0"
-                                    type="button"
-                                    @click="showMissingProfileModal = true"
-                                    class="text-amber-800 font-bold hover:underline cursor-pointer flex items-center gap-1"
-                                >
-                                    <span>{{ profileMissingFields.length }} belum</span>
-                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                                </button>
-                                <span v-else class="text-emerald-800 font-bold">Lengkap</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <Link href="/alumni/profile" class="inline-flex items-center justify-center w-full px-4 py-3 text-xs font-bold rounded-xl text-white bg-[#0D542B] hover:bg-[#08381c] transition-colors shadow-xs cursor-pointer">
-                        Kelola Data Profil
-                    </Link>
+        <!-- Container Dashboard Responsif Proporsional (Max-W 7XL: ~1280px Selaras Navbar) -->
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <!-- Header Dashboard -->
+            <header class="pt-8 sm:pt-10 pb-6 sm:pb-8">
+                <div>
+                    <h1 class="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
+                        Tahapan Pengisian Tracer Study
+                    </h1>
+                    <p class="text-sm sm:text-base text-slate-500 mt-1.5">
+                        Selesaikan 3 tahapan berikut untuk melengkapi pelaporan data tracer study Anda.
+                    </p>
                 </div>
+            </header>
 
-                <!-- KARTU 2: STATUS KUESIONER TRACER STUDY UNIVERSITAS -->
-                <div class="bg-white rounded-2xl p-6 border border-slate-200 shadow-xs hover:shadow-md transition-all duration-300 flex flex-col justify-between h-full relative">
-                    <div>
-                        <!-- Header Status Badge -->
-                        <div class="flex items-center justify-between mb-4">
-                            <span class="text-[11px] font-bold uppercase tracking-wider text-slate-600">Tahap 2</span>
-                            <span v-if="questionnaireCompleted" class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-emerald-50 text-[#0D542B] border border-emerald-200">
-                                Wajib Lengkap
-                            </span>
-                            <span v-else class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-amber-50 text-amber-900 border border-amber-200">
-                                Belum Lengkap
-                            </span>
-                        </div>
-                        
-                        <!-- Judul & Deskripsi -->
-                        <h3 class="text-lg font-bold text-slate-900 mb-1.5">Kuesioner Universitas</h3>
-                        <p class="text-slate-500 text-xs leading-relaxed mb-5">
-                            Isi butir evaluasi pelacakan jejak alumni standar nasional Dikti untuk akreditasi kampus UKDW.
-                        </p>
-                        
-                        <!-- Box Progress Bar -->
-                        <div class="bg-slate-50 rounded-xl p-4 mb-5 border border-slate-200">
-                            <div class="flex items-center justify-between mb-2">
-                                <span class="text-xs font-bold text-slate-700">Butir Wajib Dikti</span>
-                                <span class="text-xs font-extrabold text-[#0D542B]">{{ questionnairePercentage }}%</span>
-                            </div>
-                            <div class="w-full bg-slate-200 rounded-full h-2 overflow-hidden">
-                                <div class="bg-[#0D542B] h-2 rounded-full transition-all duration-500" :style="{ width: `${questionnairePercentage}%` }"></div>
-                            </div>
-                            <div class="mt-2.5 flex items-center justify-between text-xs text-slate-600">
-                                <span>{{ questionnaireAnsweredCount }} dari {{ questionnaireTotalCount }} butir wajib</span>
-                                <button 
-                                    v-if="!questionnaireCompleted && questionnaireMissing.length > 0"
-                                    type="button"
-                                    @click="showMissingQuestionnaireModal = true"
-                                    class="text-amber-800 font-bold hover:underline cursor-pointer flex items-center gap-1"
+            <!-- Area Kartu: Responsif, Proporsional, Tidak Over-Stretch dan Tidak Gepeng -->
+            <main class="py-2">
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-7 lg:gap-8">
+                    
+                    <!-- KARTU 1: DATA DIRI & KARIER -->
+                    <div class="bg-white rounded-2xl p-6 sm:p-7 border border-slate-200 shadow-2xs hover:shadow-md transition-all duration-200 flex flex-col justify-between min-h-[380px]">
+                        <div>
+                            <div class="flex items-center justify-between h-6 mb-3">
+                                <span class="text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                                    Tahap 1
+                                </span>
+                                <span 
+                                    v-if="profileCompleted" 
+                                    class="px-2.5 py-0.5 rounded text-[11px] font-semibold bg-emerald-50 text-[#0D542B] border border-emerald-200"
                                 >
-                                    <span>{{ questionnaireMissing.length }} butir belum</span>
-                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                                </button>
-                                <span v-else class="text-emerald-800 font-bold">Lengkap</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <Link href="/alumni/kuesioner" class="inline-flex items-center justify-center w-full px-4 py-3 text-xs font-bold rounded-xl text-white bg-[#0D542B] hover:bg-[#08381c] transition-colors shadow-xs cursor-pointer">
-                        Isi Kuesioner Universitas
-                    </Link>
-                </div>
-
-                <!-- KARTU 3: KUESIONER PROGRAM STUDI -->
-                <div class="bg-white rounded-2xl p-6 border border-slate-200 shadow-xs hover:shadow-md transition-all duration-300 flex flex-col justify-between h-full relative">
-                    <div>
-                        <!-- Header Status Badge -->
-                        <div class="flex items-center justify-between mb-4">
-                            <span class="text-[11px] font-bold uppercase tracking-wider text-slate-600">Tahap 3</span>
-                            <span v-if="prodiCompleted && prodiQuestionsCount > 0" class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-emerald-50 text-[#0D542B] border border-emerald-200">
-                                Sudah Lengkap
-                            </span>
-                            <span v-else-if="prodiQuestionsCount === 0" class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-700 border border-slate-200">
-                                Belum Ada Soal
-                            </span>
-                            <span v-else class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-amber-50 text-amber-900 border border-amber-200">
-                                Belum Lengkap
-                            </span>
-                        </div>
-                        
-                        <!-- Judul & Deskripsi -->
-                        <h3 class="text-lg font-bold text-slate-900 mb-1.5">Kuesioner Program Studi</h3>
-                        <p class="text-slate-500 text-xs leading-relaxed mb-5">
-                            Evaluasi spesifik kurikulum dan fasilitas pada Program Studi <strong>{{ alumni?.prodi?.nama_prodi || 'Anda' }}</strong>.
-                        </p>
-                        
-                        <!-- Box Progress Bar -->
-                        <div class="bg-slate-50 rounded-xl p-4 mb-5 border border-slate-200">
-                            <div class="flex items-center justify-between mb-2">
-                                <span class="text-xs font-bold text-slate-700">Progres Kuesioner Prodi</span>
-                                <span class="text-xs font-extrabold text-[#0D542B]">
-                                    {{ prodiQuestionsCount > 0 ? Math.round((prodiAnsweredCount / prodiQuestionsCount) * 100) : 100 }}%
+                                    Selesai
+                                </span>
+                                <span 
+                                    v-else 
+                                    class="px-2.5 py-0.5 rounded text-[11px] font-semibold bg-slate-100 text-slate-600 border border-slate-200"
+                                >
+                                    Belum Lengkap
                                 </span>
                             </div>
-                            <div class="w-full bg-slate-200 rounded-full h-2 overflow-hidden">
-                                <div 
-                                    class="bg-[#0D542B] h-2 rounded-full transition-all duration-500" 
-                                    :style="{ width: `${prodiQuestionsCount > 0 ? (prodiAnsweredCount / prodiQuestionsCount) * 100 : 100}%` }"
-                                ></div>
-                            </div>
-                            <div class="mt-2.5 flex items-center justify-between text-xs text-slate-600">
-                                <span>{{ prodiAnsweredCount }} dari {{ prodiQuestionsCount }} soal terisi</span>
-                                <span class="font-bold text-emerald-800 truncate max-w-[120px]">{{ alumni?.prodi?.kode_prodi || 'Prodi' }}</span>
+
+                            <h2 class="text-lg sm:text-xl font-bold text-slate-900 mb-2">
+                                Profil & Riwayat Karier
+                            </h2>
+                            
+                            <p class="text-xs sm:text-sm text-slate-500 leading-relaxed mb-6">
+                                Pemutakhiran data domisili, kontak, serta riwayat pekerjaan alumni.
+                            </p>
+
+                            <div class="bg-slate-50 rounded-xl p-4 sm:p-5 border border-slate-100">
+                                <div class="flex items-center justify-between text-xs sm:text-sm mb-2">
+                                    <span class="font-medium text-slate-600">Kelengkapan Data</span>
+                                    <span class="font-bold text-slate-900">{{ profilePercentage }}%</span>
+                                </div>
+                                <div class="w-full bg-slate-200 rounded-full h-2.5 overflow-hidden">
+                                    <div 
+                                        class="bg-[#0D542B] h-2.5 rounded-full transition-all duration-300" 
+                                        :style="{ width: `${profilePercentage}%` }"
+                                    ></div>
+                                </div>
+                                <div class="text-[11px] sm:text-xs text-slate-400 mt-2.5">
+                                    {{ profileFilledCount }} dari {{ profileTotalCount }} data terisi
+                                </div>
                             </div>
                         </div>
+
+                        <Link 
+                            href="/alumni/profile" 
+                            class="h-11 sm:h-12 w-full inline-flex items-center justify-center text-xs sm:text-sm font-semibold rounded-xl text-white bg-[#0D542B] hover:bg-[#093d1f] transition-colors cursor-pointer shadow-2xs mt-6"
+                        >
+                            {{ profileCompleted ? 'Perbarui Profil' : 'Lengkapi Profil' }}
+                        </Link>
                     </div>
 
-                    <Link href="/alumni/kuesioner-prodi" class="inline-flex items-center justify-center w-full px-4 py-3 text-xs font-bold rounded-xl text-white bg-[#0D542B] hover:bg-[#08381c] transition-colors shadow-xs cursor-pointer">
-                        Buka Kuesioner Prodi
-                    </Link>
-                </div>
+                    <!-- KARTU 2: KUESIONER UNIVERSITAS -->
+                    <div class="bg-white rounded-2xl p-6 sm:p-7 border border-slate-200 shadow-2xs hover:shadow-md transition-all duration-200 flex flex-col justify-between min-h-[380px]">
+                        <div>
+                            <div class="flex items-center justify-between h-6 mb-3">
+                                <span class="text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                                    Tahap 2
+                                </span>
+                                <span 
+                                    v-if="questionnaireCompleted" 
+                                    class="px-2.5 py-0.5 rounded text-[11px] font-semibold bg-emerald-50 text-[#0D542B] border border-emerald-200"
+                                >
+                                    Selesai
+                                </span>
+                                <span 
+                                    v-else 
+                                    class="px-2.5 py-0.5 rounded text-[11px] font-semibold bg-slate-100 text-slate-600 border border-slate-200"
+                                >
+                                    Belum Lengkap
+                                </span>
+                            </div>
 
-            </div>
+                            <h2 class="text-lg sm:text-xl font-bold text-slate-900 mb-2">
+                                Kuesioner Universitas
+                            </h2>
+                            
+                            <p class="text-xs sm:text-sm text-slate-500 leading-relaxed mb-6">
+                                Kuesioner pelacakan jejak alumni standar nasional Dikti.
+                            </p>
 
-        </main>
+                            <div class="bg-slate-50 rounded-xl p-4 sm:p-5 border border-slate-100">
+                                <div class="flex items-center justify-between text-xs sm:text-sm mb-2">
+                                    <span class="font-medium text-slate-600">Keterisian Butir Wajib</span>
+                                    <span class="font-bold text-slate-900">{{ questionnairePercentage }}%</span>
+                                </div>
+                                <div class="w-full bg-slate-200 rounded-full h-2.5 overflow-hidden">
+                                    <div 
+                                        class="bg-[#0D542B] h-2.5 rounded-full transition-all duration-300" 
+                                        :style="{ width: `${questionnairePercentage}%` }"
+                                    ></div>
+                                </div>
+                                <div class="text-[11px] sm:text-xs text-slate-400 mt-2.5">
+                                    {{ questionnaireAnsweredCount }} dari {{ questionnaireTotalCount }} butir terjawab
+                                </div>
+                            </div>
+                        </div>
 
-        <!-- MODAL INTERAKTIF: RINCIAN FIELD PROFIL YANG BELUM LENGKAP -->
-        <div v-if="showMissingProfileModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs p-4">
-            <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl border border-slate-200 relative animate-in fade-in zoom-in-95 duration-200">
-                <div class="flex items-center justify-between pb-3 border-b border-slate-100">
-                    <div>
-                        <h4 class="text-base font-bold text-slate-900">Rincian Data Profil Belum Lengkap</h4>
-                        <p class="text-xs text-slate-500">Silakan lengkapi atribut berikut di halaman profil:</p>
+                        <Link 
+                            href="/alumni/kuesioner" 
+                            class="h-11 sm:h-12 w-full inline-flex items-center justify-center text-xs sm:text-sm font-semibold rounded-xl text-white bg-[#0D542B] hover:bg-[#093d1f] transition-colors cursor-pointer shadow-2xs mt-6"
+                        >
+                            {{ questionnaireCompleted ? 'Lihat Kuesioner' : 'Isi Kuesioner' }}
+                        </Link>
                     </div>
-                    <button 
-                        @click="showMissingProfileModal = false" 
-                        type="button" 
-                        class="text-slate-400 hover:text-slate-600 p-1 rounded-lg"
-                    >
-                        ✕
-                    </button>
-                </div>
-                <div class="my-4 max-h-64 overflow-y-auto space-y-2 pr-1">
-                    <div 
-                        v-for="(field, idx) in profileMissingFields" 
-                        :key="idx" 
-                        class="flex items-center gap-2.5 p-2.5 bg-amber-50/70 border border-amber-100 rounded-xl text-xs text-amber-900 font-medium"
-                    >
-                        <span class="w-5 h-5 rounded-full bg-amber-200 text-amber-900 font-bold flex items-center justify-center text-[10px] shrink-0">{{ idx + 1 }}</span>
-                        <span>{{ formatFieldName(field) }}</span>
+
+                    <!-- KARTU 3: KUESIONER PROGRAM STUDI -->
+                    <div class="bg-white rounded-2xl p-6 sm:p-7 border border-slate-200 shadow-2xs hover:shadow-md transition-all duration-200 flex flex-col justify-between min-h-[380px] md:col-span-2 lg:col-span-1">
+                        <div>
+                            <div class="flex items-center justify-between h-6 mb-3">
+                                <span class="text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                                    Tahap 3
+                                </span>
+                                <span 
+                                    v-if="prodiCompleted && prodiQuestionsCount > 0" 
+                                    class="px-2.5 py-0.5 rounded text-[11px] font-semibold bg-emerald-50 text-[#0D542B] border border-emerald-200"
+                                >
+                                    Selesai
+                                </span>
+                                <span 
+                                    v-else-if="prodiQuestionsCount === 0" 
+                                    class="px-2.5 py-0.5 rounded text-[11px] font-semibold bg-slate-100 text-slate-600 border border-slate-200"
+                                >
+                                    Belum Ada Soal
+                                </span>
+                                <span 
+                                    v-else 
+                                    class="px-2.5 py-0.5 rounded text-[11px] font-semibold bg-slate-100 text-slate-600 border border-slate-200"
+                                >
+                                    Belum Lengkap
+                                </span>
+                            </div>
+
+                            <h2 class="text-lg sm:text-xl font-bold text-slate-900 mb-2">
+                                Kuesioner Program Studi
+                            </h2>
+                            
+                            <p class="text-xs sm:text-sm text-slate-500 leading-relaxed mb-6">
+                                Evaluasi kurikulum dan proses pembelajaran tingkat program studi.
+                            </p>
+
+                            <div class="bg-slate-50 rounded-xl p-4 sm:p-5 border border-slate-100">
+                                <div class="flex items-center justify-between text-xs sm:text-sm mb-2">
+                                    <span class="font-medium text-slate-600">Progres Kuesioner Prodi</span>
+                                    <span class="font-bold text-slate-900">{{ prodiPercentage }}%</span>
+                                </div>
+                                <div class="w-full bg-slate-200 rounded-full h-2.5 overflow-hidden">
+                                    <div 
+                                        class="bg-[#0D542B] h-2.5 rounded-full transition-all duration-300" 
+                                        :style="{ width: `${prodiPercentage}%` }"
+                                    ></div>
+                                </div>
+                                <div class="text-[11px] sm:text-xs text-slate-400 mt-2.5">
+                                    <span v-if="prodiQuestionsCount > 0">
+                                        {{ prodiAnsweredCount }} dari {{ prodiQuestionsCount }} butir terjawab
+                                    </span>
+                                    <span v-else>
+                                        Belum ada instrumen soal prodi
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <Link 
+                            href="/alumni/kuesioner-prodi" 
+                            class="h-11 sm:h-12 w-full inline-flex items-center justify-center text-xs sm:text-sm font-semibold rounded-xl text-white bg-[#0D542B] hover:bg-[#093d1f] transition-colors cursor-pointer shadow-2xs mt-6"
+                        >
+                            {{ prodiCompleted ? 'Lihat Kuesioner Prodi' : 'Isi Kuesioner Prodi' }}
+                        </Link>
                     </div>
+
                 </div>
-                <div class="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
-                    <button 
-                        @click="showMissingProfileModal = false" 
-                        type="button" 
-                        class="px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-xl cursor-pointer"
-                    >
-                        Tutup
-                    </button>
-                    <Link 
-                        href="/alumni/profile" 
-                        class="px-4 py-2 text-xs font-bold text-white bg-[#0D542B] hover:bg-[#08381c] rounded-xl cursor-pointer"
-                    >
-                        Lengkapi Sekarang &rarr;
-                    </Link>
-                </div>
-            </div>
+            </main>
         </div>
-
-        <!-- MODAL INTERAKTIF: RINCIAN SOAL KUESIONER YANG BELUM DIJAWAB -->
-        <div v-if="showMissingQuestionnaireModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs p-4">
-            <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl border border-slate-200 relative animate-in fade-in zoom-in-95 duration-200">
-                <div class="flex items-center justify-between pb-3 border-b border-slate-100">
-                    <div>
-                        <h4 class="text-base font-bold text-slate-900">Soal Wajib Belum Dijawab</h4>
-                        <p class="text-xs text-slate-500">Terdapat {{ questionnaireMissing.length }} butir pertanyaan belum terisi:</p>
-                    </div>
-                    <button 
-                        @click="showMissingQuestionnaireModal = false" 
-                        type="button" 
-                        class="text-slate-400 hover:text-slate-600 p-1 rounded-lg"
-                    >
-                        ✕
-                    </button>
-                </div>
-                <div class="my-4 max-h-64 overflow-y-auto space-y-2 pr-1">
-                    <div 
-                        v-for="(soal, idx) in questionnaireMissing" 
-                        :key="idx" 
-                        class="flex items-center justify-between p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800"
-                    >
-                        <span class="font-bold text-[#0D542B]">{{ soal }}</span>
-                        <span class="text-[11px] text-slate-500">Wajib Diisi</span>
-                    </div>
-                </div>
-                <div class="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
-                    <button 
-                        @click="showMissingQuestionnaireModal = false" 
-                        type="button" 
-                        class="px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-xl cursor-pointer"
-                    >
-                        Tutup
-                    </button>
-                    <Link 
-                        href="/alumni/kuesioner" 
-                        class="px-4 py-2 text-xs font-bold text-white bg-[#0D542B] hover:bg-[#08381c] rounded-xl cursor-pointer"
-                    >
-                        Buka Formulir Kuesioner &rarr;
-                    </Link>
-                </div>
-            </div>
-        </div>
-
     </div>
 </template>

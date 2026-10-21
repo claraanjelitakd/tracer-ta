@@ -708,71 +708,71 @@ const dashboardRoute = computed(() => {
                         </p>
                     </div>
 
-                    <!-- Ringkasan Cepat di Header (Aksen Kuning UKDW #FDC700) -->
-                    <div class="bg-black/15 border border-white/20 px-6 py-4 rounded-2xl text-left md:text-right text-white">
-                        <span class="text-xs text-white/80 font-bold uppercase tracking-wider block">Tingkat Sinkronisasi LinkedIn</span>
-                        <span class="text-3xl font-black text-[#FDC700] block">{{ localStats.persentase_sinkron }}%</span>
-                        <span class="text-xs text-white/90 font-medium">{{ localStats.berhasil_sinkron }} dari {{ localStats.total_alumni }} Alumni Terhubung</span>
+                    <!-- Ringkasan Cepat di Header -->
+                    <div class="bg-white/10 border border-white/20 px-5 py-3 rounded-xl text-left md:text-right text-white">
+                        <span class="text-xs text-emerald-100 font-bold uppercase tracking-wider block">Tingkat Sinkronisasi LinkedIn</span>
+                        <span class="text-3xl font-extrabold text-white block mt-0.5">{{ localStats.persentase_sinkron }}%</span>
+                        <span class="text-xs text-emerald-100/80 font-medium">{{ localStats.berhasil_sinkron }} dari {{ localStats.total_alumni }} Alumni Terhubung</span>
                     </div>
                 </div>
             </header>
 
             <!-- Main Content Container -->
-            <main class="w-full max-w-[1400px] mx-auto -mt-10 px-4 sm:px-6 lg:px-8 space-y-6 pb-16">
+            <main class="w-full max-w-[1440px] mx-auto -mt-10 px-4 sm:px-6 lg:px-8 space-y-6 pb-16">
 
-                <!-- 6 Kartu Statistik Ringkas & Profesional (-mt-10) -->
+                <!-- 6 Kartu Statistik Ringkas & Profesional (Formal, Flat, Bersih) -->
                 <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3.5">
                     <!-- 1. Total Alumni -->
-                    <div class="bg-white rounded-2xl p-4 shadow-xs border border-gray-100">
-                        <p class="text-[11px] font-bold text-gray-500 uppercase tracking-wider">Total Alumni</p>
-                        <p class="text-2xl font-extrabold text-gray-900 tracking-tight mt-1.5">{{ localStats.total_alumni }}</p>
-                        <p class="text-[11px] text-gray-400 mt-0.5">Lulusan {{ selectedTahun }}</p>
+                    <div class="bg-white rounded-xl p-4.5 border border-slate-200 shadow-2xs">
+                        <p class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Total Alumni</p>
+                        <p class="text-2xl font-extrabold text-slate-900 tracking-tight mt-1.5">{{ localStats.total_alumni }}</p>
+                        <p class="text-xs text-slate-500 mt-1">Lulusan {{ selectedTahun }}</p>
                     </div>
 
                     <!-- 2. Terhubung LinkedIn -->
-                    <div class="bg-white rounded-2xl p-4 shadow-xs border border-gray-100">
-                        <p class="text-[11px] font-bold text-sky-700 uppercase tracking-wider">Punya Akun</p>
-                        <p class="text-2xl font-extrabold text-sky-900 tracking-tight mt-1.5">{{ localStats.dengan_linkedin }}</p>
-                        <p class="text-[11px] text-sky-600 mt-0.5">{{ provider === 'apify' ? 'Ada URL Profil' : 'Ada Username' }}</p>
+                    <div class="bg-white rounded-xl p-4.5 border border-slate-200 shadow-2xs">
+                        <p class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Punya Akun</p>
+                        <p class="text-2xl font-extrabold text-slate-900 tracking-tight mt-1.5">{{ localStats.dengan_linkedin }}</p>
+                        <p class="text-xs text-slate-500 mt-1">{{ provider === 'apify' ? 'Ada URL Profil' : 'Ada Username' }}</p>
                     </div>
 
                     <!-- 3. Siap Diplot (Matching) -->
-                    <div class="bg-white rounded-2xl p-4 shadow-xs border border-blue-100 bg-gradient-to-br from-white to-blue-50/30">
-                        <p class="text-[11px] font-bold text-blue-700 uppercase tracking-wider">Siap Diplot</p>
-                        <p class="text-2xl font-extrabold text-blue-900 tracking-tight mt-1.5">{{ localStats.siap_diplot || 0 }}</p>
-                        <p class="text-[11px] text-blue-600 mt-0.5">Data sama / cocok</p>
+                    <div class="bg-white rounded-xl p-4.5 border border-slate-200 shadow-2xs">
+                        <p class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Siap Diplot</p>
+                        <p class="text-2xl font-extrabold text-slate-900 tracking-tight mt-1.5">{{ localStats.siap_diplot || 0 }}</p>
+                        <p class="text-xs text-slate-500 mt-1">Data sama / cocok</p>
                     </div>
 
                     <!-- 4. Nama Sesuai (Validasi) -->
-                    <div class="bg-white rounded-2xl p-4 shadow-xs border border-emerald-100 bg-gradient-to-br from-white to-emerald-50/30">
-                        <p class="text-[11px] font-bold text-emerald-700 uppercase tracking-wider">Nama Cocok</p>
-                        <p class="text-2xl font-extrabold text-emerald-900 tracking-tight mt-1.5">{{ localStats.nama_sesuai || 0 }}</p>
-                        <p class="text-[11px] text-emerald-600 mt-0.5">Nama identik/parsial</p>
+                    <div class="bg-white rounded-xl p-4.5 border border-slate-200 shadow-2xs">
+                        <p class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Nama Cocok</p>
+                        <p class="text-2xl font-extrabold text-slate-900 tracking-tight mt-1.5">{{ localStats.nama_sesuai || 0 }}</p>
+                        <p class="text-xs text-slate-500 mt-1">Identik / parsial</p>
                     </div>
 
                     <!-- 5. Menunggu Review (Khusus Apify) -->
-                    <div class="bg-white rounded-2xl p-4 shadow-xs border border-amber-100">
-                        <p class="text-[11px] font-bold text-amber-600 uppercase tracking-wider">Pending Review</p>
-                        <p class="text-2xl font-extrabold text-amber-600 tracking-tight mt-1.5">{{ localStats.pending_review }}</p>
-                        <p class="text-[11px] text-amber-600 mt-0.5">Menunggu approval</p>
+                    <div class="bg-white rounded-xl p-4.5 border border-slate-200 shadow-2xs">
+                        <p class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Pending Review</p>
+                        <p class="text-2xl font-extrabold text-slate-900 tracking-tight mt-1.5">{{ localStats.pending_review }}</p>
+                        <p class="text-xs text-slate-500 mt-1">Menunggu approval</p>
                     </div>
 
                     <!-- 6. Berhasil / Approved -->
-                    <div class="bg-white rounded-2xl p-4 shadow-xs border border-gray-100">
-                        <p class="text-[11px] font-bold text-[#0D542B] uppercase tracking-wider">Approved</p>
+                    <div class="bg-white rounded-xl p-4.5 border border-slate-200 shadow-2xs">
+                        <p class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Approved</p>
                         <p class="text-2xl font-extrabold text-[#0D542B] tracking-tight mt-1.5">{{ localStats.berhasil_sinkron }}</p>
-                        <p class="text-[11px] text-gray-400 mt-0.5">Terplot ke database</p>
+                        <p class="text-xs text-slate-500 mt-1">Terplot ke database</p>
                     </div>
                 </div>
 
-                <!-- Panel Filter Komprehensif (Sama Persis dengan superadmin/alumni) -->
-                <div class="bg-white rounded-2xl p-6 shadow-xs border border-gray-100">
-                    <div class="flex items-center justify-between border-b border-gray-100 pb-4 mb-5 flex-wrap gap-3">
+                <!-- Panel Filter Komprehensif -->
+                <div class="bg-white rounded-xl p-5 shadow-2xs border border-gray-300">
+                    <div class="flex items-center justify-between border-b border-gray-200 pb-3.5 mb-4 flex-wrap gap-3">
                         <div class="flex items-center gap-3">
                             <h2 class="text-sm font-extrabold text-gray-900 uppercase tracking-wider">
                                 Filter & Pencarian Alumni LinkedIn
                             </h2>
-                            <span class="text-xs px-2.5 py-0.5 rounded-full bg-emerald-50 text-[#0D542B] font-bold">
+                            <span class="text-xs px-2.5 py-0.5 rounded-full bg-emerald-50 text-[#0D542B] font-bold border border-emerald-200">
                                 Tahun Kelulusan: {{ selectedTahun }}
                             </span>
                         </div>
@@ -787,26 +787,26 @@ const dashboardRoute = computed(() => {
                         </div>
                     </div>
 
-                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-7 gap-4">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-7 gap-3.5">
                         <!-- 1. Pencarian Nama / NIM / Akun -->
                         <div>
-                            <label class="block text-xs font-bold text-gray-600 mb-1.5">Cari Nama / NIM / LinkedIn</label>
+                            <label class="block text-xs font-bold text-gray-700 mb-1">Cari Nama / NIM / LinkedIn</label>
                             <input 
                                 type="text" 
                                 v-model="search" 
                                 @input="handleSearchInput" 
                                 placeholder="Ketik nama, NIM, atau URL..." 
-                                class="w-full text-xs rounded-xl border border-gray-200 bg-gray-50 py-2.5 px-3.5 font-medium text-gray-900 focus:bg-white focus:border-[#0D542B] focus:ring-1 focus:ring-[#0D542B] outline-none"
+                                class="w-full text-xs rounded-lg border border-gray-300 bg-white py-2 px-3 font-medium text-gray-900 focus:border-[#0D542B] focus:ring-1 focus:ring-[#0D542B] outline-none"
                             />
                         </div>
 
                         <!-- 2. Filter Tahun Kelulusan -->
                         <div>
-                            <label class="block text-xs font-bold text-gray-600 mb-1.5">Tahun Kelulusan *</label>
+                            <label class="block text-xs font-bold text-gray-700 mb-1">Tahun Kelulusan *</label>
                             <select 
                                 v-model="selectedTahun" 
                                 @change="applyFilters" 
-                                class="w-full text-xs rounded-xl border border-gray-200 bg-gray-50 py-2.5 px-3.5 font-bold text-gray-900 focus:bg-white focus:border-[#0D542B] focus:ring-1 focus:ring-[#0D542B] outline-none cursor-pointer"
+                                class="w-full text-xs rounded-lg border border-gray-300 bg-white py-2 px-3 font-bold text-gray-900 focus:border-[#0D542B] focus:ring-1 focus:ring-[#0D542B] outline-none cursor-pointer"
                             >
                                 <option v-for="t in daftarTahun" :key="t" :value="t">
                                     {{ t }}
@@ -816,11 +816,11 @@ const dashboardRoute = computed(() => {
 
                         <!-- 3. Filter Target Kelulusan (Semester + Tahun) -->
                         <div>
-                            <label class="block text-xs font-bold text-gray-600 mb-1.5">Target Kelulusan</label>
+                            <label class="block text-xs font-bold text-gray-700 mb-1">Target Kelulusan</label>
                             <select 
                                 v-model="selectedTarget" 
                                 @change="applyFilters" 
-                                class="w-full text-xs rounded-xl border border-gray-200 bg-gray-50 py-2.5 px-3.5 font-medium text-gray-900 focus:bg-white focus:border-[#0D542B] focus:ring-1 focus:ring-[#0D542B] outline-none cursor-pointer"
+                                class="w-full text-xs rounded-lg border border-gray-300 bg-white py-2 px-3 font-medium text-gray-900 focus:border-[#0D542B] focus:ring-1 focus:ring-[#0D542B] outline-none cursor-pointer"
                             >
                                 <option value="all">Semua Target</option>
                                 <option v-for="tgt in daftarTarget" :key="tgt" :value="tgt">
@@ -831,11 +831,11 @@ const dashboardRoute = computed(() => {
 
                         <!-- 4. Filter Semester Kelulusan -->
                         <div>
-                            <label class="block text-xs font-bold text-gray-600 mb-1.5">Semester</label>
+                            <label class="block text-xs font-bold text-gray-700 mb-1">Semester</label>
                             <select 
                                 v-model="selectedSemester" 
                                 @change="applyFilters" 
-                                class="w-full text-xs rounded-xl border border-gray-200 bg-gray-50 py-2.5 px-3.5 font-medium text-gray-900 focus:bg-white focus:border-[#0D542B] focus:ring-1 focus:ring-[#0D542B] outline-none cursor-pointer"
+                                class="w-full text-xs rounded-lg border border-gray-300 bg-white py-2 px-3 font-medium text-gray-900 focus:border-[#0D542B] focus:ring-1 focus:ring-[#0D542B] outline-none cursor-pointer"
                             >
                                 <option value="all">Semua Semester</option>
                                 <option value="Gasal">Gasal</option>
@@ -845,11 +845,11 @@ const dashboardRoute = computed(() => {
 
                         <!-- 5. Filter Status Sinkronisasi -->
                         <div>
-                            <label class="block text-xs font-bold text-gray-600 mb-1.5">Status Sinkronisasi</label>
+                            <label class="block text-xs font-bold text-gray-700 mb-1">Status Sinkronisasi</label>
                             <select 
                                 v-model="selectedStatus" 
                                 @change="applyFilters" 
-                                class="w-full text-xs rounded-xl border border-gray-200 bg-gray-50 py-2.5 px-3.5 font-medium text-gray-900 focus:bg-white focus:border-[#0D542B] focus:ring-1 focus:ring-[#0D542B] outline-none cursor-pointer"
+                                class="w-full text-xs rounded-lg border border-gray-300 bg-white py-2 px-3 font-medium text-gray-900 focus:border-[#0D542B] focus:ring-1 focus:ring-[#0D542B] outline-none cursor-pointer"
                             >
                                 <option value="all">Semua Status</option>
                                 <option value="approved">Approved / Berhasil</option>
@@ -862,11 +862,11 @@ const dashboardRoute = computed(() => {
 
                         <!-- 6. Filter Status Plot & Validasi Nama -->
                         <div>
-                            <label class="block text-xs font-bold text-gray-600 mb-1.5">Plotting & Nama</label>
+                            <label class="block text-xs font-bold text-gray-700 mb-1">Plotting & Nama</label>
                             <select 
                                 v-model="selectedStatusPlot" 
                                 @change="applyFilters" 
-                                class="w-full text-xs rounded-xl border border-gray-200 bg-gray-50 py-2.5 px-3.5 font-medium text-gray-900 focus:bg-white focus:border-[#0D542B] focus:ring-1 focus:ring-[#0D542B] outline-none cursor-pointer"
+                                class="w-full text-xs rounded-lg border border-gray-300 bg-white py-2 px-3 font-medium text-gray-900 focus:border-[#0D542B] focus:ring-1 focus:ring-[#0D542B] outline-none cursor-pointer"
                             >
                                 <option value="all">Semua Plot & Nama</option>
                                 <option value="ready">Siap Diplot (Data Sama)</option>
@@ -878,12 +878,12 @@ const dashboardRoute = computed(() => {
 
                         <!-- 7. Filter Program Studi (Disesuaikan Peran) -->
                         <div>
-                            <label class="block text-xs font-bold text-gray-600 mb-1.5">Program Studi</label>
+                            <label class="block text-xs font-bold text-gray-700 mb-1">Program Studi</label>
                             <select 
                                 v-model="selectedProdiId" 
                                 @change="applyFilters" 
                                 :disabled="role === 'admin_prodi'"
-                                class="w-full text-xs rounded-xl border border-gray-200 bg-gray-50 py-2.5 px-3.5 font-medium text-gray-900 focus:bg-white focus:border-[#0D542B] focus:ring-1 focus:ring-[#0D542B] outline-none disabled:opacity-75 disabled:cursor-not-allowed cursor-pointer"
+                                class="w-full text-xs rounded-lg border border-gray-300 bg-white py-2 px-3 font-medium text-gray-900 focus:border-[#0D542B] focus:ring-1 focus:ring-[#0D542B] outline-none disabled:opacity-75 disabled:cursor-not-allowed cursor-pointer"
                             >
                                 <option v-if="role !== 'admin_prodi'" value="all">Semua Program Studi</option>
                                 <option v-for="p in prodis" :key="p.id" :value="p.id">
@@ -895,11 +895,11 @@ const dashboardRoute = computed(() => {
                 </div>
 
                 <!-- Tabel Data Alumni & Status Sinkronisasi LinkedIn -->
-                <div class="bg-white rounded-2xl shadow-xs border border-gray-100 overflow-hidden">
-                    <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between flex-wrap gap-3">
+                <div class="bg-white rounded-xl shadow-2xs border border-gray-300 overflow-hidden">
+                    <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between flex-wrap gap-3">
                         <div class="flex items-center gap-2">
                             <span class="text-xs font-bold text-gray-700">Daftar Alumni:</span>
-                            <span class="text-xs font-extrabold text-[#0D542B] bg-emerald-50 px-2 py-0.5 rounded-full">
+                            <span class="text-xs font-extrabold text-[#0D542B] bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded">
                                 {{ filteredAlumni.length }} Data Ditemukan
                             </span>
                         </div>
@@ -909,20 +909,20 @@ const dashboardRoute = computed(() => {
                     </div>
 
                     <div class="overflow-x-auto">
-                        <table class="w-full text-left text-xs text-gray-600">
-                            <thead class="bg-gray-50/80 text-gray-700 font-bold uppercase tracking-wider text-[11px] border-b border-gray-100">
+                        <table class="w-full text-left text-xs text-gray-700">
+                            <thead class="bg-gray-100 text-gray-800 font-bold uppercase tracking-wider text-[11px] border-b border-gray-300">
                                 <tr>
-                                    <th class="py-3.5 px-6">Alumni / Mahasiswa</th>
-                                    <th class="py-3.5 px-4">Program Studi</th>
-                                    <th class="py-3.5 px-4">Akun LinkedIn</th>
-                                    <th class="py-3.5 px-4">Karier Terkini</th>
-                                    <th class="py-3.5 px-4 text-center">Status Sinkronisasi</th>
-                                    <th class="py-3.5 px-6 text-center">Aksi</th>
+                                    <th class="py-3 px-4 border-r border-gray-200">Alumni / Mahasiswa</th>
+                                    <th class="py-3 px-4 border-r border-gray-200">Program Studi</th>
+                                    <th class="py-3 px-4 border-r border-gray-200">Akun LinkedIn</th>
+                                    <th class="py-3 px-4 border-r border-gray-200">Karier Terkini</th>
+                                    <th class="py-3 px-4 text-center border-r border-gray-200">Status Sinkronisasi</th>
+                                    <th class="py-3 px-4 text-center">Aksi</th>
                                 </tr>
                             </thead>
-                            <tbody class="divide-y divide-gray-100">
+                            <tbody class="divide-y divide-gray-200">
                                 <tr v-if="paginatedAlumni.length === 0">
-                                    <td colspan="6" class="py-12 text-center text-gray-400">
+                                    <td colspan="6" class="py-12 text-center text-gray-500">
                                         Tidak ada data alumni yang cocok dengan filter yang dipilih.
                                     </td>
                                 </tr>
@@ -932,11 +932,11 @@ const dashboardRoute = computed(() => {
                                     v-for="alumni in paginatedAlumni" 
                                     :key="alumni.id"
                                     :id="`alumni-row-${alumni.id}`"
-                                    class="hover:bg-gray-50/60 transition-colors"
-                                    :class="highlightedAlumniId === alumni.id ? 'bg-amber-50/50' : ''"
+                                    class="hover:bg-gray-50/70 transition-colors"
+                                    :class="highlightedAlumniId === alumni.id ? 'bg-emerald-50/40' : ''"
                                 >
                                     <!-- 1. Alumni Info -->
-                                    <td class="py-4 px-6">
+                                    <td class="py-3.5 px-4">
                                         <div class="flex items-center gap-3">
                                             <div class="w-9 h-9 rounded-xl bg-slate-100 text-[#0D542B] font-bold text-xs flex items-center justify-center shrink-0 border border-slate-200">
                                                 {{ (alumni.nama || 'A').charAt(0) }}
@@ -952,22 +952,13 @@ const dashboardRoute = computed(() => {
                                                     NIM: {{ alumni.nim }}
                                                 </span>
                                                 <!-- Badge Validasi Nama dari Database View v_alumni_linkedin_plot -->
-                                                <div v-if="alumni.keterangan_nama" class="mt-1.5">
+                                                <div v-if="alumni.keterangan_nama" class="mt-1">
                                                     <span 
-                                                        class="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-md"
-                                                        :class="{
-                                                            'bg-emerald-50 text-emerald-800 border border-emerald-200': alumni.keterangan_nama === 'Nama Sesuai Eksak',
-                                                            'bg-sky-50 text-sky-800 border border-sky-200': alumni.keterangan_nama === 'Nama Sesuai Parsial',
-                                                            'bg-rose-50 text-rose-800 border border-rose-200': alumni.keterangan_nama === 'Nama Berbeda (Perlu Verifikasi)',
-                                                            'bg-gray-100 text-gray-500 border border-gray-200': alumni.keterangan_nama === 'Belum Ada Data LinkedIn'
-                                                        }"
+                                                        class="inline-block text-[10px] font-medium px-2 py-0.5 rounded border"
+                                                        :class="alumni.keterangan_nama.includes('Nama Sesuai')
+                                                            ? 'bg-emerald-50 text-[#0D542B] border-emerald-200'
+                                                            : 'bg-gray-50 text-gray-700 border-gray-200'"
                                                     >
-                                                        <span class="w-1.5 h-1.5 rounded-full" :class="{
-                                                            'bg-emerald-500': alumni.keterangan_nama === 'Nama Sesuai Eksak',
-                                                            'bg-sky-500': alumni.keterangan_nama === 'Nama Sesuai Parsial',
-                                                            'bg-rose-500': alumni.keterangan_nama === 'Nama Berbeda (Perlu Verifikasi)',
-                                                            'bg-gray-400': alumni.keterangan_nama === 'Belum Ada Data LinkedIn'
-                                                        }"></span>
                                                         {{ alumni.keterangan_nama }}
                                                     </span>
                                                 </div>
@@ -976,21 +967,21 @@ const dashboardRoute = computed(() => {
                                     </td>
 
                                     <!-- 2. Program Studi -->
-                                    <td class="py-4 px-4">
+                                    <td class="py-3.5 px-4">
                                         <span class="font-semibold text-gray-800 block">{{ alumni.prodi }}</span>
-                                        <span class="text-[10px] text-gray-400 block">{{ alumni.fakultas }}</span>
+                                        <span class="text-[10px] text-gray-500 block">{{ alumni.fakultas }}</span>
                                     </td>
 
                                     <!-- 3. Akun LinkedIn -->
-                                    <td class="py-4 px-4">
+                                    <td class="py-3.5 px-4">
                                         <div v-if="alumni.linkedin_url">
                                             <a 
                                                 :href="alumni.linkedin_url" 
                                                 target="_blank" 
-                                                class="text-[#0077B5] hover:underline font-mono text-xs inline-flex items-center gap-1 max-w-[200px] truncate"
+                                                class="text-gray-700 hover:text-[#0D542B] hover:underline font-mono text-xs inline-flex items-center gap-1.5 max-w-[200px] truncate"
                                                 title="Buka profil LinkedIn asli"
                                             >
-                                                <svg class="w-3.5 h-3.5 shrink-0 fill-current" viewBox="0 0 24 24">
+                                                <svg class="w-3.5 h-3.5 shrink-0 fill-current text-gray-500" viewBox="0 0 24 24">
                                                     <path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/>
                                                 </svg>
                                                 <span class="truncate">{{ alumni.linkedin_url.replace(/^https?:\/\/(www\.)?linkedin\.com\/in\//, '') || 'Profil LinkedIn' }}</span>
@@ -1005,17 +996,17 @@ const dashboardRoute = computed(() => {
                                     </td>
 
                                     <!-- 4. Karier Terkini & Plotting LinkedIn (Database View v_alumni_linkedin_plot) -->
-                                    <td class="py-4 px-4">
+                                    <td class="py-3.5 px-4">
                                         <div class="space-y-1.5">
                                             <div>
-                                                <span class="text-[9px] uppercase font-bold tracking-wider text-gray-600 block">Biodata UKDW:</span>
+                                                <span class="text-[9px] uppercase font-bold tracking-wider text-gray-500 block">Biodata UKDW:</span>
                                                 <span class="font-semibold text-gray-800 block truncate max-w-[210px]" :title="alumni.posisi">{{ alumni.posisi || '-' }}</span>
                                                 <span class="text-[11px] text-gray-500 block truncate max-w-[210px]" :title="alumni.perusahaan">{{ alumni.perusahaan || '-' }}</span>
                                             </div>
 
                                             <div v-if="alumni.posisi_linkedin || alumni.perusahaan_linkedin" class="pt-1 border-t border-gray-100">
-                                                <span class="text-[9px] uppercase font-bold tracking-wider text-[#0077B5] flex items-center gap-1">
-                                                    <svg class="w-2.5 h-2.5 fill-current" viewBox="0 0 24 24"><path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/></svg>
+                                                <span class="text-[9px] uppercase font-bold tracking-wider text-gray-600 flex items-center gap-1">
+                                                    <svg class="w-2.5 h-2.5 fill-current text-gray-500" viewBox="0 0 24 24"><path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/></svg>
                                                     LinkedIn Scrape:
                                                 </span>
                                                 <span class="text-xs font-medium text-slate-800 block truncate max-w-[210px]" :title="alumni.posisi_linkedin">{{ alumni.posisi_linkedin || '-' }}</span>
@@ -1024,14 +1015,10 @@ const dashboardRoute = computed(() => {
 
                                             <div v-if="alumni.status_plot_label" class="mt-1">
                                                 <span 
-                                                    class="inline-block text-[10px] font-bold px-2 py-0.5 rounded-full"
-                                                    :class="{
-                                                        'bg-emerald-50 text-emerald-800 border border-emerald-200': alumni.status_plot_label === 'Sudah Terplot (Approved)',
-                                                        'bg-teal-50 text-teal-800 border border-teal-200': alumni.status_plot_label === 'Data Sama / Siap Diplot',
-                                                        'bg-amber-50 text-amber-800 border border-amber-200': alumni.status_plot_label === 'Menunggu Review (Pending)',
-                                                        'bg-rose-50 text-rose-800 border border-rose-200': alumni.status_plot_label === 'Ditolak (Rejected)',
-                                                        'bg-gray-100 text-gray-500': alumni.status_plot_label === 'Belum Pernah Sync'
-                                                    }"
+                                                    class="inline-block text-[10px] font-medium px-2 py-0.5 rounded border"
+                                                    :class="alumni.status_plot_label.includes('Approved') || alumni.status_plot_label.includes('Siap Diplot')
+                                                        ? 'bg-emerald-50 text-[#0D542B] border-emerald-200' 
+                                                        : 'bg-gray-50 text-gray-700 border-gray-200'"
                                                 >
                                                     {{ alumni.status_plot_label }}
                                                 </span>
@@ -1040,15 +1027,12 @@ const dashboardRoute = computed(() => {
                                     </td>
 
                                     <!-- 5. Status Sinkronisasi -->
-                                    <td class="py-4 px-4 text-center">
+                                    <td class="py-3.5 px-4 text-center">
                                         <span 
-                                            class="inline-block px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider"
-                                            :class="{
-                                                'bg-emerald-50 text-emerald-800 border border-emerald-200': alumni.status_sync === 'Approved' || alumni.status_sync === 'Berhasil',
-                                                'bg-amber-50 text-amber-800 border border-amber-200': alumni.status_sync === 'Pending Review',
-                                                'bg-rose-50 text-rose-800 border border-rose-200': alumni.status_sync === 'Rejected' || alumni.status_sync === 'Gagal',
-                                                'bg-gray-100 text-gray-600': alumni.status_sync === 'Belum Disinkronkan' || alumni.status_sync === 'Belum Ada URL LinkedIn',
-                                            }"
+                                            class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium border"
+                                            :class="(alumni.status_sync === 'Approved' || alumni.status_sync === 'Berhasil')
+                                                ? 'bg-emerald-50 text-[#0D542B] border-emerald-200'
+                                                : 'bg-gray-50 text-gray-700 border-gray-200'"
                                         >
                                             {{ alumni.status_sync }}
                                         </span>
@@ -1058,7 +1042,7 @@ const dashboardRoute = computed(() => {
                                     </td>
 
                                     <!-- 6. Aksi Cepat (Tombol Ikon Berukuran Pasti) -->
-                                    <td class="py-4 px-6 text-center">
+                                    <td class="py-3.5 px-4 text-center">
                                         <div class="inline-flex items-center justify-center gap-1.5">
                                             <!-- Tombol Sync Single (Icon Berukuran Pasti 32x32) -->
                                             <button
@@ -1083,7 +1067,7 @@ const dashboardRoute = computed(() => {
                                                 v-if="alumni.latest_sync_result && alumni.latest_sync_result.status === 'pending'"
                                                 type="button"
                                                 @click="openReviewModal(alumni.latest_sync_result.id, alumni)"
-                                                class="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 text-amber-800 bg-amber-100 hover:bg-amber-200 border border-amber-200/80 active:scale-95 transition-all shadow-2xs cursor-pointer"
+                                                class="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 text-gray-700 bg-white hover:bg-gray-100 hover:text-[#0D542B] border border-gray-300 active:scale-95 transition-all shadow-2xs cursor-pointer"
                                                 title="Tinjau hasil scraping Apify"
                                                 aria-label="Tinjau hasil sinkronisasi"
                                             >
@@ -1096,7 +1080,7 @@ const dashboardRoute = computed(() => {
                                             <button
                                                 type="button"
                                                 @click="openHistoryModal(alumni)"
-                                                class="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-200/60 active:scale-95 transition-all shadow-2xs cursor-pointer"
+                                                class="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 text-gray-700 bg-white hover:bg-gray-100 hover:text-[#0D542B] border border-gray-300 active:scale-95 transition-all shadow-2xs cursor-pointer"
                                                 title="Lihat riwayat sinkronisasi alumni ini"
                                                 aria-label="Riwayat sinkronisasi"
                                             >
@@ -1112,7 +1096,7 @@ const dashboardRoute = computed(() => {
                     </div>
 
                     <!-- Footer Pagination ala DataTables -->
-                    <div class="px-6 py-4 bg-gray-50/50 border-t border-gray-100 flex items-center justify-between flex-wrap gap-4">
+                    <div class="px-6 py-4 bg-gray-50/50 border-t border-gray-300 flex items-center justify-between flex-wrap gap-4">
                         <div class="text-xs text-gray-500">
                             Menampilkan {{ filteredAlumni.length > 0 ? (currentPage - 1) * perPage + 1 : 0 }} sampai 
                             {{ Math.min(currentPage * perPage, filteredAlumni.length) }} dari 
@@ -1124,7 +1108,7 @@ const dashboardRoute = computed(() => {
                                 type="button"
                                 @click="goToPage(currentPage - 1)"
                                 :disabled="currentPage === 1"
-                                class="px-3 py-1.5 rounded-lg text-xs font-semibold text-gray-700 bg-white border border-gray-200 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+                                class="px-3 py-1.5 rounded-lg text-xs font-semibold text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
                             >
                                 Sebelumnya
                             </button>
@@ -1135,7 +1119,7 @@ const dashboardRoute = computed(() => {
                                 type="button"
                                 @click="goToPage(p)"
                                 class="w-8 h-8 rounded-lg text-xs font-bold transition-colors cursor-pointer"
-                                :class="currentPage === p ? 'bg-[#0D542B] text-white shadow-2xs' : 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-50'"
+                                :class="currentPage === p ? 'bg-[#0D542B] text-white shadow-2xs' : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'"
                             >
                                 {{ p }}
                             </button>
@@ -1144,7 +1128,7 @@ const dashboardRoute = computed(() => {
                                 type="button"
                                 @click="goToPage(currentPage + 1)"
                                 :disabled="currentPage === totalPages"
-                                class="px-3 py-1.5 rounded-lg text-xs font-semibold text-gray-700 bg-white border border-gray-200 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+                                class="px-3 py-1.5 rounded-lg text-xs font-semibold text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
                             >
                                 Selanjutnya
                             </button>

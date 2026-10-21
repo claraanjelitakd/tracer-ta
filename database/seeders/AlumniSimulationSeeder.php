@@ -682,9 +682,6 @@ class AlumniSimulationSeeder extends Seeder
             $answers['F8'] = 'Bekerja (full time/part time)';
         }
 
-        // 2. Pembiayaan Kuliah (F12)
-        $answers['F12'] = ($kategoriIdx === 2) ? 'Beasiswa' : 'Biaya Sendiri / Keluarga';
-
         // 3. Butir Kompetensi Wajib (F17a1 s/d F17b7) - Nilai skala 1 s/d 5
         $kompetensiCodes = [
             'F17a1', 'F17b1', 'F17a2', 'F17b2', 'F17a3', 'F17b3',
@@ -719,7 +716,7 @@ class AlumniSimulationSeeder extends Seeder
             $answers['F505'] = '8500000';
         } else {
             // Jalur Melanjutkan Pendidikan (Kategori 2 / Index 2)
-            $answers['F18a'] = 'Beasiswa Lembaga Pengelola Dana Pendidikan (LPDP)';
+            $answers['F12'] = 'Beasiswa Pemerintah';
             $answers['F18b'] = 'Universitas Gadjah Mada';
             $answers['F18c'] = 'Program Magister Pascasarjana';
             $answers['F18d'] = '2025-09-01';

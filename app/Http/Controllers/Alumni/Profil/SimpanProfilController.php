@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Alumni\Profil;
 use App\Http\Controllers\Controller;
 use App\Mail\UndanganEvaluasiAtasanMail;
 use App\Models\Atasan;
+use App\Models\Biodata;
 use App\Models\DataAkademik;
 use App\Models\DataOrangTua;
 use App\Models\EvaluasiAtasan;
@@ -92,7 +93,7 @@ class SimpanProfilController extends Controller
                     'kabupaten_id' => $kabupatenId,
                     'alamat' => $alamat,
                     'kode_pos' => $kodePos,
-                    'skala' => $skala,
+                    'skala' => $skala ?: 'Nasional',
                     'jenis_perusahaan' => $jenisPerusahaan,
                     'jenis_perusahaan_lainnya' => $jenisPerusahaanLainnya,
                     'jenis_lokasi' => $jenisLokasi,
@@ -332,20 +333,58 @@ class SimpanProfilController extends Controller
     }
 
     /**
-     * Mengirimkan email undangan kuesioner evaluasi atasan secara manual oleh alumni
+     * Mengirimkan email undangan kuesioner evaluasi atasan secara manual oleh alumni atau administrator.
      */
     public function kirimEmailAtasan(Request $request)
     {
         $user = $request->user();
-        $biodata = $user->biodata;
+        $biodata = null;
+
+        if (in_array($user->role, ['superadmin', 'admin_fakultas', 'admin_prodi', 'admin_biro3'])) {
+            $biodataId = $request->input('biodata_id') ?? $request->input('alumni_id');
+            if ($biodataId) {
+                $biodata = Biodata::with(['perusahaan', 'atasan', 'prodi.fakultas', 'dataAkademik'])->find($biodataId);
+            }
+
+            if (! $biodata) {
+                return redirect()->back()->with('error', 'Data biodata alumni tidak ditemukan.');
+            }
+
+            // Validasi otorisasi lingkup peran admin
+            if ($user->role === 'admin_prodi' && $user->prodi_id) {
+                if ((int) $biodata->prodi_id !== (int) $user->prodi_id) {
+                    abort(403, 'Anda tidak memiliki akses ke data alumni program studi ini.');
+                }
+            } elseif ($user->role === 'admin_fakultas' && $user->fakultas_id) {
+                if ((int) $biodata->prodi?->fakultas_id !== (int) $user->fakultas_id) {
+                    abort(403, 'Anda tidak memiliki akses ke data alumni fakultas ini.');
+                }
+            }
+        } else {
+            $biodata = $user->biodata;
+        }
 
         if (! $biodata) {
             return redirect()->back()->with('error', 'Data biodata alumni tidak ditemukan.');
         }
 
-        $emailAtasan = $biodata->email_atasan;
+        $emailAtasan = $request->input('email_atasan') ?: ($biodata->atasan?->email ?: null);
         if (! $emailAtasan || ! filter_var($emailAtasan, FILTER_VALIDATE_EMAIL)) {
             return redirect()->back()->with('error', 'Alamat email atasan belum diisi atau format tidak valid. Mohon lengkapi pada form atasan terlebih dahulu.');
+        }
+
+        // Sinkronkan email ke tabel atasan jika belum ada atau berbeda
+        if ($biodata->atasan) {
+            if ($biodata->atasan->email !== $emailAtasan) {
+                $biodata->atasan->update(['email' => $emailAtasan]);
+            }
+        } else {
+            $atasan = Atasan::create([
+                'nama' => 'Atasan',
+                'email' => $emailAtasan,
+            ]);
+            $biodata->update(['atasan_id' => $atasan->id]);
+            $biodata->setRelation('atasan', $atasan);
         }
 
         $idAtasan = $biodata->atasan_id;
@@ -360,8 +399,25 @@ class SimpanProfilController extends Controller
             ]
         );
 
+        // Pastikan token selalu terisi jika record evaluasi sudah ada sebelumnya tanpa token
+        if (empty($evaluasi->token)) {
+            $evaluasi->token = Str::random(40);
+        }
+        if (! $evaluasi->atasan_id && $idAtasan) {
+            $evaluasi->atasan_id = $idAtasan;
+        }
+        if (! $evaluasi->perusahaan_id && $biodata->perusahaan_id) {
+            $evaluasi->perusahaan_id = $biodata->perusahaan_id;
+            $evaluasi->nama_perusahaan = $biodata->perusahaan?->nama_perusahaan;
+            $evaluasi->alamat_lengkap = $biodata->perusahaan?->alamat;
+        }
+        if ($evaluasi->isDirty()) {
+            $evaluasi->save();
+        }
+
         try {
             Mail::to($emailAtasan)->send(new UndanganEvaluasiAtasanMail($biodata, $evaluasi));
+            Log::info("Email evaluasi atasan terkirim ke: {$emailAtasan} | Alumni: {$biodata->nama} (NIM: {$biodata->nim}) | Evaluasi ID: {$evaluasi->id}");
 
             return redirect()->back()->with('success', "Email undangan evaluasi berhasil dikirimkan ke atasan ({$emailAtasan}).");
         } catch (\Throwable $e) {

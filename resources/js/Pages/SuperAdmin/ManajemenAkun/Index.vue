@@ -181,54 +181,53 @@ const handleResetToDefaultAndNotify = (userData) => {
         <Sidebar :user="user" />
 
         <div class="flex-1 flex flex-col min-w-0 lg:pl-72">
-            <!-- Header Top Bar -->
-            <div class="bg-white border-b border-gray-200 px-6 py-5">
-                <div class="w-full flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <!-- Header Solid UKDW Green Konsisten -->
+            <div class="bg-[#0D542B] text-white pt-8 pb-16 px-4 sm:px-6 lg:px-8 border-b border-emerald-900/40">
+                <div class="w-full max-w-[1440px] mx-auto flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div>
-                        <div class="flex items-center gap-2 text-xs text-gray-500 font-medium mb-1">
-                            <Link href="/superadmin/dashboard" class="hover:underline hover:text-[#0D542B]">Dashboard</Link>
+                        <div class="flex items-center gap-2 text-xs text-white/70 font-medium mb-1.5">
+                            <Link href="/superadmin/dashboard" class="hover:text-white transition-colors">Dashboard</Link>
                             <span>/</span>
-                            <span class="text-gray-800 font-semibold">Super Admin</span>
-                            <span>/</span>
-                            <span class="text-[#0D542B] font-bold">Manajemen Akun</span>
+                            <span class="text-white font-semibold">Manajemen Akun</span>
                         </div>
-                        <h1 class="text-xl font-bold text-gray-900">
-                            Manajemen Akun & Pemulihan Password Tanggal Lahir
+                        <h1 class="text-2xl font-bold tracking-tight text-white">
+                            Manajemen Akun Pengguna
                         </h1>
-                        <p class="text-xs text-gray-500 mt-0.5">
-                            Pengelolaan pengguna terpadu, sunting email/biodata, dan 1-Klik reset password ke tanggal lahir dengan konfirmasi email.
+                        <p class="text-xs text-emerald-100/90 mt-1 max-w-2xl leading-relaxed">
+                            Pengelolaan akun terpadu, pembaruan email/identitas, dan reset password 1-klik dengan notifikasi email resmi.
                         </p>
                     </div>
 
-                    <!-- Widget Statistik Dual Sesuai Foto Pengguna -->
-                    <div class="bg-slate-50/80 border border-slate-200/80 rounded-2xl px-8 py-3.5 flex items-center gap-8 text-center shadow-2xs">
+                    <!-- Widget Statistik 2-Tone Bersih -->
+                    <div class="bg-white/10 border border-white/20 rounded-xl px-6 py-3 flex items-center gap-6 text-center shadow-xs">
                         <div>
-                            <div class="text-2xl font-black text-[#0D542B] leading-none mb-1.5">{{ stats.total_admin_fakultas + stats.total_admin_prodi }}</div>
-                            <div class="text-[11px] font-bold text-slate-600 tracking-wide uppercase">ADMIN FAKULTAS & PRODI</div>
+                            <div class="text-2xl font-black text-white leading-none mb-1">{{ stats?.total_admin_fakultas + stats?.total_admin_prodi || 0 }}</div>
+                            <div class="text-[10px] font-bold text-emerald-100/80 tracking-wide uppercase">ADMIN FAKULTAS &amp; PRODI</div>
                         </div>
-                        <div class="w-px h-10 bg-slate-300/80"></div>
+                        <div class="w-px h-8 bg-white/20"></div>
                         <div>
-                            <div class="text-2xl font-black text-[#D97706] leading-none mb-1.5">{{ stats.total_alumni }}</div>
-                            <div class="text-[11px] font-bold text-slate-600 tracking-wide uppercase">MAHASISWA & ALUMNI</div>
+                            <div class="text-2xl font-black text-[#FDC700] leading-none mb-1">{{ stats?.total_alumni || 0 }}</div>
+                            <div class="text-[10px] font-bold text-emerald-100/80 tracking-wide uppercase">MAHASISWA &amp; ALUMNI</div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <main class="w-full p-6 space-y-4">
+            <!-- Kontainer Konten Utama -->
+            <main class="w-full max-w-[1440px] mx-auto -mt-10 px-4 sm:px-6 lg:px-8 space-y-6 pb-12">
                 <!-- Filter bar -->
-                <div class="bg-white p-4 rounded-lg border border-gray-200 flex flex-col md:flex-row md:items-center justify-between gap-3 text-xs shadow-2xs">
+                <div class="bg-white p-3.5 rounded-xl border border-gray-300 flex flex-col md:flex-row md:items-center justify-between gap-3 text-xs shadow-2xs">
                     <div class="flex items-center gap-3 flex-wrap flex-1">
                         <input
                             v-model="search"
                             @keyup.enter="applyFilters"
                             type="text"
                             placeholder="Cari nama, email, atau username..."
-                            class="px-3 py-2 border border-gray-300 rounded-lg text-xs w-64 focus:outline-none focus:ring-1 focus:ring-[#0D542B]"
+                            class="px-3 py-1.5 border border-gray-300 rounded-lg text-xs w-64 focus:outline-none focus:ring-1 focus:ring-[#0D542B] bg-white text-gray-900 placeholder-gray-400"
                         />
 
                         <!-- Filter Role -->
-                        <select v-model="selectedRole" @change="applyFilters" class="px-3 py-2 border border-gray-300 rounded-lg text-xs bg-white">
+                        <select v-model="selectedRole" @change="applyFilters" class="px-3 py-1.5 border border-gray-300 rounded-lg text-xs bg-white text-gray-700 font-medium">
                             <option value="all">Semua Peran (Role)</option>
                             <option value="superadmin">Super Admin</option>
                             <option value="admin_biro3">Admin Biro 3</option>
@@ -238,7 +237,7 @@ const handleResetToDefaultAndNotify = (userData) => {
                         </select>
 
                         <!-- Filter Prodi -->
-                        <select v-model="selectedProdi" @change="applyFilters" class="px-3 py-2 border border-gray-300 rounded-lg text-xs bg-white">
+                        <select v-model="selectedProdi" @change="applyFilters" class="px-3 py-1.5 border border-gray-300 rounded-lg text-xs bg-white text-gray-700 font-medium">
                             <option value="">Semua Program Studi</option>
                             <option v-for="p in prodis" :key="p.id" :value="p.id">{{ p.nama_prodi }}</option>
                         </select>
@@ -246,8 +245,9 @@ const handleResetToDefaultAndNotify = (userData) => {
                 </div>
 
                 <!-- Table Pengguna -->
-                <div class="bg-white border border-gray-300 overflow-x-auto shadow-2xs">
-                    <table class="w-full min-w-full text-left border-collapse border border-gray-300 text-xs bg-white">
+                <div class="bg-white rounded-xl border border-gray-300 shadow-2xs overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="w-full min-w-full text-left border-collapse border border-gray-300 text-xs bg-white">
                         <thead>
                             <tr class="bg-gray-100 text-gray-800 font-semibold border-b border-gray-300 text-[11px] whitespace-nowrap">
                                 <th class="border border-gray-300 px-2.5 py-2 text-center w-12 whitespace-nowrap">No</th>
@@ -276,12 +276,12 @@ const handleResetToDefaultAndNotify = (userData) => {
                                     {{ u.email }}
                                 </td>
                                 <td class="border border-gray-300 px-3 py-2">
-                                    <span v-if="u.role === 'superadmin'" class="px-2 py-0.5 rounded font-bold text-[11px] text-[#0D542B] bg-emerald-50 border border-emerald-200">Super Admin</span>
-                                    <span v-else-if="u.role === 'admin_fakultas'" class="px-2 py-0.5 rounded font-bold text-[11px] text-[#0D542B] bg-emerald-50 border border-emerald-200">Admin Fakultas</span>
-                                    <span v-else-if="u.role === 'admin_prodi'" class="px-2 py-0.5 rounded font-bold text-[11px] text-[#0D542B] bg-emerald-50 border border-emerald-200">Admin Prodi</span>
-                                    <span v-else-if="u.role === 'admin_biro3'" class="px-2 py-0.5 rounded font-bold text-[11px] text-[#0D542B] bg-emerald-50 border border-emerald-200">Admin Biro 3</span>
-                                    <span v-else-if="u.role === 'alumni'" class="px-2 py-0.5 rounded font-bold text-[11px] text-gray-700 bg-gray-100 border border-gray-200">Alumni</span>
-                                    <span v-else class="px-2 py-0.5 rounded font-bold text-[11px] text-gray-700 bg-gray-100 border border-gray-200">{{ u.role }}</span>
+                                    <span v-if="u.role === 'superadmin' || u.role?.startsWith('admin')" class="inline-block px-2.5 py-0.5 rounded-full font-semibold text-[10px] text-[#0D542B] bg-emerald-50 border border-emerald-200">
+                                        {{ u.role === 'superadmin' ? 'Super Admin' : (u.role === 'admin_fakultas' ? 'Admin Fakultas' : (u.role === 'admin_prodi' ? 'Admin Prodi' : (u.role === 'admin_biro3' ? 'Admin Biro 3' : u.role))) }}
+                                    </span>
+                                    <span v-else class="inline-block px-2.5 py-0.5 rounded-full font-semibold text-[10px] text-gray-700 bg-gray-100 border border-gray-200">
+                                        {{ u.role === 'alumni' ? 'Alumni' : u.role }}
+                                    </span>
                                 </td>
                                 <td class="border border-gray-300 px-3 py-2 text-gray-700">
                                     <template v-if="u.role === 'alumni' || u.role === 'admin_prodi'">
@@ -298,7 +298,7 @@ const handleResetToDefaultAndNotify = (userData) => {
                                         <button
                                             type="button"
                                             @click="openEditUserModal(u)"
-                                            class="p-1 text-amber-600 hover:bg-amber-50 rounded cursor-pointer transition-colors"
+                                            class="p-1.5 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
                                             title="Sunting Pengguna"
                                         >
                                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -309,8 +309,8 @@ const handleResetToDefaultAndNotify = (userData) => {
                                         <button
                                             type="button"
                                             @click="handleResetToDefaultAndNotify(u)"
-                                            class="p-1 text-[#0D542B] hover:bg-emerald-50 rounded cursor-pointer transition-colors"
-                                            title="Reset Password ke Tanggal Lahir & Kirim Email"
+                                            class="p-1.5 text-gray-600 hover:text-[#0D542B] hover:bg-emerald-50 rounded-lg transition-colors cursor-pointer"
+                                            title="Reset Password ke Tanggal Lahir &amp; Kirim Email"
                                         >
                                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
@@ -321,6 +321,30 @@ const handleResetToDefaultAndNotify = (userData) => {
                             </tr>
                         </tbody>
                     </table>
+                </div>
+
+                    <!-- Pagination -->
+                    <div v-if="users.links && users.links.length > 3" class="px-4 py-3 border-t border-gray-200 bg-slate-50 flex items-center justify-between text-xs text-gray-600">
+                        <div>
+                            Menampilkan {{ users.from || 0 }} - {{ users.to || 0 }} dari total {{ users.total || 0 }} pengguna.
+                        </div>
+                        <div class="flex gap-1">
+                            <Link
+                                v-for="(link, lIdx) in users.links"
+                                :key="lIdx"
+                                :href="link.url || '#'"
+                                v-html="link.label"
+                                class="px-2.5 py-1 rounded text-xs font-semibold transition-colors"
+                                :class="[
+                                    link.active
+                                        ? 'bg-[#0D542B] text-white'
+                                        : link.url
+                                            ? 'bg-white text-gray-700 hover:bg-gray-200 border border-gray-300'
+                                            : 'text-gray-400 cursor-not-allowed pointer-events-none'
+                                ]"
+                            />
+                        </div>
+                    </div>
                 </div>
             </main>
         </div>

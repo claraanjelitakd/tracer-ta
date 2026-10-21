@@ -550,26 +550,23 @@ const submitCopyYear = () => {
         <Sidebar :user="user" />
 
         <!-- KONTEN UTAMA HALAMAN -->
-        <main class="flex-1 lg:pl-72 flex flex-col min-w-0 min-h-screen">
-            <!-- TOPBAR / HEADER HALAMAN -->
-            <header class="bg-white border-b border-gray-200 px-6 py-5 sticky top-0 z-30 shadow-2xs">
-                <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <!-- KONTEN UTAMA HALAMAN -->
+        <div class="flex-1 lg:pl-72 flex flex-col min-w-0 min-h-screen">
+            <!-- Header Solid UKDW Green Konsisten -->
+            <div class="bg-[#0D542B] text-white pt-8 pb-16 px-4 sm:px-6 lg:px-8 border-b border-emerald-900/40">
+                <div class="w-full max-w-[1440px] mx-auto flex flex-col md:flex-row md:items-center justify-between gap-4">
                     <div>
-                        <div class="flex items-center gap-2 text-xs text-slate-400 font-medium mb-1">
-                            <span>Super Admin</span>
+                        <div class="flex items-center gap-2 text-xs text-white/70 font-medium mb-1.5">
+                            <Link href="/superadmin/dashboard" class="hover:text-white transition-colors">Dashboard</Link>
                             <span>/</span>
-                            <span>Master Data</span>
-                            <span>/</span>
-                            <span class="text-slate-700 font-semibold">Wilayah & UMP</span>
+                            <span class="text-white font-semibold">Master Wilayah &amp; UMP</span>
                         </div>
-                        <div class="flex items-center gap-3">
-                            <h1 class="text-xl font-bold text-slate-900 tracking-tight">
-                                Master Wilayah & Standar UMP
-                            </h1>
-                            <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                                {{ stats.total_provinsi }} Provinsi &bull; {{ stats.total_kabupaten }} Kab/Kota
-                            </span>
-                        </div>
+                        <h1 class="text-2xl font-bold tracking-tight text-white">
+                            Master Wilayah &amp; Standar UMP
+                        </h1>
+                        <p class="text-xs text-emerald-100/90 mt-1 max-w-2xl leading-relaxed">
+                            Pengelolaan hierarki wilayah nasional dan regulasi Upah Minimum Provinsi (UMP) per tahun kelulusan tracer study.
+                        </p>
                     </div>
 
                     <!-- TOMBOL AKSI CEPAT DI HEADER -->
@@ -578,7 +575,7 @@ const submitCopyYear = () => {
                             v-if="currentTab === 'provinsi'"
                             type="button"
                             @click="openCreateProvinsi"
-                            class="inline-flex items-center gap-1.5 px-3.5 py-2 bg-[#0D542B] hover:bg-[#0a4222] text-white rounded-lg text-xs font-semibold shadow-2xs transition-colors cursor-pointer"
+                            class="px-4 py-2 bg-white text-[#0D542B] hover:bg-emerald-50 font-bold text-xs rounded-lg transition-colors flex items-center gap-2 cursor-pointer shadow-sm"
                         >
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
@@ -590,7 +587,7 @@ const submitCopyYear = () => {
                             v-if="currentTab === 'kabupaten'"
                             type="button"
                             @click="openCreateKabupaten"
-                            class="inline-flex items-center gap-1.5 px-3.5 py-2 bg-[#0D542B] hover:bg-[#0a4222] text-white rounded-lg text-xs font-semibold shadow-2xs transition-colors cursor-pointer"
+                            class="px-4 py-2 bg-white text-[#0D542B] hover:bg-emerald-50 font-bold text-xs rounded-lg transition-colors flex items-center gap-2 cursor-pointer shadow-sm"
                         >
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
@@ -602,7 +599,7 @@ const submitCopyYear = () => {
                             <button
                                 type="button"
                                 @click="openCreateUmp"
-                                class="inline-flex items-center gap-1.5 px-3.5 py-2 bg-[#0D542B] hover:bg-[#0a4222] text-white rounded-lg text-xs font-semibold shadow-2xs transition-colors cursor-pointer"
+                                class="px-4 py-2 bg-white text-[#0D542B] hover:bg-emerald-50 font-bold text-xs rounded-lg transition-colors flex items-center gap-2 cursor-pointer shadow-sm"
                             >
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
@@ -613,10 +610,10 @@ const submitCopyYear = () => {
                             <button
                                 type="button"
                                 @click="openCopyYearModal"
-                                class="inline-flex items-center gap-1.5 px-3 py-2 bg-white hover:bg-slate-50 text-slate-700 border border-gray-300 rounded-lg text-xs font-semibold shadow-2xs transition-colors cursor-pointer"
+                                class="px-3.5 py-2 bg-white/10 hover:bg-white/20 text-white border border-white/20 rounded-lg text-xs font-semibold shadow-xs transition-colors cursor-pointer flex items-center gap-1.5"
                                 title="Salin ketetapan UMP dari satu tahun ke tahun lainnya"
                             >
-                                <svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg class="w-4 h-4 text-emerald-100" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2" />
                                 </svg>
                                 <span>Salin UMP Tahun</span>
@@ -624,124 +621,76 @@ const submitCopyYear = () => {
                         </template>
                     </div>
                 </div>
-            </header>
+            </div>
 
             <!-- ISI KONTEN UTAMA -->
-            <div class="p-6 space-y-5">
-                <!-- KARTU STATISTIK RINGKASAN -->
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <main class="w-full max-w-[1440px] mx-auto -mt-10 px-4 sm:px-6 lg:px-8 space-y-6 pb-12">
+                <!-- KARTU STATISTIK RINGKASAN: Formal, Flat, 2-Tone -->
+                <div class="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3.5 sm:gap-4">
                     <!-- Kartu 1: Total Provinsi -->
-                    <div class="bg-white p-4 rounded-lg border border-gray-200 shadow-2xs">
-                        <div class="flex items-center justify-between">
-                            <span class="text-xs font-medium text-slate-500">Master Provinsi</span>
-                            <span class="w-7 h-7 rounded-md bg-emerald-50 text-[#0D542B] flex items-center justify-center">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                </svg>
-                            </span>
-                        </div>
-                        <div class="mt-2 flex items-baseline gap-2">
-                            <span class="text-2xl font-bold text-slate-900">{{ stats.total_provinsi }}</span>
-                            <span class="text-xs text-slate-500">Provinsi</span>
-                        </div>
-                        <span class="text-[11px] text-emerald-600 font-medium block mt-1">
-                            Referensi Wilayah Tingkat I
-                        </span>
+                    <div class="bg-white rounded-xl p-4.5 border border-slate-200 shadow-2xs">
+                        <p class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Master Provinsi</p>
+                        <p class="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight mt-1.5">{{ stats.total_provinsi }}</p>
+                        <p class="text-xs text-slate-500 mt-1">Wilayah Tingkat I</p>
                     </div>
 
                     <!-- Kartu 2: Total Kabupaten/Kota -->
-                    <div class="bg-white p-4 rounded-lg border border-gray-200 shadow-2xs">
-                        <div class="flex items-center justify-between">
-                            <span class="text-xs font-medium text-slate-500">Master Kabupaten/Kota</span>
-                            <span class="w-7 h-7 rounded-md bg-blue-50 text-blue-700 flex items-center justify-center">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                                </svg>
-                            </span>
-                        </div>
-                        <div class="mt-2 flex items-baseline gap-2">
-                            <span class="text-2xl font-bold text-slate-900">{{ stats.total_kabupaten }}</span>
-                            <span class="text-xs text-slate-500">Daerah</span>
-                        </div>
-                        <span class="text-[11px] text-slate-500 font-medium block mt-1">
-                            Referensi Wilayah Tingkat II
-                        </span>
+                    <div class="bg-white rounded-xl p-4.5 border border-slate-200 shadow-2xs">
+                        <p class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Master Kabupaten / Kota</p>
+                        <p class="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight mt-1.5">{{ stats.total_kabupaten }}</p>
+                        <p class="text-xs text-slate-500 mt-1">Wilayah Tingkat II</p>
                     </div>
 
                     <!-- Kartu 3: Regulasi UMP Tahun Ini -->
-                    <div class="bg-white p-4 rounded-lg border border-gray-200 shadow-2xs">
-                        <div class="flex items-center justify-between">
-                            <span class="text-xs font-medium text-slate-500">Ketetapan UMP {{ selectedYear }}</span>
-                            <span class="w-7 h-7 rounded-md bg-amber-50 text-amber-700 flex items-center justify-center">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                </svg>
-                            </span>
-                        </div>
-                        <div class="mt-2 flex items-baseline gap-2">
-                            <span class="text-2xl font-bold text-[#0D542B]">{{ stats.total_ump_configured }}</span>
-                            <span class="text-xs text-slate-500">/ {{ stats.total_provinsi }} Provinsi</span>
-                        </div>
-                        <span class="text-[11px] font-medium block mt-1" :class="stats.total_ump_configured === stats.total_provinsi ? 'text-emerald-600' : 'text-amber-600'">
-                            {{ stats.total_ump_configured === stats.total_provinsi ? '100% Seluruh Provinsi Terdata' : `${stats.total_provinsi - stats.total_ump_configured} Provinsi Belum Diatur` }}
-                        </span>
+                    <div class="bg-white rounded-xl p-4.5 border border-slate-200 shadow-2xs">
+                        <p class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Ketetapan UMP {{ selectedYear }}</p>
+                        <p class="text-2xl sm:text-3xl font-extrabold text-[#0D542B] tracking-tight mt-1.5">{{ stats.total_ump_configured }} / {{ stats.total_provinsi }}</p>
+                        <p class="text-xs text-slate-500 mt-1">{{ stats.total_ump_configured === stats.total_provinsi ? '100% Seluruh Provinsi Terdata' : `${stats.total_provinsi - stats.total_ump_configured} Provinsi Belum Diatur` }}</p>
                     </div>
 
                     <!-- Kartu 4: Rentang UMP Nasional -->
-                    <div class="bg-white p-4 rounded-lg border border-gray-200 shadow-2xs">
-                        <div class="flex items-center justify-between">
-                            <span class="text-xs font-medium text-slate-500">Rata-rata UMP Nasional</span>
-                            <span class="w-7 h-7 rounded-md bg-indigo-50 text-indigo-700 flex items-center justify-center">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                                </svg>
-                            </span>
-                        </div>
-                        <div class="mt-2 flex items-baseline gap-2">
-                            <span class="text-xl font-bold text-slate-900">{{ formatRupiah(stats.avg_ump) }}</span>
-                        </div>
-                        <div class="text-[11px] text-slate-500 mt-1 flex items-center justify-between">
-                            <span class="truncate">Min: {{ formatRupiah(stats.min_ump.besaran) }}</span>
-                            <span class="truncate">Max: {{ formatRupiah(stats.max_ump.besaran) }}</span>
-                        </div>
+                    <div class="bg-white rounded-xl p-4.5 border border-slate-200 shadow-2xs">
+                        <p class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Rata-rata UMP Nasional</p>
+                        <p class="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight mt-1.5">{{ formatRupiah(stats.avg_ump) }}</p>
+                        <p class="text-xs text-slate-500 mt-1">Min: {{ formatRupiah(stats.min_ump.besaran) }} &bull; Max: {{ formatRupiah(stats.max_ump.besaran) }}</p>
                     </div>
                 </div>
 
-                <!-- TABS NAVIGASI (SEPERTI TAB STATUS PERUSAHAAN) -->
-                <div class="flex items-center gap-2 flex-wrap">
+                <!-- TABS NAVIGASI RESMI: 2-tone clean styling -->
+                <div class="bg-white p-2 rounded-xl border border-gray-300 shadow-2xs flex items-center gap-2 overflow-x-auto">
                     <button
                         type="button"
                         @click="switchTab('provinsi')"
-                        class="px-4 py-2 text-xs font-bold rounded-lg transition-colors flex items-center gap-1.5 cursor-pointer"
-                        :class="currentTab === 'provinsi' ? 'bg-[#0D542B] text-white shadow-xs' : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'"
+                        class="px-4 py-2 text-xs font-bold rounded-lg transition-colors flex items-center gap-2 cursor-pointer whitespace-nowrap"
+                        :class="currentTab === 'provinsi' ? 'bg-[#0D542B] text-white shadow-xs' : 'text-gray-600 hover:bg-gray-100'"
                     >
                         <span>Master Provinsi</span>
-                        <span class="px-1.5 py-0.5 rounded-full text-[10px]" :class="currentTab === 'provinsi' ? 'bg-white/20 text-white' : 'bg-gray-100 text-gray-700'">{{ stats.total_provinsi }}</span>
+                        <span class="px-2 py-0.5 rounded text-[11px] font-semibold" :class="currentTab === 'provinsi' ? 'bg-white/20 text-white' : 'bg-gray-100 text-gray-700'">{{ stats.total_provinsi }}</span>
                     </button>
 
                     <button
                         type="button"
                         @click="switchTab('kabupaten')"
-                        class="px-4 py-2 text-xs font-bold rounded-lg transition-colors flex items-center gap-1.5 cursor-pointer"
-                        :class="currentTab === 'kabupaten' ? 'bg-[#0D542B] text-white shadow-xs' : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'"
+                        class="px-4 py-2 text-xs font-bold rounded-lg transition-colors flex items-center gap-2 cursor-pointer whitespace-nowrap"
+                        :class="currentTab === 'kabupaten' ? 'bg-[#0D542B] text-white shadow-xs' : 'text-gray-600 hover:bg-gray-100'"
                     >
                         <span>Master Kabupaten / Kota</span>
-                        <span class="px-1.5 py-0.5 rounded-full text-[10px]" :class="currentTab === 'kabupaten' ? 'bg-white/20 text-white' : 'bg-gray-100 text-gray-700'">{{ stats.total_kabupaten }}</span>
+                        <span class="px-2 py-0.5 rounded text-[11px] font-semibold" :class="currentTab === 'kabupaten' ? 'bg-white/20 text-white' : 'bg-gray-100 text-gray-700'">{{ stats.total_kabupaten }}</span>
                     </button>
 
                     <button
                         type="button"
                         @click="switchTab('ump')"
-                        class="px-4 py-2 text-xs font-bold rounded-lg transition-colors flex items-center gap-1.5 cursor-pointer"
-                        :class="currentTab === 'ump' ? 'bg-[#0D542B] text-white shadow-xs' : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'"
+                        class="px-4 py-2 text-xs font-bold rounded-lg transition-colors flex items-center gap-2 cursor-pointer whitespace-nowrap"
+                        :class="currentTab === 'ump' ? 'bg-[#0D542B] text-white shadow-xs' : 'text-gray-600 hover:bg-gray-100'"
                     >
                         <span>Upah Minimum Provinsi (UMP)</span>
-                        <span class="px-1.5 py-0.5 rounded-full text-[10px]" :class="currentTab === 'ump' ? 'bg-white/20 text-white' : 'bg-emerald-100 text-emerald-800'">Tahun {{ selectedYear }}</span>
+                        <span class="px-2 py-0.5 rounded text-[11px] font-semibold" :class="currentTab === 'ump' ? 'bg-white/20 text-white' : 'bg-gray-100 text-gray-700'">Tahun {{ selectedYear }}</span>
                     </button>
                 </div>
 
-                <!-- BILAH FILTER & PENCARIAN (IDENTIK DENGAN DATA TABLES SUPERADMIN PERUSAHAAN) -->
-                <div class="bg-white p-3.5 rounded-lg border border-gray-200 flex flex-col md:flex-row md:items-center justify-between gap-3 text-xs shadow-2xs">
+                <!-- BILAH FILTER & PENCARIAN -->
+                <div class="bg-white p-3.5 rounded-xl border border-gray-300 flex flex-col md:flex-row md:items-center justify-between gap-3 text-xs shadow-2xs">
                     <div class="flex items-center gap-3 flex-wrap">
                         <!-- Filter Provinsi Induk (Khusus Tab Kabupaten) -->
                         <div v-if="currentTab === 'kabupaten'" class="flex items-center gap-1.5">
@@ -813,7 +762,7 @@ const submitCopyYear = () => {
                             v-model="search"
                             @input="handleSearch"
                             :placeholder="currentTab === 'provinsi' ? 'Cari nama / kode provinsi...' : (currentTab === 'kabupaten' ? 'Cari nama / kode kabupaten...' : 'Cari nama / kode provinsi UMP...')"
-                            class="w-full pl-8 pr-3 py-1.5 border border-gray-300 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-emerald-700"
+                            class="w-full pl-8 pr-3 py-1.5 border border-gray-300 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-emerald-700 bg-white text-gray-900 placeholder-gray-400"
                         />
                     </div>
                 </div>
@@ -821,28 +770,28 @@ const submitCopyYear = () => {
                 <!-- Info Jumlah Data & Tombol Reset -->
                 <div class="flex items-center justify-between text-xs text-gray-500 px-1">
                     <span v-if="currentTab === 'provinsi'">
-                        Menampilkan <strong>{{ provinces.length }}</strong> provinsi terdaftar
+                        Menampilkan <strong class="text-gray-900">{{ provinces.length }}</strong> provinsi terdaftar
                     </span>
                     <span v-else-if="currentTab === 'kabupaten'">
-                        Menampilkan <strong>{{ kabupatens.data?.length || 0 }}</strong> dari total <strong>{{ kabupatens.total || 0 }}</strong> kabupaten/kota
+                        Menampilkan <strong class="text-gray-900">{{ kabupatens.data?.length || 0 }}</strong> dari total <strong class="text-gray-900">{{ kabupatens.total || 0 }}</strong> kabupaten/kota
                     </span>
                     <span v-else>
-                        Menampilkan <strong>{{ filteredUmps.length }}</strong> provinsi ketetapan UMP Tahun {{ selectedYear }}
+                        Menampilkan <strong class="text-gray-900">{{ filteredUmps.length }}</strong> provinsi ketetapan UMP Tahun {{ selectedYear }}
                     </span>
 
                     <button
                         v-if="search || selectedProvinsiId || (currentTab === 'ump' && filterStatusUmp !== 'all')"
                         @click="resetFilters"
-                        class="text-emerald-800 font-semibold hover:underline cursor-pointer"
+                        class="text-[#0D542B] font-semibold hover:underline cursor-pointer"
                     >
                         Reset Filter
                     </button>
                 </div>
 
                 <!-- ======================================================== -->
-                <!-- TABEL 1: MASTER PROVINSI (BORDER COLLAPSE BERGARIS)     -->
+                <!-- TABEL 1: MASTER PROVINSI                                -->
                 <!-- ======================================================== -->
-                <div v-if="currentTab === 'provinsi'" class="bg-white border border-gray-300 overflow-x-auto shadow-2xs">
+                <div v-if="currentTab === 'provinsi'" class="bg-white rounded-xl border border-gray-300 overflow-x-auto shadow-2xs">
                     <table class="w-full min-w-full text-left border-collapse border border-gray-300 text-xs bg-white">
                         <thead>
                             <tr class="bg-gray-100 text-gray-800 font-semibold border-b border-gray-300 text-[11px] whitespace-nowrap">
@@ -884,7 +833,7 @@ const submitCopyYear = () => {
                                         <button
                                             type="button"
                                             @click="openEditProvinsi(prov)"
-                                            class="p-1 text-amber-600 hover:bg-amber-50 rounded cursor-pointer transition-colors"
+                                            class="p-1.5 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
                                             title="Edit Provinsi"
                                         >
                                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -896,7 +845,7 @@ const submitCopyYear = () => {
                                         <button
                                             type="button"
                                             @click="confirmDeleteProvinsi(prov)"
-                                            class="p-1 text-rose-600 hover:bg-rose-50 rounded cursor-pointer transition-colors"
+                                            class="p-1.5 text-gray-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
                                             title="Hapus Provinsi"
                                         >
                                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -911,10 +860,10 @@ const submitCopyYear = () => {
                 </div>
 
                 <!-- ======================================================== -->
-                <!-- TABEL 2: MASTER KABUPATEN (BORDER COLLAPSE BERGARIS)     -->
+                <!-- TABEL 2: MASTER KABUPATEN                               -->
                 <!-- ======================================================== -->
-                <div v-if="currentTab === 'kabupaten'">
-                    <div class="bg-white border border-gray-300 overflow-x-auto shadow-2xs">
+                <div v-if="currentTab === 'kabupaten'" class="space-y-4">
+                    <div class="bg-white rounded-xl border border-gray-300 overflow-x-auto shadow-2xs">
                         <table class="w-full min-w-full text-left border-collapse border border-gray-300 text-xs bg-white">
                             <thead>
                                 <tr class="bg-gray-100 text-gray-800 font-semibold border-b border-gray-300 text-[11px] whitespace-nowrap">
@@ -946,7 +895,7 @@ const submitCopyYear = () => {
                                         {{ kab.nama_kabupaten }}
                                     </td>
                                     <td class="border border-gray-300 px-3 py-2 text-gray-700">
-                                        <span class="inline-flex items-center font-mono text-[11px] font-bold text-emerald-800 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200 mr-1.5">
+                                        <span class="inline-flex items-center font-mono text-[11px] font-bold text-gray-700 bg-gray-100 px-1.5 py-0.5 rounded border border-gray-200 mr-1.5">
                                             {{ kab.kode_provinsi }}
                                         </span>
                                         <span>{{ kab.nama_provinsi }}</span>
@@ -957,7 +906,7 @@ const submitCopyYear = () => {
                                             <button
                                                 type="button"
                                                 @click="openEditKabupaten(kab)"
-                                                class="p-1 text-amber-600 hover:bg-amber-50 rounded cursor-pointer transition-colors"
+                                                class="p-1.5 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
                                                 title="Edit Kabupaten/Kota"
                                             >
                                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -969,7 +918,7 @@ const submitCopyYear = () => {
                                             <button
                                                 type="button"
                                                 @click="confirmDeleteKabupaten(kab)"
-                                                class="p-1 text-rose-600 hover:bg-rose-50 rounded cursor-pointer transition-colors"
+                                                class="p-1.5 text-gray-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
                                                 title="Hapus Kabupaten/Kota"
                                             >
                                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -984,7 +933,7 @@ const submitCopyYear = () => {
                     </div>
 
                     <!-- PAGINASI KABUPATEN -->
-                    <div v-if="kabupatens.links && kabupatens.links.length > 3" class="p-3 border border-t-0 border-gray-300 bg-white flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
+                    <div v-if="kabupatens.links && kabupatens.links.length > 3" class="p-3 border border-gray-300 rounded-xl bg-white flex flex-col sm:flex-row items-center justify-between gap-3 text-xs shadow-2xs">
                         <span class="text-gray-500">
                             Menampilkan {{ kabupatens.from || 0 }} sampai {{ kabupatens.to || 0 }} dari {{ kabupatens.total || 0 }} data
                         </span>
@@ -1010,9 +959,9 @@ const submitCopyYear = () => {
                 </div>
 
                 <!-- ======================================================== -->
-                <!-- TABEL 3: STANDAR UMP PER PROVINSI (TANPA KOLOM STATUS)  -->
+                <!-- TABEL 3: STANDAR UMP PER PROVINSI                       -->
                 <!-- ======================================================== -->
-                <div v-if="currentTab === 'ump'" class="bg-white border border-gray-300 overflow-x-auto shadow-2xs">
+                <div v-if="currentTab === 'ump'" class="bg-white rounded-xl border border-gray-300 overflow-x-auto shadow-2xs">
                     <table class="w-full min-w-full text-left border-collapse border border-gray-300 text-xs bg-white">
                         <thead>
                             <tr class="bg-gray-100 text-gray-800 font-semibold border-b border-gray-300 text-[11px] whitespace-nowrap">
@@ -1067,7 +1016,7 @@ const submitCopyYear = () => {
                                             <button
                                                 type="button"
                                                 @click="openConfigureUmp(u)"
-                                                class="p-1 text-amber-600 hover:bg-amber-50 rounded cursor-pointer transition-colors"
+                                                class="p-1.5 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
                                                 title="Ubah Ketetapan UMP"
                                             >
                                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1079,7 +1028,7 @@ const submitCopyYear = () => {
                                             <button
                                                 type="button"
                                                 @click="confirmDeleteUmp(u)"
-                                                class="p-1 text-rose-600 hover:bg-rose-50 rounded cursor-pointer transition-colors"
+                                                class="p-1.5 text-gray-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
                                                 title="Hapus Ketetapan UMP"
                                             >
                                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1093,7 +1042,7 @@ const submitCopyYear = () => {
                                             v-else
                                             type="button"
                                             @click="openConfigureUmp(u)"
-                                            class="p-1 text-emerald-700 hover:bg-emerald-50 rounded cursor-pointer transition-colors"
+                                            class="p-1.5 text-gray-600 hover:text-[#0D542B] hover:bg-emerald-50 rounded-lg transition-colors cursor-pointer"
                                             title="Tetapkan UMP"
                                         >
                                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1106,8 +1055,8 @@ const submitCopyYear = () => {
                         </tbody>
                     </table>
                 </div>
-            </div>
-        </main>
+            </main>
+        </div>
 
         <!-- ======================================================== -->
         <!-- MODAL 1: TAMBAH / EDIT PROVINSI (MURNI CRUD)             -->

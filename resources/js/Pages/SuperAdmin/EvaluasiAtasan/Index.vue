@@ -176,19 +176,19 @@ const closeDetailModal = () => {
 
         <!-- Area Konten Utama -->
         <div class="flex-1 flex flex-col min-w-0 lg:pl-72">
-            <!-- Header Halaman Bersih & Flat -->
-            <div class="bg-white border-b border-gray-200 px-6 py-5">
-                <div class="w-full flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <!-- Header Solid UKDW Green Konsisten -->
+            <div class="bg-[#0D542B] text-white pt-8 pb-16 px-4 sm:px-6 lg:px-8 border-b border-emerald-900/40">
+                <div class="w-full max-w-[1440px] mx-auto flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div>
-                        <div class="flex items-center gap-2 text-xs text-gray-500 font-medium mb-1">
-                            <Link href="/superadmin/dashboard" class="hover:text-emerald-700">Dashboard</Link>
+                        <div class="flex items-center gap-2 text-xs text-white/70 font-medium mb-1.5">
+                            <Link href="/superadmin/dashboard" class="hover:text-white transition-colors">Dashboard</Link>
                             <span>/</span>
-                            <span class="text-gray-900 font-semibold">Kuesioner Evaluasi Atasan</span>
+                            <span class="text-white font-semibold">Kuesioner Evaluasi Atasan</span>
                         </div>
-                        <h1 class="text-xl font-bold text-gray-900">
-                            Pengaturan Kuesioner Evaluasi Pengguna Lulusan (Atasan)
+                        <h1 class="text-2xl font-bold tracking-tight text-white">
+                            Pengaturan Kuesioner Evaluasi Pengguna Lulusan
                         </h1>
-                        <p class="text-xs text-gray-500 mt-0.5">
+                        <p class="text-xs text-emerald-100/90 mt-1 max-w-2xl leading-relaxed">
                             Konfigurasi butir instrumen aspek kinerja kepuasan pengguna lulusan serta tinjau riwayat respon evaluasi atasan.
                         </p>
                     </div>
@@ -198,9 +198,9 @@ const closeDetailModal = () => {
                             v-if="activeTab === 'questions'"
                             type="button"
                             @click="openQuestionModal()"
-                            class="px-3.5 py-1.5 bg-[#0D542B] hover:bg-[#08381c] text-white font-semibold text-xs rounded-lg transition-colors flex items-center gap-1.5 cursor-pointer shadow-xs"
+                            class="px-4 py-2 bg-white text-[#0D542B] hover:bg-emerald-50 font-bold text-xs rounded-lg transition-colors flex items-center gap-2 cursor-pointer shadow-sm"
                         >
-                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
                             </svg>
                             <span>Tambah Aspek Penilaian</span>
@@ -209,180 +209,183 @@ const closeDetailModal = () => {
                 </div>
             </div>
 
-            <!-- TABS NAVIGASI PILLS RESMI -->
-            <div class="px-6 pt-5 flex items-center gap-2 flex-wrap">
-                <button
-                    type="button"
-                    @click="activeTab = 'questions'"
-                    class="px-4 py-2 text-xs font-bold rounded-lg transition-colors flex items-center gap-1.5 cursor-pointer"
-                    :class="activeTab === 'questions' ? 'bg-[#0D542B] text-white shadow-xs' : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'"
-                >
-                    <span>Butir Aspek Penilaian</span>
-                    <span class="px-1.5 py-0.5 rounded-full text-[10px]" :class="activeTab === 'questions' ? 'bg-white/20 text-white' : 'bg-gray-100 text-gray-700'">{{ stats.active_questions }}</span>
-                </button>
-                <button
-                    type="button"
-                    @click="activeTab = 'responses'"
-                    class="px-4 py-2 text-xs font-bold rounded-lg transition-colors flex items-center gap-1.5 cursor-pointer"
-                    :class="activeTab === 'responses' ? 'bg-[#0D542B] text-white shadow-xs' : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'"
-                >
-                    <span>Riwayat Respon Pengguna Lulusan</span>
-                    <span class="px-1.5 py-0.5 rounded-full text-[10px]" :class="activeTab === 'responses' ? 'bg-white/20 text-white' : 'bg-gray-100 text-gray-700'">{{ stats.submitted_evaluasi }} / {{ stats.total_evaluasi }}</span>
-                </button>
-            </div>
+            <!-- Kontainer Konten Utama -->
+            <main class="w-full max-w-[1440px] mx-auto -mt-10 px-4 sm:px-6 lg:px-8 space-y-6 pb-12">
+                <!-- TABS NAVIGASI RESMI: 2-tone clean styling -->
+                <div class="bg-white p-2 rounded-xl border border-gray-300 shadow-2xs flex items-center gap-2 overflow-x-auto">
+                    <button
+                        type="button"
+                        @click="activeTab = 'questions'"
+                        class="px-4 py-2 text-xs font-bold rounded-lg transition-colors flex items-center gap-2 cursor-pointer whitespace-nowrap"
+                        :class="activeTab === 'questions' ? 'bg-[#0D542B] text-white shadow-xs' : 'text-gray-600 hover:bg-gray-100'"
+                    >
+                        <span>Butir Aspek Penilaian</span>
+                        <span class="px-2 py-0.5 rounded text-[11px] font-semibold" :class="activeTab === 'questions' ? 'bg-white/20 text-white' : 'bg-gray-100 text-gray-700'">{{ stats.active_questions }}</span>
+                    </button>
+                    <button
+                        type="button"
+                        @click="activeTab = 'responses'"
+                        class="px-4 py-2 text-xs font-bold rounded-lg transition-colors flex items-center gap-2 cursor-pointer whitespace-nowrap"
+                        :class="activeTab === 'responses' ? 'bg-[#0D542B] text-white shadow-xs' : 'text-gray-600 hover:bg-gray-100'"
+                    >
+                        <span>Riwayat Respon Pengguna Lulusan</span>
+                        <span class="px-2 py-0.5 rounded text-[11px] font-semibold" :class="activeTab === 'responses' ? 'bg-white/20 text-white' : 'bg-gray-100 text-gray-700'">{{ stats.submitted_evaluasi }} / {{ stats.total_evaluasi }}</span>
+                    </button>
+                </div>
 
-            <!-- Konten Tab 1: Butir Aspek Evaluasi -->
-            <main v-if="activeTab === 'questions'" class="w-full p-6 space-y-4">
-                <!-- Bilah Pencarian -->
-                <div class="bg-white p-3.5 rounded-lg border border-gray-200 flex justify-between items-center text-xs shadow-2xs">
-                    <span class="text-gray-600 font-medium">
-                        Menampilkan <strong>{{ filteredQuestions.length }}</strong> aspek evaluasi kepuasan pengguna lulusan
-                    </span>
-                    <div class="w-64">
-                        <input
-                            type="text"
-                            v-model="searchQuery"
-                            placeholder="Cari aspek penilaian..."
-                            class="w-full px-3 py-1.5 border border-gray-300 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-emerald-700"
-                        />
+                <!-- Konten Tab 1: Butir Aspek Evaluasi -->
+                <div v-if="activeTab === 'questions'" class="space-y-4">
+                    <!-- Bilah Pencarian -->
+                    <div class="bg-white p-3.5 rounded-xl border border-gray-300 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 text-xs shadow-2xs">
+                        <span class="text-gray-600 font-medium">
+                            Menampilkan <strong class="text-gray-900">{{ filteredQuestions.length }}</strong> aspek evaluasi kepuasan pengguna lulusan
+                        </span>
+                        <div class="w-full sm:w-64">
+                            <input
+                                type="text"
+                                v-model="searchQuery"
+                                placeholder="Cari aspek penilaian..."
+                                class="w-full px-3 py-1.5 border border-gray-300 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-emerald-700 bg-white text-gray-900 placeholder-gray-400"
+                            />
+                        </div>
+                    </div>
+
+                    <!-- Tabel Butir Aspek -->
+                    <div class="bg-white rounded-xl border border-gray-300 overflow-x-auto shadow-2xs">
+                        <table class="w-full min-w-full text-left border-collapse border border-gray-300 text-xs bg-white">
+                            <thead>
+                                <tr class="bg-gray-100 text-gray-800 font-semibold border-b border-gray-300 text-[11px] whitespace-nowrap">
+                                    <th class="border border-gray-300 px-2.5 py-2 text-center w-12 whitespace-nowrap">No</th>
+                                    <th class="border border-gray-300 px-3 py-2 w-32 whitespace-nowrap">Kode Aspek</th>
+                                    <th class="border border-gray-300 px-3 py-2 min-w-[240px] whitespace-nowrap">Aspek Penilaian</th>
+                                    <th class="border border-gray-300 px-3 py-2 w-28 text-center whitespace-nowrap">Status</th>
+                                    <th class="border border-gray-300 px-2.5 py-2 text-center w-24 whitespace-nowrap">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr v-if="filteredQuestions.length === 0">
+                                    <td colspan="5" class="border border-gray-300 p-8 text-center text-gray-400 italic">
+                                        Belum ada butir aspek evaluasi penilaian.
+                                    </td>
+                                </tr>
+                                <tr v-for="(item, idx) in filteredQuestions" :key="item.id" class="hover:bg-gray-50/80 transition-colors">
+                                    <td class="border border-gray-300 px-2.5 py-2 text-center font-medium text-gray-600">{{ item.order || (idx + 1) }}</td>
+                                    <td class="border border-gray-300 px-3 py-2 font-mono text-[11px] text-gray-700 font-bold">{{ item.kode }}</td>
+                                    <td class="border border-gray-300 px-3 py-2">
+                                        <div class="font-bold text-gray-900 text-xs">{{ item.aspek }}</div>
+                                        <div v-if="item.deskripsi" class="text-[11px] text-gray-500 mt-0.5">{{ item.deskripsi }}</div>
+                                    </td>
+                                    <td class="border border-gray-300 px-3 py-2 text-center">
+                                        <button
+                                            type="button"
+                                            @click="toggleActive(item)"
+                                            class="inline-block px-2.5 py-0.5 rounded-full text-[10px] font-semibold cursor-pointer transition-colors border"
+                                            :class="item.is_active ? 'bg-emerald-50 text-emerald-800 border-emerald-200 hover:bg-emerald-100' : 'bg-gray-100 text-gray-600 border-gray-200 hover:bg-gray-200'"
+                                        >
+                                            {{ item.is_active ? 'Aktif' : 'Nonaktif' }}
+                                        </button>
+                                    </td>
+                                    <td class="border border-gray-300 px-2.5 py-2 text-center">
+                                        <div class="flex items-center justify-center gap-1">
+                                            <button
+                                                type="button"
+                                                @click="openQuestionModal(item)"
+                                                class="p-1.5 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
+                                                title="Sunting Aspek"
+                                            >
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                                </svg>
+                                            </button>
+                                            <button
+                                                type="button"
+                                                @click="deleteQuestion(item)"
+                                                class="p-1.5 text-gray-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
+                                                title="Hapus Aspek"
+                                            >
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                </svg>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
                     </div>
                 </div>
 
-                <!-- Tabel Butir Aspek -->
-                <div class="bg-white border border-gray-300 overflow-x-auto shadow-2xs">
-                    <table class="w-full min-w-full text-left border-collapse border border-gray-300 text-xs bg-white">
-                        <thead>
-                            <tr class="bg-gray-100 text-gray-800 font-semibold border-b border-gray-300 text-[11px] whitespace-nowrap">
-                                <th class="border border-gray-300 px-2.5 py-2 text-center w-12 whitespace-nowrap">No</th>
-                                <th class="border border-gray-300 px-3 py-2 w-32 whitespace-nowrap">Kode Aspek</th>
-                                <th class="border border-gray-300 px-3 py-2 min-w-[240px] whitespace-nowrap">Aspek Penilaian</th>
-                                <th class="border border-gray-300 px-3 py-2 w-28 text-center whitespace-nowrap">Status</th>
-                                <th class="border border-gray-300 px-2.5 py-2 text-center w-24 whitespace-nowrap">Aksi</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr v-if="filteredQuestions.length === 0">
-                                <td colspan="5" class="border border-gray-300 p-8 text-center text-gray-400 italic">
-                                    Belum ada butir aspek evaluasi penilaian.
-                                </td>
-                            </tr>
-                            <tr v-for="(item, idx) in filteredQuestions" :key="item.id" class="hover:bg-gray-50/80 transition-colors">
-                                <td class="border border-gray-300 px-2.5 py-2 text-center font-medium text-gray-600">{{ item.order || (idx + 1) }}</td>
-                                <td class="border border-gray-300 px-3 py-2 font-mono text-[11px] text-gray-700 font-bold">{{ item.kode }}</td>
-                                <td class="border border-gray-300 px-3 py-2">
-                                    <div class="font-bold text-gray-900 text-xs">{{ item.aspek }}</div>
-                                    <div v-if="item.deskripsi" class="text-[11px] text-gray-500 mt-0.5">{{ item.deskripsi }}</div>
-                                </td>
-                                <td class="border border-gray-300 px-3 py-2 text-center">
-                                    <button
-                                        type="button"
-                                        @click="toggleActive(item)"
-                                        class="px-2.5 py-0.5 rounded-full text-[10px] font-bold cursor-pointer transition-colors"
-                                        :class="item.is_active ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'"
-                                    >
-                                        {{ item.is_active ? 'Aktif' : 'Nonaktif' }}
-                                    </button>
-                                </td>
-                                <td class="border border-gray-300 px-2.5 py-2 text-center">
-                                    <div class="flex items-center justify-center gap-1">
-                                        <button
-                                            type="button"
-                                            @click="openQuestionModal(item)"
-                                            class="p-1 text-amber-600 hover:bg-amber-50 rounded cursor-pointer transition-colors"
-                                            title="Sunting Aspek"
+                <!-- Konten Tab 2: Daftar Undangan & Respon Atasan -->
+                <div v-else class="space-y-4">
+                    <div class="bg-white rounded-xl border border-gray-300 overflow-x-auto shadow-2xs">
+                        <table class="w-full min-w-full text-left border-collapse border border-gray-300 text-xs bg-white">
+                            <thead>
+                                <tr class="bg-gray-100 text-gray-800 font-semibold border-b border-gray-300 text-[11px] whitespace-nowrap">
+                                    <th class="border border-gray-300 px-2.5 py-2 text-center w-12 whitespace-nowrap">No</th>
+                                    <th class="border border-gray-300 px-3 py-2 min-w-[200px] whitespace-nowrap">Alumni Dinilai</th>
+                                    <th class="border border-gray-300 px-3 py-2 min-w-[200px] whitespace-nowrap">Perusahaan / Instansi</th>
+                                    <th class="border border-gray-300 px-3 py-2 min-w-[200px] whitespace-nowrap">Atasan Langsung</th>
+                                    <th class="border border-gray-300 px-3 py-2 text-center w-36 whitespace-nowrap">Status Pengisian</th>
+                                    <th class="border border-gray-300 px-2.5 py-2 text-center w-24 whitespace-nowrap">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr v-if="!evaluasis.data || evaluasis.data.length === 0">
+                                    <td colspan="6" class="border border-gray-300 p-8 text-center text-gray-400 italic">
+                                        Belum ada data evaluasi atasan yang tersimpan.
+                                    </td>
+                                </tr>
+                                <tr v-for="(ev, idx) in evaluasis.data" :key="ev.id" class="hover:bg-gray-50/80 transition-colors">
+                                    <td class="border border-gray-300 px-2.5 py-2 text-center font-medium text-gray-600">{{ idx + 1 }}</td>
+                                    <td class="border border-gray-300 px-3 py-2">
+                                        <div class="font-bold text-gray-900">{{ ev.biodata?.nama || ev.biodata?.data_akademik?.nama || '-' }}</div>
+                                        <div class="text-[11px] text-gray-500">NIM: {{ ev.biodata?.nim || '-' }} &bull; {{ ev.biodata?.prodi?.nama_prodi || '-' }}</div>
+                                    </td>
+                                    <td class="border border-gray-300 px-3 py-2">
+                                        <div class="font-bold text-gray-900">{{ ev.perusahaan?.nama_perusahaan || ev.nama_perusahaan || '-' }}</div>
+                                        <div class="text-[11px] text-gray-500">{{ ev.perusahaan?.alamat || ev.alamat_lengkap || '-' }}</div>
+                                    </td>
+                                    <td class="border border-gray-300 px-3 py-2">
+                                        <div class="font-bold text-gray-900">{{ ev.atasan?.nama || '-' }}</div>
+                                        <div class="text-[11px] text-gray-500">{{ ev.atasan?.email || '-' }} &bull; {{ ev.atasan?.telepon || '-' }}</div>
+                                    </td>
+                                    <td class="border border-gray-300 px-3 py-2 text-center">
+                                        <span
+                                            class="inline-block px-2.5 py-0.5 rounded-full text-[10px] font-semibold border"
+                                            :class="ev.is_submitted ? 'bg-emerald-50 text-emerald-800 border-emerald-200' : 'bg-gray-100 text-gray-600 border-gray-200'"
                                         >
-                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                                            </svg>
-                                        </button>
-                                        <button
-                                            type="button"
-                                            @click="deleteQuestion(item)"
-                                            class="p-1 text-rose-600 hover:bg-rose-50 rounded cursor-pointer transition-colors"
-                                            title="Hapus Aspek"
-                                        >
-                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                            </svg>
-                                        </button>
-                                    </div>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </main>
-
-            <!-- Konten Tab 2: Daftar Undangan & Respon Atasan -->
-            <main v-else class="w-full p-6 space-y-4">
-                <div class="bg-white border border-gray-300 overflow-x-auto shadow-2xs">
-                    <table class="w-full min-w-full text-left border-collapse border border-gray-300 text-xs bg-white">
-                        <thead>
-                            <tr class="bg-gray-100 text-gray-800 font-semibold border-b border-gray-300 text-[11px] whitespace-nowrap">
-                                <th class="border border-gray-300 px-2.5 py-2 text-center w-12 whitespace-nowrap">No</th>
-                                <th class="border border-gray-300 px-3 py-2 min-w-[200px] whitespace-nowrap">Alumni Dinilai</th>
-                                <th class="border border-gray-300 px-3 py-2 min-w-[200px] whitespace-nowrap">Perusahaan / Instansi</th>
-                                <th class="border border-gray-300 px-3 py-2 min-w-[200px] whitespace-nowrap">Atasan Langsung</th>
-                                <th class="border border-gray-300 px-3 py-2 text-center w-32 whitespace-nowrap">Status Pengisian</th>
-                                <th class="border border-gray-300 px-2.5 py-2 text-center w-24 whitespace-nowrap">Aksi</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr v-if="!evaluasis.data || evaluasis.data.length === 0">
-                                <td colspan="6" class="border border-gray-300 p-8 text-center text-gray-400 italic">
-                                    Belum ada data evaluasi atasan yang tersimpan.
-                                </td>
-                            </tr>
-                            <tr v-for="(ev, idx) in evaluasis.data" :key="ev.id" class="hover:bg-gray-50/80 transition-colors">
-                                <td class="border border-gray-300 px-2.5 py-2 text-center font-medium text-gray-600">{{ idx + 1 }}</td>
-                                <td class="border border-gray-300 px-3 py-2">
-                                    <div class="font-bold text-gray-900">{{ ev.biodata?.nama || ev.biodata?.data_akademik?.nama || '-' }}</div>
-                                    <div class="text-[11px] text-gray-500">NIM: {{ ev.biodata?.nim || '-' }} • {{ ev.biodata?.prodi?.nama_prodi || '-' }}</div>
-                                </td>
-                                <td class="border border-gray-300 px-3 py-2">
-                                    <div class="font-bold text-gray-900">{{ ev.perusahaan?.nama_perusahaan || ev.nama_perusahaan || '-' }}</div>
-                                    <div class="text-[11px] text-gray-500">{{ ev.perusahaan?.alamat || ev.alamat_lengkap || '-' }}</div>
-                                </td>
-                                <td class="border border-gray-300 px-3 py-2">
-                                    <div class="font-bold text-gray-900">{{ ev.atasan?.nama || '-' }}</div>
-                                    <div class="text-[11px] text-gray-500">{{ ev.atasan?.email || '-' }} • {{ ev.atasan?.telepon || '-' }}</div>
-                                </td>
-                                <td class="border border-gray-300 px-3 py-2 text-center">
-                                    <span
-                                        class="px-2.5 py-0.5 rounded-full text-[10px] font-bold"
-                                        :class="ev.is_submitted ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'"
-                                    >
-                                        {{ ev.is_submitted ? '✓ Sudah Diisi' : 'Menunggu Pengisian' }}
-                                    </span>
-                                </td>
-                                <td class="border border-gray-300 px-2.5 py-2 text-center">
-                                    <div class="flex items-center justify-center gap-1">
-                                        <button
-                                            type="button"
-                                            @click="viewDetailEvaluasi(ev)"
-                                            class="p-1 text-blue-600 hover:bg-blue-50 rounded cursor-pointer transition-colors"
-                                            title="Lihat Detail Evaluasi"
-                                        >
-                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                                            </svg>
-                                        </button>
-                                        <a
-                                            :href="`/evaluasi-atasan/${ev.token}`"
-                                            target="_blank"
-                                            class="p-1 text-emerald-700 hover:bg-emerald-50 rounded cursor-pointer transition-colors"
-                                            title="Buka Link Publik Kuesioner Atasan"
-                                        >
-                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                                            </svg>
-                                        </a>
-                                    </div>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
+                                            {{ ev.is_submitted ? 'Sudah Diisi' : 'Menunggu Pengisian' }}
+                                        </span>
+                                    </td>
+                                    <td class="border border-gray-300 px-2.5 py-2 text-center">
+                                        <div class="flex items-center justify-center gap-1">
+                                            <button
+                                                type="button"
+                                                @click="viewDetailEvaluasi(ev)"
+                                                class="p-1.5 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
+                                                title="Lihat Detail Evaluasi"
+                                            >
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                                </svg>
+                                            </button>
+                                            <a
+                                                :href="`/evaluasi-atasan/${ev.token}`"
+                                                target="_blank"
+                                                class="p-1.5 text-gray-600 hover:text-[#0D542B] hover:bg-emerald-50 rounded-lg transition-colors cursor-pointer"
+                                                title="Buka Link Publik Kuesioner Atasan"
+                                            >
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                                                </svg>
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </main>
 
@@ -405,8 +408,8 @@ const closeDetailModal = () => {
                                 Lembar Evaluasi Pengguna Lulusan
                             </h3>
                             <span
-                                class="px-2 py-0.5 rounded text-[10px] font-bold"
-                                :class="selectedEvaluasi.is_submitted ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'"
+                                class="px-2 py-0.5 rounded text-[10px] font-bold border"
+                                :class="selectedEvaluasi.is_submitted ? 'bg-emerald-50 text-emerald-800 border-emerald-200' : 'bg-gray-100 text-gray-600 border-gray-200'"
                             >
                                 {{ selectedEvaluasi.is_submitted ? 'Terisi Lengkap' : 'Menunggu Respon' }}
                             </span>

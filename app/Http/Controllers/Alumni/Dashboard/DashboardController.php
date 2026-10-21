@@ -49,7 +49,7 @@ class DashboardController extends Controller
         $prodiCompleted = false;
 
         if ($biodata) {
-            $biodata->load('prodi');
+            $biodata->load(['prodi.fakultas', 'dataAkademik', 'yudisium', 'perusahaan', 'atasan']);
             $eval = KelengkapanTracerService::evaluasiKelengkapanTotal($biodata);
 
             $profilePercentage = $eval['profile']['percentage'] ?? 0;
@@ -91,8 +91,20 @@ class DashboardController extends Controller
             }
         }
 
+        $prodiPercentage = ($prodiQuestionsCount > 0) ? (int) round(($prodiAnsweredCount / $prodiQuestionsCount) * 100) : 100;
+
+        $stages = [$profilePercentage, $questionnairePercentage];
+        if ($prodiQuestionsCount > 0) {
+            $stages[] = $prodiPercentage;
+        }
+        $overallPercentage = (int) round(array_sum($stages) / count($stages));
+        $isOverallComplete = $profileCompleted && $questionnaireCompleted && ($prodiQuestionsCount === 0 || $prodiCompleted);
+
         $evaluasiAtasan = $biodata ? EvaluasiAtasan::where('biodata_id', $biodata->id)->first() : null;
-        $hasSupervisor = ! empty($biodata?->email_atasan);
+        $supervisorName = $biodata?->atasan?->nama ?? $biodata?->nama_atasan;
+        $supervisorEmail = $biodata?->atasan?->email ?? $biodata?->email_atasan;
+        $companyName = $biodata?->perusahaan?->nama_perusahaan ?? $biodata?->nama_perusahaan;
+        $hasSupervisor = ! empty($supervisorEmail);
         $evaluasiSubmitted = (bool) ($evaluasiAtasan?->is_submitted ?? false);
 
         return Inertia::render('Alumni/Dashboard', [
@@ -112,10 +124,15 @@ class DashboardController extends Controller
             'prodiQuestionsCount' => $prodiQuestionsCount,
             'prodiAnsweredCount' => $prodiAnsweredCount,
             'prodiCompleted' => $prodiCompleted,
+            'prodiPercentage' => $prodiPercentage,
+            'overallPercentage' => $overallPercentage,
+            'isOverallComplete' => $isOverallComplete,
             'hasSupervisor' => $hasSupervisor,
             'evaluasiSubmitted' => $evaluasiSubmitted,
-            'supervisorEmail' => $biodata?->email_atasan,
-            'supervisorName' => $biodata?->nama_atasan,
+            'evaluasiToken' => $evaluasiAtasan?->token,
+            'supervisorEmail' => $supervisorEmail,
+            'supervisorName' => $supervisorName,
+            'companyName' => $companyName,
         ]);
     }
 }

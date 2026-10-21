@@ -74,18 +74,18 @@ const getTargetBadge = (target) => {
     if (isProfileTarget(target)) {
         return {
             label: 'Profil Alumni',
-            classes: 'bg-amber-50 text-amber-800 border-amber-300',
+            classes: 'text-gray-600',
         };
     }
     if (isBothTarget(target)) {
         return {
             label: 'Kuesioner & Profil',
-            classes: 'bg-emerald-50 text-emerald-800 border-emerald-300',
+            classes: 'text-gray-600',
         };
     }
     return {
         label: 'Kuesioner Tracer',
-        classes: 'bg-blue-50 text-blue-800 border-blue-200',
+        classes: 'text-gray-600',
     };
 };
 
@@ -760,67 +760,72 @@ const handleDeleteKuesioner = (k) => {
 <template>
     <Head title="Pengaturan Kuesioner Universitas - Super Admin UKDW" />
 
-    <div class="min-h-screen bg-slate-50 text-gray-800 flex font-sans">
+    <div class="min-h-screen bg-[#F8FAFC] text-slate-800 font-sans flex">
         <Sidebar :user="user" />
 
         <div class="flex-1 flex flex-col min-w-0 lg:pl-72">
-            <!-- Header Halaman -->
-            <div class="bg-white border-b border-gray-200 px-6 py-5">
-                <div class="w-full flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <!-- Header Solid Hijau Resmi UKDW #0D542B -->
+            <header class="bg-[#0D542B] text-white pt-8 pb-16 px-4 sm:px-6 lg:px-8 border-b border-emerald-900/40">
+                <div class="w-full max-w-[1440px] mx-auto flex flex-col md:flex-row md:items-center justify-between gap-6">
                     <div>
-                        <div class="flex items-center gap-2 text-xs text-gray-500 font-medium mb-1">
-                            <Link href="/superadmin/dashboard" class="hover:underline hover:text-[#0D542B]">Dashboard</Link>
-                            <span>/</span>
-                            <span class="text-gray-800 font-semibold">Super Admin</span>
-                            <span>/</span>
-                            <span class="text-[#0D542B] font-bold">Kuesioner Universitas</span>
-                        </div>
-                        <h1 class="text-xl font-bold text-gray-900">
+                        <!-- Breadcrumbs -->
+                        <nav class="flex items-center gap-2 text-xs text-emerald-100 font-medium mb-2.5">
+                            <Link href="/superadmin/dashboard" class="hover:text-white transition-colors flex items-center gap-1">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+                                </svg>
+                                <span>Dashboard</span>
+                            </Link>
+                            <span class="text-emerald-300/60">/</span>
+                            <span class="text-white font-bold bg-white/10 px-2 py-0.5 rounded-md">Kuesioner Universitas</span>
+                        </nav>
+
+                        <h1 class="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-white tracking-tight">
                             Pengaturan Kuesioner Universitas
                         </h1>
-                        <p class="text-xs text-gray-500 mt-0.5">
+                        <p class="text-emerald-100/90 text-xs sm:text-sm font-normal mt-1.5 max-w-2xl leading-relaxed">
                             Kelola instrumen kuesioner induk, struktur bagian (section), butir kuesioner tracer, dan biodata profil alumni.
                         </p>
                     </div>
                 </div>
-            </div>
+            </header>
 
-            <main class="flex-1 p-6 space-y-6 overflow-x-auto min-w-0">
-                <!-- Bar Informasi Kuesioner Induk & Ringkasan Data -->
-                <div class="bg-white rounded-lg p-5 border border-slate-200 shadow-2xs">
+            <main class="w-full max-w-[1440px] mx-auto -mt-10 px-4 sm:px-6 lg:px-8 space-y-6 pb-12">
+                <!-- Bar Informasi Kuesioner Induk & Ringkasan Data (2 Tone) -->
+                <div class="bg-white rounded-xl p-5 border border-gray-300 shadow-2xs">
                     <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
                         <div class="flex-1">
                             <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">
                                 Instrumen Kuesioner Induk Aktif
                             </label>
                             <div class="flex items-center gap-3">
-                                <div class="px-3.5 py-2 bg-slate-50 border border-slate-300 rounded-lg text-sm font-bold text-[#0D542B] flex items-center gap-2">
+                                <div class="px-3.5 py-2 bg-gray-50 border border-gray-300 rounded-lg text-sm font-bold text-[#0D542B] flex items-center gap-2">
                                     <span>{{ activeKuesioner?.title ? `[${activeKuesioner.year}] ${activeKuesioner.title}` : 'Belum Ada Kuesioner Aktif' }}</span>
-                                    <span v-if="activeKuesioner?.is_active" class="px-2 py-0.5 text-[10px] font-bold rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300">
+                                    <span v-if="activeKuesioner?.is_active" class="px-2 py-0.5 text-[10px] font-bold rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200">
                                         Aktif
                                     </span>
                                 </div>
                             </div>
                         </div>
 
-                        <div class="flex items-center gap-3 bg-slate-50 p-3 rounded-lg border border-slate-200 flex-wrap">
+                        <div class="flex items-center gap-3 bg-gray-50/80 p-3 rounded-lg border border-gray-200 flex-wrap">
                             <div class="text-center px-2">
-                                <span class="block text-lg font-extrabold text-[#0D542B]">{{ stats.total_sections }}</span>
+                                <span class="block text-lg font-extrabold text-slate-900">{{ stats.total_sections }}</span>
                                 <span class="text-[10px] text-gray-500 font-semibold uppercase">Bagian / Section</span>
                             </div>
-                            <div class="h-8 w-px bg-slate-300"></div>
+                            <div class="h-8 w-px bg-gray-200"></div>
                             <div class="text-center px-2">
-                                <span class="block text-lg font-extrabold text-blue-700">{{ stats.total_tracer_questions ?? 0 }}</span>
+                                <span class="block text-lg font-extrabold text-[#0D542B]">{{ stats.total_tracer_questions ?? 0 }}</span>
                                 <span class="text-[10px] text-gray-500 font-semibold uppercase">Soal Tracer</span>
                             </div>
-                            <div class="h-8 w-px bg-slate-300"></div>
+                            <div class="h-8 w-px bg-gray-200"></div>
                             <div class="text-center px-2">
-                                <span class="block text-lg font-extrabold text-amber-600">{{ stats.total_profile_questions ?? 0 }}</span>
+                                <span class="block text-lg font-extrabold text-slate-700">{{ stats.total_profile_questions ?? 0 }}</span>
                                 <span class="text-[10px] text-gray-500 font-semibold uppercase">Data Profil</span>
                             </div>
-                            <div class="h-8 w-px bg-slate-300"></div>
+                            <div class="h-8 w-px bg-gray-200"></div>
                             <div class="text-center px-2">
-                                <span class="block text-lg font-extrabold text-emerald-800">{{ stats.total_kuesioners }}</span>
+                                <span class="block text-lg font-extrabold text-slate-900">{{ stats.total_kuesioners }}</span>
                                 <span class="text-[10px] text-gray-500 font-semibold uppercase">Kuesioner Induk</span>
                             </div>
                         </div>
@@ -922,10 +927,10 @@ const handleDeleteKuesioner = (k) => {
                         </button>
                     </div>
 
-                    <!-- Tabel Section -->
-                    <div class="bg-white rounded-lg border border-slate-200 shadow-2xs overflow-hidden">
+                    <!-- Tabel Section (2 Tone) -->
+                    <div class="bg-white rounded-xl border border-gray-300 shadow-2xs overflow-hidden">
                         <table class="w-full text-xs text-left">
-                            <thead class="bg-slate-100 text-gray-700 font-bold border-b border-slate-200">
+                            <thead class="bg-gray-100 text-gray-800 font-semibold border-b border-gray-300 text-[11px]">
                                 <tr>
                                     <th class="px-4 py-3 text-center w-20">Urutan</th>
                                     <th class="px-4 py-3">Judul Bagian Section</th>
@@ -934,13 +939,13 @@ const handleDeleteKuesioner = (k) => {
                                     <th class="px-4 py-3 text-right">Aksi</th>
                                 </tr>
                             </thead>
-                            <tbody class="divide-y divide-slate-200">
+                            <tbody class="divide-y divide-gray-200">
                                 <tr v-if="filteredSections.length === 0">
                                     <td colspan="5" class="p-8 text-center text-gray-400 italic">
                                         Belum ada bagian (section) kuesioner universitas yang dibuat.
                                     </td>
                                 </tr>
-                                <tr v-for="(sec, idx) in filteredSections" :key="sec.id" class="hover:bg-slate-50 transition-colors">
+                                <tr v-for="(sec, idx) in filteredSections" :key="sec.id" class="hover:bg-gray-50/80 transition-colors">
                                     <td class="px-4 py-3 text-center">
                                         <div class="flex items-center justify-center gap-1 font-bold text-gray-700">
                                             <span>#{{ sec.order }}</span>
@@ -976,26 +981,30 @@ const handleDeleteKuesioner = (k) => {
                                     <td class="px-4 py-3 text-gray-600 max-w-sm">
                                         {{ sec.description || '-' }}
                                     </td>
-                                    <td class="px-4 py-3 text-center">
-                                        <span class="px-2.5 py-1 rounded-full bg-slate-100 text-slate-800 font-bold border border-slate-200">
-                                            {{ sec.subpertanyaans_count ?? 0 }} Pertanyaan
-                                        </span>
+                                    <td class="px-4 py-3 text-center text-gray-700 font-medium text-xs">
+                                        {{ sec.subpertanyaans_count ?? 0 }} Pertanyaan
                                     </td>
                                     <td class="px-4 py-3 text-right">
-                                        <div class="flex items-center justify-end gap-1.5">
+                                        <div class="flex items-center justify-end gap-1">
                                             <button
                                                 type="button"
                                                 @click="openSectionModal(sec)"
-                                                class="px-2.5 py-1 bg-amber-600 hover:bg-amber-700 text-white font-bold rounded shadow-2xs transition-colors cursor-pointer"
+                                                class="p-1.5 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
+                                                title="Edit Section"
                                             >
-                                                Edit
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                                </svg>
                                             </button>
                                             <button
                                                 type="button"
                                                 @click="handleDeleteSection(sec)"
-                                                class="px-2.5 py-1 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded shadow-2xs transition-colors cursor-pointer"
+                                                class="p-1.5 text-gray-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
+                                                title="Hapus Section"
                                             >
-                                                Hapus
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                </svg>
                                             </button>
                                         </div>
                                     </td>
@@ -1009,18 +1018,18 @@ const handleDeleteKuesioner = (k) => {
                 <!-- TAB 2: PERTANYAAN KUESIONER TRACER STUDY                 -->
                 <!-- ======================================================== -->
                 <div v-if="activeTab === 'tracer'" class="space-y-4">
-                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-4 rounded-lg border border-slate-200 shadow-2xs">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-4 rounded-xl border border-gray-300 shadow-2xs">
                         <div class="flex flex-wrap items-center gap-3">
                             <div>
                                 <label class="block text-[10px] font-bold text-gray-500 uppercase">Filter Section</label>
-                                <select v-model="selectedTracerSectionFilter" class="px-2.5 py-1.5 border border-slate-300 rounded text-xs bg-white">
+                                <select v-model="selectedTracerSectionFilter" class="px-2.5 py-1.5 border border-gray-300 rounded-lg text-xs bg-white focus:ring-1 focus:ring-[#0D542B] focus:border-[#0D542B]">
                                     <option value="all">Semua Section</option>
                                     <option v-for="s in sections" :key="s.id" :value="s.id">Bagian {{ s.order }}: {{ s.title }}</option>
                                 </select>
                             </div>
                             <div>
                                 <label class="block text-[10px] font-bold text-gray-500 uppercase">Sifat Pengisian</label>
-                                <select v-model="selectedTracerRequiredFilter" class="px-2.5 py-1.5 border border-slate-300 rounded text-xs bg-white">
+                                <select v-model="selectedTracerRequiredFilter" class="px-2.5 py-1.5 border border-gray-300 rounded-lg text-xs bg-white focus:ring-1 focus:ring-[#0D542B] focus:border-[#0D542B]">
                                     <option value="all">Semua Sifat</option>
                                     <option value="wajib">Wajib (Required)</option>
                                     <option value="opsional">Opsional</option>
@@ -1028,7 +1037,7 @@ const handleDeleteKuesioner = (k) => {
                             </div>
                             <div>
                                 <label class="block text-[10px] font-bold text-gray-500 uppercase">Lokasi Tampil</label>
-                                <select v-model="selectedTracerTargetFilter" class="px-2.5 py-1.5 border border-slate-300 rounded text-xs bg-white">
+                                <select v-model="selectedTracerTargetFilter" class="px-2.5 py-1.5 border border-gray-300 rounded-lg text-xs bg-white focus:ring-1 focus:ring-[#0D542B] focus:border-[#0D542B]">
                                     <option value="all">Semua (Kuesioner & Keduanya)</option>
                                     <option value="kuesioner">Hanya Kuesioner Tracer</option>
                                     <option value="both">Kuesioner & Profil</option>
@@ -1036,7 +1045,7 @@ const handleDeleteKuesioner = (k) => {
                             </div>
                             <div>
                                 <label class="block text-[10px] font-bold text-gray-500 uppercase">Pencarian Teks</label>
-                                <input type="text" v-model="tracerSearchQuery" placeholder="Cari kode atau pertanyaan..." class="px-2.5 py-1.5 border border-slate-300 rounded text-xs w-48 bg-white" />
+                                <input type="text" v-model="tracerSearchQuery" placeholder="Cari kode atau pertanyaan..." class="px-2.5 py-1.5 border border-gray-300 rounded-lg text-xs w-48 bg-white focus:ring-1 focus:ring-[#0D542B] focus:border-[#0D542B]" />
                             </div>
                         </div>
 
@@ -1049,10 +1058,10 @@ const handleDeleteKuesioner = (k) => {
                         </button>
                     </div>
 
-                    <!-- Tabel Pertanyaan Kuesioner Tracer -->
-                    <div class="bg-white rounded-lg border border-slate-200 shadow-2xs overflow-hidden">
+                    <!-- Tabel Pertanyaan Kuesioner Tracer (2 Tone) -->
+                    <div class="bg-white rounded-xl border border-gray-300 shadow-2xs overflow-hidden">
                         <table class="w-full text-xs text-left">
-                            <thead class="bg-slate-100 text-gray-700 font-bold border-b border-slate-200">
+                            <thead class="bg-gray-100 text-gray-800 font-semibold border-b border-gray-300 text-[11px]">
                                 <tr>
                                     <th class="px-3 py-3 text-center w-20">Urutan</th>
                                     <th class="px-3 py-3 w-20">Kode</th>
@@ -1062,13 +1071,13 @@ const handleDeleteKuesioner = (k) => {
                                     <th class="px-3 py-3 text-right">Aksi</th>
                                 </tr>
                             </thead>
-                            <tbody class="divide-y divide-slate-200">
+                            <tbody class="divide-y divide-gray-200">
                                 <tr v-if="filteredTracerQuestions.length === 0">
                                     <td colspan="6" class="p-8 text-center text-gray-400 italic">
                                         Belum ada butir pertanyaan kuesioner tracer ditemukan yang sesuai filter.
                                     </td>
                                 </tr>
-                                <tr v-for="(q, idx) in filteredTracerQuestions" :key="q.id" class="hover:bg-slate-50 transition-colors">
+                                <tr v-for="(q, idx) in filteredTracerQuestions" :key="q.id" class="hover:bg-gray-50/80 transition-colors">
                                     <td class="px-3 py-3.5 text-center">
                                         <div class="flex items-center justify-center gap-1 font-bold text-gray-700">
                                             <span>#{{ q.order }}</span>
@@ -1098,26 +1107,17 @@ const handleDeleteKuesioner = (k) => {
                                             </div>
                                         </div>
                                     </td>
-                                    <td class="px-3 py-3.5 font-mono font-bold text-[#0D542B]">
+                                    <td class="px-3 py-3.5 font-mono font-bold text-gray-900">
                                         {{ q.kode_pertanyaan }}
                                     </td>
                                     <td class="px-4 py-3.5">
                                         <p class="font-bold text-gray-900 leading-snug">
                                             {{ q.subpertanyaan }}
                                         </p>
-                                        <div class="flex items-center gap-2 mt-1.5 flex-wrap">
-                                            <span
-                                                class="px-2 py-0.5 rounded text-[10px] font-bold border"
-                                                :class="q.wajib ? 'bg-rose-50 text-rose-700 border-rose-200' : 'bg-slate-100 text-slate-600 border-slate-200'"
-                                            >
-                                                {{ q.wajib ? 'Wajib' : 'Opsional' }}
-                                            </span>
-                                            <span
-                                                class="px-2 py-0.5 rounded text-[10px] font-semibold border"
-                                                :class="getTargetBadge(q.tampil_di).classes"
-                                            >
-                                                {{ getTargetBadge(q.tampil_di).label }}
-                                            </span>
+                                        <div class="flex items-center gap-2 mt-1.5 flex-wrap text-xs">
+                                            <span :class="q.wajib ? 'font-bold text-gray-900' : 'text-gray-400'">{{ q.wajib ? 'Wajib' : 'Opsional' }}</span>
+                                            <span class="text-gray-300">&bull;</span>
+                                            <span class="text-gray-500">{{ getTargetBadge(q.tampil_di).label }}</span>
                                         </div>
                                         <p v-if="q.keterangan" class="text-[11px] text-gray-500 italic mt-1">
                                             Keterangan: {{ q.keterangan }}
@@ -1127,36 +1127,37 @@ const handleDeleteKuesioner = (k) => {
                                         <span class="font-bold text-gray-800 block text-xs">
                                             {{ typeLabels[q.type] || q.type }}
                                         </span>
-                                        <span class="text-[11px] font-semibold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200 inline-block mt-1">
+                                        <p class="text-[11px] text-gray-500 mt-1">
                                             {{ q.kelompok_pertanyaan ? `Bagian ${q.kelompok_pertanyaan.order}: ${q.kelompok_pertanyaan.title}` : '-' }}
-                                        </span>
+                                        </p>
                                     </td>
                                     <td class="px-4 py-3.5 max-w-md">
                                         <div v-if="canHaveOptions(q.type)" class="space-y-1.5">
                                             <div
                                                 v-for="opt in q.detils"
                                                 :key="opt.id"
-                                                class="flex items-center justify-between p-1.5 bg-slate-50 border border-slate-200 rounded text-[11px]"
+                                                class="flex items-center justify-between p-1.5 bg-gray-50 border border-gray-200 rounded text-[11px]"
                                             >
                                                 <div class="flex items-center gap-1.5 min-w-0 pr-2">
                                                     <span class="font-mono text-gray-500 font-bold shrink-0">[{{ opt.kode_opsi || `${q.kode_pertanyaan}-${opt.order}` }}]</span>
                                                     <span class="text-gray-800 font-medium truncate">{{ opt.option_text || opt.opsi }}</span>
-                                                    <span v-if="opt.jump_to" class="px-1.5 py-0.2 rounded bg-purple-50 text-purple-700 text-[10px] font-bold border border-purple-200 shrink-0">
-                                                        Lompat ke: [{{ opt.jump_to }}]
+                                                    <span v-if="opt.jump_to" class="text-gray-500 text-[10px] font-medium shrink-0">
+                                                        &rarr; Lompat ke: [{{ opt.jump_to }}]
                                                     </span>
                                                 </div>
-                                                <div class="flex items-center gap-1.5 shrink-0">
+                                                <div class="flex items-center gap-2 shrink-0">
                                                     <button
                                                         type="button"
                                                         @click="openOptionModal(q, opt)"
-                                                        class="text-amber-600 hover:text-amber-800 font-bold cursor-pointer"
+                                                        class="text-gray-500 hover:text-gray-900 font-medium cursor-pointer"
                                                     >
                                                         Edit
                                                     </button>
+                                                    <span class="text-gray-300">|</span>
                                                     <button
                                                         type="button"
                                                         @click="handleDeleteOption(opt)"
-                                                        class="text-rose-600 hover:text-rose-800 font-bold cursor-pointer"
+                                                        class="text-gray-400 hover:text-rose-600 font-medium cursor-pointer"
                                                     >
                                                         Hapus
                                                     </button>
@@ -1166,7 +1167,7 @@ const handleDeleteKuesioner = (k) => {
                                             <button
                                                 type="button"
                                                 @click="openOptionModal(q, null)"
-                                                class="px-2.5 py-1 text-[11px] font-bold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 rounded border border-emerald-200 flex items-center gap-1 cursor-pointer transition-colors mt-1"
+                                                class="px-2.5 py-1 text-[11px] font-semibold text-gray-700 bg-white hover:bg-gray-50 rounded border border-gray-300 flex items-center gap-1 cursor-pointer transition-colors mt-1"
                                             >
                                                 <span>+ Tambah Opsi Jawaban</span>
                                             </button>
@@ -1176,20 +1177,26 @@ const handleDeleteKuesioner = (k) => {
                                         </div>
                                     </td>
                                     <td class="px-3 py-3.5 text-right">
-                                        <div class="flex items-center justify-end gap-1.5">
+                                        <div class="flex items-center justify-end gap-1">
                                             <button
                                                 type="button"
                                                 @click="openQuestionModal(q, 'kuesioner')"
-                                                class="px-2.5 py-1 bg-amber-600 hover:bg-amber-700 text-white font-bold rounded shadow-2xs transition-colors cursor-pointer"
+                                                class="p-1.5 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
+                                                title="Edit Pertanyaan"
                                             >
-                                                Edit
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                                </svg>
                                             </button>
                                             <button
                                                 type="button"
                                                 @click="handleDeleteQuestion(q)"
-                                                class="px-2.5 py-1 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded shadow-2xs transition-colors cursor-pointer"
+                                                class="p-1.5 text-gray-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
+                                                title="Hapus Pertanyaan"
                                             >
-                                                Hapus
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                </svg>
                                             </button>
                                         </div>
                                     </td>
@@ -1203,18 +1210,18 @@ const handleDeleteKuesioner = (k) => {
                 <!-- TAB 3: PERTANYAAN PROFIL ALUMNI                          -->
                 <!-- ======================================================== -->
                 <div v-if="activeTab === 'profile'" class="space-y-4">
-                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-4 rounded-lg border border-slate-200 shadow-2xs">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-4 rounded-xl border border-gray-300 shadow-2xs">
                         <div class="flex flex-wrap items-center gap-3">
                             <div>
                                 <label class="block text-[10px] font-bold text-gray-500 uppercase">Filter Section</label>
-                                <select v-model="selectedProfileSectionFilter" class="px-2.5 py-1.5 border border-slate-300 rounded text-xs bg-white">
+                                <select v-model="selectedProfileSectionFilter" class="px-2.5 py-1.5 border border-gray-300 rounded-lg text-xs bg-white focus:ring-1 focus:ring-[#0D542B] focus:border-[#0D542B]">
                                     <option value="all">Semua Section</option>
                                     <option v-for="s in sections" :key="s.id" :value="s.id">Bagian {{ s.order }}: {{ s.title }}</option>
                                 </select>
                             </div>
                             <div>
                                 <label class="block text-[10px] font-bold text-gray-500 uppercase">Sifat Pengisian</label>
-                                <select v-model="selectedProfileRequiredFilter" class="px-2.5 py-1.5 border border-slate-300 rounded text-xs bg-white">
+                                <select v-model="selectedProfileRequiredFilter" class="px-2.5 py-1.5 border border-gray-300 rounded-lg text-xs bg-white focus:ring-1 focus:ring-[#0D542B] focus:border-[#0D542B]">
                                     <option value="all">Semua Sifat</option>
                                     <option value="wajib">Wajib (Required)</option>
                                     <option value="opsional">Opsional</option>
@@ -1222,7 +1229,7 @@ const handleDeleteKuesioner = (k) => {
                             </div>
                             <div>
                                 <label class="block text-[10px] font-bold text-gray-500 uppercase">Lokasi Tampil</label>
-                                <select v-model="selectedProfileTargetFilter" class="px-2.5 py-1.5 border border-slate-300 rounded text-xs bg-white">
+                                <select v-model="selectedProfileTargetFilter" class="px-2.5 py-1.5 border border-gray-300 rounded-lg text-xs bg-white focus:ring-1 focus:ring-[#0D542B] focus:border-[#0D542B]">
                                     <option value="all">Semua (Profil & Keduanya)</option>
                                     <option value="profil">Hanya Profil Alumni</option>
                                     <option value="both">Kuesioner & Profil</option>
@@ -1230,7 +1237,7 @@ const handleDeleteKuesioner = (k) => {
                             </div>
                             <div>
                                 <label class="block text-[10px] font-bold text-gray-500 uppercase">Pencarian Teks</label>
-                                <input type="text" v-model="profileSearchQuery" placeholder="Cari kode atau pertanyaan..." class="px-2.5 py-1.5 border border-slate-300 rounded text-xs w-48 bg-white" />
+                                <input type="text" v-model="profileSearchQuery" placeholder="Cari kode atau pertanyaan..." class="px-2.5 py-1.5 border border-gray-300 rounded-lg text-xs w-48 bg-white focus:ring-1 focus:ring-[#0D542B] focus:border-[#0D542B]" />
                             </div>
                         </div>
 
@@ -1243,10 +1250,10 @@ const handleDeleteKuesioner = (k) => {
                         </button>
                     </div>
 
-                    <!-- Tabel Pertanyaan Profil Alumni -->
-                    <div class="bg-white rounded-lg border border-slate-200 shadow-2xs overflow-hidden">
+                    <!-- Tabel Pertanyaan Profil Alumni (2 Tone) -->
+                    <div class="bg-white rounded-xl border border-gray-300 shadow-2xs overflow-hidden">
                         <table class="w-full text-xs text-left">
-                            <thead class="bg-slate-100 text-gray-700 font-bold border-b border-slate-200">
+                            <thead class="bg-gray-100 text-gray-800 font-semibold border-b border-gray-300 text-[11px]">
                                 <tr>
                                     <th class="px-3 py-3 text-center w-20">Urutan</th>
                                     <th class="px-3 py-3 w-28">Kode Field</th>
@@ -1256,13 +1263,13 @@ const handleDeleteKuesioner = (k) => {
                                     <th class="px-3 py-3 text-right">Aksi</th>
                                 </tr>
                             </thead>
-                            <tbody class="divide-y divide-slate-200">
+                            <tbody class="divide-y divide-gray-200">
                                 <tr v-if="filteredProfileQuestions.length === 0">
                                     <td colspan="6" class="p-8 text-center text-gray-400 italic">
                                         Belum ada butir pertanyaan profil alumni ditemukan yang sesuai filter.
                                     </td>
                                 </tr>
-                                <tr v-for="(q, idx) in filteredProfileQuestions" :key="q.id" class="hover:bg-slate-50 transition-colors">
+                                <tr v-for="(q, idx) in filteredProfileQuestions" :key="q.id" class="hover:bg-gray-50/80 transition-colors">
                                     <td class="px-3 py-3.5 text-center">
                                         <div class="flex items-center justify-center gap-1 font-bold text-gray-700">
                                             <span>#{{ q.order }}</span>
@@ -1292,26 +1299,17 @@ const handleDeleteKuesioner = (k) => {
                                             </div>
                                         </div>
                                     </td>
-                                    <td class="px-3 py-3.5 font-mono font-bold text-amber-800">
+                                    <td class="px-3 py-3.5 font-mono font-bold text-gray-900">
                                         {{ q.kode_pertanyaan }}
                                     </td>
                                     <td class="px-4 py-3.5">
                                         <p class="font-bold text-gray-900 leading-snug">
                                             {{ q.subpertanyaan }}
                                         </p>
-                                        <div class="flex items-center gap-2 mt-1.5 flex-wrap">
-                                            <span
-                                                class="px-2 py-0.5 rounded text-[10px] font-bold border"
-                                                :class="q.wajib ? 'bg-rose-50 text-rose-700 border-rose-200' : 'bg-slate-100 text-slate-600 border-slate-200'"
-                                            >
-                                                {{ q.wajib ? 'Wajib' : 'Opsional' }}
-                                            </span>
-                                            <span
-                                                class="px-2 py-0.5 rounded text-[10px] font-semibold border"
-                                                :class="getTargetBadge(q.tampil_di).classes"
-                                            >
-                                                {{ getTargetBadge(q.tampil_di).label }}
-                                            </span>
+                                        <div class="flex items-center gap-2 mt-1.5 flex-wrap text-xs">
+                                            <span :class="q.wajib ? 'font-bold text-gray-900' : 'text-gray-400'">{{ q.wajib ? 'Wajib' : 'Opsional' }}</span>
+                                            <span class="text-gray-300">&bull;</span>
+                                            <span class="text-gray-500">{{ getTargetBadge(q.tampil_di).label }}</span>
                                         </div>
                                         <p v-if="q.keterangan" class="text-[11px] text-gray-500 italic mt-1">
                                             Keterangan: {{ q.keterangan }}
@@ -1321,33 +1319,34 @@ const handleDeleteKuesioner = (k) => {
                                         <span class="font-bold text-gray-800 block text-xs">
                                             {{ typeLabels[q.type] || q.type }}
                                         </span>
-                                        <span class="text-[11px] font-semibold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200 inline-block mt-1">
+                                        <p class="text-[11px] text-gray-500 mt-1">
                                             {{ q.kelompok_pertanyaan ? `Bagian ${q.kelompok_pertanyaan.order}: ${q.kelompok_pertanyaan.title}` : '-' }}
-                                        </span>
+                                        </p>
                                     </td>
                                     <td class="px-4 py-3.5 max-w-md">
                                         <div v-if="canHaveOptions(q.type)" class="space-y-1.5">
                                             <div
                                                 v-for="opt in q.detils"
                                                 :key="opt.id"
-                                                class="flex items-center justify-between p-1.5 bg-slate-50 border border-slate-200 rounded text-[11px]"
+                                                class="flex items-center justify-between p-1.5 bg-gray-50 border border-gray-200 rounded text-[11px]"
                                             >
                                                 <div class="flex items-center gap-1.5 min-w-0 pr-2">
                                                     <span class="font-mono text-gray-500 font-bold shrink-0">[{{ opt.kode_opsi || `${q.kode_pertanyaan}-${opt.order}` }}]</span>
                                                     <span class="text-gray-800 font-medium truncate">{{ opt.option_text || opt.opsi }}</span>
                                                 </div>
-                                                <div class="flex items-center gap-1.5 shrink-0">
+                                                <div class="flex items-center gap-2 shrink-0">
                                                     <button
                                                         type="button"
                                                         @click="openOptionModal(q, opt)"
-                                                        class="text-amber-600 hover:text-amber-800 font-bold cursor-pointer"
+                                                        class="text-gray-500 hover:text-gray-900 font-medium cursor-pointer"
                                                     >
                                                         Edit
                                                     </button>
+                                                    <span class="text-gray-300">|</span>
                                                     <button
                                                         type="button"
                                                         @click="handleDeleteOption(opt)"
-                                                        class="text-rose-600 hover:text-rose-800 font-bold cursor-pointer"
+                                                        class="text-gray-400 hover:text-rose-600 font-medium cursor-pointer"
                                                     >
                                                         Hapus
                                                     </button>
@@ -1357,7 +1356,7 @@ const handleDeleteKuesioner = (k) => {
                                             <button
                                                 type="button"
                                                 @click="openOptionModal(q, null)"
-                                                class="px-2.5 py-1 text-[11px] font-bold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 rounded border border-emerald-200 flex items-center gap-1 cursor-pointer transition-colors mt-1"
+                                                class="px-2.5 py-1 text-[11px] font-semibold text-gray-700 bg-white hover:bg-gray-50 rounded border border-gray-300 flex items-center gap-1 cursor-pointer transition-colors mt-1"
                                             >
                                                 <span>+ Tambah Opsi Jawaban</span>
                                             </button>
@@ -1367,20 +1366,26 @@ const handleDeleteKuesioner = (k) => {
                                         </div>
                                     </td>
                                     <td class="px-3 py-3.5 text-right">
-                                        <div class="flex items-center justify-end gap-1.5">
+                                        <div class="flex items-center justify-end gap-1">
                                             <button
                                                 type="button"
                                                 @click="openQuestionModal(q, 'profil')"
-                                                class="px-2.5 py-1 bg-amber-600 hover:bg-amber-700 text-white font-bold rounded shadow-2xs transition-colors cursor-pointer"
+                                                class="p-1.5 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
+                                                title="Edit Pertanyaan"
                                             >
-                                                Edit
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                                </svg>
                                             </button>
                                             <button
                                                 type="button"
                                                 @click="handleDeleteQuestion(q)"
-                                                class="px-2.5 py-1 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded shadow-2xs transition-colors cursor-pointer"
+                                                class="p-1.5 text-gray-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
+                                                title="Hapus Pertanyaan"
                                             >
-                                                Hapus
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                </svg>
                                             </button>
                                         </div>
                                     </td>
@@ -1400,7 +1405,7 @@ const handleDeleteKuesioner = (k) => {
                                 type="text"
                                 v-model="kuesionerSearchQuery"
                                 placeholder="Cari judul kuesioner atau tahun..."
-                                class="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs focus:ring-1 focus:ring-[#0D542B] focus:outline-none bg-white"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg text-xs focus:ring-1 focus:ring-[#0D542B] focus:border-[#0D542B] focus:outline-none bg-white"
                             />
                         </div>
                         <button
@@ -1412,10 +1417,10 @@ const handleDeleteKuesioner = (k) => {
                         </button>
                     </div>
 
-                    <!-- Tabel Kuesioner Induk -->
-                    <div class="bg-white rounded-lg border border-slate-200 shadow-2xs overflow-hidden">
+                    <!-- Tabel Kuesioner Induk (2 Tone) -->
+                    <div class="bg-white rounded-xl border border-gray-300 shadow-2xs overflow-hidden">
                         <table class="w-full text-xs text-left">
-                            <thead class="bg-slate-100 text-gray-700 font-bold border-b border-slate-200">
+                            <thead class="bg-gray-100 text-gray-800 font-semibold border-b border-gray-300 text-[11px]">
                                 <tr>
                                     <th class="px-4 py-3 text-center w-24">Tahun</th>
                                     <th class="px-4 py-3">Judul Kuesioner Induk</th>
@@ -1425,13 +1430,13 @@ const handleDeleteKuesioner = (k) => {
                                     <th class="px-4 py-3 text-right">Aksi</th>
                                 </tr>
                             </thead>
-                            <tbody class="divide-y divide-slate-200">
+                            <tbody class="divide-y divide-gray-200">
                                 <tr v-if="filteredKuesioners.length === 0">
                                     <td colspan="6" class="p-8 text-center text-gray-400 italic">
                                         Belum ada kuesioner induk yang terdaftar.
                                     </td>
                                 </tr>
-                                <tr v-for="k in filteredKuesioners" :key="k.id" class="hover:bg-slate-50 transition-colors">
+                                <tr v-for="k in filteredKuesioners" :key="k.id" class="hover:bg-gray-50/80 transition-colors">
                                     <td class="px-4 py-3 text-center font-bold text-gray-900 text-sm">
                                         {{ k.year }}
                                     </td>
@@ -1444,45 +1449,49 @@ const handleDeleteKuesioner = (k) => {
                                     <td class="px-4 py-3 text-center">
                                         <span
                                             v-if="k.is_active"
-                                            class="px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800 font-bold border border-emerald-300"
+                                            class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200"
                                         >
                                             Aktif (Alumni)
                                         </span>
                                         <span
                                             v-else
-                                            class="px-2.5 py-1 rounded-full bg-slate-100 text-slate-500 font-semibold border border-slate-200"
+                                            class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium bg-gray-100 text-gray-600 border border-gray-200"
                                         >
                                             Nonaktif
                                         </span>
                                     </td>
-                                    <td class="px-4 py-3 text-center">
-                                        <span class="px-2.5 py-1 rounded-full bg-slate-100 text-slate-800 font-bold border border-slate-200">
-                                            {{ k.kelompok_pertanyaan_count ?? 0 }} Seksi
-                                        </span>
+                                    <td class="px-4 py-3 text-center text-gray-700 font-medium text-xs">
+                                        {{ k.kelompok_pertanyaan_count ?? 0 }} Seksi
                                     </td>
                                     <td class="px-4 py-3 text-right">
-                                        <div class="flex items-center justify-end gap-1.5">
+                                        <div class="flex items-center justify-end gap-1">
                                             <button
                                                 type="button"
                                                 @click="handleToggleKuesionerActive(k)"
-                                                class="px-2.5 py-1 rounded border text-xs font-bold transition-colors cursor-pointer"
-                                                :class="k.is_active ? 'border-amber-300 text-amber-800 bg-amber-50 hover:bg-amber-100' : 'border-emerald-300 text-emerald-800 bg-emerald-50 hover:bg-emerald-100'"
+                                                class="px-2.5 py-1 rounded-lg border text-xs font-semibold transition-colors cursor-pointer mr-1"
+                                                :class="k.is_active ? 'border-gray-300 text-gray-700 bg-white hover:bg-gray-50' : 'border-[#0D542B] text-[#0D542B] bg-emerald-50 hover:bg-emerald-100'"
                                             >
                                                 {{ k.is_active ? 'Nonaktifkan' : 'Jadikan Aktif' }}
                                             </button>
                                             <button
                                                 type="button"
                                                 @click="openKuesionerModal(k)"
-                                                class="px-2.5 py-1 bg-amber-600 hover:bg-amber-700 text-white font-bold rounded shadow-2xs transition-colors cursor-pointer"
+                                                class="p-1.5 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
+                                                title="Edit Kuesioner"
                                             >
-                                                Edit
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                                </svg>
                                             </button>
                                             <button
                                                 type="button"
                                                 @click="handleDeleteKuesioner(k)"
-                                                class="px-2.5 py-1 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded shadow-2xs transition-colors cursor-pointer"
+                                                class="p-1.5 text-gray-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
+                                                title="Hapus Kuesioner"
                                             >
-                                                Hapus
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                </svg>
                                             </button>
                                         </div>
                                     </td>

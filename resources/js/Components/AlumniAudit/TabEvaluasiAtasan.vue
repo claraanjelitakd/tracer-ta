@@ -5,7 +5,8 @@
   Mendukung peran Super Admin, Fakultas, Prodi, dan Biro 3.
 -->
 <script setup>
-import { computed } from 'vue';
+import { ref, computed } from 'vue';
+import { router } from '@inertiajs/vue3';
 import Swal from 'sweetalert2';
 
 /**
@@ -46,6 +47,65 @@ const copySurveyUrl = () => {
                 });
             });
     }
+};
+
+const sendingEmail = ref(false);
+const emailAtasanTarget = computed(() => {
+    return props.evaluasiAtasan?.atasan?.email || props.alumni?.email_atasan || props.alumni?.atasan?.email || '';
+});
+
+const handleKirimEmailAtasan = () => {
+    const email = emailAtasanTarget.value;
+    if (!email || !email.includes('@')) {
+        Swal.fire({
+            title: 'Email Atasan Tidak Ditemukan',
+            text: 'Data email atasan belum tercantum atau format tidak valid pada profil alumni ini.',
+            icon: 'warning',
+            confirmButtonColor: '#0D542B',
+        });
+        return;
+    }
+
+    Swal.fire({
+        title: 'Kirim Email ke Atasan?',
+        html: `Kirimkan email undangan pengisian kuesioner evaluasi atasan langsung ke: <br><strong class="text-slate-900">${email}</strong>?`,
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#0D542B',
+        cancelButtonColor: '#94a3b8',
+        confirmButtonText: 'Ya, Kirim Email',
+        cancelButtonText: 'Batal',
+        reverseButtons: true,
+    }).then((result) => {
+        if (result.isConfirmed) {
+            sendingEmail.value = true;
+            router.post('/alumni/kirim-email-atasan', {
+                biodata_id: props.alumni?.id || props.evaluasiAtasan?.biodata_id,
+                email_atasan: email,
+            }, {
+                preserveScroll: true,
+                onFinish: () => {
+                    sendingEmail.value = false;
+                },
+                onSuccess: () => {
+                    Swal.fire({
+                        title: 'Email Terkirim',
+                        text: `Undangan evaluasi atasan berhasil dikirim ke ${email}.`,
+                        icon: 'success',
+                        confirmButtonColor: '#0D542B',
+                    });
+                },
+                onError: (err) => {
+                    Swal.fire({
+                        title: 'Gagal Mengirim Email',
+                        text: err?.message || 'Terjadi kendala saat mengirim email ke atasan.',
+                        icon: 'error',
+                        confirmButtonColor: '#0D542B',
+                    });
+                },
+            });
+        }
+    });
 };
 
 const getSkorLabel = (skor) => {
@@ -117,15 +177,25 @@ const evaluasiAtasanQuestionsWithAnswers = computed(() => {
                     </p>
                 </div>
 
-                <div v-if="evaluasiAtasan?.survey_url" class="flex items-center gap-2 shrink-0">
+                <div v-if="evaluasiAtasan?.survey_url" class="flex items-center gap-2 shrink-0 flex-wrap">
                     <button 
                         type="button" 
                         @click="copySurveyUrl" 
-                        class="px-3.5 py-2 bg-[#0D542B] hover:bg-[#08381c] text-white text-xs font-semibold rounded-lg transition-colors flex items-center gap-1.5 shadow-2xs cursor-pointer"
+                        class="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-lg transition-colors flex items-center gap-1.5 border border-slate-300 shadow-2xs cursor-pointer"
                         title="Salin tautan formulir survei atasan"
                     >
                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"/></svg>
                         <span>Salin Link Kuesioner</span>
+                    </button>
+                    <button 
+                        type="button" 
+                        @click="handleKirimEmailAtasan" 
+                        :disabled="sendingEmail || !emailAtasanTarget"
+                        class="px-3.5 py-2 bg-[#0D542B] hover:bg-[#08381c] text-white text-xs font-semibold rounded-lg transition-colors flex items-center gap-1.5 shadow-2xs disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                        title="Kirim email undangan evaluasi langsung ke atasan"
+                    >
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+                        <span>{{ sendingEmail ? 'Mengirim...' : 'Kirim Email ke Atasan' }}</span>
                     </button>
                 </div>
             </div>

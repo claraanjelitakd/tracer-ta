@@ -79,12 +79,12 @@ class RefSubpertanyaanDetilSeeder extends Seeder
             ['kode_pertanyaan' => 'F10', 'order' => 4, 'kode_opsi' => '4', 'option_text' => 'Ya, tapi saya belum pasti akan bekerja dalam 2 minggu ke depan', 'jump_to' => 'F3'],
             ['kode_pertanyaan' => 'F10', 'order' => 5, 'kode_opsi' => '5', 'option_text' => 'Lainnya', 'jump_to' => 'F3'],
 
-            // F18a (Sumber biaya studi lanjut)
-            ['kode_pertanyaan' => 'F18a', 'order' => 1, 'kode_opsi' => '1', 'option_text' => 'Biaya Sendiri / Keluarga', 'jump_to' => null],
-            ['kode_pertanyaan' => 'F18a', 'order' => 2, 'kode_opsi' => '2', 'option_text' => 'Beasiswa Pemerintah', 'jump_to' => null],
-            ['kode_pertanyaan' => 'F18a', 'order' => 3, 'kode_opsi' => '3', 'option_text' => 'Beasiswa Swasta / Perusahaan', 'jump_to' => null],
-            ['kode_pertanyaan' => 'F18a', 'order' => 4, 'kode_opsi' => '4', 'option_text' => 'Beasiswa Luar Negeri', 'jump_to' => null],
-            ['kode_pertanyaan' => 'F18a', 'order' => 5, 'kode_opsi' => '5', 'option_text' => 'Lainnya', 'jump_to' => null],
+            // F12 (Sumber biaya studi lanjut)
+            ['kode_pertanyaan' => 'F12', 'order' => 1, 'kode_opsi' => '1', 'option_text' => 'Biaya Sendiri / Keluarga', 'jump_to' => null],
+            ['kode_pertanyaan' => 'F12', 'order' => 2, 'kode_opsi' => '2', 'option_text' => 'Beasiswa Pemerintah', 'jump_to' => null],
+            ['kode_pertanyaan' => 'F12', 'order' => 3, 'kode_opsi' => '3', 'option_text' => 'Beasiswa Swasta / Perusahaan', 'jump_to' => null],
+            ['kode_pertanyaan' => 'F12', 'order' => 4, 'kode_opsi' => '4', 'option_text' => 'Beasiswa Luar Negeri', 'jump_to' => null],
+            ['kode_pertanyaan' => 'F12', 'order' => 5, 'kode_opsi' => '5', 'option_text' => 'Lainnya', 'jump_to' => null],
 
             // F11 (Jenis perusahaan/instansi)
             ['kode_pertanyaan' => 'F11', 'order' => 1, 'kode_opsi' => '1', 'option_text' => 'Instansi pemerintah', 'jump_to' => null],
@@ -94,15 +94,6 @@ class RefSubpertanyaanDetilSeeder extends Seeder
             ['kode_pertanyaan' => 'F11', 'order' => 5, 'kode_opsi' => '5', 'option_text' => 'Lainnya', 'jump_to' => null],
             ['kode_pertanyaan' => 'F11', 'order' => 6, 'kode_opsi' => '6', 'option_text' => 'BUMN/BUMD', 'jump_to' => null],
             ['kode_pertanyaan' => 'F11', 'order' => 7, 'kode_opsi' => '7', 'option_text' => 'Institusi/Organisasi Multilateral', 'jump_to' => null],
-
-            // F12 (Sumber dana kuliah)
-            ['kode_pertanyaan' => 'F12', 'order' => 1, 'kode_opsi' => '1', 'option_text' => 'Biaya sendiri/keluarga', 'jump_to' => null],
-            ['kode_pertanyaan' => 'F12', 'order' => 2, 'kode_opsi' => '2', 'option_text' => 'Beasiswa ADIK', 'jump_to' => null],
-            ['kode_pertanyaan' => 'F12', 'order' => 3, 'kode_opsi' => '3', 'option_text' => 'Beasiswa BIDIKMISI', 'jump_to' => null],
-            ['kode_pertanyaan' => 'F12', 'order' => 4, 'kode_opsi' => '4', 'option_text' => 'Beasiswa PPA', 'jump_to' => null],
-            ['kode_pertanyaan' => 'F12', 'order' => 5, 'kode_opsi' => '5', 'option_text' => 'Beasiswa AFIRMASI', 'jump_to' => null],
-            ['kode_pertanyaan' => 'F12', 'order' => 6, 'kode_opsi' => '6', 'option_text' => 'Beasiswa perusahaan/swasta', 'jump_to' => null],
-            ['kode_pertanyaan' => 'F12', 'order' => 7, 'kode_opsi' => '7', 'option_text' => 'Lainnya, tuliskan', 'jump_to' => null],
 
             // F14 (Keeratan hubungan bidang studi dengan pekerjaan)
             ['kode_pertanyaan' => 'F14', 'order' => 1, 'kode_opsi' => '1', 'option_text' => 'Sangat erat', 'jump_to' => null],
@@ -188,6 +179,10 @@ class RefSubpertanyaanDetilSeeder extends Seeder
         RefSubpertanyaanDetil::where('kode_pertanyaan', 'F505')
             ->whereNotIn('kode_opsi', ['F5051'])
             ->delete();
+
+        // Bersihkan opsi F18a dan opsi lama F12 yang berlebih (> 5 opsi)
+        RefSubpertanyaanDetil::where('kode_pertanyaan', 'F18a')->delete();
+        RefSubpertanyaanDetil::where('kode_pertanyaan', 'F12')->where('order', '>', 5)->delete();
 
         $subpertanyaans = RefSubpertanyaan2021::all()->keyBy('kode_pertanyaan');
 

@@ -151,6 +151,21 @@ const resetFilters = () => {
     router.get('/biro3/alumni', { tahun: tahun.value }, { preserveState: true });
 };
 
+// Filter interaktif lewat kartu statistik
+const filterByStatus = (newStatus) => {
+    status.value = newStatus;
+    linkedinStatus.value = 'all';
+    applyFilters();
+};
+
+const filterByLinkedin = () => {
+    linkedinStatus.value = linkedinStatus.value === 'synced' ? 'all' : 'synced';
+    if (linkedinStatus.value === 'synced') {
+        status.value = 'all';
+    }
+    applyFilters();
+};
+
 // =========================================================================
 // FITUR UNDUH ZIP & BLAST EMAIL MASSAL BIRO 3
 // =========================================================================
@@ -403,7 +418,7 @@ const handleSendSingleEmail = (alumni) => {
                             <button 
                                 type="button"
                                 @click="handleBlastEmail"
-                                class="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition-all shadow-xs cursor-pointer active:scale-95"
+                                class="inline-flex items-center gap-2 px-4 py-2 bg-white/15 hover:bg-white/25 text-white border border-white/25 rounded-xl text-xs font-bold transition-all shadow-xs cursor-pointer active:scale-95"
                                 :title="`Kirim email pengingat massal ke seluruh alumni tahun ${tahun !== 'all' ? tahun : (daftarTahun[0] || '')} yang belum selesai`"
                             >
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -415,13 +430,10 @@ const handleSendSingleEmail = (alumni) => {
                     </div>
 
                     <!-- Ringkasan Cepat di Header -->
-                    <div class="bg-black/20 border border-white/20 backdrop-blur-xs px-6 py-4 rounded-2xl text-left md:text-right text-white shadow-xs">
-                        <div class="flex items-center md:justify-end gap-1.5 text-xs text-emerald-200 font-bold uppercase tracking-wider mb-0.5">
-                            <span class="w-2 h-2 rounded-full bg-[#FDC700] animate-pulse"></span>
-                            <span>Tingkat Kelulusan Kuesioner</span>
-                        </div>
-                        <span class="text-3xl lg:text-4xl font-black text-[#FDC700] tracking-tight block">{{ stats.persentase_selesai }}%</span>
-                        <span class="text-xs text-emerald-100/90 font-medium block mt-0.5">
+                    <div class="bg-white/10 border border-white/20 px-5 py-3 rounded-xl text-left md:text-right text-white">
+                        <span class="text-xs text-emerald-100 font-bold uppercase tracking-wider block">Tingkat Kelulusan Kuesioner</span>
+                        <span class="text-3xl font-extrabold text-white block mt-0.5">{{ stats.persentase_selesai }}%</span>
+                        <span class="text-xs text-emerald-100/80 font-medium block mt-0.5">
                             {{ stats.total_selesai }} dari {{ stats.total_alumni }} Responden Selesai
                         </span>
                     </div>
@@ -431,60 +443,92 @@ const handleSendSingleEmail = (alumni) => {
             <!-- Main Content Container -->
             <main class="w-full max-w-[1440px] mx-auto -mt-10 px-4 sm:px-6 lg:px-8 space-y-6 pb-16">
                 
-                <!-- 5 Kartu Statistik Ringkasan (Formal, Flat, Tanpa Ikon Berlebihan) -->
-                <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3.5">
-                    <!-- Total Mahasiswa -->
-                    <div class="bg-white rounded-xl p-4 border border-gray-300 shadow-2xs">
-                        <p class="text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Total Mahasiswa</p>
-                        <p class="text-2xl font-bold text-gray-900 mt-1">{{ stats.total_alumni }}</p>
-                        <p class="text-[11px] text-gray-500 mt-0.5">Tahun Kelulusan {{ tahun }}</p>
+                <!-- 5 Kartu Statistik Interaktif & Filter Cepat (Formal, Flat, Bersih) -->
+                <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3.5 sm:gap-4">
+                    <!-- 1. Total Mahasiswa (Filter: Semua Status) -->
+                    <div 
+                        @click="filterByStatus('all')"
+                        class="bg-white rounded-xl p-4.5 border cursor-pointer transition-all select-none"
+                        :class="status === 'all' && linkedinStatus === 'all' ? 'border-[#0D542B] ring-1 ring-[#0D542B] shadow-xs' : 'border-slate-200 hover:border-slate-300 shadow-2xs'"
+                        title="Klik untuk menampilkan semua mahasiswa"
+                    >
+                        <div class="flex items-center justify-between gap-1.5">
+                            <p class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Total Mahasiswa</p>
+                            <span v-if="status === 'all' && linkedinStatus === 'all'" class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-[#0D542B] text-white">Aktif</span>
+                        </div>
+                        <p class="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight mt-1.5">{{ stats.total_alumni }}</p>
+                        <p class="text-xs text-slate-500 mt-1">Tahun Kelulusan {{ tahun }}</p>
                     </div>
 
-                    <!-- Kuesioner Selesai -->
-                    <div class="bg-white rounded-xl p-4 border border-gray-300 shadow-2xs">
-                        <p class="text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Kuesioner Selesai</p>
-                        <p class="text-2xl font-bold text-emerald-700 mt-1">{{ stats.total_selesai }}</p>
-                        <p class="text-[11px] text-gray-500 mt-0.5">Lengkap 100%</p>
+                    <!-- 2. Kuesioner Selesai (Filter: Selesai) -->
+                    <div 
+                        @click="filterByStatus('selesai')"
+                        class="bg-white rounded-xl p-4.5 border cursor-pointer transition-all select-none"
+                        :class="status === 'selesai' ? 'border-[#0D542B] ring-1 ring-[#0D542B] shadow-xs' : 'border-slate-200 hover:border-slate-300 shadow-2xs'"
+                        title="Klik untuk memfilter responden kuesioner selesai (100%)"
+                    >
+                        <div class="flex items-center justify-between gap-1.5">
+                            <p class="text-[11px] font-bold text-slate-600 uppercase tracking-wider">Kuesioner Selesai</p>
+                            <span v-if="status === 'selesai'" class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-[#0D542B] text-white">Aktif</span>
+                        </div>
+                        <p class="text-2xl sm:text-3xl font-extrabold text-[#0D542B] tracking-tight mt-1.5">{{ stats.total_selesai }}</p>
+                        <p class="text-xs text-slate-500 mt-1">Lengkap 100%</p>
                     </div>
 
-                    <!-- Belum Selesai -->
-                    <div class="bg-white rounded-xl p-4 border border-gray-300 shadow-2xs">
-                        <p class="text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Belum Selesai</p>
-                        <p class="text-2xl font-bold text-amber-700 mt-1">{{ stats.total_belum_selesai }}</p>
-                        <p class="text-[11px] text-gray-500 mt-0.5">Perlu tindak lanjut</p>
+                    <!-- 3. Belum Selesai (Filter: Belum Selesai) -->
+                    <div 
+                        @click="filterByStatus('belum_selesai')"
+                        class="bg-white rounded-xl p-4.5 border cursor-pointer transition-all select-none"
+                        :class="status === 'belum_selesai' ? 'border-[#0D542B] ring-1 ring-[#0D542B] shadow-xs' : 'border-slate-200 hover:border-slate-300 shadow-2xs'"
+                        title="Klik untuk memfilter responden yang belum selesai"
+                    >
+                        <div class="flex items-center justify-between gap-1.5">
+                            <p class="text-[11px] font-bold text-slate-600 uppercase tracking-wider">Belum Selesai</p>
+                            <span v-if="status === 'belum_selesai'" class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-[#0D542B] text-white">Aktif</span>
+                        </div>
+                        <p class="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight mt-1.5">{{ stats.total_belum_selesai }}</p>
+                        <p class="text-xs text-slate-500 mt-1">Perlu tindak lanjut</p>
                     </div>
 
-                    <!-- Rasio Kuesioner -->
-                    <div class="bg-white rounded-xl p-4 border border-gray-300 shadow-2xs">
-                        <p class="text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Rasio Kuesioner</p>
-                        <p class="text-2xl font-bold text-gray-900 mt-1">{{ stats.persentase_selesai }}%</p>
-                        <p class="text-[11px] text-gray-500 mt-0.5">Partisipasi responden</p>
+                    <!-- 4. Rasio Selesai -->
+                    <div class="bg-white rounded-xl p-4.5 border border-slate-200 shadow-2xs">
+                        <p class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Rasio Selesai</p>
+                        <p class="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight mt-1.5">{{ stats.persentase_selesai }}%</p>
+                        <p class="text-xs text-slate-500 mt-1">Kepatuhan responden</p>
                     </div>
 
-                    <!-- Sinkronisasi LinkedIn -->
-                    <div class="bg-white rounded-xl p-4 border border-gray-300 shadow-2xs col-span-2 sm:col-span-1">
-                        <p class="text-[11px] font-semibold text-gray-500 uppercase tracking-wider">LinkedIn Tersinkron</p>
-                        <p class="text-2xl font-bold text-[#0077B5] mt-1">{{ stats.total_linkedin_synced || 0 }}</p>
-                        <p class="text-[11px] text-gray-500 mt-0.5">{{ stats.persentase_linkedin || 0 }}% dari total lulusan</p>
+                    <!-- 5. Tersinkron LinkedIn (Filter: LinkedIn Synced) -->
+                    <div 
+                        @click="filterByLinkedin"
+                        class="bg-white rounded-xl p-4.5 border cursor-pointer transition-all select-none col-span-2 sm:col-span-1"
+                        :class="linkedinStatus === 'synced' ? 'border-[#0D542B] ring-1 ring-[#0D542B] shadow-xs' : 'border-slate-200 hover:border-slate-300 shadow-2xs'"
+                        title="Klik untuk memfilter alumni yang profil LinkedIn-nya sudah tersinkron"
+                    >
+                        <div class="flex items-center justify-between gap-1.5">
+                            <p class="text-[11px] font-bold text-slate-600 uppercase tracking-wider">Tersinkron LinkedIn</p>
+                            <span v-if="linkedinStatus === 'synced'" class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-[#0D542B] text-white">Aktif</span>
+                        </div>
+                        <p class="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight mt-1.5">{{ stats.total_linkedin_synced || 0 }}</p>
+                        <p class="text-xs text-slate-500 mt-1">{{ stats.persentase_linkedin || 0 }}% dari total alumni</p>
                     </div>
                 </div>
 
                 <!-- Panel Filter Master Data (Formal & Bersih) -->
-                <div class="bg-white rounded-xl p-4 sm:p-5 border border-gray-300 shadow-2xs">
+                <div class="bg-white rounded-xl p-4 sm:p-5 border border-slate-200 shadow-2xs">
                     <!-- Header Filter Panel -->
-                    <div class="flex items-center justify-between border-b border-gray-200 pb-3 mb-4">
+                    <div class="flex items-center justify-between border-b border-slate-200 pb-3 mb-4">
                         <div class="flex items-center gap-2">
-                            <h2 class="text-xs sm:text-sm font-bold text-gray-800 uppercase tracking-wider">
-                                Filter Data Mahasiswa
+                            <h2 class="text-xs sm:text-sm font-extrabold text-slate-800 uppercase tracking-wider">
+                                Filter & Pencarian Mahasiswa
                             </h2>
-                            <span class="text-[11px] px-2 py-0.5 rounded bg-gray-100 text-gray-700 border border-gray-300 font-semibold">
+                            <span class="text-[11px] px-2 py-0.5 rounded bg-emerald-50 text-[#0D542B] border border-emerald-200 font-bold">
                                 Tahun: {{ tahun }}
                             </span>
                         </div>
                         <div>
                             <button 
                                 @click="resetFilters" 
-                                class="text-xs text-gray-600 hover:text-gray-900 font-semibold transition-colors cursor-pointer px-2.5 py-1 rounded border border-gray-300 hover:bg-gray-100"
+                                class="text-xs text-slate-600 hover:text-slate-900 font-semibold transition-colors cursor-pointer px-2.5 py-1 rounded border border-slate-200 hover:bg-slate-50"
                             >
                                 Reset Filter
                             </button>

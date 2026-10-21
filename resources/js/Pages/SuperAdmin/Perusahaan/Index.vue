@@ -563,15 +563,15 @@ const handleVerifyDirect = (company) => {
                             Pusat validasi data mitra institusi, verifikasi usulan instansi kerja, dan konsolidasi profil karir alumni Universitas Kristen Duta Wacana.
                         </p>
 
-                        <!-- Tombol Aksi Cepat Header (Sesuai Desain Tombol Gambar 3) -->
+                        <!-- Tombol Aksi Cepat Header -->
                         <div class="flex items-center gap-3 mt-4 flex-wrap">
                             <button
                                 type="button"
                                 @click="openCreateModal"
-                                class="inline-flex items-center gap-2 px-4 py-2 bg-[#FDC700] hover:bg-[#e6b400] text-slate-900 rounded-xl text-xs font-extrabold transition-all shadow-xs cursor-pointer active:scale-95"
+                                class="px-4 py-2 bg-white text-[#0D542B] hover:bg-emerald-50 font-bold text-xs rounded-lg transition-colors flex items-center gap-2 cursor-pointer shadow-sm"
                                 title="Tambah entri perusahaan baru ke master data resmi"
                             >
-                                <svg class="w-4 h-4 text-slate-900" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
                                 </svg>
                                 <span>Tambah Perusahaan Baru</span>
@@ -583,7 +583,7 @@ const handleVerifyDirect = (company) => {
 
             <!-- Main Content Container dengan Negative Top Margin (-mt-10) Menumpuk Header Hijau -->
             <main class="w-full max-w-[1440px] mx-auto -mt-10 px-4 sm:px-6 lg:px-8 space-y-6 pb-12">
-                <!-- 4 Kartu Statistik Interaktif & Filter Cepat (Sesuai Gambar 3, Bisa Diklik!) -->
+                <!-- 4 Kartu Statistik Interaktif & Filter Cepat (Bisa Diklik!) -->
                 <div class="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3.5 sm:gap-4">
                     <!-- 1. Total Institusi (Filter: Semua Status) -->
                     <div
@@ -641,7 +641,7 @@ const handleVerifyDirect = (company) => {
                             <p class="text-[11px] font-bold text-slate-600 uppercase tracking-wider">Usulan Ditolak</p>
                             <span v-if="statusFilter === 'Ditolak'" class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-[#0D542B] text-white">Aktif</span>
                         </div>
-                        <p class="text-2xl sm:text-3xl font-extrabold text-rose-800 tracking-tight mt-1.5">{{ stats.total_rejected }}</p>
+                        <p class="text-2xl sm:text-3xl font-extrabold text-slate-800 tracking-tight mt-1.5">{{ stats.total_rejected }}</p>
                         <p class="text-xs text-slate-500 mt-1">Tidak memenuhi syarat</p>
                     </div>
                 </div>
@@ -854,25 +854,25 @@ const handleVerifyDirect = (company) => {
                                     <div class="mb-1">
                                         <span
                                             v-if="company.status_verifikasi === 'Terverifikasi'"
-                                            class="inline-block px-2 py-0.5 text-[11px] font-semibold rounded bg-slate-100 text-[#0D542B] border border-[#0D542B]/40"
+                                            class="inline-block px-2.5 py-0.5 text-[10px] font-semibold rounded-full bg-emerald-50 text-[#0D542B] border border-emerald-200"
                                         >
                                             Terverifikasi
                                         </span>
                                         <span
                                             v-else-if="company.status_verifikasi === 'Menunggu Verifikasi'"
-                                            class="inline-block px-2 py-0.5 text-[11px] font-semibold rounded bg-slate-100 text-slate-800 border border-slate-300"
+                                            class="inline-block px-2.5 py-0.5 text-[10px] font-semibold rounded-full bg-gray-100 text-gray-700 border border-gray-200"
                                         >
                                             Menunggu Peninjauan
                                         </span>
                                         <span
                                             v-else-if="company.status_verifikasi === 'Ditolak'"
-                                            class="inline-block px-2 py-0.5 text-[11px] font-semibold rounded bg-slate-100 text-rose-800 border border-rose-300"
+                                            class="inline-block px-2.5 py-0.5 text-[10px] font-semibold rounded-full bg-gray-100 text-gray-600 border border-gray-200"
                                         >
                                             Ditolak
                                         </span>
                                         <span
                                             v-else
-                                            class="inline-block px-2 py-0.5 text-[11px] font-semibold rounded bg-slate-100 text-slate-700 border border-slate-300"
+                                            class="inline-block px-2.5 py-0.5 text-[10px] font-semibold rounded-full bg-gray-100 text-gray-700 border border-gray-200"
                                         >
                                             {{ company.status_verifikasi }}
                                         </span>
@@ -892,7 +892,7 @@ const handleVerifyDirect = (company) => {
                                             {{ formatDate(company.latest_verification_log?.created_at || company.updated_at) }}
                                         </div>
                                     </div>
-                                    <div v-else-if="company.status_verifikasi === 'Ditolak'" class="text-[10px] text-rose-700 leading-tight space-y-0.5">
+                                    <div v-else-if="company.status_verifikasi === 'Ditolak'" class="text-[10px] text-slate-600 leading-tight space-y-0.5">
                                         <div>
                                             <span class="text-slate-400">Ditolak oleh:</span>
                                             <strong class="text-slate-800 ml-1">
@@ -945,7 +945,7 @@ const handleVerifyDirect = (company) => {
                                         <button
                                             type="button"
                                             @click="openAlumniModal(company)"
-                                            class="p-1.5 text-slate-700 hover:text-slate-900 hover:bg-slate-100 rounded border border-slate-300 transition-colors cursor-pointer shrink-0"
+                                            class="p-1.5 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer shrink-0"
                                             title="Lihat Daftar Alumni Bekerja (Menu List)"
                                         >
                                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -957,7 +957,7 @@ const handleVerifyDirect = (company) => {
                                         <button
                                             type="button"
                                             @click="openReviewModal(company)"
-                                            class="p-1.5 text-blue-700 hover:bg-blue-50 rounded border border-blue-200 transition-colors cursor-pointer shrink-0"
+                                            class="p-1.5 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer shrink-0"
                                             title="Peninjauan Lengkap Usulan Perusahaan & Alumni"
                                         >
                                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -971,7 +971,7 @@ const handleVerifyDirect = (company) => {
                                             v-if="company.status_verifikasi !== 'Terverifikasi'"
                                             type="button"
                                             @click="handleVerifyDirect(company)"
-                                            class="w-7 h-7 flex items-center justify-center font-bold text-xs bg-[#0D542B] hover:bg-[#08381c] text-white rounded shadow-2xs transition-colors cursor-pointer shrink-0"
+                                            class="w-7 h-7 flex items-center justify-center font-bold text-xs bg-[#0D542B] hover:bg-[#08381c] text-white rounded-lg shadow-2xs transition-colors cursor-pointer shrink-0"
                                             title="Setujui sebagai Master Resmi (Tombol V)"
                                         >
                                             V
@@ -982,7 +982,7 @@ const handleVerifyDirect = (company) => {
                                             v-if="company.status_verifikasi !== 'Ditolak'"
                                             type="button"
                                             @click="openRejectModal(company)"
-                                            class="w-7 h-7 flex items-center justify-center font-bold text-xs bg-rose-700 hover:bg-rose-800 text-white rounded shadow-2xs transition-colors cursor-pointer shrink-0"
+                                            class="w-7 h-7 flex items-center justify-center font-bold text-xs bg-gray-100 hover:bg-rose-50 text-gray-600 hover:text-rose-700 border border-gray-300 rounded-lg shadow-2xs transition-colors cursor-pointer shrink-0"
                                             title="Tolak Usulan dengan Alasan (Tombol X)"
                                         >
                                             X
@@ -992,10 +992,10 @@ const handleVerifyDirect = (company) => {
                                         <button
                                             type="button"
                                             @click="openEditModal(company)"
-                                            class="p-1.5 text-slate-600 hover:bg-slate-100 rounded border border-slate-300 transition-colors cursor-pointer shrink-0"
+                                            class="p-1.5 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer shrink-0"
                                             title="Sunting Data Institusi"
                                         >
-                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                                             </svg>
                                         </button>
